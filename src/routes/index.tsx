@@ -7,7 +7,7 @@ import { useTable, type Dossier, type Paiement, type Facture, type Compte, type 
 import { formatEUR, formatPercent, formatDate } from "@/lib/format";
 import { computeGlobalFinance, computeComptesSoldes } from "@/lib/finance";
 import { PageHeader } from "@/components/page-header";
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landmark } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landmark, Percent } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -108,6 +108,41 @@ function Dashboard() {
           tone="cash"
           hint={comptes.length > 0 ? `${comptes.length} compte${comptes.length > 1 ? "s" : ""}` : "Configurez vos comptes"}
         />
+      </section>
+
+      {/* TVA sur marge — vision agence de voyages */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="p-5 border-border/60">
+          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            <PiggyBank className="h-3.5 w-3.5" />
+            Marge brute
+          </div>
+          <div className={`mt-2 text-xl font-semibold tabular ${f.marge >= 0 ? "" : "text-destructive"}`}>
+            {formatEUR(f.marge)}
+          </div>
+        </Card>
+        <Card className="p-5 border-border/60">
+          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            <Percent className="h-3.5 w-3.5" />
+            TVA sur marge
+          </div>
+          <div className="mt-2 text-xl font-semibold tabular text-[color:var(--cost)]">
+            −{formatEUR(f.tvaSurMarge)}
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-1">Régime agences de voyages</div>
+        </Card>
+        <Card className="p-5 border-border/60 bg-secondary/30">
+          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            <PiggyBank className="h-3.5 w-3.5" />
+            Marge nette
+          </div>
+          <div className={`mt-2 text-xl font-semibold tabular ${f.margeNette >= 0 ? "text-[color:var(--margin)]" : "text-destructive"}`}>
+            {formatEUR(f.margeNette)}
+          </div>
+          {f.ca > 0 && (
+            <div className="text-[11px] text-muted-foreground mt-1">{formatPercent(f.margeNettePct)} du CA</div>
+          )}
+        </Card>
       </section>
 
       {/* Trésorerie par compte */}
