@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/empty-state";
 import { parseBankCsv, type BankSource, type ParsedBankRow } from "@/lib/bank-import";
 import { Upload, FileText, AlertCircle, CheckCircle2, TrendingUp, TrendingDown, FileWarning } from "lucide-react";
 import { toast } from "sonner";
+import { logAudit } from "@/lib/audit";
 
 export const Route = createFileRoute("/import-bancaire")({
   component: () => (
@@ -122,6 +123,14 @@ function ImportBancairePage() {
     const { error } = await supabase.from("bank_transactions").insert(toInsert);
     setImporting(false);
     if (error) return toast.error(error.message);
+    const compteNom = comptes.find((c) => c.id === compteId)?.nom ?? "compte";
+    await logAudit({
+      userId: user.id,
+      entity: "bank_transaction",
+      action: "import",
+      description: `${toInsert.length} transaction${toInsert.length > 1 ? "s" : ""} importée${toInsert.length > 1 ? "s" : ""} (${parsed.fileName} → ${compteNom})`,
+      newValue: { fichier: parsed.fileName, source: parsed.source, compte: compteNom, lignes: toInsert.length },
+    });
     toast.success(`${toInsert.length} transaction${toInsert.length > 1 ? "s" : ""} importée${toInsert.length > 1 ? "s" : ""}`);
     setParsed(null);
     setExistingHashes(new Set());
