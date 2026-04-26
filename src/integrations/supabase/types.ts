@@ -91,6 +91,7 @@ export type Database = {
           id: string
           prix_vente: number
           statut: Database["public"]["Enums"]["dossier_statut"]
+          taux_tva_marge: number
           titre: string
           updated_at: string
           user_id: string
@@ -102,6 +103,7 @@ export type Database = {
           id?: string
           prix_vente?: number
           statut?: Database["public"]["Enums"]["dossier_statut"]
+          taux_tva_marge?: number
           titre: string
           updated_at?: string
           user_id: string
@@ -113,6 +115,7 @@ export type Database = {
           id?: string
           prix_vente?: number
           statut?: Database["public"]["Enums"]["dossier_statut"]
+          taux_tva_marge?: number
           titre?: string
           updated_at?: string
           user_id?: string
