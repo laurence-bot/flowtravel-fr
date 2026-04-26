@@ -32,6 +32,33 @@ export type Paiement = {
   date: string;
   source: "banque" | "manuel";
   methode: "virement" | "carte" | "especes";
+  statut_rapprochement: "non_rapproche" | "rapproche";
+  bank_transaction_id: string | null;
+};
+
+export type BankTransaction = {
+  id: string;
+  compte_id: string;
+  date: string;
+  libelle_original: string;
+  libelle_normalise: string;
+  montant: number;
+  sens: "credit" | "debit";
+  source_banque: "sg" | "cic" | "ebury";
+  hash_unique: string;
+  statut: "nouveau" | "rapproche" | "ignore";
+  created_at: string;
+};
+
+export type Rapprochement = {
+  id: string;
+  bank_transaction_id: string;
+  paiement_id: string;
+  score: number;
+  statut: "suggere" | "valide" | "rejete";
+  raison: string | null;
+  created_at: string;
+  validated_at: string | null;
 };
 
 export type Facture = {
