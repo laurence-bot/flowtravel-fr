@@ -3,11 +3,11 @@ import { RequireAuth } from "@/components/require-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useTable, type Dossier, type Paiement, type Facture } from "@/hooks/use-data";
+import { useTable, type Dossier, type Paiement, type Facture, type Compte, type Transfert, BANQUE_LABELS } from "@/hooks/use-data";
 import { formatEUR, formatPercent, formatDate } from "@/lib/format";
-import { computeGlobalFinance } from "@/lib/finance";
+import { computeGlobalFinance, computeComptesSoldes } from "@/lib/finance";
 import { PageHeader } from "@/components/page-header";
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landmark } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -64,8 +64,12 @@ function Dashboard() {
   const { data: dossiers } = useTable<Dossier>("dossiers");
   const { data: paiements } = useTable<Paiement>("paiements");
   const { data: factures } = useTable<Facture>("factures_fournisseurs");
+  const { data: comptes } = useTable<Compte>("comptes");
+  const { data: transferts } = useTable<Transfert>("transferts");
 
   const f = computeGlobalFinance(dossiers, paiements, factures);
+  const soldes = computeComptesSoldes(comptes, paiements, transferts);
+  const tresorerieReelle = soldes.reduce((s, c) => s + c.solde, 0);
   const recentDossiers = dossiers.slice(0, 5);
   const recentPaiements = paiements.slice(0, 5);
 
@@ -98,13 +102,45 @@ function Dashboard() {
           hint={f.ca > 0 ? `${formatPercent(f.margePct)} du CA` : "—"}
         />
         <KPI
-          label="Trésorerie nette"
-          value={formatEUR(f.tresorerie)}
+          label="Trésorerie réelle"
+          value={formatEUR(comptes.length > 0 ? tresorerieReelle : f.tresorerie)}
           icon={Wallet}
           tone="cash"
-          hint={`${formatEUR(f.encaisse)} encaissés`}
+          hint={comptes.length > 0 ? `${comptes.length} compte${comptes.length > 1 ? "s" : ""}` : "Configurez vos comptes"}
         />
       </section>
+
+      {/* Trésorerie par compte */}
+      {comptes.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-xl flex items-center gap-2">
+              <Landmark className="h-5 w-5 text-muted-foreground" />
+              Trésorerie par compte
+            </h2>
+            <Link to="/comptes" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+              Détails <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {soldes.map((s) => (
+              <Card key={s.compte.id} className="p-4 border-border/60">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">{s.compte.nom}</div>
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mt-0.5">
+                      {BANQUE_LABELS[s.compte.banque]}
+                    </div>
+                  </div>
+                  <div className={`tabular text-lg font-semibold ${s.solde >= 0 ? "" : "text-destructive"}`}>
+                    {formatEUR(s.solde)}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6 border-border/60">
