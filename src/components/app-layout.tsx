@@ -40,7 +40,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const NavList = ({ onClick }: { onClick?: () => void }) => (
     <nav className="flex-1 px-4 py-6 space-y-1">
-      {nav.map((item) => {
+      {visibleNav.map((item) => {
         const Icon = item.icon;
         const active = isActive(item.to);
         return (
@@ -81,6 +81,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="px-3 text-xs text-sidebar-foreground/80 truncate" title={user?.email ?? ""}>
             {user?.email}
           </div>
+          {role && (
+            <div className="px-3 text-[11px] text-[color:var(--gold)] uppercase tracking-[0.15em]">
+              {ROLE_LABELS[role]}
+            </div>
+          )}
           <button
             onClick={handleSignOut}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-[13px] text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
