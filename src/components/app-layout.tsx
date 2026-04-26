@@ -1,9 +1,11 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText } from "lucide-react";
+import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
+import { canAccessRoute, ROLE_LABELS } from "@/lib/permissions";
 
 const nav = [
   { to: "/", label: "Tableau de bord", icon: LayoutDashboard },
@@ -17,13 +19,16 @@ const nav = [
   { to: "/rapprochement", label: "Rapprochement", icon: Link2 },
   { to: "/export", label: "Export comptable", icon: FileDown },
   { to: "/audit", label: "Journal d'audit", icon: ScrollText },
+  { to: "/utilisateurs", label: "Utilisateurs", icon: UserCog },
 ] as const;
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
+  const { role } = useRole();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const visibleNav = nav.filter((item) => canAccessRoute(role, item.to));
 
   const handleSignOut = async () => {
     await signOut();
