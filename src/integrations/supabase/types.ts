@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      bank_transactions: {
+        Row: {
+          compte_id: string
+          created_at: string
+          date: string
+          hash_unique: string
+          id: string
+          libelle_normalise: string
+          libelle_original: string
+          montant: number
+          sens: Database["public"]["Enums"]["bank_sens"]
+          source_banque: Database["public"]["Enums"]["bank_source"]
+          statut: Database["public"]["Enums"]["bank_statut"]
+          user_id: string
+        }
+        Insert: {
+          compte_id: string
+          created_at?: string
+          date: string
+          hash_unique: string
+          id?: string
+          libelle_normalise: string
+          libelle_original: string
+          montant: number
+          sens: Database["public"]["Enums"]["bank_sens"]
+          source_banque: Database["public"]["Enums"]["bank_source"]
+          statut?: Database["public"]["Enums"]["bank_statut"]
+          user_id: string
+        }
+        Update: {
+          compte_id?: string
+          created_at?: string
+          date?: string
+          hash_unique?: string
+          id?: string
+          libelle_normalise?: string
+          libelle_original?: string
+          montant?: number
+          sens?: Database["public"]["Enums"]["bank_sens"]
+          source_banque?: Database["public"]["Enums"]["bank_source"]
+          statut?: Database["public"]["Enums"]["bank_statut"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       comptes: {
         Row: {
           actif: boolean
@@ -279,6 +324,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      bank_sens: "credit" | "debit"
+      bank_source: "sg" | "cic" | "ebury"
+      bank_statut: "nouveau" | "rapproche" | "ignore"
       compte_banque: "sg" | "cic" | "ebury" | "autre"
       compte_categorie:
         | "gestion"
@@ -418,6 +466,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      bank_sens: ["credit", "debit"],
+      bank_source: ["sg", "cic", "ebury"],
+      bank_statut: ["nouveau", "rapproche", "ignore"],
       compte_banque: ["sg", "cic", "ebury", "autre"],
       compte_categorie: [
         "gestion",

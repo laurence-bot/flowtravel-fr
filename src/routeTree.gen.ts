@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PaiementsRouteImport } from './routes/paiements'
+import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
 import { Route as DossiersRouteImport } from './routes/dossiers'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as ComptesRouteImport } from './routes/comptes'
@@ -20,6 +21,11 @@ import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
 const PaiementsRoute = PaiementsRouteImport.update({
   id: '/paiements',
   path: '/paiements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImportBancaireRoute = ImportBancaireRouteImport.update({
+  id: '/import-bancaire',
+  path: '/import-bancaire',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DossiersRoute = DossiersRouteImport.update({
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRoute
   '/dossiers': typeof DossiersRouteWithChildren
+  '/import-bancaire': typeof ImportBancaireRoute
   '/paiements': typeof PaiementsRoute
   '/dossiers/$id': typeof DossiersIdRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRoute
   '/dossiers': typeof DossiersRouteWithChildren
+  '/import-bancaire': typeof ImportBancaireRoute
   '/paiements': typeof PaiementsRoute
   '/dossiers/$id': typeof DossiersIdRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRoute
   '/dossiers': typeof DossiersRouteWithChildren
+  '/import-bancaire': typeof ImportBancaireRoute
   '/paiements': typeof PaiementsRoute
   '/dossiers/$id': typeof DossiersIdRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/comptes'
     | '/contacts'
     | '/dossiers'
+    | '/import-bancaire'
     | '/paiements'
     | '/dossiers/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/comptes'
     | '/contacts'
     | '/dossiers'
+    | '/import-bancaire'
     | '/paiements'
     | '/dossiers/$id'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/comptes'
     | '/contacts'
     | '/dossiers'
+    | '/import-bancaire'
     | '/paiements'
     | '/dossiers/$id'
   fileRoutesById: FileRoutesById
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   ComptesRoute: typeof ComptesRoute
   ContactsRoute: typeof ContactsRoute
   DossiersRoute: typeof DossiersRouteWithChildren
+  ImportBancaireRoute: typeof ImportBancaireRoute
   PaiementsRoute: typeof PaiementsRoute
 }
 
@@ -127,6 +140,13 @@ declare module '@tanstack/react-router' {
       path: '/paiements'
       fullPath: '/paiements'
       preLoaderRoute: typeof PaiementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/import-bancaire': {
+      id: '/import-bancaire'
+      path: '/import-bancaire'
+      fullPath: '/import-bancaire'
+      preLoaderRoute: typeof ImportBancaireRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dossiers': {
@@ -192,6 +212,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComptesRoute: ComptesRoute,
   ContactsRoute: ContactsRoute,
   DossiersRoute: DossiersRouteWithChildren,
+  ImportBancaireRoute: ImportBancaireRoute,
   PaiementsRoute: PaiementsRoute,
 }
 export const routeTree = rootRouteImport
