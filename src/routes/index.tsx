@@ -112,6 +112,30 @@ function Dashboard() {
         />
       </section>
 
+      {txARapprocher > 0 && (
+        <Link
+          to="/rapprochement"
+          className="block group"
+        >
+          <Card className="p-4 border-[color:var(--gold)]/30 bg-[color:var(--gold)]/8 hover:bg-[color:var(--gold)]/12 transition-colors flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-10 w-10 rounded-md flex items-center justify-center bg-[color:var(--gold)]/20 text-[color:var(--gold)] shrink-0">
+                <Link2 className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="font-medium text-sm">
+                  {txARapprocher} transaction{txARapprocher > 1 ? "s" : ""} bancaire{txARapprocher > 1 ? "s" : ""} à rapprocher
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  Validez les suggestions automatiques pour fiabiliser votre trésorerie.
+                </div>
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />
+          </Card>
+        </Link>
+      )}
+
       {/* TVA sur marge — vision agence de voyages */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="p-5 border-border/60">
