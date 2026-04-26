@@ -17,7 +17,6 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { Plus, Mail, Phone, Users, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import { logAudit } from "@/lib/audit";
 
 export const Route = createFileRoute("/contacts")({
   component: () => (
@@ -55,17 +54,15 @@ function ContactsPage() {
       return;
     }
     setSubmitting(true);
-    const { data: inserted, error } = await supabase.from("contacts").insert({
+    const { error } = await supabase.from("contacts").insert({
       user_id: user.id,
       nom: parsed.data.nom,
       type: parsed.data.type,
       email: parsed.data.email || null,
       telephone: parsed.data.telephone || null,
-    }).select().single();
+    });
     setSubmitting(false);
     if (error) return toast.error(error.message);
-    // Pas dans la liste audit officielle mais on trace la création de contact via "dossier" non — on ignore: pas demandé
-    void inserted;
     toast.success("Contact créé");
     setOpen(false);
     setForm({ nom: "", type: "client", email: "", telephone: "" });
