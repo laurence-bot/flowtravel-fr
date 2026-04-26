@@ -6,21 +6,29 @@ import { useRole } from "@/hooks/use-role";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/empty-state";
 import { ROLE_LABELS, ROLE_DESCRIPTIONS, type AppRole, isAdmin } from "@/lib/permissions";
 import { logAudit } from "@/lib/audit";
+import { RequireAuth } from "@/components/require-auth";
 import { toast } from "sonner";
 import { ShieldAlert, Users } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 export const Route = createFileRoute("/utilisateurs")({
-  component: UtilisateursPage,
+  component: UtilisateursRoute,
 });
+
+function UtilisateursRoute() {
+  return (
+    <RequireAuth>
+      <UtilisateursPage />
+    </RequireAuth>
+  );
+}
 
 type ProfileRow = {
   id: string;
