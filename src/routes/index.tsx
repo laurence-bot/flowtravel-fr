@@ -3,7 +3,7 @@ import { RequireAuth } from "@/components/require-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useTable, type Dossier, type Paiement, type Facture, type Compte, type Transfert, type BankTransaction, BANQUE_LABELS } from "@/hooks/use-data";
+import { useTable, type Dossier, type Paiement, type Facture, type Compte, type Transfert, type BankTransaction, type Contact, BANQUE_LABELS } from "@/hooks/use-data";
 import { formatEUR, formatPercent, formatDate } from "@/lib/format";
 import { computeGlobalFinance, computeComptesSoldes } from "@/lib/finance";
 import { computeCashForecast } from "@/lib/cash-forecast";
@@ -68,11 +68,13 @@ function Dashboard() {
   const { data: comptes } = useTable<Compte>("comptes");
   const { data: transferts } = useTable<Transfert>("transferts");
   const { data: bankTx } = useTable<BankTransaction>("bank_transactions");
+  const { data: contacts } = useTable<Contact>("contacts");
 
   const f = computeGlobalFinance(dossiers, paiements, factures);
   const soldes = computeComptesSoldes(comptes, paiements, transferts);
   const tresorerieReelle = soldes.reduce((s, c) => s + c.solde, 0);
   const txARapprocher = bankTx.filter((t) => t.statut === "nouveau").length;
+  const forecast = computeCashForecast(30, { comptes, paiements, transferts, dossiers, factures, contacts });
   const recentDossiers = dossiers.slice(0, 5);
   const recentPaiements = paiements.slice(0, 5);
 
