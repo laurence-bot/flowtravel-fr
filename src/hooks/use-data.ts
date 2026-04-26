@@ -18,6 +18,7 @@ export type Dossier = {
   statut: "brouillon" | "confirme" | "cloture";
   prix_vente: number;
   cout_total: number;
+  taux_tva_marge: number;
   created_at: string;
 };
 

@@ -33,6 +33,7 @@ const dossierSchema = z.object({
   statut: z.enum(["brouillon", "confirme", "cloture"]),
   prix_vente: z.number().min(0, "Le prix doit être positif"),
   cout_total: z.number().min(0, "Le coût doit être positif"),
+  taux_tva_marge: z.number().min(0, "Taux invalide").max(99, "Taux invalide"),
 });
 
 function DossiersPage() {
@@ -47,6 +48,7 @@ function DossiersPage() {
     statut: "brouillon" as Dossier["statut"],
     prix_vente: "",
     cout_total: "",
+    taux_tva_marge: "20",
   });
 
   const submit = async (e: React.FormEvent) => {
@@ -58,6 +60,7 @@ function DossiersPage() {
       statut: form.statut,
       prix_vente: Number(form.prix_vente) || 0,
       cout_total: Number(form.cout_total) || 0,
+      taux_tva_marge: Number(form.taux_tva_marge) || 0,
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
@@ -71,12 +74,13 @@ function DossiersPage() {
       statut: parsed.data.statut,
       prix_vente: parsed.data.prix_vente,
       cout_total: parsed.data.cout_total,
+      taux_tva_marge: parsed.data.taux_tva_marge,
     });
     setSubmitting(false);
     if (error) return toast.error(error.message);
     toast.success("Dossier créé");
     setOpen(false);
-    setForm({ titre: "", client_id: "", statut: "brouillon", prix_vente: "", cout_total: "" });
+    setForm({ titre: "", client_id: "", statut: "brouillon", prix_vente: "", cout_total: "", taux_tva_marge: "20" });
     refetch();
   };
 
@@ -157,6 +161,21 @@ function DossiersPage() {
                 placeholder="0,00"
               />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Taux de TVA sur marge (%)</Label>
+            <Input
+              type="number"
+              step="0.1"
+              min="0"
+              max="99"
+              value={form.taux_tva_marge}
+              onChange={(e) => setForm({ ...form, taux_tva_marge: e.target.value })}
+              placeholder="20"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Régime spécifique des agences de voyages. 20 % par défaut.
+            </p>
           </div>
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? "Enregistrement…" : "Enregistrer le dossier"}

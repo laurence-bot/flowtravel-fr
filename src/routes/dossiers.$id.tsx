@@ -115,6 +115,52 @@ function DossierDetail() {
         </Card>
       </section>
 
+      {/* TVA sur marge — régime des agences de voyages */}
+      <Card className="p-6 border-border/60">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h2 className="font-display text-xl">TVA sur marge</h2>
+          <span className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+            Taux appliqué : {f.tauxTva.toFixed(1).replace(".0", "")} %
+          </span>
+        </div>
+        <div className="mt-5 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+          <div>
+            <div className="text-xs text-muted-foreground">Prix de vente</div>
+            <div className="tabular font-medium mt-1">{formatEUR(f.prixVente)}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">Coûts fournisseurs</div>
+            <div className="tabular font-medium mt-1 text-[color:var(--cost)]">{formatEUR(f.coutTotal)}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">Marge brute</div>
+            <div className={`tabular font-medium mt-1 ${f.margeBrute >= 0 ? "" : "text-destructive"}`}>
+              {formatEUR(f.margeBrute)}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">TVA sur marge</div>
+            <div className="tabular font-medium mt-1 text-[color:var(--cost)]">−{formatEUR(f.tvaSurMarge)}</div>
+          </div>
+          <div className="col-span-2 md:col-span-2">
+            <div className="text-xs text-muted-foreground">Marge nette (après TVA)</div>
+            <div className={`tabular text-lg font-semibold mt-1 ${f.margeNette >= 0 ? "text-[color:var(--margin)]" : "text-destructive"}`}>
+              {formatEUR(f.margeNette)}
+              {f.prixVente > 0 && (
+                <span className="text-xs text-muted-foreground font-normal ml-2">
+                  ({formatPercent(f.margeNettePct)} du CA)
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        {f.margeBrute <= 0 && (
+          <p className="text-[11px] text-muted-foreground mt-4">
+            Marge brute nulle ou négative : la TVA sur marge ne s'applique pas.
+          </p>
+        )}
+      </Card>
+
       {/* Résumé financier + Factures */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6 border-border/60">

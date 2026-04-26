@@ -20,12 +20,49 @@ export type DossierFinance = {
   coutTotal: number;
   marge: number;
   margePct: number;
+  margeBrute: number;
+  tauxTva: number;
+  tvaSurMarge: number;
+  margeNette: number;
+  margeNettePct: number;
   encaisseClient: number;
   payeFournisseur: number;
   resteAEncaisser: number;
   resteAPayerFournisseur: number;
   soldeTresorerie: number;
 };
+
+/**
+ * TVA sur marge (régime spécifique des agences de voyages, art. 266-1-e CGI).
+ * Formule : TVA = (marge brute × taux) / (1 + taux). Nulle si marge brute ≤ 0.
+ */
+export type TvaMarge = {
+  margeBrute: number;
+  tauxTva: number;
+  tvaSurMarge: number;
+  margeNette: number;
+};
+
+export function computeTvaMarge(
+  dossier: Pick<Dossier, "prix_vente" | "cout_total" | "taux_tva_marge">,
+): TvaMarge {
+  const prix = num(dossier.prix_vente);
+  const cout = num(dossier.cout_total);
+  const tauxRaw = num(dossier.taux_tva_marge);
+  const tauxTva = tauxRaw > 0 && tauxRaw < 100 ? tauxRaw : 20;
+  const margeBrute = prix - cout;
+  if (margeBrute <= 0) {
+    return { margeBrute, tauxTva, tvaSurMarge: 0, margeNette: margeBrute };
+  }
+  const t = tauxTva / 100;
+  const tvaSurMarge = (margeBrute * t) / (1 + t);
+  return {
+    margeBrute,
+    tauxTva,
+    tvaSurMarge,
+    margeNette: margeBrute - tvaSurMarge,
+  };
+}
 
 export function computeDossierFinance(
   dossier: Dossier,
@@ -36,6 +73,8 @@ export function computeDossierFinance(
   const coutTotal = num(dossier.cout_total);
   const marge = prixVente - coutTotal;
   const margePct = prixVente > 0 ? (marge / prixVente) * 100 : 0;
+  const tva = computeTvaMarge(dossier);
+  const margeNettePct = prixVente > 0 ? (tva.margeNette / prixVente) * 100 : 0;
 
   const encaisseClient = paiements
     .filter((p) => p.dossier_id === dossier.id && p.type === "paiement_client")
@@ -53,6 +92,11 @@ export function computeDossierFinance(
     coutTotal,
     marge,
     margePct,
+    margeBrute: tva.margeBrute,
+    tauxTva: tva.tauxTva,
+    tvaSurMarge: tva.tvaSurMarge,
+    margeNette: tva.margeNette,
+    margeNettePct,
     encaisseClient,
     payeFournisseur,
     resteAEncaisser: Math.max(0, prixVente - encaisseClient),
@@ -66,6 +110,9 @@ export type GlobalFinance = {
   couts: number;
   marge: number;
   margePct: number;
+  tvaSurMarge: number;
+  margeNette: number;
+  margeNettePct: number;
   encaisse: number;
   decaisse: number;
   tresorerie: number;
@@ -82,6 +129,9 @@ export function computeGlobalFinance(
   const couts = dossiers.reduce((s, d) => s + num(d.cout_total), 0);
   const marge = ca - couts;
   const margePct = ca > 0 ? (marge / ca) * 100 : 0;
+  const tvaSurMarge = dossiers.reduce((s, d) => s + computeTvaMarge(d).tvaSurMarge, 0);
+  const margeNette = marge - tvaSurMarge;
+  const margeNettePct = ca > 0 ? (margeNette / ca) * 100 : 0;
 
   const encaisse = paiements
     .filter((p) => p.type === "paiement_client")
@@ -101,6 +151,9 @@ export function computeGlobalFinance(
     couts,
     marge,
     margePct,
+    tvaSurMarge,
+    margeNette,
+    margeNettePct,
     encaisse,
     decaisse,
     // Trésorerie nette = encaissements − décaissements (les transferts internes sont neutres par construction)
