@@ -13,16 +13,16 @@ export function ReadOnlyShield({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <div className="mb-6 flex items-center gap-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
-        <Lock className="h-4 w-4 shrink-0" />
+      <div className="mb-6 flex items-center gap-3 rounded-md border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 px-4 py-3 text-sm text-foreground">
+        <Lock className="h-4 w-4 shrink-0 text-[color:var(--gold)]" />
         <div>
           <span className="font-medium">Mode lecture seule</span>
-          <span className="text-amber-700/80 dark:text-amber-200/70">
+          <span className="text-muted-foreground">
             {" "}— votre rôle ({role ? ROLE_LABELS[role] : "—"}) ne permet pas de modifier les données de cette page.
           </span>
         </div>
       </div>
-      <fieldset disabled className="contents [&_button[type=submit]]:cursor-not-allowed [&_button:not([data-rw-allow])]:cursor-not-allowed">
+      <fieldset disabled className="contents">
         {children}
       </fieldset>
     </>
