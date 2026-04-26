@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useTable, type Contact, type Dossier, type Paiement } from "@/hooks/use-data";
+import { useTable, type Contact, type Dossier, type Paiement, type Compte } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { formatEUR, formatDate } from "@/lib/format";
@@ -35,12 +35,14 @@ const paiementSchema = z.object({
   source: z.enum(["banque", "manuel"]),
   dossier_id: z.string().uuid().optional().or(z.literal("")),
   personne_id: z.string().uuid().optional().or(z.literal("")),
+  compte_id: z.string().uuid("Compte requis"),
 });
 
 function PaiementsPage() {
   const { data: paiements, loading, refetch } = useTable<Paiement>("paiements");
   const { data: dossiers } = useTable<Dossier>("dossiers");
   const { data: contacts } = useTable<Contact>("contacts");
+  const { data: comptes } = useTable<Compte>("comptes");
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -55,6 +57,7 @@ function PaiementsPage() {
     source: "manuel" as Paiement["source"],
     dossier_id: "",
     personne_id: "",
+    compte_id: "",
   });
 
   const filtered = paiements.filter((p) => filter === "all" || p.type === filter);
@@ -86,6 +89,7 @@ function PaiementsPage() {
       source: parsed.data.source,
       dossier_id: parsed.data.dossier_id || null,
       personne_id: parsed.data.personne_id || null,
+      compte_id: parsed.data.compte_id,
     });
     setSubmitting(false);
     if (error) return toast.error(error.message);

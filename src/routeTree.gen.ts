@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as PaiementsRouteImport } from './routes/paiements'
 import { Route as DossiersRouteImport } from './routes/dossiers'
 import { Route as ContactsRouteImport } from './routes/contacts'
+import { Route as ComptesRouteImport } from './routes/comptes'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
@@ -29,6 +30,11 @@ const DossiersRoute = DossiersRouteImport.update({
 const ContactsRoute = ContactsRouteImport.update({
   id: '/contacts',
   path: '/contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComptesRoute = ComptesRouteImport.update({
+  id: '/comptes',
+  path: '/comptes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -50,6 +56,7 @@ const DossiersIdRoute = DossiersIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/paiements': typeof PaiementsRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/paiements': typeof PaiementsRoute
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/paiements': typeof PaiementsRoute
@@ -77,16 +86,25 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/comptes'
     | '/contacts'
     | '/dossiers'
     | '/paiements'
     | '/dossiers/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/contacts' | '/dossiers' | '/paiements' | '/dossiers/$id'
+  to:
+    | '/'
+    | '/auth'
+    | '/comptes'
+    | '/contacts'
+    | '/dossiers'
+    | '/paiements'
+    | '/dossiers/$id'
   id:
     | '__root__'
     | '/'
     | '/auth'
+    | '/comptes'
     | '/contacts'
     | '/dossiers'
     | '/paiements'
@@ -96,6 +114,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  ComptesRoute: typeof ComptesRoute
   ContactsRoute: typeof ContactsRoute
   DossiersRoute: typeof DossiersRouteWithChildren
   PaiementsRoute: typeof PaiementsRoute
@@ -122,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/contacts'
       fullPath: '/contacts'
       preLoaderRoute: typeof ContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comptes': {
+      id: '/comptes'
+      path: '/comptes'
+      fullPath: '/comptes'
+      preLoaderRoute: typeof ComptesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -163,6 +189,7 @@ const DossiersRouteWithChildren = DossiersRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  ComptesRoute: ComptesRoute,
   ContactsRoute: ContactsRoute,
   DossiersRoute: DossiersRouteWithChildren,
   PaiementsRoute: PaiementsRoute,
