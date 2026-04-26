@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as RapprochementRouteImport } from './routes/rapprochement'
 import { Route as PaiementsRouteImport } from './routes/paiements'
 import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
+import { Route as ExportRouteImport } from './routes/export'
 import { Route as DossiersRouteImport } from './routes/dossiers'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as ComptesRouteImport } from './routes/comptes'
@@ -32,6 +33,11 @@ const PaiementsRoute = PaiementsRouteImport.update({
 const ImportBancaireRoute = ImportBancaireRouteImport.update({
   id: '/import-bancaire',
   path: '/import-bancaire',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExportRoute = ExportRouteImport.update({
+  id: '/export',
+  path: '/export',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DossiersRoute = DossiersRouteImport.update({
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRoute
   '/dossiers': typeof DossiersRouteWithChildren
+  '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/paiements': typeof PaiementsRoute
   '/rapprochement': typeof RapprochementRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRoute
   '/dossiers': typeof DossiersRouteWithChildren
+  '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/paiements': typeof PaiementsRoute
   '/rapprochement': typeof RapprochementRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRoute
   '/dossiers': typeof DossiersRouteWithChildren
+  '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/paiements': typeof PaiementsRoute
   '/rapprochement': typeof RapprochementRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/comptes'
     | '/contacts'
     | '/dossiers'
+    | '/export'
     | '/import-bancaire'
     | '/paiements'
     | '/rapprochement'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/comptes'
     | '/contacts'
     | '/dossiers'
+    | '/export'
     | '/import-bancaire'
     | '/paiements'
     | '/rapprochement'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/comptes'
     | '/contacts'
     | '/dossiers'
+    | '/export'
     | '/import-bancaire'
     | '/paiements'
     | '/rapprochement'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   ComptesRoute: typeof ComptesRoute
   ContactsRoute: typeof ContactsRoute
   DossiersRoute: typeof DossiersRouteWithChildren
+  ExportRoute: typeof ExportRoute
   ImportBancaireRoute: typeof ImportBancaireRoute
   PaiementsRoute: typeof PaiementsRoute
   RapprochementRoute: typeof RapprochementRoute
@@ -167,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/import-bancaire'
       fullPath: '/import-bancaire'
       preLoaderRoute: typeof ImportBancaireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/export': {
+      id: '/export'
+      path: '/export'
+      fullPath: '/export'
+      preLoaderRoute: typeof ExportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dossiers': {
@@ -232,6 +252,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComptesRoute: ComptesRoute,
   ContactsRoute: ContactsRoute,
   DossiersRoute: DossiersRouteWithChildren,
+  ExportRoute: ExportRoute,
   ImportBancaireRoute: ImportBancaireRoute,
   PaiementsRoute: PaiementsRoute,
   RapprochementRoute: RapprochementRoute,
