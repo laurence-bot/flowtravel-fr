@@ -35,6 +35,7 @@ import {
   Search,
 } from "lucide-react";
 import { toast } from "sonner";
+import { logAudit } from "@/lib/audit";
 
 export const Route = createFileRoute("/rapprochement")({
   component: () => (
@@ -137,6 +138,14 @@ function RapprochementPage() {
       if (e3) throw e3;
 
       toast.success("Rapprochement validé");
+      await logAudit({
+        userId: user.id,
+        entity: "rapprochement",
+        action: "validate",
+        entityId: tx.id,
+        description: `Rapprochement validé : ${tx.libelle_original} ↔ paiement ${paiement.montant} € (score ${Math.round(score)})`,
+        newValue: { bank_transaction_id: tx.id, paiement_id: paiement.id, score, raison: reason },
+      });
       await Promise.all([refetchTx(), refetchPaiements()]);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erreur lors de la validation";
@@ -159,6 +168,14 @@ function RapprochementPage() {
         raison: reason,
       });
       if (error) throw error;
+      await logAudit({
+        userId: user.id,
+        entity: "rapprochement",
+        action: "reject",
+        entityId: tx.id,
+        description: `Suggestion rejetée : ${tx.libelle_original} ↔ paiement ${paiement.montant} €`,
+        newValue: { bank_transaction_id: tx.id, paiement_id: paiement.id, raison: reason },
+      });
       toast.success("Suggestion rejetée");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erreur lors du rejet");
