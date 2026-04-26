@@ -25,6 +25,7 @@ export type Paiement = {
   id: string;
   dossier_id: string | null;
   personne_id: string | null;
+  compte_id: string | null;
   montant: number;
   type: "paiement_client" | "paiement_fournisseur";
   date: string;
@@ -39,6 +40,44 @@ export type Facture = {
   montant: number;
   date_echeance: string | null;
   paye: boolean;
+};
+
+export type CompteBanque = "sg" | "cic" | "ebury" | "autre";
+export type CompteCategorie = "gestion" | "anticipation" | "clients" | "fournisseurs" | "plateforme";
+
+export type Compte = {
+  id: string;
+  nom: string;
+  banque: CompteBanque;
+  categorie: CompteCategorie;
+  solde_initial: number;
+  actif: boolean;
+  created_at: string;
+};
+
+export type Transfert = {
+  id: string;
+  compte_source_id: string;
+  compte_destination_id: string;
+  montant: number;
+  date: string;
+  libelle: string | null;
+  created_at: string;
+};
+
+export const BANQUE_LABELS: Record<CompteBanque, string> = {
+  sg: "Société Générale",
+  cic: "CIC",
+  ebury: "Ebury",
+  autre: "Autre",
+};
+
+export const CATEGORIE_LABELS: Record<CompteCategorie, string> = {
+  gestion: "Gestion",
+  anticipation: "Anticipation",
+  clients: "Clients",
+  fournisseurs: "Fournisseurs",
+  plateforme: "Plateforme",
 };
 
 export function useTable<T>(table: string, deps: unknown[] = []) {

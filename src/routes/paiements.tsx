@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useTable, type Contact, type Dossier, type Paiement } from "@/hooks/use-data";
+import { useTable, type Contact, type Dossier, type Paiement, type Compte } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { formatEUR, formatDate } from "@/lib/format";
@@ -35,12 +35,14 @@ const paiementSchema = z.object({
   source: z.enum(["banque", "manuel"]),
   dossier_id: z.string().uuid().optional().or(z.literal("")),
   personne_id: z.string().uuid().optional().or(z.literal("")),
+  compte_id: z.string().uuid("Compte requis"),
 });
 
 function PaiementsPage() {
   const { data: paiements, loading, refetch } = useTable<Paiement>("paiements");
   const { data: dossiers } = useTable<Dossier>("dossiers");
   const { data: contacts } = useTable<Contact>("contacts");
+  const { data: comptes } = useTable<Compte>("comptes");
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -55,6 +57,7 @@ function PaiementsPage() {
     source: "manuel" as Paiement["source"],
     dossier_id: "",
     personne_id: "",
+    compte_id: "",
   });
 
   const filtered = paiements.filter((p) => filter === "all" || p.type === filter);
@@ -86,6 +89,7 @@ function PaiementsPage() {
       source: parsed.data.source,
       dossier_id: parsed.data.dossier_id || null,
       personne_id: parsed.data.personne_id || null,
+      compte_id: parsed.data.compte_id,
     });
     setSubmitting(false);
     if (error) return toast.error(error.message);
@@ -100,6 +104,7 @@ function PaiementsPage() {
   );
   const dossierTitre = (id: string | null) => dossiers.find((d) => d.id === id)?.titre ?? "—";
   const personneNom = (id: string | null) => contacts.find((c) => c.id === id)?.nom ?? "—";
+  const compteNom = (id: string | null) => comptes.find((c) => c.id === id)?.nom ?? "—";
 
   const NewPaiementButton = (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -226,6 +231,25 @@ function PaiementsPage() {
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <Label>Compte impacté <span className="text-destructive">*</span></Label>
+            <Select value={form.compte_id} onValueChange={(v) => setForm({ ...form, compte_id: v })}>
+              <SelectTrigger>
+                <SelectValue placeholder={comptes.length === 0 ? "Créez d'abord un compte" : "Choisir le compte"} />
+              </SelectTrigger>
+              <SelectContent>
+                {comptes.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {comptes.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Rendez-vous dans <span className="font-medium">Comptes & Trésorerie</span> pour créer vos comptes.
+              </p>
+            )}
+          </div>
+
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? "Enregistrement…" : "Enregistrer le paiement"}
           </Button>
@@ -293,6 +317,7 @@ function PaiementsPage() {
                 <TableHead>Type</TableHead>
                 <TableHead>Personne</TableHead>
                 <TableHead>Dossier</TableHead>
+                <TableHead>Compte</TableHead>
                 <TableHead>Méthode</TableHead>
                 <TableHead className="text-right">Montant</TableHead>
               </TableRow>
@@ -315,6 +340,7 @@ function PaiementsPage() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">{personneNom(p.personne_id)}</TableCell>
                   <TableCell className="text-muted-foreground">{dossierTitre(p.dossier_id)}</TableCell>
+                  <TableCell className="text-muted-foreground">{compteNom(p.compte_id)}</TableCell>
                   <TableCell className="capitalize text-muted-foreground">{p.methode}</TableCell>
                   <TableCell
                     className={`text-right tabular font-medium ${

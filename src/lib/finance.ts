@@ -2,7 +2,13 @@
  * Logique métier financière — toutes les valeurs en euros.
  * Centralise les calculs pour éviter toute incohérence entre écrans.
  */
-import type { Dossier, Paiement, Facture } from "@/hooks/use-data";
+import type {
+  Dossier,
+  Paiement,
+  Facture,
+  Compte,
+  Transfert,
+} from "@/hooks/use-data";
 
 const num = (v: unknown) => {
   const n = Number(v ?? 0);
@@ -17,12 +23,14 @@ export type DossierFinance = {
   encaisseClient: number;
   payeFournisseur: number;
   resteAEncaisser: number;
+  resteAPayerFournisseur: number;
   soldeTresorerie: number;
 };
 
 export function computeDossierFinance(
   dossier: Dossier,
   paiements: Paiement[],
+  factures: Facture[] = [],
 ): DossierFinance {
   const prixVente = num(dossier.prix_vente);
   const coutTotal = num(dossier.cout_total);
@@ -36,6 +44,10 @@ export function computeDossierFinance(
     .filter((p) => p.dossier_id === dossier.id && p.type === "paiement_fournisseur")
     .reduce((s, p) => s + num(p.montant), 0);
 
+  const facturesDossier = factures.filter((f) => f.dossier_id === dossier.id);
+  const totalFactures = facturesDossier.reduce((s, f) => s + num(f.montant), 0);
+  const resteAPayerFournisseur = Math.max(0, totalFactures - payeFournisseur);
+
   return {
     prixVente,
     coutTotal,
@@ -44,6 +56,7 @@ export function computeDossierFinance(
     encaisseClient,
     payeFournisseur,
     resteAEncaisser: Math.max(0, prixVente - encaisseClient),
+    resteAPayerFournisseur,
     soldeTresorerie: encaisseClient - payeFournisseur,
   };
 }
@@ -90,8 +103,76 @@ export function computeGlobalFinance(
     margePct,
     encaisse,
     decaisse,
+    // Trésorerie nette = encaissements − décaissements (les transferts internes sont neutres par construction)
     tresorerie: encaisse - decaisse,
     facturesNonPayees: facturesNonPayees.length,
     resteAPayerFournisseurs,
+  };
+}
+
+/**
+ * Solde par compte — intègre :
+ *  - solde initial
+ *  - encaissements clients (entrants)
+ *  - décaissements fournisseurs (sortants)
+ *  - transferts internes (sortants pour la source, entrants pour la destination → impact net zéro sur la trésorerie globale)
+ */
+export type CompteSolde = {
+  compte: Compte;
+  entrees: number;
+  sorties: number;
+  transfertsEntrants: number;
+  transfertsSortants: number;
+  solde: number;
+};
+
+export function computeComptesSoldes(
+  comptes: Compte[],
+  paiements: Paiement[],
+  transferts: Transfert[],
+): CompteSolde[] {
+  return comptes.map((compte) => {
+    const entrees = paiements
+      .filter((p) => p.compte_id === compte.id && p.type === "paiement_client")
+      .reduce((s, p) => s + num(p.montant), 0);
+    const sorties = paiements
+      .filter((p) => p.compte_id === compte.id && p.type === "paiement_fournisseur")
+      .reduce((s, p) => s + num(p.montant), 0);
+    const transfertsEntrants = transferts
+      .filter((t) => t.compte_destination_id === compte.id)
+      .reduce((s, t) => s + num(t.montant), 0);
+    const transfertsSortants = transferts
+      .filter((t) => t.compte_source_id === compte.id)
+      .reduce((s, t) => s + num(t.montant), 0);
+
+    return {
+      compte,
+      entrees,
+      sorties,
+      transfertsEntrants,
+      transfertsSortants,
+      solde:
+        num(compte.solde_initial) +
+        entrees -
+        sorties +
+        transfertsEntrants -
+        transfertsSortants,
+    };
+  });
+}
+
+export type TresorerieGlobale = {
+  soldeTotal: number;
+  totalEntrees: number;
+  totalSorties: number;
+  nbComptes: number;
+};
+
+export function computeTresorerieGlobale(soldes: CompteSolde[]): TresorerieGlobale {
+  return {
+    soldeTotal: soldes.reduce((s, c) => s + c.solde, 0),
+    totalEntrees: soldes.reduce((s, c) => s + c.entrees, 0),
+    totalSorties: soldes.reduce((s, c) => s + c.sorties, 0),
+    nbComptes: soldes.length,
   };
 }
