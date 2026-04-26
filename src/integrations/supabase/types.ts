@@ -14,7 +14,188 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      contacts: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          nom: string
+          telephone: string | null
+          type: Database["public"]["Enums"]["contact_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          nom: string
+          telephone?: string | null
+          type: Database["public"]["Enums"]["contact_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          nom?: string
+          telephone?: string | null
+          type?: Database["public"]["Enums"]["contact_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dossiers: {
+        Row: {
+          client_id: string | null
+          cout_total: number
+          created_at: string
+          id: string
+          prix_vente: number
+          statut: Database["public"]["Enums"]["dossier_statut"]
+          titre: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          cout_total?: number
+          created_at?: string
+          id?: string
+          prix_vente?: number
+          statut?: Database["public"]["Enums"]["dossier_statut"]
+          titre: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          cout_total?: number
+          created_at?: string
+          id?: string
+          prix_vente?: number
+          statut?: Database["public"]["Enums"]["dossier_statut"]
+          titre?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dossiers_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      factures_fournisseurs: {
+        Row: {
+          created_at: string
+          date_echeance: string | null
+          dossier_id: string | null
+          fournisseur_id: string | null
+          id: string
+          montant: number
+          paye: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date_echeance?: string | null
+          dossier_id?: string | null
+          fournisseur_id?: string | null
+          id?: string
+          montant: number
+          paye?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date_echeance?: string | null
+          dossier_id?: string | null
+          fournisseur_id?: string | null
+          id?: string
+          montant?: number
+          paye?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factures_fournisseurs_dossier_id_fkey"
+            columns: ["dossier_id"]
+            isOneToOne: false
+            referencedRelation: "dossiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factures_fournisseurs_fournisseur_id_fkey"
+            columns: ["fournisseur_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      paiements: {
+        Row: {
+          created_at: string
+          date: string
+          dossier_id: string | null
+          id: string
+          methode: Database["public"]["Enums"]["paiement_methode"]
+          montant: number
+          personne_id: string | null
+          source: Database["public"]["Enums"]["paiement_source"]
+          type: Database["public"]["Enums"]["paiement_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          dossier_id?: string | null
+          id?: string
+          methode?: Database["public"]["Enums"]["paiement_methode"]
+          montant: number
+          personne_id?: string | null
+          source?: Database["public"]["Enums"]["paiement_source"]
+          type: Database["public"]["Enums"]["paiement_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          dossier_id?: string | null
+          id?: string
+          methode?: Database["public"]["Enums"]["paiement_methode"]
+          montant?: number
+          personne_id?: string | null
+          source?: Database["public"]["Enums"]["paiement_source"]
+          type?: Database["public"]["Enums"]["paiement_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paiements_dossier_id_fkey"
+            columns: ["dossier_id"]
+            isOneToOne: false
+            referencedRelation: "dossiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paiements_personne_id_fkey"
+            columns: ["personne_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +204,11 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      contact_type: "client" | "fournisseur"
+      dossier_statut: "brouillon" | "confirme" | "cloture"
+      paiement_methode: "virement" | "carte" | "especes"
+      paiement_source: "banque" | "manuel"
+      paiement_type: "paiement_client" | "paiement_fournisseur"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +335,12 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      contact_type: ["client", "fournisseur"],
+      dossier_statut: ["brouillon", "confirme", "cloture"],
+      paiement_methode: ["virement", "carte", "especes"],
+      paiement_source: ["banque", "manuel"],
+      paiement_type: ["paiement_client", "paiement_fournisseur"],
+    },
   },
 } as const
