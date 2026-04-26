@@ -206,6 +206,55 @@ function Dashboard() {
         </section>
       )}
 
+      {/* Prévision de trésorerie 30 jours */}
+      {(comptes.length > 0 || dossiers.length > 0 || factures.length > 0) && (
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-xl flex items-center gap-2">
+              <LineChart className="h-5 w-5 text-muted-foreground" />
+              Prévision de trésorerie · 30 jours
+            </h2>
+            <Link to="/previsions" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+              Voir le détail <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <Card className="p-5 border-border/60">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Aujourd'hui</div>
+                <div className="mt-1.5 text-xl font-semibold tabular">{formatEUR(forecast.soldeInitial)}</div>
+              </div>
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Solde projeté à 30 j</div>
+                <div className={`mt-1.5 text-xl font-semibold tabular ${forecast.soldeFinal < 0 ? "text-destructive" : forecast.soldeFinal < forecast.soldeInitial * 0.3 ? "text-[color:var(--gold)]" : "text-[color:var(--margin)]"}`}>
+                  {formatEUR(forecast.soldeFinal)}
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  +{formatEUR(forecast.totalEntrees)} / −{formatEUR(forecast.totalSorties)}
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Point bas</div>
+                <div className={`mt-1.5 text-xl font-semibold tabular ${forecast.pointBas && forecast.pointBas.solde < 0 ? "text-destructive" : ""}`}>
+                  {forecast.pointBas ? formatEUR(forecast.pointBas.solde) : "—"}
+                </div>
+                {forecast.pointBas && (
+                  <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(forecast.pointBas.date)}</div>
+                )}
+              </div>
+            </div>
+            {forecast.alertes.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-border/60 flex items-start gap-2 text-xs">
+                <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                <div className="text-muted-foreground">
+                  <span className="text-destructive font-medium">{forecast.alertes.length} alerte{forecast.alertes.length > 1 ? "s" : ""}</span> de trésorerie sur les 30 prochains jours.
+                </div>
+              </div>
+            )}
+          </Card>
+        </section>
+      )}
+
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6 border-border/60">
           <div className="flex items-center justify-between">
