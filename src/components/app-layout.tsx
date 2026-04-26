@@ -6,6 +6,7 @@ import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 import { canAccessRoute, ROLE_LABELS } from "@/lib/permissions";
+import { ReadOnlyShield } from "@/components/read-only-shield";
 
 const nav = [
   { to: "/", label: "Tableau de bord", icon: LayoutDashboard },
@@ -134,7 +135,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="w-5" />
         </div>
         <div className="flex-1 px-5 py-8 md:px-10 md:py-10 max-w-[1400px] w-full mx-auto">
-          {children}
+          <ReadOnlyShield>{children}</ReadOnlyShield>
         </div>
       </main>
     </div>
