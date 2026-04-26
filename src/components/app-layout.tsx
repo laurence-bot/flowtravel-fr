@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown } from "lucide-react";
+import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ const nav = [
   { to: "/dossiers", label: "Dossiers", icon: FolderOpen },
   { to: "/paiements", label: "Paiements", icon: Wallet },
   { to: "/comptes", label: "Comptes & Trésorerie", icon: Landmark },
+  { to: "/previsions", label: "Prévisions", icon: LineChart },
   { to: "/import-bancaire", label: "Import bancaire", icon: Upload },
   { to: "/rapprochement", label: "Rapprochement", icon: Link2 },
   { to: "/export", label: "Export comptable", icon: FileDown },

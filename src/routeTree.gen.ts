@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RapprochementRouteImport } from './routes/rapprochement'
+import { Route as PrevisionsRouteImport } from './routes/previsions'
 import { Route as PaiementsRouteImport } from './routes/paiements'
 import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
 import { Route as ExportRouteImport } from './routes/export'
@@ -23,6 +24,11 @@ import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
 const RapprochementRoute = RapprochementRouteImport.update({
   id: '/rapprochement',
   path: '/rapprochement',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrevisionsRoute = PrevisionsRouteImport.update({
+  id: '/previsions',
+  path: '/previsions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PaiementsRoute = PaiementsRouteImport.update({
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/paiements': typeof PaiementsRoute
+  '/previsions': typeof PrevisionsRoute
   '/rapprochement': typeof RapprochementRoute
   '/dossiers/$id': typeof DossiersIdRoute
 }
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/paiements': typeof PaiementsRoute
+  '/previsions': typeof PrevisionsRoute
   '/rapprochement': typeof RapprochementRoute
   '/dossiers/$id': typeof DossiersIdRoute
 }
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/paiements': typeof PaiementsRoute
+  '/previsions': typeof PrevisionsRoute
   '/rapprochement': typeof RapprochementRoute
   '/dossiers/$id': typeof DossiersIdRoute
 }
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/export'
     | '/import-bancaire'
     | '/paiements'
+    | '/previsions'
     | '/rapprochement'
     | '/dossiers/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/export'
     | '/import-bancaire'
     | '/paiements'
+    | '/previsions'
     | '/rapprochement'
     | '/dossiers/$id'
   id:
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/export'
     | '/import-bancaire'
     | '/paiements'
+    | '/previsions'
     | '/rapprochement'
     | '/dossiers/$id'
   fileRoutesById: FileRoutesById
@@ -156,6 +168,7 @@ export interface RootRouteChildren {
   ExportRoute: typeof ExportRoute
   ImportBancaireRoute: typeof ImportBancaireRoute
   PaiementsRoute: typeof PaiementsRoute
+  PrevisionsRoute: typeof PrevisionsRoute
   RapprochementRoute: typeof RapprochementRoute
 }
 
@@ -166,6 +179,13 @@ declare module '@tanstack/react-router' {
       path: '/rapprochement'
       fullPath: '/rapprochement'
       preLoaderRoute: typeof RapprochementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/previsions': {
+      id: '/previsions'
+      path: '/previsions'
+      fullPath: '/previsions'
+      preLoaderRoute: typeof PrevisionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/paiements': {
@@ -255,6 +275,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExportRoute: ExportRoute,
   ImportBancaireRoute: ImportBancaireRoute,
   PaiementsRoute: PaiementsRoute,
+  PrevisionsRoute: PrevisionsRoute,
   RapprochementRoute: RapprochementRoute,
 }
 export const routeTree = rootRouteImport
