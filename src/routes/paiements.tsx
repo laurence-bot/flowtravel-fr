@@ -19,7 +19,6 @@ import { EmptyState } from "@/components/empty-state";
 import { Plus, Wallet, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
-import { formatEUR as fmtEur } from "@/lib/format";
 
 export const Route = createFileRoute("/paiements")({
   component: () => (
@@ -100,7 +99,7 @@ function PaiementsPage() {
       entity: "paiement",
       action: "create",
       entityId: inserted?.id,
-      description: `${parsed.data.type === "paiement_client" ? "Encaissement client" : "Paiement fournisseur"} de ${fmtEur(parsed.data.montant)}`,
+      description: `${parsed.data.type === "paiement_client" ? "Encaissement client" : "Paiement fournisseur"} de ${formatEUR(parsed.data.montant)}`,
       newValue: inserted,
     });
     toast.success("Paiement enregistré");
