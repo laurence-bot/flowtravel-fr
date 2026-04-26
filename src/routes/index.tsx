@@ -6,8 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { useTable, type Dossier, type Paiement, type Facture, type Compte, type Transfert, type BankTransaction, BANQUE_LABELS } from "@/hooks/use-data";
 import { formatEUR, formatPercent, formatDate } from "@/lib/format";
 import { computeGlobalFinance, computeComptesSoldes } from "@/lib/finance";
+import { computeCashForecast } from "@/lib/cash-forecast";
 import { PageHeader } from "@/components/page-header";
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landmark, Percent, Link2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landmark, Percent, Link2, LineChart, AlertTriangle } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: () => (
