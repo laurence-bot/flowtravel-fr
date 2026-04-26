@@ -230,6 +230,25 @@ function PaiementsPage() {
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <Label>Compte impacté <span className="text-destructive">*</span></Label>
+            <Select value={form.compte_id} onValueChange={(v) => setForm({ ...form, compte_id: v })}>
+              <SelectTrigger>
+                <SelectValue placeholder={comptes.length === 0 ? "Créez d'abord un compte" : "Choisir le compte"} />
+              </SelectTrigger>
+              <SelectContent>
+                {comptes.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {comptes.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Rendez-vous dans <span className="font-medium">Comptes & Trésorerie</span> pour créer vos comptes.
+              </p>
+            )}
+          </div>
+
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? "Enregistrement…" : "Enregistrer le paiement"}
           </Button>
