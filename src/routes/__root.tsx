@@ -32,7 +32,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Cashflow Travel — Maison de gestion financière pour agences de voyages" },
+      { title: "Cashflow Travel – Pilotage financier agence de voyages" },
       { name: "description", content: "Pilotez la rentabilité, les flux financiers et la trésorerie de votre agence de voyages." },
       { name: "author", content: "Cashflow Travel" },
       { property: "og:title", content: "Cashflow Travel" },
@@ -42,10 +42,10 @@ export const Route = createRootRoute({
       { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "alternate icon", href: "/favicon.svg" },
+      { rel: "apple-touch-icon", href: "/favicon.svg" },
     ],
   }),
   shellComponent: RootShell,
