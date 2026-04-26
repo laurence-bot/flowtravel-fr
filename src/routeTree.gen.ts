@@ -313,18 +313,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface ContactsRouteChildren {
-  ContactsIdRoute: typeof ContactsIdRoute
-}
-
-const ContactsRouteChildren: ContactsRouteChildren = {
-  ContactsIdRoute: ContactsIdRoute,
-}
-
-const ContactsRouteWithChildren = ContactsRoute._addFileChildren(
-  ContactsRouteChildren,
-)
-
 interface DossiersRouteChildren {
   DossiersIdRoute: typeof DossiersIdRoute
 }
@@ -335,6 +323,18 @@ const DossiersRouteChildren: DossiersRouteChildren = {
 
 const DossiersRouteWithChildren = DossiersRoute._addFileChildren(
   DossiersRouteChildren,
+)
+
+interface ContactsRouteChildren {
+  ContactsIdRoute: typeof ContactsIdRoute
+}
+
+const ContactsRouteChildren: ContactsRouteChildren = {
+  ContactsIdRoute: ContactsIdRoute,
+}
+
+const ContactsRouteWithChildren = ContactsRoute._addFileChildren(
+  ContactsRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
