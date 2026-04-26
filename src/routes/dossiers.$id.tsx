@@ -7,8 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useTable, type Contact, type Dossier, type Paiement, type Facture } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
-import { formatEUR, formatDate } from "@/lib/format";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { formatEUR, formatPercent, formatDate } from "@/lib/format";
+import { computeDossierFinance } from "@/lib/finance";
+import { StatutBadge } from "@/components/statut-badge";
+import { ArrowLeft, Trash2, User, Receipt, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dossiers/$id")({
@@ -19,37 +21,44 @@ export const Route = createFileRoute("/dossiers/$id")({
   ),
 });
 
-const statutLabel = { brouillon: "Brouillon", confirme: "Confirmé", cloture: "Clôturé" } as const;
-
 function DossierDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const [dossier, setDossier] = useState<Dossier | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const { data: contacts } = useTable<Contact>("contacts");
   const { data: paiements } = useTable<Paiement>("paiements");
   const { data: factures } = useTable<Facture>("factures_fournisseurs");
 
   useEffect(() => {
-    supabase.from("dossiers").select("*").eq("id", id).single().then(({ data }) => {
-      setDossier(data as Dossier | null);
+    supabase.from("dossiers").select("*").eq("id", id).maybeSingle().then(({ data }) => {
+      if (!data) setNotFound(true);
+      else setDossier(data as Dossier);
     });
   }, [id]);
 
-  if (!dossier) {
-    return <div className="text-muted-foreground text-sm">Chargement du dossier…</div>;
+  if (notFound) {
+    return (
+      <div className="text-center py-20">
+        <h2 className="font-display text-2xl">Dossier introuvable</h2>
+        <Button asChild variant="outline" className="mt-4">
+          <Link to="/dossiers">Retour aux dossiers</Link>
+        </Button>
+      </div>
+    );
   }
+  if (!dossier) return <div className="text-muted-foreground text-sm">Chargement du dossier…</div>;
 
   const client = contacts.find((c) => c.id === dossier.client_id);
   const paiementsDossier = paiements.filter((p) => p.dossier_id === dossier.id);
   const facturesDossier = factures.filter((f) => f.dossier_id === dossier.id);
+  const f = computeDossierFinance(dossier, paiements);
 
-  const encaisse = paiementsDossier.filter((p) => p.type === "paiement_client").reduce((s, p) => s + Number(p.montant), 0);
-  const decaisse = paiementsDossier.filter((p) => p.type === "paiement_fournisseur").reduce((s, p) => s + Number(p.montant), 0);
-  const marge = Number(dossier.prix_vente) - Number(dossier.cout_total);
-  const reste = Number(dossier.prix_vente) - encaisse;
+  const paiementsClients = paiementsDossier.filter((p) => p.type === "paiement_client");
+  const paiementsFournisseurs = paiementsDossier.filter((p) => p.type === "paiement_fournisseur");
 
   const supprimer = async () => {
-    if (!confirm("Supprimer ce dossier ?")) return;
+    if (!confirm("Supprimer ce dossier ? Cette action est irréversible.")) return;
     const { error } = await supabase.from("dossiers").delete().eq("id", dossier.id);
     if (error) return toast.error(error.message);
     toast.success("Dossier supprimé");
@@ -57,82 +66,97 @@ function DossierDetail() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link to="/dossiers" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
-          <ArrowLeft className="h-4 w-4" />Retour aux dossiers
-        </Link>
-      </div>
+    <div className="space-y-8">
+      <Link to="/dossiers" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
+        <ArrowLeft className="h-4 w-4" />
+        Retour aux dossiers
+      </Link>
 
-      <header className="flex flex-wrap items-start justify-between gap-4">
+      <header className="flex flex-wrap items-start justify-between gap-4 pb-6 border-b border-border">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold">{dossier.titre}</h1>
-            <Badge variant="secondary">{statutLabel[dossier.statut]}</Badge>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="font-display text-3xl md:text-4xl text-foreground">{dossier.titre}</h1>
+            <StatutBadge statut={dossier.statut} />
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Client : {client?.nom ?? "—"}
+          <p className="text-sm text-muted-foreground mt-2 inline-flex items-center gap-2">
+            <User className="h-3.5 w-3.5" />
+            {client?.nom ?? "Aucun client associé"}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={supprimer}>
-          <Trash2 className="h-4 w-4 mr-2" />Supprimer
+          <Trash2 className="h-4 w-4 mr-2" />
+          Supprimer
         </Button>
       </header>
 
+      {/* KPIs financiers */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="text-xs text-muted-foreground">Prix de vente</div>
-          <div className="mt-1 text-xl font-semibold tabular">{formatEUR(dossier.prix_vente)}</div>
+        <Card className="p-5 border-border/60">
+          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Prix de vente</div>
+          <div className="mt-2 text-2xl font-semibold tabular">{formatEUR(f.prixVente)}</div>
         </Card>
-        <Card className="p-4">
-          <div className="text-xs text-muted-foreground">Coût total</div>
-          <div className="mt-1 text-xl font-semibold tabular text-[color:var(--cost)]">{formatEUR(dossier.cout_total)}</div>
+        <Card className="p-5 border-border/60">
+          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Coût total</div>
+          <div className="mt-2 text-2xl font-semibold tabular text-[color:var(--cost)]">{formatEUR(f.coutTotal)}</div>
         </Card>
-        <Card className="p-4">
-          <div className="text-xs text-muted-foreground">Marge</div>
-          <div className={`mt-1 text-xl font-semibold tabular ${marge >= 0 ? "text-[color:var(--margin)]" : "text-destructive"}`}>{formatEUR(marge)}</div>
+        <Card className="p-5 border-border/60">
+          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Marge</div>
+          <div className={`mt-2 text-2xl font-semibold tabular ${f.marge >= 0 ? "text-[color:var(--margin)]" : "text-destructive"}`}>
+            {formatEUR(f.marge)}
+          </div>
+          {f.prixVente > 0 && (
+            <div className="text-xs text-muted-foreground mt-1">{formatPercent(f.margePct)} du CA</div>
+          )}
         </Card>
-        <Card className="p-4">
-          <div className="text-xs text-muted-foreground">Reste à encaisser</div>
-          <div className="mt-1 text-xl font-semibold tabular">{formatEUR(reste)}</div>
+        <Card className="p-5 border-border/60">
+          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Reste à encaisser</div>
+          <div className="mt-2 text-2xl font-semibold tabular">{formatEUR(f.resteAEncaisser)}</div>
         </Card>
       </section>
 
+      {/* Résumé financier + Factures */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-5">
-          <h2 className="font-semibold">Résumé financier</h2>
-          <dl className="mt-4 space-y-2 text-sm">
-            <div className="flex justify-between border-b py-2">
+        <Card className="p-6 border-border/60">
+          <h2 className="font-display text-xl">Résumé financier</h2>
+          <dl className="mt-5 space-y-3 text-sm">
+            <div className="flex justify-between items-center border-b border-border/60 pb-3">
               <dt className="text-muted-foreground">Total encaissé client</dt>
-              <dd className="tabular text-[color:var(--revenue)] font-medium">{formatEUR(encaisse)}</dd>
+              <dd className="tabular text-[color:var(--revenue)] font-medium">+{formatEUR(f.encaisseClient)}</dd>
             </div>
-            <div className="flex justify-between border-b py-2">
+            <div className="flex justify-between items-center border-b border-border/60 pb-3">
               <dt className="text-muted-foreground">Total payé fournisseurs</dt>
-              <dd className="tabular text-[color:var(--cost)] font-medium">−{formatEUR(decaisse)}</dd>
+              <dd className="tabular text-[color:var(--cost)] font-medium">−{formatEUR(f.payeFournisseur)}</dd>
             </div>
-            <div className="flex justify-between py-2">
+            <div className="flex justify-between items-center pt-1">
               <dt className="font-medium">Solde de trésorerie du dossier</dt>
-              <dd className="tabular font-semibold">{formatEUR(encaisse - decaisse)}</dd>
+              <dd className="tabular text-lg font-semibold">{formatEUR(f.soldeTresorerie)}</dd>
             </div>
           </dl>
         </Card>
-        <Card className="p-5">
-          <h2 className="font-semibold">Factures fournisseurs</h2>
+        <Card className="p-6 border-border/60">
+          <h2 className="font-display text-xl flex items-center gap-2">
+            <Receipt className="h-5 w-5 text-muted-foreground" />
+            Factures fournisseurs
+          </h2>
           {facturesDossier.length === 0 ? (
-            <p className="text-sm text-muted-foreground mt-3">Aucune facture liée.</p>
+            <p className="text-sm text-muted-foreground mt-4">Aucune facture liée à ce dossier.</p>
           ) : (
-            <ul className="mt-3 divide-y">
-              {facturesDossier.map((f) => {
-                const fournisseur = contacts.find((c) => c.id === f.fournisseur_id);
+            <ul className="mt-4 divide-y divide-border/60">
+              {facturesDossier.map((fact) => {
+                const fournisseur = contacts.find((c) => c.id === fact.fournisseur_id);
                 return (
-                  <li key={f.id} className="py-2 flex justify-between text-sm">
+                  <li key={fact.id} className="py-3 flex justify-between items-start text-sm">
                     <div>
                       <div className="font-medium">{fournisseur?.nom ?? "Fournisseur"}</div>
-                      <div className="text-xs text-muted-foreground">Échéance : {formatDate(f.date_echeance)}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        Échéance : {formatDate(fact.date_echeance)}
+                      </div>
                     </div>
                     <div className="text-right">
-                      <div className="tabular font-medium">{formatEUR(f.montant)}</div>
-                      <Badge variant={f.paye ? "default" : "outline"} className="mt-1">{f.paye ? "Payée" : "À payer"}</Badge>
+                      <div className="tabular font-medium">{formatEUR(fact.montant)}</div>
+                      <Badge variant={fact.paye ? "default" : "outline"} className="mt-1 text-[10px]">
+                        {fact.paye ? "Payée" : "À payer"}
+                      </Badge>
                     </div>
                   </li>
                 );
@@ -142,41 +166,85 @@ function DossierDetail() {
         </Card>
       </section>
 
-      <Card>
-        <div className="px-5 py-4 border-b">
-          <h2 className="font-semibold">Paiements liés</h2>
+      {/* Paiements clients & fournisseurs */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <PaiementBloc
+          title="Paiements clients"
+          icon={<ArrowDownLeft className="h-5 w-5 text-[color:var(--revenue)]" />}
+          paiements={paiementsClients}
+          contacts={contacts}
+          variant="entrant"
+        />
+        <PaiementBloc
+          title="Paiements fournisseurs"
+          icon={<ArrowUpRight className="h-5 w-5 text-[color:var(--cost)]" />}
+          paiements={paiementsFournisseurs}
+          contacts={contacts}
+          variant="sortant"
+        />
+      </section>
+    </div>
+  );
+}
+
+function PaiementBloc({
+  title,
+  icon,
+  paiements,
+  contacts,
+  variant,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  paiements: Paiement[];
+  contacts: Contact[];
+  variant: "entrant" | "sortant";
+}) {
+  const total = paiements.reduce((s, p) => s + Number(p.montant), 0);
+  const colorClass = variant === "entrant" ? "text-[color:var(--revenue)]" : "text-[color:var(--cost)]";
+  const sign = variant === "entrant" ? "+" : "−";
+  return (
+    <Card className="border-border/60 overflow-hidden">
+      <div className="px-6 py-4 border-b border-border/60 flex items-center justify-between">
+        <h2 className="font-display text-lg flex items-center gap-2">
+          {icon}
+          {title}
+        </h2>
+        <div className={`tabular font-medium ${colorClass}`}>
+          {sign}
+          {formatEUR(total)}
         </div>
+      </div>
+      {paiements.length === 0 ? (
+        <p className="text-sm text-muted-foreground px-6 py-8 text-center">Aucun mouvement.</p>
+      ) : (
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="bg-secondary/30 hover:bg-secondary/30">
               <TableHead>Date</TableHead>
-              <TableHead>Type</TableHead>
+              <TableHead>Personne</TableHead>
               <TableHead>Méthode</TableHead>
               <TableHead className="text-right">Montant</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paiementsDossier.length === 0 ? (
-              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6">Aucun paiement.</TableCell></TableRow>
-            ) : (
-              paiementsDossier.map((p) => (
+            {paiements.map((p) => {
+              const personne = contacts.find((c) => c.id === p.personne_id);
+              return (
                 <TableRow key={p.id}>
-                  <TableCell>{formatDate(p.date)}</TableCell>
-                  <TableCell>
-                    <Badge variant={p.type === "paiement_client" ? "default" : "secondary"}>
-                      {p.type === "paiement_client" ? "Encaissement client" : "Paiement fournisseur"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="capitalize text-muted-foreground">{p.methode}</TableCell>
-                  <TableCell className={`text-right tabular font-medium ${p.type === "paiement_client" ? "text-[color:var(--revenue)]" : "text-[color:var(--cost)]"}`}>
-                    {p.type === "paiement_client" ? "+" : "−"}{formatEUR(p.montant)}
+                  <TableCell className="text-sm">{formatDate(p.date)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{personne?.nom ?? "—"}</TableCell>
+                  <TableCell className="capitalize text-sm text-muted-foreground">{p.methode}</TableCell>
+                  <TableCell className={`text-right tabular font-medium ${colorClass}`}>
+                    {sign}
+                    {formatEUR(p.montant)}
                   </TableCell>
                 </TableRow>
-              ))
-            )}
+              );
+            })}
           </TableBody>
         </Table>
-      </Card>
-    </div>
+      )}
+    </Card>
   );
 }

@@ -1,16 +1,22 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
+import { Logo } from "@/components/logo";
 import { toast } from "sonner";
+import { z } from "zod";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
+});
+
+const schema = z.object({
+  email: z.string().trim().email("Adresse email invalide").max(255),
+  password: z.string().min(6, "Mot de passe : 6 caractères minimum").max(72),
 });
 
 function AuthPage() {
@@ -27,9 +33,14 @@ function AuthPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const parsed = schema.safeParse({ email, password });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message);
+      return;
+    }
     setSubmitting(true);
     const fn = tab === "signin" ? signIn : signUp;
-    const { error } = await fn(email, password);
+    const { error } = await fn(parsed.data.email, parsed.data.password);
     setSubmitting(false);
     if (error) {
       toast.error(error.message);
@@ -45,18 +56,16 @@ function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-10">
       <div className="w-full max-w-md">
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="h-11 w-11 rounded-md bg-primary flex items-center justify-center">
-            <Plane className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="font-display text-2xl font-semibold leading-none">Cashflow Travel</h1>
-            <p className="text-xs text-muted-foreground mt-1">Gestion financière agence de voyages</p>
-          </div>
+        <div className="flex flex-col items-center text-center mb-8">
+          <Logo variant="dark" showText={false} />
+          <h1 className="font-display text-3xl mt-4 text-foreground">Cashflow Travel</h1>
+          <p className="text-xs uppercase tracking-[0.25em] text-[color:var(--gold)] mt-2">
+            Maison de gestion financière
+          </p>
         </div>
-        <Card className="p-6">
+        <Card className="p-7 shadow-sm border-border/70">
           <Tabs value={tab} onValueChange={setTab}>
             <TabsList className="grid grid-cols-2 w-full">
               <TabsTrigger value="signin">Connexion</TabsTrigger>
@@ -96,7 +105,7 @@ function AuthPage() {
           </Tabs>
         </Card>
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Outil interne sécurisé — chaque utilisateur ne voit que ses propres données.
+          Outil interne — chaque utilisateur ne voit que ses propres données.
         </p>
       </div>
     </div>

@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { z } from "zod";
 import { RequireAuth } from "@/components/require-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,7 +13,10 @@ import { useTable, type Contact, type Dossier } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { formatEUR } from "@/lib/format";
-import { Plus } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { StatutBadge } from "@/components/statut-badge";
+import { Plus, FolderOpen, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dossiers")({
@@ -24,14 +27,20 @@ export const Route = createFileRoute("/dossiers")({
   ),
 });
 
-const statutLabel = { brouillon: "Brouillon", confirme: "Confirmé", cloture: "Clôturé" } as const;
-const statutVariant = { brouillon: "secondary", confirme: "default", cloture: "outline" } as const;
+const dossierSchema = z.object({
+  titre: z.string().trim().min(1, "Le titre est requis").max(200),
+  client_id: z.string().uuid().optional().or(z.literal("")),
+  statut: z.enum(["brouillon", "confirme", "cloture"]),
+  prix_vente: z.number().min(0, "Le prix doit être positif"),
+  cout_total: z.number().min(0, "Le coût doit être positif"),
+});
 
 function DossiersPage() {
   const { data: dossiers, loading, refetch } = useTable<Dossier>("dossiers");
-  const { data: clients } = useTable<Contact>("contacts");
+  const { data: contacts } = useTable<Contact>("contacts");
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     titre: "",
     client_id: "",
@@ -43,14 +52,27 @@ function DossiersPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    const { error } = await supabase.from("dossiers").insert({
-      user_id: user.id,
+    const parsed = dossierSchema.safeParse({
       titre: form.titre,
-      client_id: form.client_id || null,
+      client_id: form.client_id,
       statut: form.statut,
       prix_vente: Number(form.prix_vente) || 0,
       cout_total: Number(form.cout_total) || 0,
     });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message);
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await supabase.from("dossiers").insert({
+      user_id: user.id,
+      titre: parsed.data.titre,
+      client_id: parsed.data.client_id || null,
+      statut: parsed.data.statut,
+      prix_vente: parsed.data.prix_vente,
+      cout_total: parsed.data.cout_total,
+    });
+    setSubmitting(false);
     if (error) return toast.error(error.message);
     toast.success("Dossier créé");
     setOpen(false);
@@ -58,104 +80,159 @@ function DossiersPage() {
     refetch();
   };
 
-  const clientList = clients.filter((c) => c.type === "client");
-  const clientName = (id: string | null) => clients.find((c) => c.id === id)?.nom ?? "—";
+  const clientList = contacts.filter((c) => c.type === "client");
+  const clientName = (id: string | null) => contacts.find((c) => c.id === id)?.nom ?? "—";
+
+  const NewDossierButton = (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Nouveau dossier
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="font-display text-2xl">Nouveau dossier</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Titre du voyage</Label>
+            <Input
+              required
+              value={form.titre}
+              onChange={(e) => setForm({ ...form, titre: e.target.value })}
+              placeholder="Ex. Safari Tanzanie · Dupont"
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Client</Label>
+              <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clientList.length === 0 && (
+                    <div className="px-2 py-2 text-sm text-muted-foreground">Aucun client. Ajoutez-en un.</div>
+                  )}
+                  {clientList.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Statut</Label>
+              <Select value={form.statut} onValueChange={(v: Dossier["statut"]) => setForm({ ...form, statut: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="brouillon">Brouillon</SelectItem>
+                  <SelectItem value="confirme">Confirmé</SelectItem>
+                  <SelectItem value="cloture">Clôturé</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Prix de vente (€)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.prix_vente}
+                onChange={(e) => setForm({ ...form, prix_vente: e.target.value })}
+                placeholder="0,00"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Coût total (€)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.cout_total}
+                onChange={(e) => setForm({ ...form, cout_total: e.target.value })}
+                placeholder="0,00"
+              />
+            </div>
+          </div>
+          <Button type="submit" className="w-full" disabled={submitting}>
+            {submitting ? "Enregistrement…" : "Enregistrer le dossier"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Dossiers</h1>
-          <p className="text-sm text-muted-foreground mt-1">Voyages vendus et leur rentabilité</p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" />Nouveau dossier</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Nouveau dossier</DialogTitle></DialogHeader>
-            <form onSubmit={submit} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Titre du voyage</Label>
-                <Input required value={form.titre} onChange={(e) => setForm({ ...form, titre: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Client</Label>
-                <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner un client" /></SelectTrigger>
-                  <SelectContent>
-                    {clientList.length === 0 && <div className="px-2 py-1 text-sm text-muted-foreground">Aucun client</div>}
-                    {clientList.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Statut</Label>
-                <Select value={form.statut} onValueChange={(v: Dossier["statut"]) => setForm({ ...form, statut: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="brouillon">Brouillon</SelectItem>
-                    <SelectItem value="confirme">Confirmé</SelectItem>
-                    <SelectItem value="cloture">Clôturé</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Prix de vente (€)</Label>
-                  <Input type="number" step="0.01" value={form.prix_vente} onChange={(e) => setForm({ ...form, prix_vente: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Coût total (€)</Label>
-                  <Input type="number" step="0.01" value={form.cout_total} onChange={(e) => setForm({ ...form, cout_total: e.target.value })} />
-                </div>
-              </div>
-              <Button type="submit" className="w-full">Enregistrer</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </header>
+    <div className="space-y-8">
+      <PageHeader
+        title="Dossiers"
+        description="Voyages vendus, coûts et marges"
+        action={NewDossierButton}
+      />
 
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Titre</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead className="text-right">Prix de vente</TableHead>
-              <TableHead className="text-right">Coût</TableHead>
-              <TableHead className="text-right">Marge</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>
-            ) : dossiers.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Aucun dossier pour le moment.</TableCell></TableRow>
-            ) : (
-              dossiers.map((d) => {
-                const marge = Number(d.prix_vente) - Number(d.cout_total);
+      <Card className="border-border/60 overflow-hidden">
+        {loading ? (
+          <div className="py-12 text-center text-sm text-muted-foreground">Chargement…</div>
+        ) : dossiers.length === 0 ? (
+          <EmptyState
+            icon={FolderOpen}
+            title="Aucun dossier"
+            description="Créez votre premier dossier de voyage pour suivre sa rentabilité."
+            action={NewDossierButton}
+          />
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-secondary/40 hover:bg-secondary/40">
+                <TableHead>Dossier</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead>Statut</TableHead>
+                <TableHead className="text-right">Prix de vente</TableHead>
+                <TableHead className="text-right">Coût</TableHead>
+                <TableHead className="text-right">Marge</TableHead>
+                <TableHead className="w-8" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {dossiers.map((d) => {
+                const prix = Number(d.prix_vente);
+                const cout = Number(d.cout_total);
+                const marge = prix - cout;
+                const margePct = prix > 0 ? (marge / prix) * 100 : 0;
                 return (
-                  <TableRow key={d.id} className="cursor-pointer">
+                  <TableRow key={d.id} className="cursor-pointer group">
                     <TableCell className="font-medium">
-                      <Link to="/dossiers/$id" params={{ id: d.id }} className="hover:underline">{d.titre}</Link>
+                      <Link to="/dossiers/$id" params={{ id: d.id }} className="hover:text-[color:var(--gold)] transition-colors">
+                        {d.titre}
+                      </Link>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{clientName(d.client_id)}</TableCell>
-                    <TableCell>
-                      <Badge variant={statutVariant[d.statut]}>{statutLabel[d.statut]}</Badge>
+                    <TableCell><StatutBadge statut={d.statut} /></TableCell>
+                    <TableCell className="text-right tabular">{formatEUR(prix)}</TableCell>
+                    <TableCell className="text-right tabular text-muted-foreground">{formatEUR(cout)}</TableCell>
+                    <TableCell className="text-right tabular">
+                      <div className={marge >= 0 ? "text-[color:var(--margin)] font-medium" : "text-destructive font-medium"}>
+                        {formatEUR(marge)}
+                      </div>
+                      {prix > 0 && (
+                        <div className="text-[11px] text-muted-foreground">{margePct.toFixed(1)}%</div>
+                      )}
                     </TableCell>
-                    <TableCell className="text-right tabular">{formatEUR(d.prix_vente)}</TableCell>
-                    <TableCell className="text-right tabular text-muted-foreground">{formatEUR(d.cout_total)}</TableCell>
-                    <TableCell className={`text-right tabular font-medium ${marge >= 0 ? "text-[color:var(--margin)]" : "text-destructive"}`}>
-                      {formatEUR(marge)}
+                    <TableCell>
+                      <Link to="/dossiers/$id" params={{ id: d.id }} className="text-muted-foreground group-hover:text-foreground">
+                        <ChevronRight className="h-4 w-4" />
+                      </Link>
                     </TableCell>
                   </TableRow>
                 );
-              })
-            )}
-          </TableBody>
-        </Table>
+              })}
+            </TableBody>
+          </Table>
+        )}
       </Card>
     </div>
   );

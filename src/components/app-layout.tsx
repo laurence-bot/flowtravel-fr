@@ -1,7 +1,9 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Plane } from "lucide-react";
+import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X } from "lucide-react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/logo";
 
 const nav = [
   { to: "/", label: "Tableau de bord", icon: LayoutDashboard },
@@ -14,94 +16,109 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
     navigate({ to: "/auth" });
   };
 
+  const isActive = (to: string) =>
+    to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
+
+  const NavList = ({ onClick }: { onClick?: () => void }) => (
+    <nav className="flex-1 px-4 py-6 space-y-1">
+      {nav.map((item) => {
+        const Icon = item.icon;
+        const active = isActive(item.to);
+        return (
+          <Link
+            key={item.to}
+            to={item.to}
+            onClick={onClick}
+            className={cn(
+              "group flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] transition-all relative",
+              active
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+            )}
+          >
+            {active && (
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2px] bg-[color:var(--gold)] rounded-r" />
+            )}
+            <Icon className={cn("h-4 w-4", active && "text-[color:var(--gold)]")} />
+            <span className="font-medium tracking-wide">{item.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen w-full bg-background">
+      {/* Sidebar desktop */}
       <aside className="hidden md:flex w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-        <div className="px-6 py-6 border-b border-sidebar-border">
-          <div className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-md bg-sidebar-primary flex items-center justify-center">
-              <Plane className="h-5 w-5 text-sidebar-primary-foreground" />
-            </div>
-            <div>
-              <div className="font-display font-semibold text-base leading-tight">Cashflow</div>
-              <div className="text-xs text-sidebar-foreground/60 leading-tight">Travel</div>
-            </div>
-          </div>
+        <div className="px-6 py-7 border-b border-sidebar-border">
+          <Logo variant="light" />
         </div>
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {nav.map((item) => {
-            const Icon = item.icon;
-            const active =
-              item.to === "/"
-                ? location.pathname === "/"
-                : location.pathname.startsWith(item.to);
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="px-3 py-4 border-t border-sidebar-border">
-          <div className="px-3 py-2 text-xs text-sidebar-foreground/60 truncate">
+        <NavList />
+        <div className="px-4 py-5 border-t border-sidebar-border space-y-2">
+          <div className="px-3 text-[11px] uppercase tracking-[0.18em] text-sidebar-foreground/40">
+            Connecté
+          </div>
+          <div className="px-3 text-xs text-sidebar-foreground/80 truncate" title={user?.email ?? ""}>
             {user?.email}
           </div>
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-[13px] text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
           >
             <LogOut className="h-4 w-4" />
             Déconnexion
           </button>
         </div>
       </aside>
-      <main className="flex-1 min-w-0">
-        <div className="md:hidden flex items-center justify-between px-4 py-3 border-b bg-card">
-          <div className="flex items-center gap-2">
-            <Plane className="h-5 w-5 text-primary" />
-            <span className="font-display font-semibold">Cashflow Travel</span>
-          </div>
-          <button onClick={handleSignOut} className="text-sm text-muted-foreground">
-            <LogOut className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="p-6 md:p-8 max-w-[1400px] mx-auto">{children}</div>
-        <nav className="md:hidden fixed bottom-0 inset-x-0 bg-card border-t flex justify-around py-2">
-          {nav.map((item) => {
-            const Icon = item.icon;
-            const active =
-              item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "flex flex-col items-center gap-0.5 px-2 py-1 text-[10px]",
-                  active ? "text-primary" : "text-muted-foreground",
-                )}
+
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          <div
+            className="absolute inset-0 bg-foreground/40"
+            onClick={() => setMobileOpen(false)}
+          />
+          <aside className="relative w-72 bg-sidebar text-sidebar-foreground flex flex-col">
+            <div className="px-6 py-6 border-b border-sidebar-border flex items-center justify-between">
+              <Logo variant="light" />
+              <button onClick={() => setMobileOpen(false)} className="text-sidebar-foreground/70">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <NavList onClick={() => setMobileOpen(false)} />
+            <div className="px-4 py-5 border-t border-sidebar-border">
+              <button
+                onClick={handleSignOut}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
               >
-                <Icon className="h-5 w-5" />
-                <span className="truncate max-w-[64px]">{item.label.split(" ")[0]}</span>
-              </Link>
-            );
-          })}
-        </nav>
+                <LogOut className="h-4 w-4" />
+                Déconnexion
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      <main className="flex-1 min-w-0 flex flex-col">
+        {/* Mobile header */}
+        <div className="md:hidden flex items-center justify-between px-4 py-3 border-b bg-card">
+          <button onClick={() => setMobileOpen(true)} className="text-foreground">
+            <Menu className="h-5 w-5" />
+          </button>
+          <Logo variant="dark" />
+          <div className="w-5" />
+        </div>
+        <div className="flex-1 px-5 py-8 md:px-10 md:py-10 max-w-[1400px] w-full mx-auto">
+          {children}
+        </div>
       </main>
     </div>
   );
