@@ -18,6 +18,7 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { Plus, Wallet, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
+import { logAudit } from "@/lib/audit";
 
 export const Route = createFileRoute("/paiements")({
   component: () => (
@@ -80,7 +81,7 @@ function PaiementsPage() {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("paiements").insert({
+    const { data: inserted, error } = await supabase.from("paiements").insert({
       user_id: user.id,
       type: parsed.data.type,
       montant: parsed.data.montant,
@@ -90,9 +91,17 @@ function PaiementsPage() {
       dossier_id: parsed.data.dossier_id || null,
       personne_id: parsed.data.personne_id || null,
       compte_id: parsed.data.compte_id,
-    });
+    }).select().single();
     setSubmitting(false);
     if (error) return toast.error(error.message);
+    await logAudit({
+      userId: user.id,
+      entity: "paiement",
+      action: "create",
+      entityId: inserted?.id,
+      description: `${parsed.data.type === "paiement_client" ? "Encaissement client" : "Paiement fournisseur"} de ${formatEUR(parsed.data.montant)}`,
+      newValue: inserted,
+    });
     toast.success("Paiement enregistré");
     setOpen(false);
     setForm({ ...form, montant: "", dossier_id: "", personne_id: "" });

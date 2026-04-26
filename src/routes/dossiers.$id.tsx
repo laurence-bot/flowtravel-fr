@@ -7,11 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useTable, type Contact, type Dossier, type Paiement, type Facture } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { formatEUR, formatPercent, formatDate } from "@/lib/format";
 import { computeDossierFinance } from "@/lib/finance";
 import { StatutBadge } from "@/components/statut-badge";
 import { ArrowLeft, Trash2, User, Receipt, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
+import { logAudit } from "@/lib/audit";
 
 export const Route = createFileRoute("/dossiers/$id")({
   component: () => (
@@ -24,6 +26,7 @@ export const Route = createFileRoute("/dossiers/$id")({
 function DossierDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [dossier, setDossier] = useState<Dossier | null>(null);
   const [notFound, setNotFound] = useState(false);
   const { data: contacts } = useTable<Contact>("contacts");
@@ -58,9 +61,18 @@ function DossierDetail() {
   const paiementsFournisseurs = paiementsDossier.filter((p) => p.type === "paiement_fournisseur");
 
   const supprimer = async () => {
+    if (!dossier) return;
     if (!confirm("Supprimer ce dossier ? Cette action est irréversible.")) return;
     const { error } = await supabase.from("dossiers").delete().eq("id", dossier.id);
     if (error) return toast.error(error.message);
+    await logAudit({
+      userId: user?.id,
+      entity: "dossier",
+      action: "delete",
+      entityId: dossier.id,
+      description: `Dossier supprimé : ${dossier.titre}`,
+      oldValue: dossier,
+    });
     toast.success("Dossier supprimé");
     navigate({ to: "/dossiers" });
   };

@@ -28,6 +28,7 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { Plus, Landmark, ArrowRightLeft, TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { toast } from "sonner";
+import { logAudit } from "@/lib/audit";
 
 export const Route = createFileRoute("/comptes")({
   component: () => (
@@ -236,12 +237,20 @@ function NewCompteDialog({ userId, onDone }: { userId?: string; onDone: () => vo
     });
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
     setSubmitting(true);
-    const { error } = await supabase.from("comptes").insert({
+    const { data: inserted, error } = await supabase.from("comptes").insert({
       user_id: userId,
       ...parsed.data,
-    });
+    }).select().single();
     setSubmitting(false);
     if (error) return toast.error(error.message);
+    await logAudit({
+      userId,
+      entity: "compte",
+      action: "create",
+      entityId: inserted?.id,
+      description: `Compte créé : ${parsed.data.nom} (${parsed.data.banque}, solde initial ${parsed.data.solde_initial} €)`,
+      newValue: inserted,
+    });
     toast.success("Compte créé");
     setOpen(false);
     setForm({ nom: "", banque: "sg", categorie: "gestion", solde_initial: "0" });
@@ -334,13 +343,21 @@ function NewTransfertDialog({
     });
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
     setSubmitting(true);
-    const { error } = await supabase.from("transferts").insert({
+    const { data: inserted, error } = await supabase.from("transferts").insert({
       user_id: userId,
       ...parsed.data,
       libelle: parsed.data.libelle ?? null,
-    });
+    }).select().single();
     setSubmitting(false);
     if (error) return toast.error(error.message);
+    await logAudit({
+      userId,
+      entity: "transfert",
+      action: "create",
+      entityId: inserted?.id,
+      description: `Transfert interne de ${parsed.data.montant} €${parsed.data.libelle ? ` — ${parsed.data.libelle}` : ""}`,
+      newValue: inserted,
+    });
     toast.success("Transfert enregistré");
     setOpen(false);
     setForm({ ...form, montant: "", libelle: "" });

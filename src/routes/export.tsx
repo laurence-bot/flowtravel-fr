@@ -52,6 +52,8 @@ import {
   Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
+import { logAudit } from "@/lib/audit";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/export")({
   component: () => (
@@ -65,6 +67,7 @@ type DataType = "paiements_clients" | "paiements_fournisseurs" | "factures" | "t
 type StatutFiltre = "tous" | "rapproche" | "non_rapproche";
 
 function ExportPage() {
+  const { user } = useAuth();
   const { data: paiements } = useTable<Paiement>("paiements");
   const { data: dossiers } = useTable<Dossier>("dossiers");
   const { data: contacts } = useTable<Contact>("contacts");
@@ -299,6 +302,13 @@ function ExportPage() {
     }
     const { filename, csv, rows } = buildExport();
     downloadCSV(filename, csv);
+    void logAudit({
+      userId: user?.id,
+      entity: "export_comptable",
+      action: "export",
+      description: `Export CSV "${type}" — ${rows} ligne${rows > 1 ? "s" : ""} (${filename})`,
+      newValue: { type, rows, filename, dateDebut, dateFin, statut, compteId, dossierId },
+    });
     toast.success(`${rows} ligne${rows > 1 ? "s" : ""} exportée${rows > 1 ? "s" : ""}.`);
   };
 
