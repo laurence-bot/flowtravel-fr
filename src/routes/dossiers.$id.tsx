@@ -52,7 +52,7 @@ function DossierDetail() {
   const client = contacts.find((c) => c.id === dossier.client_id);
   const paiementsDossier = paiements.filter((p) => p.dossier_id === dossier.id);
   const facturesDossier = factures.filter((f) => f.dossier_id === dossier.id);
-  const f = computeDossierFinance(dossier, paiements);
+  const f = computeDossierFinance(dossier, paiements, factures);
 
   const paiementsClients = paiementsDossier.filter((p) => p.type === "paiement_client");
   const paiementsFournisseurs = paiementsDossier.filter((p) => p.type === "paiement_fournisseur");
@@ -111,6 +111,7 @@ function DossierDetail() {
         <Card className="p-5 border-border/60">
           <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Reste à encaisser</div>
           <div className="mt-2 text-2xl font-semibold tabular">{formatEUR(f.resteAEncaisser)}</div>
+          <div className="text-xs text-muted-foreground mt-1">Reste à payer fourn. : {formatEUR(f.resteAPayerFournisseur)}</div>
         </Card>
       </section>
 
