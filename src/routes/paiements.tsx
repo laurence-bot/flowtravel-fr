@@ -104,6 +104,7 @@ function PaiementsPage() {
   );
   const dossierTitre = (id: string | null) => dossiers.find((d) => d.id === id)?.titre ?? "—";
   const personneNom = (id: string | null) => contacts.find((c) => c.id === id)?.nom ?? "—";
+  const compteNom = (id: string | null) => comptes.find((c) => c.id === id)?.nom ?? "—";
 
   const NewPaiementButton = (
     <Dialog open={open} onOpenChange={setOpen}>
