@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: Database["public"]["Enums"]["audit_action"]
+          created_at: string
+          description: string
+          entity_id: string | null
+          entity_type: Database["public"]["Enums"]["audit_entity"]
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          user_id: string
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["audit_action"]
+          created_at?: string
+          description: string
+          entity_id?: string | null
+          entity_type: Database["public"]["Enums"]["audit_entity"]
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          user_id: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["audit_action"]
+          created_at?: string
+          description?: string
+          entity_id?: string | null
+          entity_type?: Database["public"]["Enums"]["audit_entity"]
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       bank_transactions: {
         Row: {
           compte_id: string
@@ -366,6 +402,23 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      audit_action:
+        | "create"
+        | "update"
+        | "delete"
+        | "validate"
+        | "reject"
+        | "import"
+        | "export"
+      audit_entity:
+        | "dossier"
+        | "paiement"
+        | "facture_fournisseur"
+        | "compte"
+        | "transfert"
+        | "bank_transaction"
+        | "rapprochement"
+        | "export_comptable"
       bank_sens: "credit" | "debit"
       bank_source: "sg" | "cic" | "ebury"
       bank_statut: "nouveau" | "rapproche" | "ignore"
@@ -510,6 +563,25 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      audit_action: [
+        "create",
+        "update",
+        "delete",
+        "validate",
+        "reject",
+        "import",
+        "export",
+      ],
+      audit_entity: [
+        "dossier",
+        "paiement",
+        "facture_fournisseur",
+        "compte",
+        "transfert",
+        "bank_transaction",
+        "rapprochement",
+        "export_comptable",
+      ],
       bank_sens: ["credit", "debit"],
       bank_source: ["sg", "cic", "ebury"],
       bank_statut: ["nouveau", "rapproche", "ignore"],
