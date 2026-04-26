@@ -317,6 +317,7 @@ function PaiementsPage() {
                 <TableHead>Type</TableHead>
                 <TableHead>Personne</TableHead>
                 <TableHead>Dossier</TableHead>
+                <TableHead>Compte</TableHead>
                 <TableHead>Méthode</TableHead>
                 <TableHead className="text-right">Montant</TableHead>
               </TableRow>
@@ -339,6 +340,7 @@ function PaiementsPage() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">{personneNom(p.personne_id)}</TableCell>
                   <TableCell className="text-muted-foreground">{dossierTitre(p.dossier_id)}</TableCell>
+                  <TableCell className="text-muted-foreground">{compteNom(p.compte_id)}</TableCell>
                   <TableCell className="capitalize text-muted-foreground">{p.methode}</TableCell>
                   <TableCell
                     className={`text-right tabular font-medium ${
