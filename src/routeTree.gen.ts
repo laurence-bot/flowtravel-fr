@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UtilisateursRouteImport } from './routes/utilisateurs'
 import { Route as RapprochementRouteImport } from './routes/rapprochement'
 import { Route as PrevisionsRouteImport } from './routes/previsions'
 import { Route as PilotageRouteImport } from './routes/pilotage'
@@ -24,6 +25,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
 import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
 
+const UtilisateursRoute = UtilisateursRouteImport.update({
+  id: '/utilisateurs',
+  path: '/utilisateurs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RapprochementRoute = RapprochementRouteImport.update({
   id: '/rapprochement',
   path: '/rapprochement',
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
   '/rapprochement': typeof RapprochementRoute
+  '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
 }
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
   '/rapprochement': typeof RapprochementRoute
+  '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
 }
@@ -141,6 +149,7 @@ export interface FileRoutesById {
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
   '/rapprochement': typeof RapprochementRoute
+  '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
 }
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/pilotage'
     | '/previsions'
     | '/rapprochement'
+    | '/utilisateurs'
     | '/contacts/$id'
     | '/dossiers/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/pilotage'
     | '/previsions'
     | '/rapprochement'
+    | '/utilisateurs'
     | '/contacts/$id'
     | '/dossiers/$id'
   id:
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
     | '/pilotage'
     | '/previsions'
     | '/rapprochement'
+    | '/utilisateurs'
     | '/contacts/$id'
     | '/dossiers/$id'
   fileRoutesById: FileRoutesById
@@ -208,10 +220,18 @@ export interface RootRouteChildren {
   PilotageRoute: typeof PilotageRoute
   PrevisionsRoute: typeof PrevisionsRoute
   RapprochementRoute: typeof RapprochementRoute
+  UtilisateursRoute: typeof UtilisateursRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/utilisateurs': {
+      id: '/utilisateurs'
+      path: '/utilisateurs'
+      fullPath: '/utilisateurs'
+      preLoaderRoute: typeof UtilisateursRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rapprochement': {
       id: '/rapprochement'
       path: '/rapprochement'
@@ -313,18 +333,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface DossiersRouteChildren {
-  DossiersIdRoute: typeof DossiersIdRoute
-}
-
-const DossiersRouteChildren: DossiersRouteChildren = {
-  DossiersIdRoute: DossiersIdRoute,
-}
-
-const DossiersRouteWithChildren = DossiersRoute._addFileChildren(
-  DossiersRouteChildren,
-)
-
 interface ContactsRouteChildren {
   ContactsIdRoute: typeof ContactsIdRoute
 }
@@ -335,6 +343,18 @@ const ContactsRouteChildren: ContactsRouteChildren = {
 
 const ContactsRouteWithChildren = ContactsRoute._addFileChildren(
   ContactsRouteChildren,
+)
+
+interface DossiersRouteChildren {
+  DossiersIdRoute: typeof DossiersIdRoute
+}
+
+const DossiersRouteChildren: DossiersRouteChildren = {
+  DossiersIdRoute: DossiersIdRoute,
+}
+
+const DossiersRouteWithChildren = DossiersRoute._addFileChildren(
+  DossiersRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
@@ -350,6 +370,7 @@ const rootRouteChildren: RootRouteChildren = {
   PilotageRoute: PilotageRoute,
   PrevisionsRoute: PrevisionsRoute,
   RapprochementRoute: RapprochementRoute,
+  UtilisateursRoute: UtilisateursRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
