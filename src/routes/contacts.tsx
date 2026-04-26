@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { z } from "zod";
 import { RequireAuth } from "@/components/require-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useTable, type Contact } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { Plus, Mail, Phone } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { Plus, Mail, Phone, Users } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/contacts")({
@@ -23,25 +26,42 @@ export const Route = createFileRoute("/contacts")({
   ),
 });
 
+const contactSchema = z.object({
+  nom: z.string().trim().min(1, "Le nom est requis").max(120),
+  type: z.enum(["client", "fournisseur"]),
+  email: z.string().trim().email("Email invalide").max(255).optional().or(z.literal("")),
+  telephone: z.string().trim().max(40).optional().or(z.literal("")),
+});
+
 function ContactsPage() {
   const { data, loading, refetch } = useTable<Contact>("contacts");
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<"all" | "client" | "fournisseur">("all");
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ nom: "", type: "client" as Contact["type"], email: "", telephone: "" });
 
   const filtered = data.filter((c) => filter === "all" || c.type === filter);
+  const clientsCount = data.filter((c) => c.type === "client").length;
+  const fournisseursCount = data.filter((c) => c.type === "fournisseur").length;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    const parsed = contactSchema.safeParse(form);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message);
+      return;
+    }
+    setSubmitting(true);
     const { error } = await supabase.from("contacts").insert({
       user_id: user.id,
-      nom: form.nom,
-      type: form.type,
-      email: form.email || null,
-      telephone: form.telephone || null,
+      nom: parsed.data.nom,
+      type: parsed.data.type,
+      email: parsed.data.email || null,
+      telephone: parsed.data.telephone || null,
     });
+    setSubmitting(false);
     if (error) return toast.error(error.message);
     toast.success("Contact créé");
     setOpen(false);
@@ -49,73 +69,98 @@ function ContactsPage() {
     refetch();
   };
 
+  const NewContactButton = (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Nouveau contact
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="font-display text-2xl">Nouveau contact</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Nom</Label>
+            <Input required value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} placeholder="Nom du client ou fournisseur" />
+          </div>
+          <div className="space-y-2">
+            <Label>Type</Label>
+            <Select value={form.type} onValueChange={(v: Contact["type"]) => setForm({ ...form, type: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="client">Client</SelectItem>
+                <SelectItem value="fournisseur">Fournisseur</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="optionnel" />
+            </div>
+            <div className="space-y-2">
+              <Label>Téléphone</Label>
+              <Input value={form.telephone} onChange={(e) => setForm({ ...form, telephone: e.target.value })} placeholder="optionnel" />
+            </div>
+          </div>
+          <Button type="submit" className="w-full" disabled={submitting}>
+            {submitting ? "Enregistrement…" : "Enregistrer"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Clients & Fournisseurs</h1>
-          <p className="text-sm text-muted-foreground mt-1">Gestion de vos partenaires</p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" />Nouveau contact</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Nouveau contact</DialogTitle></DialogHeader>
-            <form onSubmit={submit} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Nom</Label>
-                <Input required value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Type</Label>
-                <Select value={form.type} onValueChange={(v: Contact["type"]) => setForm({ ...form, type: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="client">Client</SelectItem>
-                    <SelectItem value="fournisseur">Fournisseur</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Téléphone</Label>
-                <Input value={form.telephone} onChange={(e) => setForm({ ...form, telephone: e.target.value })} />
-              </div>
-              <Button type="submit" className="w-full">Enregistrer</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </header>
+    <div className="space-y-8">
+      <PageHeader
+        title="Clients & Fournisseurs"
+        description={`${clientsCount} client${clientsCount > 1 ? "s" : ""} · ${fournisseursCount} fournisseur${fournisseursCount > 1 ? "s" : ""}`}
+        action={NewContactButton}
+      />
 
       <div className="flex gap-2">
         {(["all", "client", "fournisseur"] as const).map((t) => (
-          <Button key={t} variant={filter === t ? "default" : "outline"} size="sm" onClick={() => setFilter(t)}>
-            {t === "all" ? "Tous" : t === "client" ? "Clients" : "Fournisseurs"}
+          <Button
+            key={t}
+            variant={filter === t ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter(t)}
+          >
+            {t === "all" ? `Tous (${data.length})` : t === "client" ? `Clients (${clientsCount})` : `Fournisseurs (${fournisseursCount})`}
           </Button>
         ))}
       </div>
 
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nom</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Téléphone</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>
-            ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Aucun contact pour le moment.</TableCell></TableRow>
-            ) : (
-              filtered.map((c) => (
+      <Card className="border-border/60 overflow-hidden">
+        {loading ? (
+          <div className="py-12 text-center text-sm text-muted-foreground">Chargement…</div>
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title={data.length === 0 ? "Aucun contact" : "Aucun résultat"}
+            description={
+              data.length === 0
+                ? "Ajoutez un client ou un fournisseur pour commencer."
+                : "Modifiez le filtre pour voir d'autres contacts."
+            }
+            action={data.length === 0 ? NewContactButton : undefined}
+          />
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-secondary/40 hover:bg-secondary/40">
+                <TableHead>Nom</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Téléphone</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.nom}</TableCell>
                   <TableCell>
@@ -124,16 +169,30 @@ function ContactsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {c.email && <span className="inline-flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" />{c.email}</span>}
+                    {c.email ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Mail className="h-3.5 w-3.5" />
+                        {c.email}
+                      </span>
+                    ) : (
+                      "—"
+                    )}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {c.telephone && <span className="inline-flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{c.telephone}</span>}
+                    {c.telephone ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Phone className="h-3.5 w-3.5" />
+                        {c.telephone}
+                      </span>
+                    ) : (
+                      "—"
+                    )}
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </Card>
     </div>
   );

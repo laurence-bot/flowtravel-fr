@@ -31,7 +31,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Cashflow Travel — Gestion financière pour agences de voyages" },
+      { title: "Cashflow Travel — Maison de gestion financière pour agences de voyages" },
       { name: "description", content: "Pilotez la rentabilité, les flux financiers et la trésorerie de votre agence de voyages." },
       { name: "author", content: "Cashflow Travel" },
       { property: "og:title", content: "Cashflow Travel" },
