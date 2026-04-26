@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RapprochementRouteImport } from './routes/rapprochement'
 import { Route as PaiementsRouteImport } from './routes/paiements'
 import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
 import { Route as DossiersRouteImport } from './routes/dossiers'
@@ -18,6 +19,11 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
 
+const RapprochementRoute = RapprochementRouteImport.update({
+  id: '/rapprochement',
+  path: '/rapprochement',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PaiementsRoute = PaiementsRouteImport.update({
   id: '/paiements',
   path: '/paiements',
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/dossiers': typeof DossiersRouteWithChildren
   '/import-bancaire': typeof ImportBancaireRoute
   '/paiements': typeof PaiementsRoute
+  '/rapprochement': typeof RapprochementRoute
   '/dossiers/$id': typeof DossiersIdRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/dossiers': typeof DossiersRouteWithChildren
   '/import-bancaire': typeof ImportBancaireRoute
   '/paiements': typeof PaiementsRoute
+  '/rapprochement': typeof RapprochementRoute
   '/dossiers/$id': typeof DossiersIdRoute
 }
 export interface FileRoutesById {
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/dossiers': typeof DossiersRouteWithChildren
   '/import-bancaire': typeof ImportBancaireRoute
   '/paiements': typeof PaiementsRoute
+  '/rapprochement': typeof RapprochementRoute
   '/dossiers/$id': typeof DossiersIdRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/dossiers'
     | '/import-bancaire'
     | '/paiements'
+    | '/rapprochement'
     | '/dossiers/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/dossiers'
     | '/import-bancaire'
     | '/paiements'
+    | '/rapprochement'
     | '/dossiers/$id'
   id:
     | '__root__'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/dossiers'
     | '/import-bancaire'
     | '/paiements'
+    | '/rapprochement'
     | '/dossiers/$id'
   fileRoutesById: FileRoutesById
 }
@@ -131,10 +143,18 @@ export interface RootRouteChildren {
   DossiersRoute: typeof DossiersRouteWithChildren
   ImportBancaireRoute: typeof ImportBancaireRoute
   PaiementsRoute: typeof PaiementsRoute
+  RapprochementRoute: typeof RapprochementRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/rapprochement': {
+      id: '/rapprochement'
+      path: '/rapprochement'
+      fullPath: '/rapprochement'
+      preLoaderRoute: typeof RapprochementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/paiements': {
       id: '/paiements'
       path: '/paiements'
@@ -214,6 +234,7 @@ const rootRouteChildren: RootRouteChildren = {
   DossiersRoute: DossiersRouteWithChildren,
   ImportBancaireRoute: ImportBancaireRoute,
   PaiementsRoute: PaiementsRoute,
+  RapprochementRoute: RapprochementRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

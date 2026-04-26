@@ -319,6 +319,7 @@ function PaiementsPage() {
                 <TableHead>Dossier</TableHead>
                 <TableHead>Compte</TableHead>
                 <TableHead>Méthode</TableHead>
+                <TableHead>Rapprochement</TableHead>
                 <TableHead className="text-right">Montant</TableHead>
               </TableRow>
             </TableHeader>
@@ -342,6 +343,17 @@ function PaiementsPage() {
                   <TableCell className="text-muted-foreground">{dossierTitre(p.dossier_id)}</TableCell>
                   <TableCell className="text-muted-foreground">{compteNom(p.compte_id)}</TableCell>
                   <TableCell className="capitalize text-muted-foreground">{p.methode}</TableCell>
+                  <TableCell>
+                    {p.statut_rapprochement === "rapproche" ? (
+                      <Badge variant="outline" className="bg-[color:var(--margin)]/12 text-[color:var(--margin)] border-[color:var(--margin)]/25">
+                        Rapproché
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-muted text-muted-foreground border-transparent">
+                        En attente
+                      </Badge>
+                    )}
+                  </TableCell>
                   <TableCell
                     className={`text-right tabular font-medium ${
                       p.type === "paiement_client" ? "text-[color:var(--revenue)]" : "text-[color:var(--cost)]"

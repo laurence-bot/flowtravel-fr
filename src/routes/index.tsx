@@ -3,11 +3,11 @@ import { RequireAuth } from "@/components/require-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useTable, type Dossier, type Paiement, type Facture, type Compte, type Transfert, BANQUE_LABELS } from "@/hooks/use-data";
+import { useTable, type Dossier, type Paiement, type Facture, type Compte, type Transfert, type BankTransaction, BANQUE_LABELS } from "@/hooks/use-data";
 import { formatEUR, formatPercent, formatDate } from "@/lib/format";
 import { computeGlobalFinance, computeComptesSoldes } from "@/lib/finance";
 import { PageHeader } from "@/components/page-header";
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landmark, Percent } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landmark, Percent, Link2 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -66,10 +66,12 @@ function Dashboard() {
   const { data: factures } = useTable<Facture>("factures_fournisseurs");
   const { data: comptes } = useTable<Compte>("comptes");
   const { data: transferts } = useTable<Transfert>("transferts");
+  const { data: bankTx } = useTable<BankTransaction>("bank_transactions");
 
   const f = computeGlobalFinance(dossiers, paiements, factures);
   const soldes = computeComptesSoldes(comptes, paiements, transferts);
   const tresorerieReelle = soldes.reduce((s, c) => s + c.solde, 0);
+  const txARapprocher = bankTx.filter((t) => t.statut === "nouveau").length;
   const recentDossiers = dossiers.slice(0, 5);
   const recentPaiements = paiements.slice(0, 5);
 
@@ -109,6 +111,30 @@ function Dashboard() {
           hint={comptes.length > 0 ? `${comptes.length} compte${comptes.length > 1 ? "s" : ""}` : "Configurez vos comptes"}
         />
       </section>
+
+      {txARapprocher > 0 && (
+        <Link
+          to="/rapprochement"
+          className="block group"
+        >
+          <Card className="p-4 border-[color:var(--gold)]/30 bg-[color:var(--gold)]/8 hover:bg-[color:var(--gold)]/12 transition-colors flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-10 w-10 rounded-md flex items-center justify-center bg-[color:var(--gold)]/20 text-[color:var(--gold)] shrink-0">
+                <Link2 className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="font-medium text-sm">
+                  {txARapprocher} transaction{txARapprocher > 1 ? "s" : ""} bancaire{txARapprocher > 1 ? "s" : ""} à rapprocher
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  Validez les suggestions automatiques pour fiabiliser votre trésorerie.
+                </div>
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />
+          </Card>
+        </Link>
+      )}
 
       {/* TVA sur marge — vision agence de voyages */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">

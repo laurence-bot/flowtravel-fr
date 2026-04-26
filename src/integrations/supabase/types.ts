@@ -228,6 +228,7 @@ export type Database = {
       }
       paiements: {
         Row: {
+          bank_transaction_id: string | null
           compte_id: string | null
           created_at: string
           date: string
@@ -237,10 +238,12 @@ export type Database = {
           montant: number
           personne_id: string | null
           source: Database["public"]["Enums"]["paiement_source"]
+          statut_rapprochement: Database["public"]["Enums"]["paiement_statut_rapprochement"]
           type: Database["public"]["Enums"]["paiement_type"]
           user_id: string
         }
         Insert: {
+          bank_transaction_id?: string | null
           compte_id?: string | null
           created_at?: string
           date?: string
@@ -250,10 +253,12 @@ export type Database = {
           montant: number
           personne_id?: string | null
           source?: Database["public"]["Enums"]["paiement_source"]
+          statut_rapprochement?: Database["public"]["Enums"]["paiement_statut_rapprochement"]
           type: Database["public"]["Enums"]["paiement_type"]
           user_id: string
         }
         Update: {
+          bank_transaction_id?: string | null
           compte_id?: string | null
           created_at?: string
           date?: string
@@ -263,6 +268,7 @@ export type Database = {
           montant?: number
           personne_id?: string | null
           source?: Database["public"]["Enums"]["paiement_source"]
+          statut_rapprochement?: Database["public"]["Enums"]["paiement_statut_rapprochement"]
           type?: Database["public"]["Enums"]["paiement_type"]
           user_id?: string
         }
@@ -282,6 +288,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rapprochements: {
+        Row: {
+          bank_transaction_id: string
+          created_at: string
+          id: string
+          paiement_id: string
+          raison: string | null
+          score: number
+          statut: Database["public"]["Enums"]["rapprochement_statut"]
+          user_id: string
+          validated_at: string | null
+        }
+        Insert: {
+          bank_transaction_id: string
+          created_at?: string
+          id?: string
+          paiement_id: string
+          raison?: string | null
+          score?: number
+          statut?: Database["public"]["Enums"]["rapprochement_statut"]
+          user_id: string
+          validated_at?: string | null
+        }
+        Update: {
+          bank_transaction_id?: string
+          created_at?: string
+          id?: string
+          paiement_id?: string
+          raison?: string | null
+          score?: number
+          statut?: Database["public"]["Enums"]["rapprochement_statut"]
+          user_id?: string
+          validated_at?: string | null
+        }
+        Relationships: []
       }
       transferts: {
         Row: {
@@ -338,7 +380,9 @@ export type Database = {
       dossier_statut: "brouillon" | "confirme" | "cloture"
       paiement_methode: "virement" | "carte" | "especes"
       paiement_source: "banque" | "manuel"
+      paiement_statut_rapprochement: "non_rapproche" | "rapproche"
       paiement_type: "paiement_client" | "paiement_fournisseur"
+      rapprochement_statut: "suggere" | "valide" | "rejete"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -481,7 +525,9 @@ export const Constants = {
       dossier_statut: ["brouillon", "confirme", "cloture"],
       paiement_methode: ["virement", "carte", "especes"],
       paiement_source: ["banque", "manuel"],
+      paiement_statut_rapprochement: ["non_rapproche", "rapproche"],
       paiement_type: ["paiement_client", "paiement_fournisseur"],
+      rapprochement_statut: ["suggere", "valide", "rejete"],
     },
   },
 } as const

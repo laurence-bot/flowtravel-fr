@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload } from "lucide-react";
+import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ const nav = [
   { to: "/paiements", label: "Paiements", icon: Wallet },
   { to: "/comptes", label: "Comptes & Trésorerie", icon: Landmark },
   { to: "/import-bancaire", label: "Import bancaire", icon: Upload },
+  { to: "/rapprochement", label: "Rapprochement", icon: Link2 },
 ] as const;
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
