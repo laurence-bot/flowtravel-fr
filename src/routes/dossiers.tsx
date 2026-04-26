@@ -162,6 +162,21 @@ function DossiersPage() {
               />
             </div>
           </div>
+          <div className="space-y-2">
+            <Label>Taux de TVA sur marge (%)</Label>
+            <Input
+              type="number"
+              step="0.1"
+              min="0"
+              max="99"
+              value={form.taux_tva_marge}
+              onChange={(e) => setForm({ ...form, taux_tva_marge: e.target.value })}
+              placeholder="20"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Régime spécifique des agences de voyages. 20 % par défaut.
+            </p>
+          </div>
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? "Enregistrement…" : "Enregistrer le dossier"}
           </Button>
