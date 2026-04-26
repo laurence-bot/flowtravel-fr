@@ -21,6 +21,7 @@ import { Route as ComptesRouteImport } from './routes/comptes'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
+import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
 
 const RapprochementRoute = RapprochementRouteImport.update({
   id: '/rapprochement',
@@ -82,12 +83,17 @@ const DossiersIdRoute = DossiersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => DossiersRoute,
 } as any)
+const ContactsIdRoute = ContactsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ContactsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
-  '/contacts': typeof ContactsRoute
+  '/contacts': typeof ContactsRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -95,13 +101,14 @@ export interface FileRoutesByFullPath {
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
   '/rapprochement': typeof RapprochementRoute
+  '/contacts/$id': typeof ContactsIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
-  '/contacts': typeof ContactsRoute
+  '/contacts': typeof ContactsRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
   '/rapprochement': typeof RapprochementRoute
+  '/contacts/$id': typeof ContactsIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
 }
 export interface FileRoutesById {
@@ -116,7 +124,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
-  '/contacts': typeof ContactsRoute
+  '/contacts': typeof ContactsRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
   '/rapprochement': typeof RapprochementRoute
+  '/contacts/$id': typeof ContactsIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
 }
 export interface FileRouteTypes {
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/pilotage'
     | '/previsions'
     | '/rapprochement'
+    | '/contacts/$id'
     | '/dossiers/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/pilotage'
     | '/previsions'
     | '/rapprochement'
+    | '/contacts/$id'
     | '/dossiers/$id'
   id:
     | '__root__'
@@ -168,6 +179,7 @@ export interface FileRouteTypes {
     | '/pilotage'
     | '/previsions'
     | '/rapprochement'
+    | '/contacts/$id'
     | '/dossiers/$id'
   fileRoutesById: FileRoutesById
 }
@@ -175,7 +187,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   ComptesRoute: typeof ComptesRoute
-  ContactsRoute: typeof ContactsRoute
+  ContactsRoute: typeof ContactsRouteWithChildren
   DossiersRoute: typeof DossiersRouteWithChildren
   ExportRoute: typeof ExportRoute
   ImportBancaireRoute: typeof ImportBancaireRoute
@@ -271,6 +283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DossiersIdRouteImport
       parentRoute: typeof DossiersRoute
     }
+    '/contacts/$id': {
+      id: '/contacts/$id'
+      path: '/$id'
+      fullPath: '/contacts/$id'
+      preLoaderRoute: typeof ContactsIdRouteImport
+      parentRoute: typeof ContactsRoute
+    }
   }
 }
 
@@ -286,11 +305,23 @@ const DossiersRouteWithChildren = DossiersRoute._addFileChildren(
   DossiersRouteChildren,
 )
 
+interface ContactsRouteChildren {
+  ContactsIdRoute: typeof ContactsIdRoute
+}
+
+const ContactsRouteChildren: ContactsRouteChildren = {
+  ContactsIdRoute: ContactsIdRoute,
+}
+
+const ContactsRouteWithChildren = ContactsRoute._addFileChildren(
+  ContactsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   ComptesRoute: ComptesRoute,
-  ContactsRoute: ContactsRoute,
+  ContactsRoute: ContactsRouteWithChildren,
   DossiersRoute: DossiersRouteWithChildren,
   ExportRoute: ExportRoute,
   ImportBancaireRoute: ImportBancaireRoute,

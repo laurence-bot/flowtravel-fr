@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { RequireAuth } from "@/components/require-auth";
@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { Plus, Mail, Phone, Users } from "lucide-react";
+import { Plus, Mail, Phone, Users, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/contacts")({
@@ -157,12 +157,17 @@ function ContactsPage() {
                 <TableHead>Type</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Téléphone</TableHead>
+                <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell className="font-medium">{c.nom}</TableCell>
+                <TableRow key={c.id} className="cursor-pointer hover:bg-secondary/40">
+                  <TableCell className="font-medium">
+                    <Link to="/contacts/$id" params={{ id: c.id }} className="hover:underline">
+                      {c.nom}
+                    </Link>
+                  </TableCell>
                   <TableCell>
                     <Badge variant={c.type === "client" ? "default" : "secondary"}>
                       {c.type === "client" ? "Client" : "Fournisseur"}
@@ -187,6 +192,11 @@ function ContactsPage() {
                     ) : (
                       "—"
                     )}
+                  </TableCell>
+                  <TableCell>
+                    <Link to="/contacts/$id" params={{ id: c.id }} className="text-muted-foreground hover:text-foreground inline-flex">
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
                   </TableCell>
                 </TableRow>
               ))}
