@@ -12,6 +12,7 @@ import { computeDossierFinance } from "@/lib/finance";
 import { StatutBadge } from "@/components/statut-badge";
 import { ArrowLeft, Trash2, User, Receipt, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
+import { logAudit } from "@/lib/audit";
 
 export const Route = createFileRoute("/dossiers/$id")({
   component: () => (
@@ -58,9 +59,18 @@ function DossierDetail() {
   const paiementsFournisseurs = paiementsDossier.filter((p) => p.type === "paiement_fournisseur");
 
   const supprimer = async () => {
+    if (!dossier) return;
     if (!confirm("Supprimer ce dossier ? Cette action est irréversible.")) return;
     const { error } = await supabase.from("dossiers").delete().eq("id", dossier.id);
     if (error) return toast.error(error.message);
+    await logAudit({
+      userId: dossier.user_id,
+      entity: "dossier",
+      action: "delete",
+      entityId: dossier.id,
+      description: `Dossier supprimé : ${dossier.titre}`,
+      oldValue: dossier,
+    });
     toast.success("Dossier supprimé");
     navigate({ to: "/dossiers" });
   };

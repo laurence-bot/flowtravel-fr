@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/empty-state";
 import { StatutBadge } from "@/components/statut-badge";
 import { Plus, FolderOpen, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { logAudit } from "@/lib/audit";
 
 export const Route = createFileRoute("/dossiers")({
   component: () => (
@@ -67,7 +68,7 @@ function DossiersPage() {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("dossiers").insert({
+    const { data: inserted, error } = await supabase.from("dossiers").insert({
       user_id: user.id,
       titre: parsed.data.titre,
       client_id: parsed.data.client_id || null,
@@ -75,9 +76,17 @@ function DossiersPage() {
       prix_vente: parsed.data.prix_vente,
       cout_total: parsed.data.cout_total,
       taux_tva_marge: parsed.data.taux_tva_marge,
-    });
+    }).select().single();
     setSubmitting(false);
     if (error) return toast.error(error.message);
+    await logAudit({
+      userId: user.id,
+      entity: "dossier",
+      action: "create",
+      entityId: inserted?.id,
+      description: `Dossier créé : ${parsed.data.titre} (${parsed.data.prix_vente} €)`,
+      newValue: inserted,
+    });
     toast.success("Dossier créé");
     setOpen(false);
     setForm({ titre: "", client_id: "", statut: "brouillon", prix_vente: "", cout_total: "", taux_tva_marge: "20" });
