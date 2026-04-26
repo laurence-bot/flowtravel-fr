@@ -9,38 +9,128 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PaiementsRouteImport } from './routes/paiements'
+import { Route as DossiersRouteImport } from './routes/dossiers'
+import { Route as ContactsRouteImport } from './routes/contacts'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
 
+const PaiementsRoute = PaiementsRouteImport.update({
+  id: '/paiements',
+  path: '/paiements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DossiersRoute = DossiersRouteImport.update({
+  id: '/dossiers',
+  path: '/dossiers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactsRoute = ContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DossiersIdRoute = DossiersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => DossiersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/contacts': typeof ContactsRoute
+  '/dossiers': typeof DossiersRouteWithChildren
+  '/paiements': typeof PaiementsRoute
+  '/dossiers/$id': typeof DossiersIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/contacts': typeof ContactsRoute
+  '/dossiers': typeof DossiersRouteWithChildren
+  '/paiements': typeof PaiementsRoute
+  '/dossiers/$id': typeof DossiersIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/contacts': typeof ContactsRoute
+  '/dossiers': typeof DossiersRouteWithChildren
+  '/paiements': typeof PaiementsRoute
+  '/dossiers/$id': typeof DossiersIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/contacts'
+    | '/dossiers'
+    | '/paiements'
+    | '/dossiers/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/auth' | '/contacts' | '/dossiers' | '/paiements' | '/dossiers/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/contacts'
+    | '/dossiers'
+    | '/paiements'
+    | '/dossiers/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
+  ContactsRoute: typeof ContactsRoute
+  DossiersRoute: typeof DossiersRouteWithChildren
+  PaiementsRoute: typeof PaiementsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/paiements': {
+      id: '/paiements'
+      path: '/paiements'
+      fullPath: '/paiements'
+      preLoaderRoute: typeof PaiementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dossiers': {
+      id: '/dossiers'
+      path: '/dossiers'
+      fullPath: '/dossiers'
+      preLoaderRoute: typeof DossiersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contacts': {
+      id: '/contacts'
+      path: '/contacts'
+      fullPath: '/contacts'
+      preLoaderRoute: typeof ContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,21 +138,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dossiers/$id': {
+      id: '/dossiers/$id'
+      path: '/$id'
+      fullPath: '/dossiers/$id'
+      preLoaderRoute: typeof DossiersIdRouteImport
+      parentRoute: typeof DossiersRoute
+    }
   }
 }
 
+interface DossiersRouteChildren {
+  DossiersIdRoute: typeof DossiersIdRoute
+}
+
+const DossiersRouteChildren: DossiersRouteChildren = {
+  DossiersIdRoute: DossiersIdRoute,
+}
+
+const DossiersRouteWithChildren = DossiersRoute._addFileChildren(
+  DossiersRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
+  ContactsRoute: ContactsRoute,
+  DossiersRoute: DossiersRouteWithChildren,
+  PaiementsRoute: PaiementsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
