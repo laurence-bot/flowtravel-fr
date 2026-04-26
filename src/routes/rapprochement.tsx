@@ -348,21 +348,26 @@ function RapprochementPage() {
                         <SelectValue placeholder="Choisir un paiement…" />
                       </SelectTrigger>
                       <SelectContent>
-                        {paiementsNonRapproches.length === 0 && (
-                          <div className="px-2 py-2 text-xs text-muted-foreground">
-                            Aucun paiement disponible.
-                          </div>
-                        )}
-                        {paiementsNonRapproches.map((p) => {
-                          const c = contacts.find((x) => x.id === p.personne_id);
-                          return (
-                            <SelectItem key={p.id} value={p.id}>
-                              {formatDate(p.date)} — {formatEUR(p.montant)} —{" "}
-                              {p.type === "paiement_client" ? "Client" : "Fournisseur"}
-                              {c ? ` · ${c.nom}` : ""}
-                            </SelectItem>
-                          );
-                        })}
+                        {(() => {
+                          const expectedType = tx.sens === "credit" ? "paiement_client" : "paiement_fournisseur";
+                          const candidats = paiementsNonRapproches.filter((p) => p.type === expectedType);
+                          if (candidats.length === 0) {
+                            return (
+                              <div className="px-2 py-2 text-xs text-muted-foreground">
+                                Aucun paiement {tx.sens === "credit" ? "client" : "fournisseur"} disponible.
+                              </div>
+                            );
+                          }
+                          return candidats.map((p) => {
+                            const c = contacts.find((x) => x.id === p.personne_id);
+                            return (
+                              <SelectItem key={p.id} value={p.id}>
+                                {formatDate(p.date)} — {formatEUR(p.montant)}
+                                {c ? ` · ${c.nom}` : ""}
+                              </SelectItem>
+                            );
+                          });
+                        })()}
                       </SelectContent>
                     </Select>
                   </div>
