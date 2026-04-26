@@ -80,10 +80,29 @@ function RapprochementPage() {
     [paiements],
   );
 
+  /**
+   * Vérifie la cohérence sens bancaire ↔ type paiement.
+   * Crédit ↔ paiement client, Débit ↔ paiement fournisseur.
+   */
+  function isCoherent(tx: BankTransaction, p: Paiement): boolean {
+    return (
+      (tx.sens === "credit" && p.type === "paiement_client") ||
+      (tx.sens === "debit" && p.type === "paiement_fournisseur")
+    );
+  }
+
   async function validate(tx: BankTransaction, paiement: Paiement, score: number, reason: string) {
     if (!user) return;
     if (paiement.statut_rapprochement === "rapproche") {
       toast.error("Ce paiement est déjà rapproché");
+      return;
+    }
+    if (tx.statut === "rapproche") {
+      toast.error("Cette transaction est déjà rapprochée");
+      return;
+    }
+    if (!isCoherent(tx, paiement)) {
+      toast.error("Sens incohérent : un crédit doit correspondre à un paiement client, un débit à un paiement fournisseur.");
       return;
     }
     setBusy(tx.id);
@@ -130,30 +149,40 @@ function RapprochementPage() {
   async function reject(tx: BankTransaction, paiement: Paiement, score: number, reason: string) {
     if (!user) return;
     setBusy(tx.id);
-    const { error } = await supabase.from("rapprochements").insert({
-      user_id: user.id,
-      bank_transaction_id: tx.id,
-      paiement_id: paiement.id,
-      score,
-      statut: "rejete",
-      raison: reason,
-    });
-    setBusy(null);
-    if (error) return toast.error(error.message);
-    toast.success("Suggestion rejetée");
+    try {
+      const { error } = await supabase.from("rapprochements").insert({
+        user_id: user.id,
+        bank_transaction_id: tx.id,
+        paiement_id: paiement.id,
+        score,
+        statut: "rejete",
+        raison: reason,
+      });
+      if (error) throw error;
+      toast.success("Suggestion rejetée");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors du rejet");
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function ignore(tx: BankTransaction) {
     if (!user) return;
     setBusy(tx.id);
-    const { error } = await supabase
-      .from("bank_transactions")
-      .update({ statut: "ignore" })
-      .eq("id", tx.id);
-    setBusy(null);
-    if (error) return toast.error(error.message);
-    toast.success("Transaction ignorée");
-    refetchTx();
+    try {
+      const { error } = await supabase
+        .from("bank_transactions")
+        .update({ statut: "ignore" })
+        .eq("id", tx.id);
+      if (error) throw error;
+      toast.success("Transaction ignorée");
+      await refetchTx();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (

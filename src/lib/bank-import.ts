@@ -102,7 +102,9 @@ export function parseDate(raw: string): string | null {
   const fr = s.match(/^(\d{2})[\/\-.](\d{2})[\/\-.](\d{2,4})/);
   if (fr) {
     let yyyy = fr[3];
-    if (yyyy.length === 2) yyyy = (parseInt(yyyy, 10) > 50 ? "19" : "20") + yyyy;
+    // Pivot : un relevé bancaire ne contient pas de dates antérieures à 1971.
+    // 00–70 → 20xx, 71–99 → 19xx
+    if (yyyy.length === 2) yyyy = (parseInt(yyyy, 10) > 70 ? "19" : "20") + yyyy;
     return `${yyyy}-${fr[2]}-${fr[1]}`;
   }
   return null;
