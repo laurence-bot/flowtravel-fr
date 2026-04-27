@@ -339,16 +339,29 @@ function CotationDetailPage() {
       .from("cotations")
       .update({ statut: "perdue", raison_perte: raisonPerte || null })
       .eq("id", cot.id);
+    // Annulation automatique de toutes les options associées
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
+      .from("fournisseur_options")
+      .update({ statut: "annulee" })
+      .eq("cotation_id", cot.id)
+      .not("statut", "in", "(annulee,option_refusee)");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
+      .from("flight_options")
+      .update({ statut: "annulee" })
+      .eq("cotation_id", cot.id)
+      .neq("statut", "annulee");
     await logAudit({
       userId: user.id,
       entity: "cotation",
       entityId: cot.id,
       action: "reject",
-      description: `Cotation perdue : ${cot.titre}${raisonPerte ? ` (${raisonPerte})` : ""}`,
+      description: `Cotation perdue : ${cot.titre}${raisonPerte ? ` (${raisonPerte})` : ""} — options associées annulées`,
     });
     setPerteOpen(false);
     setRaisonPerte("");
-    toast.success("Cotation marquée comme perdue.");
+    toast.success("Cotation perdue. Options annulées — pensez à envoyer les emails d'annulation aux fournisseurs.");
     refetchCot();
   };
 
