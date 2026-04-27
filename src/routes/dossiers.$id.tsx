@@ -204,10 +204,18 @@ function DossierDetail() {
           </dl>
         </Card>
         <Card className="p-6 border-border/60">
-          <h2 className="font-display text-xl flex items-center gap-2">
-            <Receipt className="h-5 w-5 text-muted-foreground" />
-            Factures fournisseurs
-          </h2>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <h2 className="font-display text-xl flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-muted-foreground" />
+              Factures fournisseurs
+            </h2>
+            <NewFactureDialog
+              dossierId={dossier.id}
+              userId={user?.id}
+              fournisseurs={contacts.filter((c) => c.type === "fournisseur")}
+              onDone={refetchFactures}
+            />
+          </div>
           {facturesDossier.length === 0 ? (
             <p className="text-sm text-muted-foreground mt-4">Aucune facture liée à ce dossier.</p>
           ) : (
@@ -223,7 +231,12 @@ function DossierDetail() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="tabular font-medium">{formatEUR(fact.montant)}</div>
+                      <div className="tabular font-medium">{formatEUR(factureEUR(fact))}</div>
+                      {fact.devise !== "EUR" && (
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                          {formatMoney(fact.montant_devise ?? 0, fact.devise)} @ {Number(fact.taux_change).toFixed(4)}
+                        </div>
+                      )}
                       <Badge variant={fact.paye ? "default" : "outline"} className="mt-1 text-[10px]">
                         {fact.paye ? "Payée" : "À payer"}
                       </Badge>
