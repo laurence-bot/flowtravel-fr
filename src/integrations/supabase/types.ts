@@ -436,6 +436,57 @@ export type Database = {
         }
         Relationships: []
       }
+      dossier_tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          date_echeance: string | null
+          description: string | null
+          dossier_id: string
+          id: string
+          ordre: number
+          phase: Database["public"]["Enums"]["dossier_task_phase"]
+          priorite: Database["public"]["Enums"]["dossier_task_priorite"]
+          statut: Database["public"]["Enums"]["dossier_task_statut"]
+          titre: string
+          type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          date_echeance?: string | null
+          description?: string | null
+          dossier_id: string
+          id?: string
+          ordre?: number
+          phase?: Database["public"]["Enums"]["dossier_task_phase"]
+          priorite?: Database["public"]["Enums"]["dossier_task_priorite"]
+          statut?: Database["public"]["Enums"]["dossier_task_statut"]
+          titre: string
+          type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          date_echeance?: string | null
+          description?: string | null
+          dossier_id?: string
+          id?: string
+          ordre?: number
+          phase?: Database["public"]["Enums"]["dossier_task_phase"]
+          priorite?: Database["public"]["Enums"]["dossier_task_priorite"]
+          statut?: Database["public"]["Enums"]["dossier_task_statut"]
+          titre?: string
+          type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       dossiers: {
         Row: {
           client_id: string | null
@@ -1056,6 +1107,7 @@ export type Database = {
         | "cotation"
         | "cotation_ligne"
         | "demande"
+        | "dossier_task"
       bank_sens: "credit" | "debit"
       bank_source: "sg" | "cic" | "ebury"
       bank_statut: "nouveau" | "rapproche" | "ignore"
@@ -1102,6 +1154,9 @@ export type Database = {
         | "MAD"
         | "TND"
       dossier_statut: "brouillon" | "confirme" | "cloture"
+      dossier_task_phase: "avant" | "pre_depart" | "pendant" | "apres" | "autre"
+      dossier_task_priorite: "normale" | "importante" | "critique"
+      dossier_task_statut: "a_faire" | "en_cours" | "termine"
       echeance_statut: "a_payer" | "paye" | "en_retard" | "annule"
       echeance_type: "acompte_1" | "acompte_2" | "acompte_3" | "solde" | "autre"
       fx_coverage_statut:
@@ -1273,6 +1328,7 @@ export const Constants = {
         "cotation",
         "cotation_ligne",
         "demande",
+        "dossier_task",
       ],
       bank_sens: ["credit", "debit"],
       bank_source: ["sg", "cic", "ebury"],
@@ -1325,6 +1381,9 @@ export const Constants = {
         "TND",
       ],
       dossier_statut: ["brouillon", "confirme", "cloture"],
+      dossier_task_phase: ["avant", "pre_depart", "pendant", "apres", "autre"],
+      dossier_task_priorite: ["normale", "importante", "critique"],
+      dossier_task_statut: ["a_faire", "en_cours", "termine"],
       echeance_statut: ["a_payer", "paye", "en_retard", "annule"],
       echeance_type: ["acompte_1", "acompte_2", "acompte_3", "solde", "autre"],
       fx_coverage_statut: [
