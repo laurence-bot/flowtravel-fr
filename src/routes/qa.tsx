@@ -437,14 +437,14 @@ function QaPage() {
                       </Button>
                     )}
                     {s.status === "ok" && s.viewRoute && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => navigate({ to: s.viewRoute! as any })}
-                        className="shrink-0 h-7 text-xs"
+                      <a
+                        href={s.viewRoute}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 inline-flex items-center h-7 px-2 text-xs rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
                       >
                         Page <ArrowRight className="h-3 w-3 ml-1" />
-                      </Button>
+                      </a>
                     )}
                   </div>
 
