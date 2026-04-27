@@ -58,6 +58,8 @@ import {
   type EmailDraft,
 } from "@/lib/options";
 import { EmailDraftModal } from "@/components/email-draft-modal";
+import { useAgencySettings } from "@/hooks/use-agency-settings";
+import { appendSignature } from "@/lib/agency-settings";
 import type { Cotation, CotationLigne } from "@/lib/cotations";
 import { ligneCoutEur } from "@/lib/cotations";
 import { formatEUR } from "@/lib/format";
@@ -112,13 +114,15 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
     kind: string;
   } | null>(null);
 
+  const { settings: agency } = useAgencySettings();
+
   const openDraft = (
     title: string,
     d: EmailDraft,
     meta: { entity: "fournisseur_option" | "flight_option"; entityId: string; kind: string },
   ) => {
     setDraftTitle(title);
-    setDraft(d);
+    setDraft({ ...d, body: appendSignature(d.body, agency) });
     setDraftMeta(meta);
     setDraftOpen(true);
   };
