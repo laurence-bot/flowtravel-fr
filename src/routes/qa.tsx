@@ -151,6 +151,37 @@ function QaPage() {
     Object.keys(state).forEach((k) => delete (state as any)[k]);
   };
 
+  const loadExisting = async () => {
+    if (!user) return;
+    setStepBusy(true);
+    try {
+      const loaded = await loadQaStateFromDb(user.id);
+      Object.assign(state, loaded);
+      const doneKeys = detectCompletedSteps(loaded);
+      // Marque les étapes comme OK et charge leurs détails
+      const newSteps = makeInitialSteps().map((s) =>
+        doneKeys.includes(s.key) ? { ...s, status: "ok" as const, detail: "Données existantes" } : s,
+      );
+      setSteps(newSteps);
+      setCurrentIdx(doneKeys.length);
+      const allDetails: Record<string, QaDetail | null> = {};
+      const allOpen: Record<string, boolean> = {};
+      for (const k of doneKeys) {
+        try {
+          allDetails[k] = await getStepDetails(k, state);
+          allOpen[k] = true;
+        } catch { /* ignore */ }
+      }
+      setDetails(allDetails);
+      setOpenDetails(allOpen);
+      toast.success(`${doneKeys.length} étapes chargées depuis la base`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setStepBusy(false);
+    }
+  };
+
   const launchAuto = async () => {
     if (!user) return;
     setRunning(true);
