@@ -19,6 +19,7 @@ import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
 import { Route as ExportRouteImport } from './routes/export'
 import { Route as DossiersRouteImport } from './routes/dossiers'
 import { Route as CouverturesFxRouteImport } from './routes/couvertures-fx'
+import { Route as CotationsRouteImport } from './routes/cotations'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as ComptesRouteImport } from './routes/comptes'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -78,6 +79,11 @@ const CouverturesFxRoute = CouverturesFxRouteImport.update({
   path: '/couvertures-fx',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CotationsRoute = CotationsRouteImport.update({
+  id: '/cotations',
+  path: '/cotations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactsRoute = ContactsRouteImport.update({
   id: '/contacts',
   path: '/contacts',
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
+  '/cotations': typeof CotationsRoute
   '/couvertures-fx': typeof CouverturesFxRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
+  '/cotations': typeof CotationsRoute
   '/couvertures-fx': typeof CouverturesFxRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
+  '/cotations': typeof CotationsRoute
   '/couvertures-fx': typeof CouverturesFxRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/comptes'
     | '/contacts'
+    | '/cotations'
     | '/couvertures-fx'
     | '/dossiers'
     | '/export'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/comptes'
     | '/contacts'
+    | '/cotations'
     | '/couvertures-fx'
     | '/dossiers'
     | '/export'
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/comptes'
     | '/contacts'
+    | '/cotations'
     | '/couvertures-fx'
     | '/dossiers'
     | '/export'
@@ -249,6 +261,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ComptesRoute: typeof ComptesRoute
   ContactsRoute: typeof ContactsRouteWithChildren
+  CotationsRoute: typeof CotationsRoute
   CouverturesFxRoute: typeof CouverturesFxRoute
   DossiersRoute: typeof DossiersRouteWithChildren
   ExportRoute: typeof ExportRoute
@@ -332,6 +345,13 @@ declare module '@tanstack/react-router' {
       path: '/couvertures-fx'
       fullPath: '/couvertures-fx'
       preLoaderRoute: typeof CouverturesFxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cotations': {
+      id: '/cotations'
+      path: '/cotations'
+      fullPath: '/cotations'
+      preLoaderRoute: typeof CotationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contacts': {
@@ -423,6 +443,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ComptesRoute: ComptesRoute,
   ContactsRoute: ContactsRouteWithChildren,
+  CotationsRoute: CotationsRoute,
   CouverturesFxRoute: CouverturesFxRoute,
   DossiersRoute: DossiersRouteWithChildren,
   ExportRoute: ExportRoute,
@@ -438,3 +459,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
