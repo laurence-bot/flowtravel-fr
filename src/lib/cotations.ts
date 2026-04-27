@@ -27,6 +27,7 @@ export type Cotation = {
   version_number: number;
   titre: string;
   destination: string | null;
+  pays_destination: string | null;
   tags_destination: string[];
   langue: string | null;
   date_depart: string | null;
@@ -208,6 +209,7 @@ export async function duplicateCotation(
       version_number: nextVersion,
       titre: source.titre,
       destination: source.destination,
+      pays_destination: source.pays_destination,
       tags_destination: source.tags_destination,
       langue: source.langue,
       date_depart: source.date_depart,
