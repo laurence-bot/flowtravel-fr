@@ -102,6 +102,8 @@ function CotationsPage() {
   const [filtreStatut, setFiltreStatut] = useState<string>("tous");
   const [filtreClient, setFiltreClient] = useState<string>("tous");
   const [filtreDest, setFiltreDest] = useState<string>("");
+  const [filtreDu, setFiltreDu] = useState<string>("");
+  const [filtreAu, setFiltreAu] = useState<string>("");
 
   const clients = contacts.filter((c) => c.type === "client");
 
@@ -123,6 +125,8 @@ function CotationsPage() {
       !(c.destination ?? "").toLowerCase().includes(filtreDest.toLowerCase())
     )
       return false;
+    if (filtreDu && (!c.date_depart || c.date_depart < filtreDu)) return false;
+    if (filtreAu && (!c.date_depart || c.date_depart > filtreAu)) return false;
     return true;
   });
 
@@ -248,7 +252,7 @@ function CotationsPage() {
         }
       />
 
-      <Card className="p-4 grid md:grid-cols-3 gap-3">
+      <Card className="p-4 grid md:grid-cols-5 gap-3">
         <div>
           <Label className="text-xs">Statut</Label>
           <Select value={filtreStatut} onValueChange={setFiltreStatut}>
@@ -289,6 +293,14 @@ function CotationsPage() {
             onChange={(e) => setFiltreDest(e.target.value)}
           />
         </div>
+        <div>
+          <Label className="text-xs">Départ du</Label>
+          <Input type="date" value={filtreDu} onChange={(e) => setFiltreDu(e.target.value)} />
+        </div>
+        <div>
+          <Label className="text-xs">Départ au</Label>
+          <Input type="date" value={filtreAu} onChange={(e) => setFiltreAu(e.target.value)} />
+        </div>
       </Card>
 
       <Card className="overflow-hidden">
@@ -312,6 +324,7 @@ function CotationsPage() {
                 <TableHead className="text-right">Coût</TableHead>
                 <TableHead className="text-right">Marge brute</TableHead>
                 <TableHead className="text-right">Marge nette</TableHead>
+                <TableHead className="text-right">% marge</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead>v.</TableHead>
                 <TableHead></TableHead>
@@ -346,6 +359,11 @@ function CotationsPage() {
                       className={`text-right tabular ${fin.margeNette >= 0 ? "text-[color:var(--margin)]" : "text-destructive"}`}
                     >
                       {formatEUR(fin.margeNette)}
+                    </TableCell>
+                    <TableCell
+                      className={`text-right tabular text-xs ${fin.margeNettePct < 0 ? "text-destructive" : fin.margeNettePct < 10 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}
+                    >
+                      {fin.margeNettePct.toFixed(1)}%
                     </TableCell>
                     <TableCell>
                       <StatutPill statut={c.statut} />

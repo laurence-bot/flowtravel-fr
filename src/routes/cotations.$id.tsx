@@ -59,6 +59,7 @@ import {
   CheckCircle2,
   XCircle,
   ArrowRight,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -453,7 +454,43 @@ function CotationDetailPage() {
         </Card>
       </div>
 
-      {/* Actions */}
+      {/* Alertes qualité */}
+      {(() => {
+        const alerts: { tone: "danger" | "warn"; msg: string }[] = [];
+        if (fin.margeNette < 0) {
+          alerts.push({ tone: "danger", msg: "Marge nette négative : la cotation est à perte." });
+        } else if (fin.prixVente > 0 && fin.margeNettePct < 10) {
+          alerts.push({ tone: "warn", msg: `Marge nette faible (${fin.margeNettePct.toFixed(1)}%).` });
+        }
+        const fxKo = lignesCot.filter(
+          (l) => l.devise !== "EUR" && (!l.taux_change_vers_eur || l.taux_change_vers_eur <= 0),
+        );
+        if (fxKo.length > 0) {
+          alerts.push({
+            tone: "warn",
+            msg: `${fxKo.length} ligne(s) en devise étrangère sans taux FX renseigné.`,
+          });
+        }
+        if (alerts.length === 0) return null;
+        return (
+          <div className="space-y-2">
+            {alerts.map((a, i) => (
+              <Card
+                key={i}
+                className={`p-3 flex items-center gap-2 text-sm border ${
+                  a.tone === "danger"
+                    ? "border-destructive/40 bg-destructive/10 text-destructive"
+                    : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                }`}
+              >
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                {a.msg}
+              </Card>
+            ))}
+          </div>
+        );
+      })()}
+
       {canWrite && !isLocked && (
         <Card className="p-4 flex flex-wrap gap-2">
           {cot.statut !== "validee" && (
