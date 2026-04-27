@@ -14,6 +14,7 @@ import { Route as RapprochementRouteImport } from './routes/rapprochement'
 import { Route as PrevisionsRouteImport } from './routes/previsions'
 import { Route as PilotageRouteImport } from './routes/pilotage'
 import { Route as PaiementsRouteImport } from './routes/paiements'
+import { Route as ImportPdfRouteImport } from './routes/import-pdf'
 import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
 import { Route as ExportRouteImport } from './routes/export'
 import { Route as DossiersRouteImport } from './routes/dossiers'
@@ -50,6 +51,11 @@ const PilotageRoute = PilotageRouteImport.update({
 const PaiementsRoute = PaiementsRouteImport.update({
   id: '/paiements',
   path: '/paiements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImportPdfRoute = ImportPdfRouteImport.update({
+  id: '/import-pdf',
+  path: '/import-pdf',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ImportBancaireRoute = ImportBancaireRouteImport.update({
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
+  '/import-pdf': typeof ImportPdfRoute
   '/paiements': typeof PaiementsRoute
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
+  '/import-pdf': typeof ImportPdfRoute
   '/paiements': typeof PaiementsRoute
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
+  '/import-pdf': typeof ImportPdfRoute
   '/paiements': typeof PaiementsRoute
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
@@ -183,6 +192,7 @@ export interface FileRouteTypes {
     | '/dossiers'
     | '/export'
     | '/import-bancaire'
+    | '/import-pdf'
     | '/paiements'
     | '/pilotage'
     | '/previsions'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/dossiers'
     | '/export'
     | '/import-bancaire'
+    | '/import-pdf'
     | '/paiements'
     | '/pilotage'
     | '/previsions'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/dossiers'
     | '/export'
     | '/import-bancaire'
+    | '/import-pdf'
     | '/paiements'
     | '/pilotage'
     | '/previsions'
@@ -241,6 +253,7 @@ export interface RootRouteChildren {
   DossiersRoute: typeof DossiersRouteWithChildren
   ExportRoute: typeof ExportRoute
   ImportBancaireRoute: typeof ImportBancaireRoute
+  ImportPdfRoute: typeof ImportPdfRoute
   PaiementsRoute: typeof PaiementsRoute
   PilotageRoute: typeof PilotageRoute
   PrevisionsRoute: typeof PrevisionsRoute
@@ -284,6 +297,13 @@ declare module '@tanstack/react-router' {
       path: '/paiements'
       fullPath: '/paiements'
       preLoaderRoute: typeof PaiementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/import-pdf': {
+      id: '/import-pdf'
+      path: '/import-pdf'
+      fullPath: '/import-pdf'
+      preLoaderRoute: typeof ImportPdfRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/import-bancaire': {
@@ -407,6 +427,7 @@ const rootRouteChildren: RootRouteChildren = {
   DossiersRoute: DossiersRouteWithChildren,
   ExportRoute: ExportRoute,
   ImportBancaireRoute: ImportBancaireRoute,
+  ImportPdfRoute: ImportPdfRoute,
   PaiementsRoute: PaiementsRoute,
   PilotageRoute: PilotageRoute,
   PrevisionsRoute: PrevisionsRoute,
