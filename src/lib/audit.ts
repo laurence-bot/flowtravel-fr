@@ -15,7 +15,8 @@ export type AuditEntity =
   | "pdf_import"
   | "cotation"
   | "cotation_ligne"
-  | "demande";
+  | "demande"
+  | "dossier_task";
 
 export type AuditAction =
   | "create"
@@ -72,6 +73,7 @@ export const ENTITY_LABELS: Record<AuditEntity, string> = {
   cotation: "Cotation",
   cotation_ligne: "Ligne de cotation",
   demande: "Demande",
+  dossier_task: "Tâche dossier",
 };
 
 export const ACTION_LABELS: Record<AuditAction, string> = {
