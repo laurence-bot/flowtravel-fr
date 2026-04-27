@@ -85,19 +85,19 @@ function KpiCard({
 function ContactDetail() {
   const { id } = Route.useParams();
   const { data: contacts, loading } = useTable<Contact>("contacts");
-  const { data: dossiers } = useTable<Dossier>("dossiers");
-  const { data: paiements } = useTable<Paiement>("paiements");
-  const { data: factures } = useTable<Facture>("factures_fournisseurs");
+  const { data: dossiers, loading: dossiersLoading } = useTable<Dossier>("dossiers");
+  const { data: paiements, loading: paiementsLoading } = useTable<Paiement>("paiements");
+  const { data: factures, loading: facturesLoading } = useTable<Facture>("factures_fournisseurs");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: cotations } = useTable<Cotation>("cotations" as any);
+  const { data: cotations, loading: cotationsLoading } = useTable<Cotation>("cotations" as any);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: cotLignes } = useTable<CotationLigne>("cotation_lignes_fournisseurs" as any);
+  const { data: cotLignes, loading: cotLignesLoading } = useTable<CotationLigne>("cotation_lignes_fournisseurs" as any);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: demandes } = useTable<Demande>("demandes" as any);
+  const { data: demandes, loading: demandesLoading } = useTable<Demande>("demandes" as any);
 
   const contact = contacts.find((c) => c.id === id);
 
-  if (loading && !contact) {
+  if (loading || dossiersLoading || paiementsLoading || facturesLoading || cotationsLoading || cotLignesLoading || demandesLoading) {
     return <div className="text-muted-foreground text-sm">Chargement…</div>;
   }
   if (!contact) {
