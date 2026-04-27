@@ -822,6 +822,48 @@ export async function getStepDetails(
   return null;
 }
 
+/** Recharge l'état QA depuis la base via les préfixes [QA] — utile en lecture seule
+ * ou après un rechargement de page pour réafficher tous les détails. */
+export async function loadQaStateFromDb(userId: string): Promise<QaState> {
+  const state: QaState = {};
+  const [{ data: client }, { data: comptes }, { data: cov }, { data: cotation }, { data: dossier }] =
+    await Promise.all([
+      supabase.from("contacts").select("*").eq("user_id", userId).ilike("nom", "[QA]%").maybeSingle(),
+      supabase.from("comptes").select("*").eq("user_id", userId).ilike("nom", "[QA]%"),
+      supabase.from("fx_coverages").select("*").eq("user_id", userId).ilike("reference", "[QA]%").maybeSingle(),
+      supabase.from("cotations").select("*").eq("user_id", userId).ilike("titre", "[QA]%").maybeSingle(),
+      supabase.from("dossiers").select("*").eq("user_id", userId).ilike("titre", "[QA]%").maybeSingle(),
+    ]);
+  if (client) state.client = client;
+  if (cov) state.cov = cov;
+  if (cotation) state.cotation = cotation;
+  if (dossier) state.dossier = dossier;
+  if (comptes) {
+    state.cEur = comptes.find((c: any) => c.devise === "EUR");
+    state.cUsd = comptes.find((c: any) => c.devise === "USD");
+  }
+  if (client) {
+    const { data: demande } = await supabase
+      .from("demandes").select("*").eq("user_id", userId)
+      .eq("client_id", client.id).order("created_at", { ascending: false }).maybeSingle();
+    if (demande) state.demande = demande;
+  }
+  return state;
+}
+
+/** Quelles étapes ont effectivement des données présentes en base, d'après l'état rechargé. */
+export function detectCompletedSteps(state: QaState): string[] {
+  const done: string[] = [];
+  if (state.client && state.demande) done.push("client");
+  if (state.cEur && state.cUsd) done.push("comptes");
+  if (state.cov) done.push("fx");
+  if (state.cotation) done.push("cotation", "lignes", "options", "vol", "confirm");
+  if (state.cEur && state.client) done.push("acompte");
+  if (state.dossier) done.push("dossier", "tasks", "tresorerie");
+  if (state.cEur) done.push("bank");
+  return done;
+}
+
 /** Supprime toutes les entités préfixées [QA] du compte courant. */
 export async function cleanupQaData(userId: string): Promise<void> {
   await supabase.from("dossier_tasks").delete().eq("user_id", userId).ilike("titre", "%");
