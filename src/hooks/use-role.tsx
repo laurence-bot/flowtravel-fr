@@ -26,11 +26,21 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       return;
     }
     setLoading(true);
-    const [{ data: roleRow }, { data: profile }] = await Promise.all([
-      supabase.from("user_roles").select("role").eq("user_id", user.id).maybeSingle(),
+    const [{ data: roleRows }, { data: profile }] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", user.id),
       supabase.from("user_profiles").select("actif").eq("user_id", user.id).maybeSingle(),
     ]);
-    setRole((roleRow?.role as AppRole) ?? null);
+    const roles = (roleRows ?? []).map((row) => row.role as AppRole);
+    const resolvedRole = roles.includes("administrateur")
+      ? "administrateur"
+      : roles.includes("gestion")
+        ? "gestion"
+        : roles.includes("comptable")
+          ? "comptable"
+          : roles.includes("lecture_seule")
+            ? "lecture_seule"
+            : null;
+    setRole(resolvedRole);
     setActif(profile?.actif ?? true);
     setLoading(false);
   };

@@ -3,9 +3,9 @@ import { usePageWriteAccess } from "@/hooks/use-page-write-access";
 import { ROLE_LABELS } from "@/lib/permissions";
 
 /**
- * Bannière + zone "lecture seule" : si l'utilisateur n'a pas le droit d'écrire
- * sur la page courante, on désactive tous les boutons et inputs au sein de
- * cet arbre (defense en profondeur côté UI ; la sécurité réelle est en RLS).
+ * Bannière "lecture seule". Les actions d'écriture sont masquées/désactivées
+ * dans les pages via usePageWriteAccess ; cette bannière ne bloque jamais la
+ * navigation afin de permettre l'ouverture des fiches et détails.
  */
 export function ReadOnlyShield({ children }: { children: React.ReactNode }) {
   const { canWrite, role } = usePageWriteAccess();
@@ -22,9 +22,7 @@ export function ReadOnlyShield({ children }: { children: React.ReactNode }) {
           </span>
         </div>
       </div>
-      <fieldset disabled className="contents">
-        {children}
-      </fieldset>
+      {children}
     </>
   );
 }

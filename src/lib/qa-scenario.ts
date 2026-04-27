@@ -831,19 +831,22 @@ export async function getStepDetails(
  * ou après un rechargement de page pour réafficher tous les détails. */
 export async function loadQaStateFromDb(userId: string): Promise<QaState> {
   const state: QaState = {};
-  const [{ data: clients }, { data: comptes }, { data: covs }, { data: cotations }, { data: dossiers }] =
+  const [{ data: demandes }, { data: clients }, { data: comptes }, { data: covs }, { data: cotations }, { data: dossiers }] =
     await Promise.all([
+      supabase.from("demandes").select("*").eq("user_id", userId).ilike("nom_client", "[QA]%").order("created_at", { ascending: false }).limit(1),
       supabase.from("contacts").select("*").eq("user_id", userId).ilike("nom", "[QA]%").order("created_at", { ascending: false }).limit(1),
       supabase.from("comptes").select("*").eq("user_id", userId).ilike("nom", "[QA]%"),
       supabase.from("fx_coverages").select("*").eq("user_id", userId).ilike("reference", "[QA]%").order("created_at", { ascending: false }).limit(1),
       supabase.from("cotations").select("*").eq("user_id", userId).ilike("titre", "[QA]%").order("created_at", { ascending: false }).limit(1),
       supabase.from("dossiers").select("*").eq("user_id", userId).ilike("titre", "[QA]%").order("created_at", { ascending: false }).limit(1),
     ]);
+  const demande = demandes?.[0];
   const client = clients?.[0];
   const cov = covs?.[0];
   const cotation = cotations?.[0];
   const dossier = dossiers?.[0];
   if (client) state.client = client;
+  if (demande) state.demande = demande;
   if (cov) state.cov = cov;
   if (cotation) state.cotation = cotation;
   if (dossier) state.dossier = dossier;
@@ -851,12 +854,10 @@ export async function loadQaStateFromDb(userId: string): Promise<QaState> {
     state.cEur = comptes.find((c: any) => c.devise === "EUR");
     state.cUsd = comptes.find((c: any) => c.devise === "USD");
   }
-  if (client) {
-    const { data: demandes } = await supabase
-      .from("demandes").select("*").eq("user_id", userId)
-      .eq("client_id", client.id).order("created_at", { ascending: false }).limit(1);
-    const demande = demandes?.[0];
-    if (demande) state.demande = demande;
+  if (!state.client && demande?.client_id) {
+    const { data: linkedClient } = await supabase
+      .from("contacts").select("*").eq("user_id", userId).eq("id", demande.client_id).maybeSingle();
+    if (linkedClient) state.client = linkedClient;
   }
   return state;
 }
