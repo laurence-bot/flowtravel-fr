@@ -99,6 +99,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <LogOut className="h-4 w-4" />
             Déconnexion
           </button>
+          <div className="px-3 pt-3 text-[10px] uppercase tracking-[0.2em] text-sidebar-foreground/30 text-center">
+            Powered by Flow Travel
+          </div>
         </div>
       </aside>
 
