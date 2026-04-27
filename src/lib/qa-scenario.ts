@@ -205,7 +205,7 @@ export async function runQaScenario(userId: string, onProgress: QaProgress): Pro
       montant_devise: 5600,
       taux_change_vers_eur: 1.08,
       montant_eur: +(5600 / 1.08).toFixed(2),
-      source_fx: "taux_couverture",
+      source_fx: "couverture",
       couverture_id: cov.id,
       mode_tarifaire: "global",
       pct_acompte_1: 30,
