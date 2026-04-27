@@ -15,6 +15,14 @@ const num = (v: unknown) => {
   return Number.isFinite(n) ? n : 0;
 };
 
+/** Montant en EUR d'un paiement : utilise montant_eur s'il est défini, sinon retombe sur montant. */
+export const paiementEUR = (p: { montant: number; montant_eur?: number | null }) =>
+  num(p.montant_eur ?? p.montant);
+
+/** Montant en EUR d'une facture : utilise montant_eur s'il est défini, sinon retombe sur montant. */
+export const factureEUR = (f: { montant: number; montant_eur?: number | null }) =>
+  num(f.montant_eur ?? f.montant);
+
 export type DossierFinance = {
   prixVente: number;
   coutTotal: number;
