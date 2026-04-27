@@ -25,6 +25,7 @@ import { StatutBadge } from "@/components/statut-badge";
 import { ArrowLeft, Trash2, User, Receipt, ArrowDownLeft, ArrowUpRight, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
+import { DossierTasksBlock } from "@/components/dossier-tasks-block";
 
 export const Route = createFileRoute("/dossiers/$id")({
   component: () => (
@@ -254,6 +255,9 @@ function DossierDetail() {
           )}
         </Card>
       </section>
+
+      {/* Suivi opérationnel */}
+      <DossierTasksBlock dossierId={dossier.id} />
 
       {/* Paiements clients & fournisseurs */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { RequireAuth } from "@/components/require-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,17 @@ import { formatEUR, formatPercent, formatDate } from "@/lib/format";
 import { computeGlobalFinance, computeComptesSoldes } from "@/lib/finance";
 import { computeCashForecast } from "@/lib/cash-forecast";
 import { PageHeader } from "@/components/page-header";
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landmark, Percent, Link2, LineChart, AlertTriangle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  PRIORITE_TONE,
+  STATUT_TONE,
+  isAujourdhui,
+  isEnRetard,
+  sortByUrgence,
+  type DossierTask,
+} from "@/lib/dossier-tasks";
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landmark, Percent, Link2, LineChart, AlertTriangle, CheckSquare, Flame, Clock } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -69,6 +80,18 @@ function Dashboard() {
   const { data: transferts } = useTable<Transfert>("transferts");
   const { data: bankTx } = useTable<BankTransaction>("bank_transactions");
   const { data: contacts } = useTable<Contact>("contacts");
+  const { user } = useAuth();
+  const [tasks, setTasks] = useState<DossierTask[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .from("dossier_tasks")
+      .select("*")
+      .neq("statut", "termine")
+      .then(({ data }: { data: DossierTask[] | null }) => setTasks(data ?? []));
+  }, [user, dossiers.length]);
 
   const f = computeGlobalFinance(dossiers, paiements, factures);
   const soldes = computeComptesSoldes(comptes, paiements, transferts);
@@ -77,6 +100,14 @@ function Dashboard() {
   const forecast = computeCashForecast(30, { comptes, paiements, transferts, dossiers, factures, contacts });
   const recentDossiers = dossiers.slice(0, 5);
   const recentPaiements = paiements.slice(0, 5);
+
+  const tasksRetard = tasks.filter(isEnRetard);
+  const tasksToday = tasks.filter(isAujourdhui);
+  const tasksCritiques = tasks.filter((t) => t.priorite === "critique");
+  const tasksUrgentes = [...tasksRetard, ...tasksToday, ...tasksCritiques]
+    .filter((t, i, arr) => arr.findIndex((x) => x.id === t.id) === i)
+    .sort(sortByUrgence)
+    .slice(0, 6);
 
   return (
     <div className="space-y-10">
@@ -137,6 +168,86 @@ function Dashboard() {
             <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />
           </Card>
         </Link>
+      )}
+
+      {/* Tâches opérationnelles */}
+      {tasks.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-xl flex items-center gap-2">
+              <CheckSquare className="h-5 w-5 text-muted-foreground" />
+              Tâches opérationnelles
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <Card className="p-5 border-border/60">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                <AlertTriangle className="h-3.5 w-3.5" /> En retard
+              </div>
+              <div className={`mt-2 text-2xl font-semibold tabular ${tasksRetard.length > 0 ? "text-destructive" : ""}`}>
+                {tasksRetard.length}
+              </div>
+            </Card>
+            <Card className="p-5 border-border/60">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                <Clock className="h-3.5 w-3.5" /> Aujourd'hui
+              </div>
+              <div className="mt-2 text-2xl font-semibold tabular text-blue-600 dark:text-blue-400">
+                {tasksToday.length}
+              </div>
+            </Card>
+            <Card className="p-5 border-border/60">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                <Flame className="h-3.5 w-3.5" /> Critiques
+              </div>
+              <div className={`mt-2 text-2xl font-semibold tabular ${tasksCritiques.length > 0 ? "text-destructive" : ""}`}>
+                {tasksCritiques.length}
+              </div>
+            </Card>
+          </div>
+          {tasksUrgentes.length > 0 && (
+            <Card className="border-border/60 overflow-hidden">
+              <ul className="divide-y divide-border/60">
+                {tasksUrgentes.map((t) => {
+                  const dossier = dossiers.find((d) => d.id === t.dossier_id);
+                  const late = isEnRetard(t);
+                  return (
+                    <li key={t.id}>
+                      <Link
+                        to="/dossiers/$id"
+                        params={{ id: t.dossier_id }}
+                        className="px-5 py-3 flex items-center justify-between gap-3 hover:bg-secondary/40 transition-colors"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium truncate">{t.titre}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                            {dossier?.titre ?? "Dossier"}
+                            {t.date_echeance && ` · ${t.date_echeance}`}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {late && (
+                            <Badge variant="outline" className="text-[10px] bg-destructive/15 text-destructive border-destructive/30">
+                              En retard
+                            </Badge>
+                          )}
+                          {t.priorite !== "normale" && (
+                            <Badge variant="outline" className={`text-[10px] ${PRIORITE_TONE[t.priorite]}`}>
+                              {t.priorite === "critique" ? "Critique" : "Importante"}
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className={`text-[10px] ${STATUT_TONE[t.statut]}`}>
+                            {t.statut === "en_cours" ? "En cours" : "À faire"}
+                          </Badge>
+                        </div>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </Card>
+          )}
+        </section>
       )}
 
       {/* TVA sur marge — vision agence de voyages */}
