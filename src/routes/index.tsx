@@ -19,7 +19,8 @@ import {
   sortByUrgence,
   type DossierTask,
 } from "@/lib/dossier-tasks";
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landmark, Percent, Link2, LineChart, AlertTriangle, CheckSquare, Flame, Clock } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landmark, Percent, Link2, LineChart, AlertTriangle, CheckSquare, Flame, Clock, Mail, Plane } from "lucide-react";
+import { deadlineUrgence, type FournisseurOption, type FlightOption } from "@/lib/options";
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -82,6 +83,8 @@ function Dashboard() {
   const { data: contacts } = useTable<Contact>("contacts");
   const { user } = useAuth();
   const [tasks, setTasks] = useState<DossierTask[]>([]);
+  const [foOpts, setFoOpts] = useState<FournisseurOption[]>([]);
+  const [flOpts, setFlOpts] = useState<FlightOption[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -91,6 +94,18 @@ function Dashboard() {
       .select("*")
       .neq("statut", "termine")
       .then(({ data }: { data: DossierTask[] | null }) => setTasks(data ?? []));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .from("fournisseur_options")
+      .select("*")
+      .not("statut", "in", "(annulee,option_refusee,confirmee)")
+      .then(({ data }: { data: FournisseurOption[] | null }) => setFoOpts(data ?? []));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .from("flight_options")
+      .select("*")
+      .eq("statut", "en_option")
+      .then(({ data }: { data: FlightOption[] | null }) => setFlOpts(data ?? []));
   }, [user, dossiers.length]);
 
   const f = computeGlobalFinance(dossiers, paiements, factures);
