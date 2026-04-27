@@ -77,7 +77,7 @@ const CONF_BADGE: Record<Confiance, { label: string; className: string }> = {
 
 function ImportPdfPage() {
   const { user } = useAuth();
-  const canWrite = usePageWriteAccess("import");
+  const { canWrite } = usePageWriteAccess();
 
   const [type, setType] = useState<PdfImportType>("contrat_fournisseur");
   const [step, setStep] = useState<Step>("upload");
