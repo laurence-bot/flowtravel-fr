@@ -11,7 +11,8 @@ export type AuditEntity =
   | "export_comptable"
   | "fx_coverage"
   | "fx_reservation"
-  | "facture_echeance";
+  | "facture_echeance"
+  | "pdf_import";
 
 export type AuditAction =
   | "create"
