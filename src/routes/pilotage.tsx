@@ -7,17 +7,20 @@ import {
   type Dossier,
   type Paiement,
   type Facture,
+  type FactureEcheance,
   type Compte,
   type Transfert,
   type BankTransaction,
   type Contact,
 } from "@/hooks/use-data";
+import type { FxReservation } from "@/lib/fx";
 import { formatEUR, formatPercent, formatDate } from "@/lib/format";
 import {
   computeGlobalFinance,
   computeComptesSoldes,
   computeDossierFinance,
 } from "@/lib/finance";
+import { computeFxPnl } from "@/lib/fx-pnl";
 import { computeCashForecast } from "@/lib/cash-forecast";
 import { PageHeader } from "@/components/page-header";
 import {
@@ -35,6 +38,7 @@ import {
   Link2,
   Receipt,
   LineChart,
+  Shield,
 } from "lucide-react";
 
 export const Route = createFileRoute("/pilotage")({
@@ -87,8 +91,11 @@ function Pilotage() {
   const { data: transferts } = useTable<Transfert>("transferts");
   const { data: bankTx } = useTable<BankTransaction>("bank_transactions");
   const { data: contacts } = useTable<Contact>("contacts");
+  const { data: echeances } = useTable<FactureEcheance>("facture_echeances");
+  const { data: reservations } = useTable<FxReservation>("fx_coverage_reservations");
 
   const f = computeGlobalFinance(dossiers, paiements, factures);
+  const fxPnl = computeFxPnl({ echeances, paiements, reservations });
   const soldes = computeComptesSoldes(comptes, paiements, transferts);
   const tresorerieReelle = soldes.reduce((s, c) => s + c.solde, 0);
   const forecast = computeCashForecast(30, {
@@ -385,6 +392,46 @@ function Pilotage() {
           </div>
         </Card>
       </section>
+
+      {/* IMPACT FX */}
+      {fxPnl.entries.length > 0 && (
+        <section>
+          <h2 className="font-display text-xl mb-4 flex items-center gap-2">
+            <Shield className="h-5 w-5 text-muted-foreground" />
+            Impact change (FX)
+          </h2>
+          <Card className="p-5 border-border/60">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Exposition</div>
+                <div className="mt-1.5 text-2xl font-semibold tabular">{formatEUR(fxPnl.expositionEUR)}</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">{fxPnl.entries.length} mouvement(s)</div>
+              </div>
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Couvert</div>
+                <div className="mt-1.5 text-2xl font-semibold tabular text-[color:var(--margin)]">{formatEUR(fxPnl.couvert)}</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">via couvertures FX</div>
+              </div>
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Non couvert</div>
+                <div className={`mt-1.5 text-2xl font-semibold tabular ${fxPnl.nonCouvert > 0 ? "text-[color:var(--gold)]" : ""}`}>
+                  {formatEUR(fxPnl.nonCouvert)}
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">exposé au taux du jour</div>
+              </div>
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Écart net</div>
+                <div className={`mt-1.5 text-2xl font-semibold tabular ${fxPnl.net < 0 ? "text-destructive" : "text-[color:var(--margin)]"}`}>
+                  {fxPnl.net >= 0 ? "+" : ""}{formatEUR(fxPnl.net)}
+                </div>
+                <Link to="/couvertures-fx" className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mt-0.5">
+                  Détail FX <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+            </div>
+          </Card>
+        </section>
+      )}
 
       {/* ACTIONS PRIORITAIRES */}
       <section>
