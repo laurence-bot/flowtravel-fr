@@ -353,13 +353,14 @@ export const QA_STEPS: Array<{
   },
   {
     key: "dossier",
-    label: "10. Transformer en dossier + générer factures fournisseurs",
+    label: "10. Transformer en dossier + générer factures fournisseurs (+ réserver couverture)",
     description:
-      "Crée le dossier de voyage confirmé et une facture fournisseur par ligne de cotation.",
+      "Crée le dossier de voyage confirmé, génère les factures fournisseurs et réserve automatiquement 5 600 USD sur la couverture FX.",
     viewRoute: "/dossiers",
     run: async (userId, state) => {
       if (!state.cotation) throw new Error("Étape 4 requise.");
       if (!state.client) throw new Error("Étape 1 requise.");
+      if (!state.cov) throw new Error("Étape 3 (couverture FX) requise.");
       const { data, error } = await supabase
         .from("dossiers")
         .insert({
@@ -369,7 +370,7 @@ export const QA_STEPS: Array<{
           statut: "confirme",
           prix_vente: 12800,
           cout_total: +coutTotal.toFixed(2),
-          taux_tva_marge: 20,
+          taux_tva_marge: 0,
         } as any)
         .select()
         .single();
@@ -383,20 +384,39 @@ export const QA_STEPS: Array<{
         .from("cotation_lignes_fournisseurs")
         .select("*")
         .eq("cotation_id", state.cotation.id);
+      let reservedDevise = 0;
       for (const l of lignes ?? []) {
-        await supabase.from("factures_fournisseurs").insert({
-          user_id: userId,
-          dossier_id: data.id,
-          montant: l.montant_eur,
-          devise: l.devise,
-          montant_devise: l.montant_devise,
-          taux_change: l.taux_change_vers_eur,
-          montant_eur: l.montant_eur,
-          date_echeance: l.date_solde,
-          paye: false,
-        } as any);
+        const { data: facture, error: errF } = await supabase
+          .from("factures_fournisseurs")
+          .insert({
+            user_id: userId,
+            dossier_id: data.id,
+            montant: l.montant_eur,
+            devise: l.devise,
+            montant_devise: l.montant_devise,
+            taux_change: l.taux_change_vers_eur,
+            montant_eur: l.montant_eur,
+            coverage_id: l.couverture_id,
+            date_echeance: l.date_solde,
+            paye: false,
+          } as any)
+          .select()
+          .single();
+        if (errF || !facture) continue;
+        // Réserver la couverture FX si la ligne en utilise une
+        if (l.couverture_id && l.devise !== "EUR") {
+          await supabase.from("fx_coverage_reservations").insert({
+            user_id: userId,
+            coverage_id: l.couverture_id,
+            facture_fournisseur_id: facture.id,
+            montant_devise: l.montant_devise,
+            taux_change: l.taux_change_vers_eur,
+            statut: "active",
+          } as any);
+          reservedDevise += Number(l.montant_devise);
+        }
       }
-      return `Dossier + ${lignes?.length ?? 0} factures créées`;
+      return `Dossier + ${lignes?.length ?? 0} factures créées · ${reservedDevise.toFixed(0)} USD réservés sur la couverture`;
     },
   },
   {
