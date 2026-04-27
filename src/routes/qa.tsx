@@ -437,14 +437,14 @@ function QaPage() {
                       </Button>
                     )}
                     {s.status === "ok" && s.viewRoute && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => navigate({ to: s.viewRoute! as any })}
-                        className="shrink-0 h-7 text-xs"
+                      <a
+                        href={s.viewRoute}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 inline-flex items-center h-7 px-2 text-xs rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
                       >
                         Page <ArrowRight className="h-3 w-3 ml-1" />
-                      </Button>
+                      </a>
                     )}
                   </div>
 
@@ -453,15 +453,15 @@ function QaPage() {
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <h4 className="font-medium text-sm">{d.title}</h4>
                         {d.detailRoute && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs"
-                            onClick={() => navigate({ to: d.detailRoute! as any })}
+                          <a
+                            href={d.detailRoute}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center h-7 px-3 text-xs rounded-md border border-input bg-background hover:bg-accent"
                           >
                             Ouvrir la fiche complète
                             <ExternalLink className="h-3 w-3 ml-1.5" />
-                          </Button>
+                          </a>
                         )}
                       </div>
                       {d.fields.length > 0 && (
