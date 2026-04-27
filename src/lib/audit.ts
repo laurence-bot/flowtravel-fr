@@ -79,6 +79,7 @@ export const ENTITY_LABELS: Record<AuditEntity, string> = {
   dossier_task: "Tâche dossier",
   fournisseur_option: "Option fournisseur",
   flight_option: "Option vol",
+  agency_settings: "Paramètres agence",
 };
 
 export const ACTION_LABELS: Record<AuditAction, string> = {
