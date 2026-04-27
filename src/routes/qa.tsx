@@ -311,7 +311,10 @@ function QaPage() {
                 / {QA_STEPS.length}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="default" size="sm" onClick={loadExisting} disabled={!session || stepBusy}>
+                <Eye className="h-3.5 w-3.5 mr-1.5" /> Voir les détails déjà créés
+              </Button>
               <Button variant="outline" size="sm" onClick={resetSteps} disabled={stepBusy}>
                 <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Réinitialiser
               </Button>
