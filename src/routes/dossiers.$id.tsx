@@ -335,3 +335,111 @@ function PaiementBloc({
     </Card>
   );
 }
+
+const factureSchema = z.object({
+  fournisseur_id: z.string().uuid().optional().or(z.literal("")),
+  date_echeance: z.string().optional(),
+});
+
+function NewFactureDialog({
+  dossierId, userId, fournisseurs, onDone,
+}: {
+  dossierId: string;
+  userId?: string;
+  fournisseurs: Contact[];
+  onDone: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    fournisseur_id: "",
+    date_echeance: "",
+  });
+  const [fx, setFx] = useState<FxFieldValue>(emptyFxValue());
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userId) return;
+    const parsed = factureSchema.safeParse(form);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message);
+      return;
+    }
+    const fxDb = fxValueToDb(fx);
+    if (!(fxDb.montant_devise > 0)) {
+      toast.error("Montant invalide");
+      return;
+    }
+    setSaving(true);
+    const { data: inserted, error } = await supabase.from("factures_fournisseurs").insert({
+      user_id: userId,
+      dossier_id: dossierId,
+      fournisseur_id: parsed.data.fournisseur_id || null,
+      date_echeance: parsed.data.date_echeance || null,
+      paye: false,
+      ...fxDb,
+    }).select().single();
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    await logAudit({
+      userId,
+      entity: "facture_fournisseur",
+      entityId: inserted?.id,
+      action: "create",
+      description: `Facture fournisseur ${formatMoney(fxDb.montant_devise, fxDb.devise)}${fxDb.devise !== "EUR" ? ` (${formatEUR(fxDb.montant_eur)})` : ""}`,
+      newValue: inserted,
+    });
+    toast.success("Facture créée");
+    setOpen(false);
+    setForm({ fournisseur_id: "", date_echeance: "" });
+    setFx(emptyFxValue());
+    onDone();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          <Plus className="h-4 w-4 mr-1.5" />
+          Ajouter
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-display text-2xl">Nouvelle facture fournisseur</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Fournisseur</Label>
+            <Select value={form.fournisseur_id} onValueChange={(v) => setForm({ ...form, fournisseur_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Optionnel" /></SelectTrigger>
+              <SelectContent>
+                {fournisseurs.length === 0 && (
+                  <div className="px-2 py-2 text-sm text-muted-foreground">Aucun fournisseur.</div>
+                )}
+                {fournisseurs.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <FxFieldGroup value={fx} onChange={setFx} amountLabel="Montant facture" />
+
+          <div className="space-y-2">
+            <Label>Date d'échéance</Label>
+            <Input
+              type="date"
+              value={form.date_echeance}
+              onChange={(e) => setForm({ ...form, date_echeance: e.target.value })}
+            />
+          </div>
+
+          <Button type="submit" className="w-full" disabled={saving}>
+            {saving ? "Enregistrement…" : "Créer la facture"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
