@@ -144,6 +144,8 @@ function QaPage() {
   const resetSteps = () => {
     setSteps(makeInitialSteps());
     setCurrentIdx(0);
+    setDetails({});
+    setOpenDetails({});
     Object.keys(state).forEach((k) => delete (state as any)[k]);
   };
 
