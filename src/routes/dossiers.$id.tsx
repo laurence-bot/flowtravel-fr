@@ -42,7 +42,7 @@ function DossierDetail() {
   const [notFound, setNotFound] = useState(false);
   const { data: contacts } = useTable<Contact>("contacts");
   const { data: paiements } = useTable<Paiement>("paiements");
-  const { data: factures } = useTable<Facture>("factures_fournisseurs");
+  const { data: factures, refetch: refetchFactures } = useTable<Facture>("factures_fournisseurs");
 
   useEffect(() => {
     supabase.from("dossiers").select("*").eq("id", id).maybeSingle().then(({ data }) => {
