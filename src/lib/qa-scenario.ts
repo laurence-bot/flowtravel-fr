@@ -31,7 +31,10 @@ export type QaState = {
   dossier?: any;
 };
 
-const coutTotal = 4200 + 5600 / 1.08;
+// Taux FX QA : 1 USD = 0,9259 EUR (≈ 1 EUR = 1,08 USD).
+// La colonne `taux_change` stocke combien d'EUR vaut 1 unité de devise.
+const USD_TO_EUR = 0.9259;
+const coutTotal = 4200 + 5600 * USD_TO_EUR;
 
 /** Définition ordonnée des étapes — chacune est une fonction async indépendante. */
 export const QA_STEPS: Array<{
@@ -122,9 +125,9 @@ export const QA_STEPS: Array<{
   },
   {
     key: "fx",
-    label: "3. Acheter une couverture FX 10 000 USD @ 1.08",
+    label: "3. Acheter une couverture FX 10 000 USD @ 0,9259",
     description:
-      "Crée une couverture de change pour sécuriser un futur paiement fournisseur en USD.",
+      "Crée une couverture de change pour sécuriser un futur paiement fournisseur en USD (1 USD = 0,9259 EUR).",
     viewRoute: "/couvertures-fx",
     run: async (userId, state) => {
       const { data, error } = await supabase
@@ -134,7 +137,7 @@ export const QA_STEPS: Array<{
           devise: "USD",
           reference: "[QA] Couverture USD",
           montant_devise: 10000,
-          taux_change: 1.08,
+          taux_change: USD_TO_EUR,
           date_ouverture: plus(0),
           date_echeance: plus(90),
           statut: "ouverte",
@@ -143,7 +146,7 @@ export const QA_STEPS: Array<{
         .single();
       if (error) throw error;
       state.cov = data;
-      return "Couverture 10 000 USD @ 1.08 créée";
+      return `Couverture 10 000 USD @ ${USD_TO_EUR} créée (≈ ${(10000 * USD_TO_EUR).toFixed(0)} €)`;
     },
   },
   {
@@ -163,21 +166,22 @@ export const QA_STEPS: Array<{
           demande_id: state.demande.id,
           titre: "[QA] Tanzanie · Dupont · Safari + Zanzibar",
           destination: "Tanzanie",
+          pays_destination: "Tanzanie",
           date_depart: state.demande.date_depart_souhaitee,
           date_retour: state.demande.date_retour_souhaitee,
           nombre_pax: 4,
           nombre_chambres: 2,
           statut: "brouillon",
-          regime_tva: "marge_ue",
-          taux_tva_marge: 20,
+          regime_tva: "hors_ue",
+          taux_tva_marge: 0,
           prix_vente_ttc: 12800,
-          prix_vente_ht: 12800 / 1.2,
+          prix_vente_ht: 12800,
         } as any)
         .select()
         .single();
       if (error) throw error;
       state.cotation = data;
-      return `Cotation créée · marge nette ≈ ${(((12800 - coutTotal) / 1.2) * 0.8).toFixed(0)} €`;
+      return `Cotation créée (Tanzanie hors UE, 0 % TVA) · marge brute ≈ ${(12800 - coutTotal).toFixed(0)} €`;
     },
   },
   {
@@ -217,8 +221,8 @@ export const QA_STEPS: Array<{
         quantite: 1,
         devise: "USD",
         montant_devise: 5600,
-        taux_change_vers_eur: 1.08,
-        montant_eur: +(5600 / 1.08).toFixed(2),
+        taux_change_vers_eur: USD_TO_EUR,
+        montant_eur: +(5600 * USD_TO_EUR).toFixed(2),
         source_fx: "couverture",
         couverture_id: state.cov.id,
         mode_tarifaire: "global",
@@ -228,7 +232,7 @@ export const QA_STEPS: Array<{
         date_solde: plus(70),
       } as any);
       if (e2) throw e2;
-      return "EUR 4 200 + USD 5 600 (couverts à 1.08)";
+      return `EUR 4 200 + USD 5 600 (couverts à ${USD_TO_EUR})`;
     },
   },
   {
@@ -349,13 +353,14 @@ export const QA_STEPS: Array<{
   },
   {
     key: "dossier",
-    label: "10. Transformer en dossier + générer factures fournisseurs",
+    label: "10. Transformer en dossier + générer factures fournisseurs (+ réserver couverture)",
     description:
-      "Crée le dossier de voyage confirmé et une facture fournisseur par ligne de cotation.",
+      "Crée le dossier de voyage confirmé, génère les factures fournisseurs et réserve automatiquement 5 600 USD sur la couverture FX.",
     viewRoute: "/dossiers",
     run: async (userId, state) => {
       if (!state.cotation) throw new Error("Étape 4 requise.");
       if (!state.client) throw new Error("Étape 1 requise.");
+      if (!state.cov) throw new Error("Étape 3 (couverture FX) requise.");
       const { data, error } = await supabase
         .from("dossiers")
         .insert({
@@ -365,7 +370,7 @@ export const QA_STEPS: Array<{
           statut: "confirme",
           prix_vente: 12800,
           cout_total: +coutTotal.toFixed(2),
-          taux_tva_marge: 20,
+          taux_tva_marge: 0,
         } as any)
         .select()
         .single();
@@ -379,20 +384,39 @@ export const QA_STEPS: Array<{
         .from("cotation_lignes_fournisseurs")
         .select("*")
         .eq("cotation_id", state.cotation.id);
+      let reservedDevise = 0;
       for (const l of lignes ?? []) {
-        await supabase.from("factures_fournisseurs").insert({
-          user_id: userId,
-          dossier_id: data.id,
-          montant: l.montant_eur,
-          devise: l.devise,
-          montant_devise: l.montant_devise,
-          taux_change: l.taux_change_vers_eur,
-          montant_eur: l.montant_eur,
-          date_echeance: l.date_solde,
-          paye: false,
-        } as any);
+        const { data: facture, error: errF } = await supabase
+          .from("factures_fournisseurs")
+          .insert({
+            user_id: userId,
+            dossier_id: data.id,
+            montant: l.montant_eur,
+            devise: l.devise,
+            montant_devise: l.montant_devise,
+            taux_change: l.taux_change_vers_eur,
+            montant_eur: l.montant_eur,
+            coverage_id: l.couverture_id,
+            date_echeance: l.date_solde,
+            paye: false,
+          } as any)
+          .select()
+          .single();
+        if (errF || !facture) continue;
+        // Réserver la couverture FX si la ligne en utilise une
+        if (l.couverture_id && l.devise !== "EUR") {
+          await supabase.from("fx_coverage_reservations").insert({
+            user_id: userId,
+            coverage_id: l.couverture_id,
+            facture_fournisseur_id: facture.id,
+            montant_devise: l.montant_devise,
+            taux_change: l.taux_change_vers_eur,
+            statut: "active",
+          } as any);
+          reservedDevise += Number(l.montant_devise);
+        }
       }
-      return `Dossier + ${lignes?.length ?? 0} factures créées`;
+      return `Dossier + ${lignes?.length ?? 0} factures créées · ${reservedDevise.toFixed(0)} USD réservés sur la couverture`;
     },
   },
   {
