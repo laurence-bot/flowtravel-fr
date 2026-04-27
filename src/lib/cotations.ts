@@ -307,6 +307,7 @@ export async function transformerCotationEnDossier(
     if (ech.length > 0) {
       await supabase.from("facture_echeances").insert(
         ech.map((e, i) => ({
+          statut: "a_payer" as const,
           user_id: userId,
           facture_id: facture.id,
           ordre: i + 1,
