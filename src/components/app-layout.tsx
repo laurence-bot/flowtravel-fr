@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog, Shield } from "lucide-react";
+import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog, Shield, FileScan } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
@@ -18,6 +18,7 @@ const nav = [
   { to: "/couvertures-fx", label: "Couvertures FX", icon: Shield },
   { to: "/previsions", label: "Prévisions", icon: LineChart },
   { to: "/import-bancaire", label: "Import bancaire", icon: Upload },
+  { to: "/import-pdf", label: "Import PDF", icon: FileScan },
   { to: "/rapprochement", label: "Rapprochement", icon: Link2 },
   { to: "/export", label: "Export comptable", icon: FileDown },
   { to: "/audit", label: "Journal d'audit", icon: ScrollText },
