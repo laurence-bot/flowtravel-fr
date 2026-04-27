@@ -38,6 +38,7 @@ import {
   Link2,
   Receipt,
   LineChart,
+  Shield,
 } from "lucide-react";
 
 export const Route = createFileRoute("/pilotage")({
