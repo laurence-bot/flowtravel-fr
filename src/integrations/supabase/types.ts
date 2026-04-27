@@ -358,6 +358,7 @@ export type Database = {
           nombre_chambres: number
           nombre_pax: number
           notes: string | null
+          pays_destination: string | null
           prix_vente_ht: number
           prix_vente_ttc: number
           prix_vente_usd: number | null
@@ -385,6 +386,7 @@ export type Database = {
           nombre_chambres?: number
           nombre_pax?: number
           notes?: string | null
+          pays_destination?: string | null
           prix_vente_ht?: number
           prix_vente_ttc?: number
           prix_vente_usd?: number | null
@@ -412,6 +414,7 @@ export type Database = {
           nombre_chambres?: number
           nombre_pax?: number
           notes?: string | null
+          pays_destination?: string | null
           prix_vente_ht?: number
           prix_vente_ttc?: number
           prix_vente_usd?: number | null
@@ -443,6 +446,7 @@ export type Database = {
           nom_client: string
           nombre_pax: number
           notes: string | null
+          pays_destination: string | null
           raison_perte: string | null
           statut: Database["public"]["Enums"]["demande_statut"]
           telephone: string | null
@@ -464,6 +468,7 @@ export type Database = {
           nom_client: string
           nombre_pax?: number
           notes?: string | null
+          pays_destination?: string | null
           raison_perte?: string | null
           statut?: Database["public"]["Enums"]["demande_statut"]
           telephone?: string | null
@@ -485,6 +490,7 @@ export type Database = {
           nom_client?: string
           nombre_pax?: number
           notes?: string | null
+          pays_destination?: string | null
           raison_perte?: string | null
           statut?: Database["public"]["Enums"]["demande_statut"]
           telephone?: string | null
@@ -550,6 +556,7 @@ export type Database = {
           cout_total: number
           created_at: string
           id: string
+          pays_destination: string | null
           prix_vente: number
           statut: Database["public"]["Enums"]["dossier_statut"]
           taux_tva_marge: number
@@ -562,6 +569,7 @@ export type Database = {
           cout_total?: number
           created_at?: string
           id?: string
+          pays_destination?: string | null
           prix_vente?: number
           statut?: Database["public"]["Enums"]["dossier_statut"]
           taux_tva_marge?: number
@@ -574,6 +582,7 @@ export type Database = {
           cout_total?: number
           created_at?: string
           id?: string
+          pays_destination?: string | null
           prix_vente?: number
           statut?: Database["public"]["Enums"]["dossier_statut"]
           taux_tva_marge?: number
