@@ -91,6 +91,42 @@ export type Facture = {
   coverage_id: string | null;
 };
 
+export type EcheanceType = "acompte_1" | "acompte_2" | "acompte_3" | "solde" | "autre";
+export type EcheanceStatut = "a_payer" | "paye" | "en_retard" | "annule";
+
+export type FactureEcheance = {
+  id: string;
+  facture_id: string;
+  ordre: number;
+  type: EcheanceType;
+  date_echeance: string | null;
+  devise: import("@/lib/fx").DeviseCode;
+  montant_devise: number;
+  taux_change: number;
+  montant_eur: number;
+  fx_source: import("@/lib/fx").FxSource;
+  coverage_id: string | null;
+  paiement_id: string | null;
+  statut: EcheanceStatut;
+  notes: string | null;
+  created_at: string;
+};
+
+export const ECHEANCE_TYPE_LABELS: Record<EcheanceType, string> = {
+  acompte_1: "Acompte 1",
+  acompte_2: "Acompte 2",
+  acompte_3: "Acompte 3",
+  solde: "Solde",
+  autre: "Autre",
+};
+
+export const ECHEANCE_STATUT_LABELS: Record<EcheanceStatut, string> = {
+  a_payer: "À payer",
+  paye: "Payée",
+  en_retard: "En retard",
+  annule: "Annulée",
+};
+
 export type CompteBanque = "sg" | "cic" | "ebury" | "autre";
 export type CompteCategorie = "gestion" | "anticipation" | "clients" | "fournisseurs" | "plateforme";
 
