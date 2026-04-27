@@ -312,6 +312,56 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
     });
   };
 
+  // -------------------- Actions en lot --------------------
+  const confirmerToutesOptions = async () => {
+    if (!user) return;
+    const aConfirmer = fournisseurOptions.filter(
+      (o) => o.statut === "option_confirmee" || o.statut === "demandee",
+    );
+    if (aConfirmer.length === 0) return toast.info("Aucune option à confirmer.");
+    if (!confirm(`Marquer ${aConfirmer.length} option(s) comme confirmée(s) ? Vous pourrez ensuite générer les emails de confirmation.`)) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
+      .from("fournisseur_options")
+      .update({ statut: "confirmee" })
+      .in("id", aConfirmer.map((o) => o.id));
+    await logAudit({
+      userId: user.id,
+      entity: "cotation",
+      entityId: cot.id,
+      action: "validate",
+      description: `${aConfirmer.length} option(s) fournisseur confirmée(s) suite à acompte client`,
+    });
+    refetchFo();
+    toast.success(`${aConfirmer.length} option(s) confirmée(s).`);
+  };
+
+  const annulerToutesOptions = async () => {
+    if (!user) return;
+    const aAnnuler = fournisseurOptions.filter((o) => o.statut !== "annulee" && o.statut !== "option_refusee");
+    const flAnnuler = flightOptions.filter((f) => f.statut !== "annulee");
+    if (aAnnuler.length === 0 && flAnnuler.length === 0) return toast.info("Aucune option active à annuler.");
+    if (!confirm(`Annuler ${aAnnuler.length} option(s) fournisseur et ${flAnnuler.length} option(s) vol ?`)) return;
+    if (aAnnuler.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from("fournisseur_options").update({ statut: "annulee" }).in("id", aAnnuler.map((o) => o.id));
+    }
+    if (flAnnuler.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from("flight_options").update({ statut: "annulee" }).in("id", flAnnuler.map((f) => f.id));
+    }
+    await logAudit({
+      userId: user.id,
+      entity: "cotation",
+      entityId: cot.id,
+      action: "reject",
+      description: `${aAnnuler.length + flAnnuler.length} option(s) annulée(s)`,
+    });
+    refetchFo();
+    refetchFl();
+    toast.success("Options annulées. Générez les emails d'annulation pour informer les fournisseurs.");
+  };
+
   // -------------------- Flight options --------------------
   const [flAddOpen, setFlAddOpen] = useState(false);
   const [flEmailTo, setFlEmailTo] = useState("");
