@@ -10,7 +10,7 @@ import {
   type Paiement,
   type Facture,
 } from "@/hooks/use-data";
-import { useTable as useTableGeneric } from "@/hooks/use-data";
+import { useTable } from "@/hooks/use-data";
 import {
   computeClientCotationStats,
   COTATION_STATUT_LABELS,
