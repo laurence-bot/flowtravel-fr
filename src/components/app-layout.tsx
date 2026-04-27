@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog, Shield, FileScan } from "lucide-react";
+import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog, Shield, FileScan, FileText } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
