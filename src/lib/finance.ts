@@ -143,14 +143,14 @@ export function computeGlobalFinance(
 
   const encaisse = paiements
     .filter((p) => p.type === "paiement_client")
-    .reduce((s, p) => s + num(p.montant), 0);
+    .reduce((s, p) => s + paiementEUR(p), 0);
   const decaisse = paiements
     .filter((p) => p.type === "paiement_fournisseur")
-    .reduce((s, p) => s + num(p.montant), 0);
+    .reduce((s, p) => s + paiementEUR(p), 0);
 
   const facturesNonPayees = factures.filter((f) => !f.paye);
   const resteAPayerFournisseurs = facturesNonPayees.reduce(
-    (s, f) => s + num(f.montant),
+    (s, f) => s + factureEUR(f),
     0,
   );
 
