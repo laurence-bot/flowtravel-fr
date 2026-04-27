@@ -168,7 +168,8 @@ function ImportPdfPage() {
       }
 
       // 2. journal d'import
-      const { data: importRow, error: importErr } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: importRow, error: importErr } = await (supabase as any)
         .from("pdf_imports")
         .insert({
           user_id: user.id,
