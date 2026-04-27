@@ -65,6 +65,7 @@ export const ENTITY_LABELS: Record<AuditEntity, string> = {
   fx_coverage: "Couverture FX",
   fx_reservation: "Réservation FX",
   facture_echeance: "Échéance facture",
+  pdf_import: "Import PDF",
 };
 
 export const ACTION_LABELS: Record<AuditAction, string> = {
