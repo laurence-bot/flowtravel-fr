@@ -27,6 +27,8 @@ import {
   cleanupQaData,
   QA_STEPS,
   getStepDetails,
+  loadQaStateFromDb,
+  detectCompletedSteps,
   type QaStep,
   type QaState,
   type QaDetail,
