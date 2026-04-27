@@ -59,7 +59,7 @@ export async function runQaScenario(userId: string, onProgress: QaProgress): Pro
         user_id: userId,
         nom: "[QA] Compte EUR",
         banque: "cic",
-        categorie: "courant",
+        categorie: "gestion",
         devise: "EUR",
         solde_initial: 0,
       } as any)
@@ -73,7 +73,7 @@ export async function runQaScenario(userId: string, onProgress: QaProgress): Pro
         user_id: userId,
         nom: "[QA] Compte USD",
         banque: "ebury",
-        categorie: "courant",
+        categorie: "gestion",
         devise: "USD",
         solde_initial: 0,
       } as any)
