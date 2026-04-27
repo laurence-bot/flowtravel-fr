@@ -163,6 +163,9 @@ function CotationDetailPage() {
   const fin = computeCotationFinance(cot, lignes);
   const client = contacts.find((c) => c.id === cot.client_id);
   const fournisseurs = contacts.filter((c) => c.type === "fournisseur");
+  const acompteClientRecu = !!cot.dossier_id && paiements.some(
+    (p) => p.dossier_id === cot.dossier_id && p.type === "paiement_client",
+  );
   const tone = COTATION_STATUT_TONES[cot.statut];
   const isLocked =
     cot.statut === "transformee_en_dossier" ||
@@ -752,6 +755,7 @@ function CotationDetailPage() {
         client={client}
         canWrite={canWrite && !isLocked}
         onChange={refetchCot}
+        acompteClientRecu={acompteClientRecu}
       />
 
       {/* Dialog ajout ligne */}
