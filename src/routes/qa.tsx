@@ -68,6 +68,8 @@ function QaPage() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [state] = useState<QaState>({});
   const [stepBusy, setStepBusy] = useState(false);
+  const [details, setDetails] = useState<Record<string, QaDetail | null>>({});
+  const [openDetails, setOpenDetails] = useState<Record<string, boolean>>({});
 
   // Mode automatique
   const [autoSteps, setAutoSteps] = useState<QaStep[]>([]);
