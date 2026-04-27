@@ -16,7 +16,7 @@ export function Logo({
     <div className={cn("flex items-center gap-3", className)}>
       <img
         src={logoSrc}
-        alt="Cashflow Travel"
+        alt="FlowTravel"
         width={36}
         height={36}
         className="h-9 w-9 object-contain"
@@ -25,10 +25,10 @@ export function Logo({
       {showText && (
         <div className="leading-tight">
           <div className={cn("font-display text-lg tracking-wide", textColor)}>
-            Cashflow
+            FlowTravel
           </div>
           <div className={cn("text-[10px] uppercase tracking-[0.25em]", accentColor)}>
-            Travel
+            Travel Operating System
           </div>
         </div>
       )}

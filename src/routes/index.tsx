@@ -390,7 +390,7 @@ function Dashboard() {
 
       {dossiers.length === 0 && (
         <Card className="p-8 border-dashed border-border bg-secondary/30 text-center">
-          <h3 className="font-display text-xl">Bienvenue sur Cashflow Travel</h3>
+          <h3 className="font-display text-xl">Bienvenue sur FlowTravel</h3>
           <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
             Commencez par créer un client, puis enregistrez votre premier dossier de voyage.
           </p>
