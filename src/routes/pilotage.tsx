@@ -44,7 +44,7 @@ import {
 export const Route = createFileRoute("/pilotage")({
   head: () => ({
     meta: [
-      { title: "Pilotage dirigeant — Cashflow Travel" },
+      { title: "Pilotage dirigeant — FlowTravel" },
       {
         name: "description",
         content:

@@ -50,7 +50,7 @@ function AuthPage() {
       toast.success("Compte créé. Vous pouvez vous connecter.");
       setTab("signin");
     } else {
-      toast.success("Bienvenue sur Cashflow Travel");
+      toast.success("Bienvenue sur FlowTravel");
       navigate({ to: "/" });
     }
   };
@@ -60,7 +60,8 @@ function AuthPage() {
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center text-center mb-8">
           <Logo variant="dark" showText={false} />
-          <h1 className="font-display text-3xl mt-4 text-foreground">Cashflow Travel</h1>
+          <h1 className="font-display text-3xl mt-4 text-foreground">FlowTravel</h1>
+          <p className="text-sm text-muted-foreground mt-1">Travel Operating System</p>
           <p className="text-xs uppercase tracking-[0.25em] text-[color:var(--gold)] mt-2">
             Maison de gestion financière
           </p>
