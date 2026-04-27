@@ -402,10 +402,13 @@ export const QA_STEPS: Array<{
           } as any)
           .select()
           .single();
-        if (errF || !facture) continue;
+        if (errF || !facture) {
+          console.error("[QA] Création facture fournisseur échouée:", errF);
+          continue;
+        }
         // Réserver la couverture FX si la ligne en utilise une
         if (l.couverture_id && l.devise !== "EUR") {
-          await supabase.from("fx_coverage_reservations").insert({
+          const { error: errR } = await supabase.from("fx_coverage_reservations").insert({
             user_id: userId,
             coverage_id: l.couverture_id,
             facture_fournisseur_id: facture.id,
@@ -413,6 +416,10 @@ export const QA_STEPS: Array<{
             taux_change: l.taux_change_vers_eur,
             statut: "active",
           } as any);
+          if (errR) {
+            console.error("[QA] Réservation FX échouée:", errR);
+            throw new Error(`Réservation FX échouée: ${errR.message}`);
+          }
           reservedDevise += Number(l.montant_devise);
         }
       }
