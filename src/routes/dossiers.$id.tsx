@@ -1,17 +1,28 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { z } from "zod";
 import { RequireAuth } from "@/components/require-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useTable, type Contact, type Dossier, type Paiement, type Facture } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { formatEUR, formatPercent, formatDate } from "@/lib/format";
-import { computeDossierFinance } from "@/lib/finance";
+import { formatMoney } from "@/lib/fx";
+import { computeDossierFinance, paiementEUR, factureEUR } from "@/lib/finance";
+import { FxFieldGroup, fxValueToDb, emptyFxValue, type FxFieldValue } from "@/components/fx-field-group";
 import { StatutBadge } from "@/components/statut-badge";
-import { ArrowLeft, Trash2, User, Receipt, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { ArrowLeft, Trash2, User, Receipt, ArrowDownLeft, ArrowUpRight, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 
