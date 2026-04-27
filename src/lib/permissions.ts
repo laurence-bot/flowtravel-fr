@@ -17,19 +17,19 @@ export const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
 /** Routes visibles par rôle. Si non listée → accès refusé. */
 const ROUTE_ACCESS: Record<AppRole, string[]> = {
   administrateur: [
-    "/", "/pilotage", "/contacts", "/dossiers", "/paiements",
+    "/", "/pilotage", "/contacts", "/dossiers", "/factures", "/paiements",
     "/comptes", "/couvertures-fx", "/previsions", "/import-bancaire", "/rapprochement",
     "/export", "/audit", "/utilisateurs",
   ],
   gestion: [
-    "/", "/pilotage", "/contacts", "/dossiers", "/paiements",
+    "/", "/pilotage", "/contacts", "/dossiers", "/factures", "/paiements",
     "/comptes", "/couvertures-fx", "/previsions", "/import-bancaire", "/rapprochement", "/export",
   ],
   lecture_seule: [
-    "/", "/pilotage", "/contacts", "/dossiers", "/paiements",
+    "/", "/pilotage", "/contacts", "/dossiers", "/factures", "/paiements",
     "/comptes", "/couvertures-fx", "/previsions", "/rapprochement", "/export", "/audit",
   ],
-  comptable: ["/", "/paiements", "/dossiers", "/export", "/audit"],
+  comptable: ["/", "/paiements", "/dossiers", "/factures", "/export", "/audit"],
 };
 
 export function canAccessRoute(role: AppRole | null, path: string): boolean {
