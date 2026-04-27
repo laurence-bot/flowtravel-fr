@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { RequireAuth } from "@/components/require-auth";
@@ -21,12 +21,18 @@ import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 
 export const Route = createFileRoute("/dossiers")({
-  component: () => (
+  component: DossiersRoute,
+});
+
+function DossiersRoute() {
+  const location = useLocation();
+  if (location.pathname !== "/dossiers") return <Outlet />;
+  return (
     <RequireAuth>
       <DossiersPage />
     </RequireAuth>
-  ),
-});
+  );
+}
 
 const dossierSchema = z.object({
   titre: z.string().trim().min(1, "Le titre est requis").max(200),
