@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import { RequireAuth } from "@/components/require-auth";
@@ -34,12 +34,18 @@ import { Inbox, Plus, ChevronRight, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/demandes")({
-  component: () => (
+  component: DemandesRoute,
+});
+
+function DemandesRoute() {
+  const location = useLocation();
+  if (location.pathname !== "/demandes") return <Outlet />;
+  return (
     <RequireAuth>
       <DemandesPage />
     </RequireAuth>
-  ),
-});
+  );
+}
 
 const newSchema = z.object({
   nom_client: z.string().trim().min(1, "Nom requis").max(150),
