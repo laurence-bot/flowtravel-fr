@@ -59,6 +59,8 @@ function CouverturesFXPage() {
   const { user } = useAuth();
   const { data: coverages, loading, refetch } = useTable<FxCoverage>("fx_coverages");
   const { data: reservations } = useTable<FxReservation>("fx_coverage_reservations");
+  const { data: echeances } = useTable<FactureEcheance>("facture_echeances");
+  const { data: paiements } = useTable<Paiement>("paiements");
 
   const totalEUR = coverages.reduce(
     (s, c) => s + Number(c.montant_devise) * Number(c.taux_change), 0,
@@ -66,6 +68,7 @@ function CouverturesFXPage() {
   const ouvertes = coverages.filter((c) => c.statut === "ouverte").length;
   const reservees = coverages.filter((c) => c.statut === "reservee").length;
   const anomalies = coverages.filter((c) => c.statut === "anomalie" || c.statut === "expiree").length;
+  const fxPnl = computeFxPnl({ echeances, paiements, reservations });
 
   return (
     <div className="space-y-8">
