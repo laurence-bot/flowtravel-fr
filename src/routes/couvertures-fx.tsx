@@ -224,8 +224,9 @@ function NewCoverageDialog({ userId, onDone }: { userId?: string; onDone: () => 
       return;
     }
     await logAudit({
-      entity_type: "fx_coverage",
-      entity_id: data?.id,
+      userId,
+      entity: "fx_coverage",
+      entityId: data?.id,
       action: "create",
       description: `Couverture FX ${parsed.data.devise} ${parsed.data.montant_devise} @ ${parsed.data.taux_change}`,
     });
