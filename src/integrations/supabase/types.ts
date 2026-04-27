@@ -53,44 +53,62 @@ export type Database = {
       bank_transactions: {
         Row: {
           compte_id: string
+          contrepartie: string | null
           created_at: string
           date: string
+          devise: Database["public"]["Enums"]["devise_code"]
           hash_unique: string
           id: string
+          libelle_fx: string | null
           libelle_normalise: string
           libelle_original: string
           montant: number
+          montant_devise: number | null
+          reference_ebury: string | null
           sens: Database["public"]["Enums"]["bank_sens"]
           source_banque: Database["public"]["Enums"]["bank_source"]
           statut: Database["public"]["Enums"]["bank_statut"]
+          taux_change: number | null
           user_id: string
         }
         Insert: {
           compte_id: string
+          contrepartie?: string | null
           created_at?: string
           date: string
+          devise?: Database["public"]["Enums"]["devise_code"]
           hash_unique: string
           id?: string
+          libelle_fx?: string | null
           libelle_normalise: string
           libelle_original: string
           montant: number
+          montant_devise?: number | null
+          reference_ebury?: string | null
           sens: Database["public"]["Enums"]["bank_sens"]
           source_banque: Database["public"]["Enums"]["bank_source"]
           statut?: Database["public"]["Enums"]["bank_statut"]
+          taux_change?: number | null
           user_id: string
         }
         Update: {
           compte_id?: string
+          contrepartie?: string | null
           created_at?: string
           date?: string
+          devise?: Database["public"]["Enums"]["devise_code"]
           hash_unique?: string
           id?: string
+          libelle_fx?: string | null
           libelle_normalise?: string
           libelle_original?: string
           montant?: number
+          montant_devise?: number | null
+          reference_ebury?: string | null
           sens?: Database["public"]["Enums"]["bank_sens"]
           source_banque?: Database["public"]["Enums"]["bank_source"]
           statut?: Database["public"]["Enums"]["bank_statut"]
+          taux_change?: number | null
           user_id?: string
         }
         Relationships: []
@@ -101,6 +119,7 @@ export type Database = {
           banque: Database["public"]["Enums"]["compte_banque"]
           categorie: Database["public"]["Enums"]["compte_categorie"]
           created_at: string
+          devise: Database["public"]["Enums"]["devise_code"]
           id: string
           nom: string
           solde_initial: number
@@ -112,6 +131,7 @@ export type Database = {
           banque: Database["public"]["Enums"]["compte_banque"]
           categorie: Database["public"]["Enums"]["compte_categorie"]
           created_at?: string
+          devise?: Database["public"]["Enums"]["devise_code"]
           id?: string
           nom: string
           solde_initial?: number
@@ -123,6 +143,7 @@ export type Database = {
           banque?: Database["public"]["Enums"]["compte_banque"]
           categorie?: Database["public"]["Enums"]["compte_categorie"]
           created_at?: string
+          devise?: Database["public"]["Enums"]["devise_code"]
           id?: string
           nom?: string
           solde_initial?: number
@@ -211,41 +232,148 @@ export type Database = {
           },
         ]
       }
-      factures_fournisseurs: {
+      facture_echeances: {
         Row: {
+          coverage_id: string | null
           created_at: string
           date_echeance: string | null
-          dossier_id: string | null
-          fournisseur_id: string | null
+          devise: Database["public"]["Enums"]["devise_code"]
+          facture_id: string
+          fx_source: Database["public"]["Enums"]["fx_source"]
           id: string
-          montant: number
-          paye: boolean
+          montant_devise: number
+          montant_eur: number
+          notes: string | null
+          ordre: number
+          paiement_id: string | null
+          statut: Database["public"]["Enums"]["echeance_statut"]
+          taux_change: number
+          type: Database["public"]["Enums"]["echeance_type"]
           updated_at: string
           user_id: string
         }
         Insert: {
+          coverage_id?: string | null
           created_at?: string
           date_echeance?: string | null
-          dossier_id?: string | null
-          fournisseur_id?: string | null
+          devise?: Database["public"]["Enums"]["devise_code"]
+          facture_id: string
+          fx_source?: Database["public"]["Enums"]["fx_source"]
           id?: string
-          montant: number
-          paye?: boolean
+          montant_devise: number
+          montant_eur?: number
+          notes?: string | null
+          ordre?: number
+          paiement_id?: string | null
+          statut?: Database["public"]["Enums"]["echeance_statut"]
+          taux_change?: number
+          type?: Database["public"]["Enums"]["echeance_type"]
           updated_at?: string
           user_id: string
         }
         Update: {
+          coverage_id?: string | null
           created_at?: string
           date_echeance?: string | null
-          dossier_id?: string | null
-          fournisseur_id?: string | null
+          devise?: Database["public"]["Enums"]["devise_code"]
+          facture_id?: string
+          fx_source?: Database["public"]["Enums"]["fx_source"]
           id?: string
-          montant?: number
-          paye?: boolean
+          montant_devise?: number
+          montant_eur?: number
+          notes?: string | null
+          ordre?: number
+          paiement_id?: string | null
+          statut?: Database["public"]["Enums"]["echeance_statut"]
+          taux_change?: number
+          type?: Database["public"]["Enums"]["echeance_type"]
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "facture_echeances_coverage_id_fkey"
+            columns: ["coverage_id"]
+            isOneToOne: false
+            referencedRelation: "fx_coverages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facture_echeances_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "factures_fournisseurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facture_echeances_paiement_id_fkey"
+            columns: ["paiement_id"]
+            isOneToOne: false
+            referencedRelation: "paiements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      factures_fournisseurs: {
+        Row: {
+          coverage_id: string | null
+          created_at: string
+          date_echeance: string | null
+          devise: Database["public"]["Enums"]["devise_code"]
+          dossier_id: string | null
+          fournisseur_id: string | null
+          fx_source: Database["public"]["Enums"]["fx_source"]
+          id: string
+          montant: number
+          montant_devise: number | null
+          montant_eur: number | null
+          paye: boolean
+          taux_change: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          coverage_id?: string | null
+          created_at?: string
+          date_echeance?: string | null
+          devise?: Database["public"]["Enums"]["devise_code"]
+          dossier_id?: string | null
+          fournisseur_id?: string | null
+          fx_source?: Database["public"]["Enums"]["fx_source"]
+          id?: string
+          montant: number
+          montant_devise?: number | null
+          montant_eur?: number | null
+          paye?: boolean
+          taux_change?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          coverage_id?: string | null
+          created_at?: string
+          date_echeance?: string | null
+          devise?: Database["public"]["Enums"]["devise_code"]
+          dossier_id?: string | null
+          fournisseur_id?: string | null
+          fx_source?: Database["public"]["Enums"]["fx_source"]
+          id?: string
+          montant?: number
+          montant_devise?: number | null
+          montant_eur?: number | null
+          paye?: boolean
+          taux_change?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factures_coverage_fkey"
+            columns: ["coverage_id"]
+            isOneToOne: false
+            referencedRelation: "fx_coverages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "factures_fournisseurs_dossier_id_fkey"
             columns: ["dossier_id"]
@@ -262,53 +390,191 @@ export type Database = {
           },
         ]
       }
+      fx_coverage_reservations: {
+        Row: {
+          coverage_id: string
+          created_at: string
+          echeance_id: string | null
+          facture_fournisseur_id: string | null
+          id: string
+          montant_devise: number
+          paiement_id: string | null
+          statut: Database["public"]["Enums"]["fx_reservation_statut"]
+          taux_change: number
+          user_id: string
+        }
+        Insert: {
+          coverage_id: string
+          created_at?: string
+          echeance_id?: string | null
+          facture_fournisseur_id?: string | null
+          id?: string
+          montant_devise: number
+          paiement_id?: string | null
+          statut?: Database["public"]["Enums"]["fx_reservation_statut"]
+          taux_change: number
+          user_id: string
+        }
+        Update: {
+          coverage_id?: string
+          created_at?: string
+          echeance_id?: string | null
+          facture_fournisseur_id?: string | null
+          id?: string
+          montant_devise?: number
+          paiement_id?: string | null
+          statut?: Database["public"]["Enums"]["fx_reservation_statut"]
+          taux_change?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fx_coverage_reservations_coverage_id_fkey"
+            columns: ["coverage_id"]
+            isOneToOne: false
+            referencedRelation: "fx_coverages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fx_coverage_reservations_facture_fournisseur_id_fkey"
+            columns: ["facture_fournisseur_id"]
+            isOneToOne: false
+            referencedRelation: "factures_fournisseurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fx_coverage_reservations_paiement_id_fkey"
+            columns: ["paiement_id"]
+            isOneToOne: false
+            referencedRelation: "paiements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fx_res_echeance_fkey"
+            columns: ["echeance_id"]
+            isOneToOne: false
+            referencedRelation: "facture_echeances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fx_coverages: {
+        Row: {
+          created_at: string
+          date_echeance: string
+          date_ouverture: string
+          devise: Database["public"]["Enums"]["devise_code"]
+          id: string
+          montant_devise: number
+          notes: string | null
+          reference: string | null
+          statut: Database["public"]["Enums"]["fx_coverage_statut"]
+          taux_change: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date_echeance: string
+          date_ouverture?: string
+          devise: Database["public"]["Enums"]["devise_code"]
+          id?: string
+          montant_devise: number
+          notes?: string | null
+          reference?: string | null
+          statut?: Database["public"]["Enums"]["fx_coverage_statut"]
+          taux_change: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date_echeance?: string
+          date_ouverture?: string
+          devise?: Database["public"]["Enums"]["devise_code"]
+          id?: string
+          montant_devise?: number
+          notes?: string | null
+          reference?: string | null
+          statut?: Database["public"]["Enums"]["fx_coverage_statut"]
+          taux_change?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       paiements: {
         Row: {
           bank_transaction_id: string | null
           compte_id: string | null
+          coverage_id: string | null
           created_at: string
           date: string
+          devise: Database["public"]["Enums"]["devise_code"]
           dossier_id: string | null
+          fx_source: Database["public"]["Enums"]["fx_source"]
           id: string
           methode: Database["public"]["Enums"]["paiement_methode"]
           montant: number
+          montant_devise: number | null
+          montant_eur: number | null
           personne_id: string | null
           source: Database["public"]["Enums"]["paiement_source"]
           statut_rapprochement: Database["public"]["Enums"]["paiement_statut_rapprochement"]
+          taux_change: number
           type: Database["public"]["Enums"]["paiement_type"]
           user_id: string
         }
         Insert: {
           bank_transaction_id?: string | null
           compte_id?: string | null
+          coverage_id?: string | null
           created_at?: string
           date?: string
+          devise?: Database["public"]["Enums"]["devise_code"]
           dossier_id?: string | null
+          fx_source?: Database["public"]["Enums"]["fx_source"]
           id?: string
           methode?: Database["public"]["Enums"]["paiement_methode"]
           montant: number
+          montant_devise?: number | null
+          montant_eur?: number | null
           personne_id?: string | null
           source?: Database["public"]["Enums"]["paiement_source"]
           statut_rapprochement?: Database["public"]["Enums"]["paiement_statut_rapprochement"]
+          taux_change?: number
           type: Database["public"]["Enums"]["paiement_type"]
           user_id: string
         }
         Update: {
           bank_transaction_id?: string | null
           compte_id?: string | null
+          coverage_id?: string | null
           created_at?: string
           date?: string
+          devise?: Database["public"]["Enums"]["devise_code"]
           dossier_id?: string | null
+          fx_source?: Database["public"]["Enums"]["fx_source"]
           id?: string
           methode?: Database["public"]["Enums"]["paiement_methode"]
           montant?: number
+          montant_devise?: number | null
+          montant_eur?: number | null
           personne_id?: string | null
           source?: Database["public"]["Enums"]["paiement_source"]
           statut_rapprochement?: Database["public"]["Enums"]["paiement_statut_rapprochement"]
+          taux_change?: number
           type?: Database["public"]["Enums"]["paiement_type"]
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "paiements_coverage_fkey"
+            columns: ["coverage_id"]
+            isOneToOne: false
+            referencedRelation: "fx_coverages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "paiements_dossier_id_fkey"
             columns: ["dossier_id"]
@@ -481,6 +747,9 @@ export type Database = {
         | "bank_transaction"
         | "rapprochement"
         | "export_comptable"
+        | "fx_coverage"
+        | "fx_reservation"
+        | "facture_echeance"
       bank_sens: "credit" | "debit"
       bank_source: "sg" | "cic" | "ebury"
       bank_statut: "nouveau" | "rapproche" | "ignore"
@@ -492,7 +761,29 @@ export type Database = {
         | "fournisseurs"
         | "plateforme"
       contact_type: "client" | "fournisseur"
+      devise_code:
+        | "EUR"
+        | "USD"
+        | "GBP"
+        | "ZAR"
+        | "CHF"
+        | "CAD"
+        | "AUD"
+        | "JPY"
+        | "AED"
+        | "MAD"
+        | "TND"
       dossier_statut: "brouillon" | "confirme" | "cloture"
+      echeance_statut: "a_payer" | "paye" | "en_retard" | "annule"
+      echeance_type: "acompte_1" | "acompte_2" | "acompte_3" | "solde" | "autre"
+      fx_coverage_statut:
+        | "ouverte"
+        | "reservee"
+        | "utilisee"
+        | "expiree"
+        | "anomalie"
+      fx_reservation_statut: "active" | "utilisee" | "annulee"
+      fx_source: "taux_du_jour" | "couverture" | "manuel"
       paiement_methode: "virement" | "carte" | "especes"
       paiement_source: "banque" | "manuel"
       paiement_statut_rapprochement: "non_rapproche" | "rapproche"
@@ -644,6 +935,9 @@ export const Constants = {
         "bank_transaction",
         "rapprochement",
         "export_comptable",
+        "fx_coverage",
+        "fx_reservation",
+        "facture_echeance",
       ],
       bank_sens: ["credit", "debit"],
       bank_source: ["sg", "cic", "ebury"],
@@ -657,7 +951,31 @@ export const Constants = {
         "plateforme",
       ],
       contact_type: ["client", "fournisseur"],
+      devise_code: [
+        "EUR",
+        "USD",
+        "GBP",
+        "ZAR",
+        "CHF",
+        "CAD",
+        "AUD",
+        "JPY",
+        "AED",
+        "MAD",
+        "TND",
+      ],
       dossier_statut: ["brouillon", "confirme", "cloture"],
+      echeance_statut: ["a_payer", "paye", "en_retard", "annule"],
+      echeance_type: ["acompte_1", "acompte_2", "acompte_3", "solde", "autre"],
+      fx_coverage_statut: [
+        "ouverte",
+        "reservee",
+        "utilisee",
+        "expiree",
+        "anomalie",
+      ],
+      fx_reservation_statut: ["active", "utilisee", "annulee"],
+      fx_source: ["taux_du_jour", "couverture", "manuel"],
       paiement_methode: ["virement", "carte", "especes"],
       paiement_source: ["banque", "manuel"],
       paiement_statut_rapprochement: ["non_rapproche", "rapproche"],
