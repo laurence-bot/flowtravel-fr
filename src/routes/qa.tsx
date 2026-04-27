@@ -115,6 +115,14 @@ function QaPage() {
         copy[currentIdx] = { ...copy[currentIdx], status: "ok", detail };
         return copy;
       });
+      // Charge les détails de l'étape et les ouvre par défaut
+      try {
+        const d = await getStepDetails(def.key, state);
+        setDetails((prev) => ({ ...prev, [def.key]: d }));
+        setOpenDetails((prev) => ({ ...prev, [def.key]: true }));
+      } catch {
+        /* ignore */
+      }
       toast.success(def.label.replace(/^\d+\.\s*/, ""), { description: detail });
       setCurrentIdx((i) => Math.min(i + 1, QA_STEPS.length));
     } catch (e) {
