@@ -27,6 +27,7 @@ import { Route as AuditRouteImport } from './routes/audit'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FacturesIdRouteImport } from './routes/factures.$id'
 import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
+import { Route as CotationsIdRouteImport } from './routes/cotations.$id'
 import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
 
 const UtilisateursRoute = UtilisateursRouteImport.update({
@@ -119,6 +120,11 @@ const DossiersIdRoute = DossiersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => DossiersRoute,
 } as any)
+const CotationsIdRoute = CotationsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CotationsRoute,
+} as any)
 const ContactsIdRoute = ContactsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -131,7 +137,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
-  '/cotations': typeof CotationsRoute
+  '/cotations': typeof CotationsRouteWithChildren
   '/couvertures-fx': typeof CouverturesFxRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/rapprochement': typeof RapprochementRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
+  '/cotations/$id': typeof CotationsIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
 }
@@ -152,7 +159,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
-  '/cotations': typeof CotationsRoute
+  '/cotations': typeof CotationsRouteWithChildren
   '/couvertures-fx': typeof CouverturesFxRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByTo {
   '/rapprochement': typeof RapprochementRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
+  '/cotations/$id': typeof CotationsIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
 }
@@ -174,7 +182,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
-  '/cotations': typeof CotationsRoute
+  '/cotations': typeof CotationsRouteWithChildren
   '/couvertures-fx': typeof CouverturesFxRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   '/rapprochement': typeof RapprochementRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
+  '/cotations/$id': typeof CotationsIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
 }
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
     | '/rapprochement'
     | '/utilisateurs'
     | '/contacts/$id'
+    | '/cotations/$id'
     | '/dossiers/$id'
     | '/factures/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/rapprochement'
     | '/utilisateurs'
     | '/contacts/$id'
+    | '/cotations/$id'
     | '/dossiers/$id'
     | '/factures/$id'
   id:
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/rapprochement'
     | '/utilisateurs'
     | '/contacts/$id'
+    | '/cotations/$id'
     | '/dossiers/$id'
     | '/factures/$id'
   fileRoutesById: FileRoutesById
@@ -261,7 +273,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ComptesRoute: typeof ComptesRoute
   ContactsRoute: typeof ContactsRouteWithChildren
-  CotationsRoute: typeof CotationsRoute
+  CotationsRoute: typeof CotationsRouteWithChildren
   CouverturesFxRoute: typeof CouverturesFxRoute
   DossiersRoute: typeof DossiersRouteWithChildren
   ExportRoute: typeof ExportRoute
@@ -403,6 +415,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DossiersIdRouteImport
       parentRoute: typeof DossiersRoute
     }
+    '/cotations/$id': {
+      id: '/cotations/$id'
+      path: '/$id'
+      fullPath: '/cotations/$id'
+      preLoaderRoute: typeof CotationsIdRouteImport
+      parentRoute: typeof CotationsRoute
+    }
     '/contacts/$id': {
       id: '/contacts/$id'
       path: '/$id'
@@ -425,6 +444,18 @@ const ContactsRouteWithChildren = ContactsRoute._addFileChildren(
   ContactsRouteChildren,
 )
 
+interface CotationsRouteChildren {
+  CotationsIdRoute: typeof CotationsIdRoute
+}
+
+const CotationsRouteChildren: CotationsRouteChildren = {
+  CotationsIdRoute: CotationsIdRoute,
+}
+
+const CotationsRouteWithChildren = CotationsRoute._addFileChildren(
+  CotationsRouteChildren,
+)
+
 interface DossiersRouteChildren {
   DossiersIdRoute: typeof DossiersIdRoute
 }
@@ -443,7 +474,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ComptesRoute: ComptesRoute,
   ContactsRoute: ContactsRouteWithChildren,
-  CotationsRoute: CotationsRoute,
+  CotationsRoute: CotationsRouteWithChildren,
   CouverturesFxRoute: CouverturesFxRoute,
   DossiersRoute: DossiersRouteWithChildren,
   ExportRoute: ExportRoute,
