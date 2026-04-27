@@ -62,6 +62,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { CotationOptionsBlock } from "@/components/cotation-options-block";
 
 export const Route = createFileRoute("/cotations/$id")({
   component: () => (
