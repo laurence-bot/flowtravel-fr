@@ -27,6 +27,8 @@ import {
   cleanupQaData,
   QA_STEPS,
   getStepDetails,
+  loadQaStateFromDb,
+  detectCompletedSteps,
   type QaStep,
   type QaState,
   type QaDetail,
@@ -147,6 +149,37 @@ function QaPage() {
     setDetails({});
     setOpenDetails({});
     Object.keys(state).forEach((k) => delete (state as any)[k]);
+  };
+
+  const loadExisting = async () => {
+    if (!user) return;
+    setStepBusy(true);
+    try {
+      const loaded = await loadQaStateFromDb(user.id);
+      Object.assign(state, loaded);
+      const doneKeys = detectCompletedSteps(loaded);
+      // Marque les étapes comme OK et charge leurs détails
+      const newSteps = makeInitialSteps().map((s) =>
+        doneKeys.includes(s.key) ? { ...s, status: "ok" as const, detail: "Données existantes" } : s,
+      );
+      setSteps(newSteps);
+      setCurrentIdx(doneKeys.length);
+      const allDetails: Record<string, QaDetail | null> = {};
+      const allOpen: Record<string, boolean> = {};
+      for (const k of doneKeys) {
+        try {
+          allDetails[k] = await getStepDetails(k, state);
+          allOpen[k] = true;
+        } catch { /* ignore */ }
+      }
+      setDetails(allDetails);
+      setOpenDetails(allOpen);
+      toast.success(`${doneKeys.length} étapes chargées depuis la base`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setStepBusy(false);
+    }
   };
 
   const launchAuto = async () => {
@@ -278,7 +311,10 @@ function QaPage() {
                 / {QA_STEPS.length}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="default" size="sm" onClick={loadExisting} disabled={!session || stepBusy}>
+                <Eye className="h-3.5 w-3.5 mr-1.5" /> Voir les détails déjà créés
+              </Button>
               <Button variant="outline" size="sm" onClick={resetSteps} disabled={stepBusy}>
                 <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Réinitialiser
               </Button>
