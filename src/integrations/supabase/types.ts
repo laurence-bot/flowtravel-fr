@@ -591,6 +591,57 @@ export type Database = {
           },
         ]
       }
+      pdf_imports: {
+        Row: {
+          confiance: Database["public"]["Enums"]["pdf_import_confiance"]
+          created_at: string
+          extracted_data: Json | null
+          facture_fournisseur_id: string | null
+          file_name: string
+          fx_coverage_id: string | null
+          id: string
+          notes: string | null
+          raw_text: string | null
+          statut: Database["public"]["Enums"]["pdf_import_statut"]
+          storage_path: string
+          type: Database["public"]["Enums"]["pdf_import_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confiance?: Database["public"]["Enums"]["pdf_import_confiance"]
+          created_at?: string
+          extracted_data?: Json | null
+          facture_fournisseur_id?: string | null
+          file_name: string
+          fx_coverage_id?: string | null
+          id?: string
+          notes?: string | null
+          raw_text?: string | null
+          statut?: Database["public"]["Enums"]["pdf_import_statut"]
+          storage_path: string
+          type: Database["public"]["Enums"]["pdf_import_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confiance?: Database["public"]["Enums"]["pdf_import_confiance"]
+          created_at?: string
+          extracted_data?: Json | null
+          facture_fournisseur_id?: string | null
+          file_name?: string
+          fx_coverage_id?: string | null
+          id?: string
+          notes?: string | null
+          raw_text?: string | null
+          statut?: Database["public"]["Enums"]["pdf_import_statut"]
+          storage_path?: string
+          type?: Database["public"]["Enums"]["pdf_import_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       rapprochements: {
         Row: {
           bank_transaction_id: string
@@ -750,6 +801,7 @@ export type Database = {
         | "fx_coverage"
         | "fx_reservation"
         | "facture_echeance"
+        | "pdf_import"
       bank_sens: "credit" | "debit"
       bank_source: "sg" | "cic" | "ebury"
       bank_statut: "nouveau" | "rapproche" | "ignore"
@@ -788,6 +840,9 @@ export type Database = {
       paiement_source: "banque" | "manuel"
       paiement_statut_rapprochement: "non_rapproche" | "rapproche"
       paiement_type: "paiement_client" | "paiement_fournisseur"
+      pdf_import_confiance: "faible" | "moyenne" | "elevee"
+      pdf_import_statut: "extrait" | "valide" | "annule" | "erreur"
+      pdf_import_type: "contrat_fournisseur" | "couverture_fx"
       rapprochement_statut: "suggere" | "valide" | "rejete"
     }
     CompositeTypes: {
@@ -938,6 +993,7 @@ export const Constants = {
         "fx_coverage",
         "fx_reservation",
         "facture_echeance",
+        "pdf_import",
       ],
       bank_sens: ["credit", "debit"],
       bank_source: ["sg", "cic", "ebury"],
@@ -980,6 +1036,9 @@ export const Constants = {
       paiement_source: ["banque", "manuel"],
       paiement_statut_rapprochement: ["non_rapproche", "rapproche"],
       paiement_type: ["paiement_client", "paiement_fournisseur"],
+      pdf_import_confiance: ["faible", "moyenne", "elevee"],
+      pdf_import_statut: ["extrait", "valide", "annule", "erreur"],
+      pdf_import_type: ["contrat_fournisseur", "couverture_fx"],
       rapprochement_statut: ["suggere", "valide", "rejete"],
     },
   },
