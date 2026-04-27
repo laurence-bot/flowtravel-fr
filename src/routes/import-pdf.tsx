@@ -237,12 +237,15 @@ function ImportPdfPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        icon={FileScan}
         title="Import PDF"
-        subtitle="Importez un contrat fournisseur ou une couverture FX. L'IA extrait, vous validez."
+        description="Importez un contrat fournisseur ou une couverture FX. L'IA extrait, vous validez."
       />
 
-      {!canWrite && <ReadOnlyShield />}
+      {!canWrite && (
+        <ReadOnlyShield>
+          <span />
+        </ReadOnlyShield>
+      )}
 
       {step === "upload" && (
         <Card className="p-6 space-y-6">
