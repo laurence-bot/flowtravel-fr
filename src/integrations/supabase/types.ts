@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      agency_settings: {
+        Row: {
+          address: string | null
+          agency_name: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          email: string | null
+          id: string
+          legal_name: string | null
+          logo_url: string | null
+          phone: string | null
+          primary_contact_name: string | null
+          siret: string | null
+          updated_at: string
+          user_id: string
+          vat_number: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          agency_name?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          legal_name?: string | null
+          logo_url?: string | null
+          phone?: string | null
+          primary_contact_name?: string | null
+          siret?: string | null
+          updated_at?: string
+          user_id: string
+          vat_number?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          agency_name?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          legal_name?: string | null
+          logo_url?: string | null
+          phone?: string | null
+          primary_contact_name?: string | null
+          siret?: string | null
+          updated_at?: string
+          user_id?: string
+          vat_number?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: Database["public"]["Enums"]["audit_action"]
@@ -1224,6 +1281,7 @@ export type Database = {
         | "dossier_task"
         | "fournisseur_option"
         | "flight_option"
+        | "agency_settings"
       bank_sens: "credit" | "debit"
       bank_source: "sg" | "cic" | "ebury"
       bank_statut: "nouveau" | "rapproche" | "ignore"
@@ -1460,6 +1518,7 @@ export const Constants = {
         "dossier_task",
         "fournisseur_option",
         "flight_option",
+        "agency_settings",
       ],
       bank_sens: ["credit", "debit"],
       bank_source: ["sg", "cic", "ebury"],
