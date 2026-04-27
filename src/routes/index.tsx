@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { RequireAuth } from "@/components/require-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,17 @@ import { formatEUR, formatPercent, formatDate } from "@/lib/format";
 import { computeGlobalFinance, computeComptesSoldes } from "@/lib/finance";
 import { computeCashForecast } from "@/lib/cash-forecast";
 import { PageHeader } from "@/components/page-header";
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landmark, Percent, Link2, LineChart, AlertTriangle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  PRIORITE_TONE,
+  STATUT_TONE,
+  isAujourdhui,
+  isEnRetard,
+  sortByUrgence,
+  type DossierTask,
+} from "@/lib/dossier-tasks";
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landmark, Percent, Link2, LineChart, AlertTriangle, CheckSquare, Flame, Clock } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: () => (
