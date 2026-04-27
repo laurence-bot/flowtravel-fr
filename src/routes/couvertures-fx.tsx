@@ -27,7 +27,6 @@ import {
   type DeviseCode, type FxCoverage, type FxCoverageStatut, type FxReservation,
 } from "@/lib/fx";
 import { computeCoverageUsage, computeFxPnl } from "@/lib/fx-pnl";
-import { useTable as useTable2 } from "@/hooks/use-data";
 import type { FactureEcheance, Paiement } from "@/hooks/use-data";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
