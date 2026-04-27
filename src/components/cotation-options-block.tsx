@@ -78,9 +78,11 @@ type Props = {
   client: Contact | undefined;
   canWrite: boolean;
   onChange: () => void;
+  /** Si un acompte client a été enregistré (sur le dossier issu de la cotation) */
+  acompteClientRecu?: boolean;
 };
 
-export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange }: Props) {
+export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, acompteClientRecu }: Props) {
   const { user } = useAuth();
   const { data: foAll, refetch: refetchFo } = useTable<FournisseurOption>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -310,6 +312,56 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange }
     });
   };
 
+  // -------------------- Actions en lot --------------------
+  const confirmerToutesOptions = async () => {
+    if (!user) return;
+    const aConfirmer = fournisseurOptions.filter(
+      (o) => o.statut === "option_confirmee" || o.statut === "demandee",
+    );
+    if (aConfirmer.length === 0) return toast.info("Aucune option à confirmer.");
+    if (!confirm(`Marquer ${aConfirmer.length} option(s) comme confirmée(s) ? Vous pourrez ensuite générer les emails de confirmation.`)) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
+      .from("fournisseur_options")
+      .update({ statut: "confirmee" })
+      .in("id", aConfirmer.map((o) => o.id));
+    await logAudit({
+      userId: user.id,
+      entity: "cotation",
+      entityId: cot.id,
+      action: "validate",
+      description: `${aConfirmer.length} option(s) fournisseur confirmée(s) suite à acompte client`,
+    });
+    refetchFo();
+    toast.success(`${aConfirmer.length} option(s) confirmée(s).`);
+  };
+
+  const annulerToutesOptions = async () => {
+    if (!user) return;
+    const aAnnuler = fournisseurOptions.filter((o) => o.statut !== "annulee" && o.statut !== "option_refusee");
+    const flAnnuler = flightOptions.filter((f) => f.statut !== "annulee");
+    if (aAnnuler.length === 0 && flAnnuler.length === 0) return toast.info("Aucune option active à annuler.");
+    if (!confirm(`Annuler ${aAnnuler.length} option(s) fournisseur et ${flAnnuler.length} option(s) vol ?`)) return;
+    if (aAnnuler.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from("fournisseur_options").update({ statut: "annulee" }).in("id", aAnnuler.map((o) => o.id));
+    }
+    if (flAnnuler.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from("flight_options").update({ statut: "annulee" }).in("id", flAnnuler.map((f) => f.id));
+    }
+    await logAudit({
+      userId: user.id,
+      entity: "cotation",
+      entityId: cot.id,
+      action: "reject",
+      description: `${aAnnuler.length + flAnnuler.length} option(s) annulée(s)`,
+    });
+    refetchFo();
+    refetchFl();
+    toast.success("Options annulées. Générez les emails d'annulation pour informer les fournisseurs.");
+  };
+
   // -------------------- Flight options --------------------
   const [flAddOpen, setFlAddOpen] = useState(false);
   const [flEmailTo, setFlEmailTo] = useState("");
@@ -477,6 +529,18 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange }
                   <Send className="h-4 w-4 mr-1" /> Passer en option
                 </Button>
               )}
+            {acompteClientRecu && fournisseurOptions.length > 0 && (
+              <Button size="sm" variant="default" onClick={confirmerToutesOptions} className="bg-emerald-600 hover:bg-emerald-700">
+                <CheckCircle2 className="h-4 w-4 mr-1" /> Confirmer fournisseurs (acompte reçu)
+              </Button>
+            )}
+            {(cot.statut === "perdue" || cot.statut === "annulee") &&
+              (fournisseurOptions.some((o) => o.statut !== "annulee" && o.statut !== "option_refusee") ||
+                flightOptions.some((f) => f.statut !== "annulee")) && (
+                <Button size="sm" variant="destructive" onClick={annulerToutesOptions}>
+                  <XCircle className="h-4 w-4 mr-1" /> Annuler toutes les options
+                </Button>
+              )}
           </div>
         )}
       </div>
@@ -496,6 +560,15 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange }
               {a.msg}
             </div>
           ))}
+        </div>
+      )}
+
+      {acompteClientRecu && fournisseurOptions.some((o) => o.statut !== "confirmee" && o.statut !== "annulee") && (
+        <div className="px-4 pt-4">
+          <div className="flex items-center gap-2 text-sm p-2 rounded border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            Acompte client reçu — confirmez les fournisseurs et envoyez-leur les emails de confirmation.
+          </div>
         </div>
       )}
 

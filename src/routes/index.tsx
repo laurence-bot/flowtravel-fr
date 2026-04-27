@@ -19,7 +19,8 @@ import {
   sortByUrgence,
   type DossierTask,
 } from "@/lib/dossier-tasks";
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landmark, Percent, Link2, LineChart, AlertTriangle, CheckSquare, Flame, Clock } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landmark, Percent, Link2, LineChart, AlertTriangle, CheckSquare, Flame, Clock, Mail, Plane } from "lucide-react";
+import { deadlineUrgence, type FournisseurOption, type FlightOption } from "@/lib/options";
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -82,6 +83,8 @@ function Dashboard() {
   const { data: contacts } = useTable<Contact>("contacts");
   const { user } = useAuth();
   const [tasks, setTasks] = useState<DossierTask[]>([]);
+  const [foOpts, setFoOpts] = useState<FournisseurOption[]>([]);
+  const [flOpts, setFlOpts] = useState<FlightOption[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -91,6 +94,18 @@ function Dashboard() {
       .select("*")
       .neq("statut", "termine")
       .then(({ data }: { data: DossierTask[] | null }) => setTasks(data ?? []));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .from("fournisseur_options")
+      .select("*")
+      .not("statut", "in", "(annulee,option_refusee,confirmee)")
+      .then(({ data }: { data: FournisseurOption[] | null }) => setFoOpts(data ?? []));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .from("flight_options")
+      .select("*")
+      .eq("statut", "en_option")
+      .then(({ data }: { data: FlightOption[] | null }) => setFlOpts(data ?? []));
   }, [user, dossiers.length]);
 
   const f = computeGlobalFinance(dossiers, paiements, factures);
@@ -108,6 +123,27 @@ function Dashboard() {
     .filter((t, i, arr) => arr.findIndex((x) => x.id === t.id) === i)
     .sort(sortByUrgence)
     .slice(0, 6);
+
+  // --- Options fournisseurs / vols : alertes deadlines ---
+  const allOptDeadlines = [
+    ...foOpts.map((o) => ({
+      id: o.id,
+      kind: "fournisseur" as const,
+      label: o.nom_fournisseur,
+      cotation_id: o.cotation_id,
+      urg: deadlineUrgence(o.deadline_option_date, o.deadline_option_time),
+    })),
+    ...flOpts.map((f) => ({
+      id: f.id,
+      kind: "vol" as const,
+      label: `${f.compagnie} ${f.routing}`,
+      cotation_id: f.cotation_id,
+      urg: deadlineUrgence(f.deadline_option_date, f.deadline_option_time),
+    })),
+  ];
+  const optExpired = allOptDeadlines.filter((d) => d.urg === "expired");
+  const optCritical = allOptDeadlines.filter((d) => d.urg === "critical");
+  const optSansReponse = foOpts.filter((o) => o.statut === "demandee" && deadlineUrgence(o.deadline_option_date, o.deadline_option_time) === "ok");
 
   return (
     <div className="space-y-10">
@@ -244,6 +280,69 @@ function Dashboard() {
                     </li>
                   );
                 })}
+              </ul>
+            </Card>
+          )}
+        </section>
+      )}
+
+      {/* Alertes options fournisseurs / vols */}
+      {(optExpired.length > 0 || optCritical.length > 0 || optSansReponse.length > 0) && (
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-xl flex items-center gap-2">
+              <Mail className="h-5 w-5 text-muted-foreground" />
+              Options &amp; deadlines fournisseurs
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <Card className="p-5 border-border/60">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                <AlertTriangle className="h-3.5 w-3.5" /> Expirées
+              </div>
+              <div className={`mt-2 text-2xl font-semibold tabular ${optExpired.length > 0 ? "text-destructive" : ""}`}>
+                {optExpired.length}
+              </div>
+            </Card>
+            <Card className="p-5 border-border/60">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                <Clock className="h-3.5 w-3.5" /> &lt; 24h
+              </div>
+              <div className={`mt-2 text-2xl font-semibold tabular ${optCritical.length > 0 ? "text-amber-600 dark:text-amber-400" : ""}`}>
+                {optCritical.length}
+              </div>
+            </Card>
+            <Card className="p-5 border-border/60">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                <Plane className="h-3.5 w-3.5" /> Sans réponse fournisseur
+              </div>
+              <div className="mt-2 text-2xl font-semibold tabular">
+                {optSansReponse.length}
+              </div>
+            </Card>
+          </div>
+          {(optExpired.length > 0 || optCritical.length > 0) && (
+            <Card className="border-border/60 overflow-hidden">
+              <ul className="divide-y divide-border/60">
+                {[...optExpired, ...optCritical].slice(0, 8).map((d) => (
+                  <li key={`${d.kind}-${d.id}`}>
+                    <Link
+                      to="/cotations/$id"
+                      params={{ id: d.cotation_id }}
+                      className="px-5 py-3 flex items-center justify-between gap-3 hover:bg-secondary/40 transition-colors"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium truncate">{d.label}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {d.kind === "fournisseur" ? "Option fournisseur" : "Option vol"}
+                        </div>
+                      </div>
+                      <Badge variant="outline" className={`text-[10px] ${d.urg === "expired" ? "bg-destructive/15 text-destructive border-destructive/30" : "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"}`}>
+                        {d.urg === "expired" ? "Expirée" : "< 24h"}
+                      </Badge>
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </Card>
           )}

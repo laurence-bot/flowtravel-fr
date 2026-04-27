@@ -29,7 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useTable, type Contact } from "@/hooks/use-data";
+import { useTable, type Contact, type Paiement } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { usePageWriteAccess } from "@/hooks/use-page-write-access";
@@ -109,6 +109,7 @@ function CotationDetailPage() {
     "cotation_lignes_fournisseurs" as any,
   );
   const { data: contacts } = useTable<Contact>("contacts");
+  const { data: paiements } = useTable<Paiement>("paiements");
 
   const cot = cotations.find((c) => c.id === id);
   const lignesCot = useMemo(
@@ -162,6 +163,9 @@ function CotationDetailPage() {
   const fin = computeCotationFinance(cot, lignes);
   const client = contacts.find((c) => c.id === cot.client_id);
   const fournisseurs = contacts.filter((c) => c.type === "fournisseur");
+  const acompteClientRecu = !!cot.dossier_id && paiements.some(
+    (p) => p.dossier_id === cot.dossier_id && p.type === "paiement_client",
+  );
   const tone = COTATION_STATUT_TONES[cot.statut];
   const isLocked =
     cot.statut === "transformee_en_dossier" ||
@@ -335,16 +339,29 @@ function CotationDetailPage() {
       .from("cotations")
       .update({ statut: "perdue", raison_perte: raisonPerte || null })
       .eq("id", cot.id);
+    // Annulation automatique de toutes les options associées
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
+      .from("fournisseur_options")
+      .update({ statut: "annulee" })
+      .eq("cotation_id", cot.id)
+      .not("statut", "in", "(annulee,option_refusee)");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
+      .from("flight_options")
+      .update({ statut: "annulee" })
+      .eq("cotation_id", cot.id)
+      .neq("statut", "annulee");
     await logAudit({
       userId: user.id,
       entity: "cotation",
       entityId: cot.id,
       action: "reject",
-      description: `Cotation perdue : ${cot.titre}${raisonPerte ? ` (${raisonPerte})` : ""}`,
+      description: `Cotation perdue : ${cot.titre}${raisonPerte ? ` (${raisonPerte})` : ""} — options associées annulées`,
     });
     setPerteOpen(false);
     setRaisonPerte("");
-    toast.success("Cotation marquée comme perdue.");
+    toast.success("Cotation perdue. Options annulées — pensez à envoyer les emails d'annulation aux fournisseurs.");
     refetchCot();
   };
 
@@ -751,6 +768,7 @@ function CotationDetailPage() {
         client={client}
         canWrite={canWrite && !isLocked}
         onChange={refetchCot}
+        acompteClientRecu={acompteClientRecu}
       />
 
       {/* Dialog ajout ligne */}
