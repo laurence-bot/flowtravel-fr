@@ -12,6 +12,7 @@ const nav = [
   { to: "/", label: "Tableau de bord", icon: LayoutDashboard },
   { to: "/pilotage", label: "Pilotage", icon: Compass },
   { to: "/contacts", label: "Clients & Fournisseurs", icon: Users },
+  { to: "/cotations", label: "Cotations", icon: FileText },
   { to: "/dossiers", label: "Dossiers", icon: FolderOpen },
   { to: "/paiements", label: "Paiements", icon: Wallet },
   { to: "/comptes", label: "Comptes & Trésorerie", icon: Landmark },
