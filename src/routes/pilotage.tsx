@@ -7,17 +7,20 @@ import {
   type Dossier,
   type Paiement,
   type Facture,
+  type FactureEcheance,
   type Compte,
   type Transfert,
   type BankTransaction,
   type Contact,
 } from "@/hooks/use-data";
+import type { FxReservation } from "@/lib/fx";
 import { formatEUR, formatPercent, formatDate } from "@/lib/format";
 import {
   computeGlobalFinance,
   computeComptesSoldes,
   computeDossierFinance,
 } from "@/lib/finance";
+import { computeFxPnl } from "@/lib/fx-pnl";
 import { computeCashForecast } from "@/lib/cash-forecast";
 import { PageHeader } from "@/components/page-header";
 import {
