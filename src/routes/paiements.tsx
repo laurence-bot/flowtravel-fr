@@ -14,6 +14,9 @@ import { useTable, type Contact, type Dossier, type Paiement, type Compte } from
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { formatEUR, formatDate } from "@/lib/format";
+import { formatMoney } from "@/lib/fx";
+import { paiementEUR } from "@/lib/finance";
+import { FxFieldGroup, fxValueToDb, emptyFxValue, type FxFieldValue } from "@/components/fx-field-group";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { Plus, Wallet, ArrowDownLeft, ArrowUpRight } from "lucide-react";
@@ -30,7 +33,6 @@ export const Route = createFileRoute("/paiements")({
 
 const paiementSchema = z.object({
   type: z.enum(["paiement_client", "paiement_fournisseur"]),
-  montant: z.number().positive("Le montant doit être supérieur à 0"),
   date: z.string().min(1, "Date requise"),
   methode: z.enum(["virement", "carte", "especes"]),
   source: z.enum(["banque", "manuel"]),
@@ -52,7 +54,6 @@ function PaiementsPage() {
   const today = new Date().toISOString().slice(0, 10);
   const [form, setForm] = useState({
     type: "paiement_client" as Paiement["type"],
-    montant: "",
     date: today,
     methode: "virement" as Paiement["methode"],
     source: "manuel" as Paiement["source"],
@@ -60,37 +61,40 @@ function PaiementsPage() {
     personne_id: "",
     compte_id: "",
   });
+  const [fx, setFx] = useState<FxFieldValue>(emptyFxValue());
 
   const filtered = paiements.filter((p) => filter === "all" || p.type === filter);
   const totalEncaisse = paiements
     .filter((p) => p.type === "paiement_client")
-    .reduce((s, p) => s + Number(p.montant), 0);
+    .reduce((s, p) => s + paiementEUR(p), 0);
   const totalDecaisse = paiements
     .filter((p) => p.type === "paiement_fournisseur")
-    .reduce((s, p) => s + Number(p.montant), 0);
+    .reduce((s, p) => s + paiementEUR(p), 0);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    const parsed = paiementSchema.safeParse({
-      ...form,
-      montant: Number(form.montant),
-    });
+    const parsed = paiementSchema.safeParse(form);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
+      return;
+    }
+    const fxDb = fxValueToDb(fx);
+    if (!(fxDb.montant_devise > 0)) {
+      toast.error("Montant invalide");
       return;
     }
     setSubmitting(true);
     const { data: inserted, error } = await supabase.from("paiements").insert({
       user_id: user.id,
       type: parsed.data.type,
-      montant: parsed.data.montant,
       date: parsed.data.date,
       methode: parsed.data.methode,
       source: parsed.data.source,
       dossier_id: parsed.data.dossier_id || null,
       personne_id: parsed.data.personne_id || null,
       compte_id: parsed.data.compte_id,
+      ...fxDb,
     }).select().single();
     setSubmitting(false);
     if (error) return toast.error(error.message);
@@ -99,12 +103,13 @@ function PaiementsPage() {
       entity: "paiement",
       action: "create",
       entityId: inserted?.id,
-      description: `${parsed.data.type === "paiement_client" ? "Encaissement client" : "Paiement fournisseur"} de ${formatEUR(parsed.data.montant)}`,
+      description: `${parsed.data.type === "paiement_client" ? "Encaissement" : "Paiement fournisseur"} ${formatMoney(fxDb.montant_devise, fxDb.devise)}${fxDb.devise !== "EUR" ? ` (${formatEUR(fxDb.montant_eur)})` : ""}`,
       newValue: inserted,
     });
     toast.success("Paiement enregistré");
     setOpen(false);
-    setForm({ ...form, montant: "", dossier_id: "", personne_id: "" });
+    setForm({ ...form, dossier_id: "", personne_id: "" });
+    setFx(emptyFxValue());
     refetch();
   };
 
@@ -159,31 +164,17 @@ function PaiementsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Montant (€)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0.01"
-                required
-                autoFocus
-                value={form.montant}
-                onChange={(e) => setForm({ ...form, montant: e.target.value })}
-                placeholder="0,00"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Date</Label>
-              <Input
-                type="date"
-                required
-                value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-              />
-            </div>
-          </div>
+          <FxFieldGroup value={fx} onChange={setFx} amountLabel="Montant" />
 
+          <div className="space-y-2">
+            <Label>Date</Label>
+            <Input
+              type="date"
+              required
+              value={form.date}
+              onChange={(e) => setForm({ ...form, date: e.target.value })}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Méthode</Label>
@@ -368,8 +359,15 @@ function PaiementsPage() {
                       p.type === "paiement_client" ? "text-[color:var(--revenue)]" : "text-[color:var(--cost)]"
                     }`}
                   >
-                    {p.type === "paiement_client" ? "+" : "−"}
-                    {formatEUR(p.montant)}
+                    <div>
+                      {p.type === "paiement_client" ? "+" : "−"}
+                      {formatEUR(paiementEUR(p))}
+                    </div>
+                    {p.devise !== "EUR" && (
+                      <div className="text-[11px] text-muted-foreground font-normal mt-0.5">
+                        {formatMoney(p.montant_devise ?? 0, p.devise)} @ {Number(p.taux_change).toFixed(4)}
+                      </div>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

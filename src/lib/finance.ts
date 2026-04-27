@@ -15,6 +15,14 @@ const num = (v: unknown) => {
   return Number.isFinite(n) ? n : 0;
 };
 
+/** Montant en EUR d'un paiement : utilise montant_eur s'il est défini, sinon retombe sur montant. */
+export const paiementEUR = (p: { montant: number; montant_eur?: number | null }) =>
+  num(p.montant_eur ?? p.montant);
+
+/** Montant en EUR d'une facture : utilise montant_eur s'il est défini, sinon retombe sur montant. */
+export const factureEUR = (f: { montant: number; montant_eur?: number | null }) =>
+  num(f.montant_eur ?? f.montant);
+
 export type DossierFinance = {
   prixVente: number;
   coutTotal: number;
@@ -78,13 +86,13 @@ export function computeDossierFinance(
 
   const encaisseClient = paiements
     .filter((p) => p.dossier_id === dossier.id && p.type === "paiement_client")
-    .reduce((s, p) => s + num(p.montant), 0);
+    .reduce((s, p) => s + paiementEUR(p), 0);
   const payeFournisseur = paiements
     .filter((p) => p.dossier_id === dossier.id && p.type === "paiement_fournisseur")
-    .reduce((s, p) => s + num(p.montant), 0);
+    .reduce((s, p) => s + paiementEUR(p), 0);
 
   const facturesDossier = factures.filter((f) => f.dossier_id === dossier.id);
-  const totalFactures = facturesDossier.reduce((s, f) => s + num(f.montant), 0);
+  const totalFactures = facturesDossier.reduce((s, f) => s + factureEUR(f), 0);
   const resteAPayerFournisseur = Math.max(0, totalFactures - payeFournisseur);
 
   return {
@@ -135,14 +143,14 @@ export function computeGlobalFinance(
 
   const encaisse = paiements
     .filter((p) => p.type === "paiement_client")
-    .reduce((s, p) => s + num(p.montant), 0);
+    .reduce((s, p) => s + paiementEUR(p), 0);
   const decaisse = paiements
     .filter((p) => p.type === "paiement_fournisseur")
-    .reduce((s, p) => s + num(p.montant), 0);
+    .reduce((s, p) => s + paiementEUR(p), 0);
 
   const facturesNonPayees = factures.filter((f) => !f.paye);
   const resteAPayerFournisseurs = facturesNonPayees.reduce(
-    (s, f) => s + num(f.montant),
+    (s, f) => s + factureEUR(f),
     0,
   );
 
@@ -187,10 +195,10 @@ export function computeComptesSoldes(
   return comptes.map((compte) => {
     const entrees = paiements
       .filter((p) => p.compte_id === compte.id && p.type === "paiement_client")
-      .reduce((s, p) => s + num(p.montant), 0);
+      .reduce((s, p) => s + paiementEUR(p), 0);
     const sorties = paiements
       .filter((p) => p.compte_id === compte.id && p.type === "paiement_fournisseur")
-      .reduce((s, p) => s + num(p.montant), 0);
+      .reduce((s, p) => s + paiementEUR(p), 0);
     const transfertsEntrants = transferts
       .filter((t) => t.compte_destination_id === compte.id)
       .reduce((s, t) => s + num(t.montant), 0);

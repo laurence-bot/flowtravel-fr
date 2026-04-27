@@ -1,17 +1,28 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { z } from "zod";
 import { RequireAuth } from "@/components/require-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useTable, type Contact, type Dossier, type Paiement, type Facture } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { formatEUR, formatPercent, formatDate } from "@/lib/format";
-import { computeDossierFinance } from "@/lib/finance";
+import { formatMoney } from "@/lib/fx";
+import { computeDossierFinance, paiementEUR, factureEUR } from "@/lib/finance";
+import { FxFieldGroup, fxValueToDb, emptyFxValue, type FxFieldValue } from "@/components/fx-field-group";
 import { StatutBadge } from "@/components/statut-badge";
-import { ArrowLeft, Trash2, User, Receipt, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { ArrowLeft, Trash2, User, Receipt, ArrowDownLeft, ArrowUpRight, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 
@@ -31,7 +42,7 @@ function DossierDetail() {
   const [notFound, setNotFound] = useState(false);
   const { data: contacts } = useTable<Contact>("contacts");
   const { data: paiements } = useTable<Paiement>("paiements");
-  const { data: factures } = useTable<Facture>("factures_fournisseurs");
+  const { data: factures, refetch: refetchFactures } = useTable<Facture>("factures_fournisseurs");
 
   useEffect(() => {
     supabase.from("dossiers").select("*").eq("id", id).maybeSingle().then(({ data }) => {
@@ -193,10 +204,18 @@ function DossierDetail() {
           </dl>
         </Card>
         <Card className="p-6 border-border/60">
-          <h2 className="font-display text-xl flex items-center gap-2">
-            <Receipt className="h-5 w-5 text-muted-foreground" />
-            Factures fournisseurs
-          </h2>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <h2 className="font-display text-xl flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-muted-foreground" />
+              Factures fournisseurs
+            </h2>
+            <NewFactureDialog
+              dossierId={dossier.id}
+              userId={user?.id}
+              fournisseurs={contacts.filter((c) => c.type === "fournisseur")}
+              onDone={refetchFactures}
+            />
+          </div>
           {facturesDossier.length === 0 ? (
             <p className="text-sm text-muted-foreground mt-4">Aucune facture liée à ce dossier.</p>
           ) : (
@@ -212,7 +231,12 @@ function DossierDetail() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="tabular font-medium">{formatEUR(fact.montant)}</div>
+                      <div className="tabular font-medium">{formatEUR(factureEUR(fact))}</div>
+                      {fact.devise !== "EUR" && (
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                          {formatMoney(fact.montant_devise ?? 0, fact.devise)} @ {Number(fact.taux_change).toFixed(4)}
+                        </div>
+                      )}
                       <Badge variant={fact.paye ? "default" : "outline"} className="mt-1 text-[10px]">
                         {fact.paye ? "Payée" : "À payer"}
                       </Badge>
@@ -259,7 +283,7 @@ function PaiementBloc({
   contacts: Contact[];
   variant: "entrant" | "sortant";
 }) {
-  const total = paiements.reduce((s, p) => s + Number(p.montant), 0);
+  const total = paiements.reduce((s, p) => s + paiementEUR(p), 0);
   const colorClass = variant === "entrant" ? "text-[color:var(--revenue)]" : "text-[color:var(--cost)]";
   const sign = variant === "entrant" ? "+" : "−";
   return (
@@ -295,8 +319,12 @@ function PaiementBloc({
                   <TableCell className="text-sm text-muted-foreground">{personne?.nom ?? "—"}</TableCell>
                   <TableCell className="capitalize text-sm text-muted-foreground">{p.methode}</TableCell>
                   <TableCell className={`text-right tabular font-medium ${colorClass}`}>
-                    {sign}
-                    {formatEUR(p.montant)}
+                    <div>{sign}{formatEUR(paiementEUR(p))}</div>
+                    {p.devise !== "EUR" && (
+                      <div className="text-[11px] text-muted-foreground font-normal mt-0.5">
+                        {formatMoney(p.montant_devise ?? 0, p.devise)} @ {Number(p.taux_change).toFixed(4)}
+                      </div>
+                    )}
                   </TableCell>
                 </TableRow>
               );
@@ -305,5 +333,113 @@ function PaiementBloc({
         </Table>
       )}
     </Card>
+  );
+}
+
+const factureSchema = z.object({
+  fournisseur_id: z.string().uuid().optional().or(z.literal("")),
+  date_echeance: z.string().optional(),
+});
+
+function NewFactureDialog({
+  dossierId, userId, fournisseurs, onDone,
+}: {
+  dossierId: string;
+  userId?: string;
+  fournisseurs: Contact[];
+  onDone: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    fournisseur_id: "",
+    date_echeance: "",
+  });
+  const [fx, setFx] = useState<FxFieldValue>(emptyFxValue());
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userId) return;
+    const parsed = factureSchema.safeParse(form);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message);
+      return;
+    }
+    const fxDb = fxValueToDb(fx);
+    if (!(fxDb.montant_devise > 0)) {
+      toast.error("Montant invalide");
+      return;
+    }
+    setSaving(true);
+    const { data: inserted, error } = await supabase.from("factures_fournisseurs").insert({
+      user_id: userId,
+      dossier_id: dossierId,
+      fournisseur_id: parsed.data.fournisseur_id || null,
+      date_echeance: parsed.data.date_echeance || null,
+      paye: false,
+      ...fxDb,
+    }).select().single();
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    await logAudit({
+      userId,
+      entity: "facture_fournisseur",
+      entityId: inserted?.id,
+      action: "create",
+      description: `Facture fournisseur ${formatMoney(fxDb.montant_devise, fxDb.devise)}${fxDb.devise !== "EUR" ? ` (${formatEUR(fxDb.montant_eur)})` : ""}`,
+      newValue: inserted,
+    });
+    toast.success("Facture créée");
+    setOpen(false);
+    setForm({ fournisseur_id: "", date_echeance: "" });
+    setFx(emptyFxValue());
+    onDone();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          <Plus className="h-4 w-4 mr-1.5" />
+          Ajouter
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-display text-2xl">Nouvelle facture fournisseur</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Fournisseur</Label>
+            <Select value={form.fournisseur_id} onValueChange={(v) => setForm({ ...form, fournisseur_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Optionnel" /></SelectTrigger>
+              <SelectContent>
+                {fournisseurs.length === 0 && (
+                  <div className="px-2 py-2 text-sm text-muted-foreground">Aucun fournisseur.</div>
+                )}
+                {fournisseurs.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <FxFieldGroup value={fx} onChange={setFx} amountLabel="Montant facture" />
+
+          <div className="space-y-2">
+            <Label>Date d'échéance</Label>
+            <Input
+              type="date"
+              value={form.date_echeance}
+              onChange={(e) => setForm({ ...form, date_echeance: e.target.value })}
+            />
+          </div>
+
+          <Button type="submit" className="w-full" disabled={saving}>
+            {saving ? "Enregistrement…" : "Créer la facture"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

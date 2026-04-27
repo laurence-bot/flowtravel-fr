@@ -34,6 +34,13 @@ export type Paiement = {
   methode: "virement" | "carte" | "especes";
   statut_rapprochement: "non_rapproche" | "rapproche";
   bank_transaction_id: string | null;
+  // FX
+  devise: import("@/lib/fx").DeviseCode;
+  montant_devise: number | null;
+  taux_change: number;
+  montant_eur: number | null;
+  fx_source: import("@/lib/fx").FxSource;
+  coverage_id: string | null;
 };
 
 export type BankTransaction = {
@@ -48,6 +55,13 @@ export type BankTransaction = {
   hash_unique: string;
   statut: "nouveau" | "rapproche" | "ignore";
   created_at: string;
+  // FX
+  devise: import("@/lib/fx").DeviseCode;
+  montant_devise: number | null;
+  taux_change: number | null;
+  libelle_fx: string | null;
+  reference_ebury: string | null;
+  contrepartie: string | null;
 };
 
 export type Rapprochement = {
@@ -68,6 +82,13 @@ export type Facture = {
   montant: number;
   date_echeance: string | null;
   paye: boolean;
+  // FX
+  devise: import("@/lib/fx").DeviseCode;
+  montant_devise: number | null;
+  taux_change: number;
+  montant_eur: number | null;
+  fx_source: import("@/lib/fx").FxSource;
+  coverage_id: string | null;
 };
 
 export type CompteBanque = "sg" | "cic" | "ebury" | "autre";
