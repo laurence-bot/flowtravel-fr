@@ -124,6 +124,27 @@ function Dashboard() {
     .sort(sortByUrgence)
     .slice(0, 6);
 
+  // --- Options fournisseurs / vols : alertes deadlines ---
+  const allOptDeadlines = [
+    ...foOpts.map((o) => ({
+      id: o.id,
+      kind: "fournisseur" as const,
+      label: o.nom_fournisseur,
+      cotation_id: o.cotation_id,
+      urg: deadlineUrgence(o.deadline_option_date, o.deadline_option_time),
+    })),
+    ...flOpts.map((f) => ({
+      id: f.id,
+      kind: "vol" as const,
+      label: `${f.compagnie} ${f.routing}`,
+      cotation_id: f.cotation_id,
+      urg: deadlineUrgence(f.deadline_option_date, f.deadline_option_time),
+    })),
+  ];
+  const optExpired = allOptDeadlines.filter((d) => d.urg === "expired");
+  const optCritical = allOptDeadlines.filter((d) => d.urg === "critical");
+  const optSansReponse = foOpts.filter((o) => o.statut === "demandee" && deadlineUrgence(o.deadline_option_date, o.deadline_option_time) === "ok");
+
   return (
     <div className="space-y-10">
       <PageHeader
