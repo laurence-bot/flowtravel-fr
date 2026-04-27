@@ -48,11 +48,9 @@ import {
   type CotationLigne,
   type CotationLigneModeTarifaire,
   type CotationRegimeTva,
-} from "@/lib/cotations";
-import { ALL_COUNTRIES, isEUCountry, suggestRegimeTva } from "@/lib/countries";
-type _Unused = CotationRegimeTva; void 0;
   type CotationStatut,
 } from "@/lib/cotations";
+import { ALL_COUNTRIES, isEUCountry, suggestRegimeTva } from "@/lib/countries";
 import { DEVISES, type DeviseCode } from "@/lib/fx";
 import {
   ArrowLeft,
