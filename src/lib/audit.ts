@@ -8,7 +8,10 @@ export type AuditEntity =
   | "transfert"
   | "bank_transaction"
   | "rapprochement"
-  | "export_comptable";
+  | "export_comptable"
+  | "fx_coverage"
+  | "fx_reservation"
+  | "facture_echeance";
 
 export type AuditAction =
   | "create"
@@ -58,6 +61,9 @@ export const ENTITY_LABELS: Record<AuditEntity, string> = {
   bank_transaction: "Transaction bancaire",
   rapprochement: "Rapprochement",
   export_comptable: "Export comptable",
+  fx_coverage: "Couverture FX",
+  fx_reservation: "Réservation FX",
+  facture_echeance: "Échéance facture",
 };
 
 export const ACTION_LABELS: Record<AuditAction, string> = {
