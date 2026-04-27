@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog, Shield, FileScan, FileText, Inbox } from "lucide-react";
+import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog, Shield, FileScan, FileText, Inbox, Building2 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
@@ -25,6 +25,7 @@ const nav = [
   { to: "/export", label: "Export comptable", icon: FileDown },
   { to: "/audit", label: "Journal d'audit", icon: ScrollText },
   { to: "/utilisateurs", label: "Utilisateurs", icon: UserCog },
+  { to: "/parametres-agence", label: "Paramètres agence", icon: Building2 },
 ] as const;
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
