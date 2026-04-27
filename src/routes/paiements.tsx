@@ -54,7 +54,6 @@ function PaiementsPage() {
   const today = new Date().toISOString().slice(0, 10);
   const [form, setForm] = useState({
     type: "paiement_client" as Paiement["type"],
-    montant: "",
     date: today,
     methode: "virement" as Paiement["methode"],
     source: "manuel" as Paiement["source"],
@@ -62,6 +61,7 @@ function PaiementsPage() {
     personne_id: "",
     compte_id: "",
   });
+  const [fx, setFx] = useState<FxFieldValue>(emptyFxValue());
 
   const filtered = paiements.filter((p) => filter === "all" || p.type === filter);
   const totalEncaisse = paiements
