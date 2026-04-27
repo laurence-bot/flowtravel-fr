@@ -279,7 +279,7 @@ export async function runQaScenario(userId: string, onProgress: QaProgress): Pro
   await run("acompte", async () => {
     const { error } = await supabase.from("paiements").insert({
       user_id: userId,
-      type: "client_acompte",
+      type: "paiement_client",
       source: "manuel",
       methode: "virement",
       date: plus(0),
@@ -352,11 +352,11 @@ export async function runQaScenario(userId: string, onProgress: QaProgress): Pro
   // 11. Tâches
   await run("tasks", async () => {
     const tasks = [
-      { titre: "Confirmer rooming list", phase: "preparation", priorite: "importante", statut: "termine", date_echeance: plus(15) },
-      { titre: "Réserver transferts aéroport", phase: "preparation", priorite: "importante", statut: "a_faire", date_echeance: plus(30) },
-      { titre: "Envoyer carnet de voyage", phase: "preparation", priorite: "critique", statut: "en_cours", date_echeance: plus(80) },
-      { titre: "Suivi pendant voyage", phase: "voyage", priorite: "normale", statut: "a_faire", date_echeance: plus(95) },
-      { titre: "Demander avis client", phase: "retour", priorite: "normale", statut: "a_faire", date_echeance: plus(110) },
+      { titre: "Confirmer rooming list", phase: "pre_depart", priorite: "importante", statut: "termine", date_echeance: plus(15) },
+      { titre: "Réserver transferts aéroport", phase: "pre_depart", priorite: "importante", statut: "a_faire", date_echeance: plus(30) },
+      { titre: "Envoyer carnet de voyage", phase: "pre_depart", priorite: "critique", statut: "en_cours", date_echeance: plus(80) },
+      { titre: "Suivi pendant voyage", phase: "pendant", priorite: "normale", statut: "a_faire", date_echeance: plus(95) },
+      { titre: "Demander avis client", phase: "apres", priorite: "normale", statut: "a_faire", date_echeance: plus(110) },
     ];
     for (const t of tasks) {
       await supabase.from("dossier_tasks").insert({
@@ -373,7 +373,7 @@ export async function runQaScenario(userId: string, onProgress: QaProgress): Pro
   await run("tresorerie", async () => {
     const { error } = await supabase.from("paiements").insert({
       user_id: userId,
-      type: "fournisseur_acompte",
+      type: "paiement_fournisseur",
       source: "manuel",
       methode: "virement",
       date: plus(0),
