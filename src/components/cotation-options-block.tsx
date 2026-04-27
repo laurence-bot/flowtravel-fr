@@ -78,9 +78,11 @@ type Props = {
   client: Contact | undefined;
   canWrite: boolean;
   onChange: () => void;
+  /** Si un acompte client a été enregistré (sur le dossier issu de la cotation) */
+  acompteClientRecu?: boolean;
 };
 
-export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange }: Props) {
+export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, acompteClientRecu }: Props) {
   const { user } = useAuth();
   const { data: foAll, refetch: refetchFo } = useTable<FournisseurOption>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
