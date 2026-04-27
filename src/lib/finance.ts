@@ -86,13 +86,13 @@ export function computeDossierFinance(
 
   const encaisseClient = paiements
     .filter((p) => p.dossier_id === dossier.id && p.type === "paiement_client")
-    .reduce((s, p) => s + num(p.montant), 0);
+    .reduce((s, p) => s + paiementEUR(p), 0);
   const payeFournisseur = paiements
     .filter((p) => p.dossier_id === dossier.id && p.type === "paiement_fournisseur")
-    .reduce((s, p) => s + num(p.montant), 0);
+    .reduce((s, p) => s + paiementEUR(p), 0);
 
   const facturesDossier = factures.filter((f) => f.dossier_id === dossier.id);
-  const totalFactures = facturesDossier.reduce((s, f) => s + num(f.montant), 0);
+  const totalFactures = facturesDossier.reduce((s, f) => s + factureEUR(f), 0);
   const resteAPayerFournisseur = Math.max(0, totalFactures - payeFournisseur);
 
   return {
