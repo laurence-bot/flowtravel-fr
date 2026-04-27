@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,6 +85,14 @@ function AuthPage() {
                 <Button type="submit" className="w-full" disabled={submitting}>
                   {submitting ? "Connexion…" : "Se connecter"}
                 </Button>
+                <div className="text-center">
+                  <Link
+                    to="/mot-de-passe-oublie"
+                    className="text-xs text-muted-foreground hover:text-[color:var(--gold)] transition-colors"
+                  >
+                    Mot de passe oublié ?
+                  </Link>
+                </div>
               </form>
             </TabsContent>
             <TabsContent value="signup" className="mt-6">
