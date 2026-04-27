@@ -148,6 +148,74 @@ function CouverturesFXPage() {
           </Table>
         )}
       </Card>
+
+      {/* Impact change global */}
+      {fxPnl.entries.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="font-display text-lg flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            Impact change (gain / perte FX)
+          </h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <KPI label="Exposition totale" value={formatEUR(fxPnl.expositionEUR)} icon={TrendingUp} hint={`${fxPnl.entries.length} mouvement(s)`} />
+            <KPI label="Couvert" value={formatEUR(fxPnl.couvert)} icon={ShieldCheck} hint="via couvertures" />
+            <KPI label="Non couvert" value={formatEUR(fxPnl.nonCouvert)} icon={ShieldAlert} hint="exposé taux du jour" tone={fxPnl.nonCouvert > 0 ? "alert" : undefined} />
+            <KPI
+              label="Écart net vs marché"
+              value={`${fxPnl.net >= 0 ? "+" : ""}${formatEUR(fxPnl.net)}`}
+              icon={fxPnl.net >= 0 ? TrendingUp : TrendingDown}
+              tone={fxPnl.net < 0 ? "alert" : undefined}
+              hint={`Gain ${formatEUR(fxPnl.gainTotal)} / Perte ${formatEUR(fxPnl.perteTotal)}`}
+            />
+          </div>
+        </section>
+      )}
+
+      {/* Détail utilisation par couverture */}
+      {coverages.length > 0 && (
+        <Card className="border-border/60 overflow-hidden">
+          <div className="px-6 py-4 border-b border-border/60">
+            <h2 className="font-display text-lg">Utilisation et écart par couverture</h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Comparaison du taux couvert vs taux de marché de référence sur la portion engagée.
+            </p>
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Référence</TableHead>
+                <TableHead>Devise</TableHead>
+                <TableHead className="text-right">Taux couvert</TableHead>
+                <TableHead className="text-right">Réservé</TableHead>
+                <TableHead className="text-right">Utilisé</TableHead>
+                <TableHead className="text-right">Disponible</TableHead>
+                <TableHead className="text-right">Écart EUR</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {coverages.map((c) => {
+                const u = computeCoverageUsage(c, reservations);
+                const ecartTone = u.ecart === 0 ? "" : u.ecart > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive";
+                return (
+                  <TableRow key={c.id}>
+                    <TableCell className="font-medium">{c.reference || "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-mono">{c.devise}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{Number(c.taux_change).toFixed(4)}</TableCell>
+                    <TableCell className="text-right tabular-nums text-muted-foreground">{formatMoney(u.reserveActif, c.devise)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatMoney(u.utilise, c.devise)}</TableCell>
+                    <TableCell className="text-right tabular-nums text-emerald-600 dark:text-emerald-400">{formatMoney(u.disponible, c.devise)}</TableCell>
+                    <TableCell className={`text-right tabular-nums font-medium ${ecartTone}`}>
+                      {u.ecart === 0 ? "—" : `${u.ecart > 0 ? "+" : ""}${formatEUR(u.ecart)}`}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
     </div>
   );
 }
