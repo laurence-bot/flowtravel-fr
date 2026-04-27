@@ -1055,6 +1055,7 @@ export type Database = {
         | "pdf_import"
         | "cotation"
         | "cotation_ligne"
+        | "demande"
       bank_sens: "credit" | "debit"
       bank_source: "sg" | "cic" | "ebury"
       bank_statut: "nouveau" | "rapproche" | "ignore"
@@ -1271,6 +1272,7 @@ export const Constants = {
         "pdf_import",
         "cotation",
         "cotation_ligne",
+        "demande",
       ],
       bank_sens: ["credit", "debit"],
       bank_source: ["sg", "cic", "ebury"],
