@@ -74,25 +74,27 @@ function PaiementsPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    const parsed = paiementSchema.safeParse({
-      ...form,
-      montant: Number(form.montant),
-    });
+    const parsed = paiementSchema.safeParse(form);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
+      return;
+    }
+    const fxDb = fxValueToDb(fx);
+    if (!(fxDb.montant_devise > 0)) {
+      toast.error("Montant invalide");
       return;
     }
     setSubmitting(true);
     const { data: inserted, error } = await supabase.from("paiements").insert({
       user_id: user.id,
       type: parsed.data.type,
-      montant: parsed.data.montant,
       date: parsed.data.date,
       methode: parsed.data.methode,
       source: parsed.data.source,
       dossier_id: parsed.data.dossier_id || null,
       personne_id: parsed.data.personne_id || null,
       compte_id: parsed.data.compte_id,
+      ...fxDb,
     }).select().single();
     setSubmitting(false);
     if (error) return toast.error(error.message);
@@ -101,12 +103,13 @@ function PaiementsPage() {
       entity: "paiement",
       action: "create",
       entityId: inserted?.id,
-      description: `${parsed.data.type === "paiement_client" ? "Encaissement client" : "Paiement fournisseur"} de ${formatEUR(parsed.data.montant)}`,
+      description: `${parsed.data.type === "paiement_client" ? "Encaissement" : "Paiement fournisseur"} ${formatMoney(fxDb.montant_devise, fxDb.devise)}${fxDb.devise !== "EUR" ? ` (${formatEUR(fxDb.montant_eur)})` : ""}`,
       newValue: inserted,
     });
     toast.success("Paiement enregistré");
     setOpen(false);
-    setForm({ ...form, montant: "", dossier_id: "", personne_id: "" });
+    setForm({ ...form, dossier_id: "", personne_id: "" });
+    setFx(emptyFxValue());
     refetch();
   };
 
