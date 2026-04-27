@@ -365,6 +365,63 @@ function ContactDetail() {
         </section>
       )}
 
+      {/* Demandes (clients uniquement) */}
+      {isClient && (() => {
+        const mesDemandes = demandes.filter((d) => d.client_id === contact.id);
+        const enCours = mesDemandes.filter((d) => d.statut === "nouvelle" || d.statut === "en_cours" || d.statut === "a_relancer");
+        const transformees = mesDemandes.filter((d) => d.statut === "transformee_en_cotation");
+        const perdues = mesDemandes.filter((d) => d.statut === "perdue");
+        const TONE_CLASS: Record<string, string> = {
+          neutral: "bg-secondary text-muted-foreground border-border",
+          info: "bg-blue-500/15 text-blue-700 border-blue-500/30",
+          warning: "bg-orange-500/15 text-orange-700 border-orange-500/30",
+          success: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
+          danger: "bg-destructive/15 text-destructive border-destructive/30",
+        };
+        return (
+          <section>
+            <h2 className="font-display text-xl mb-4 flex items-center gap-2">
+              <Inbox className="h-5 w-5 text-muted-foreground" />
+              Demandes
+            </h2>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <KpiCard label="En cours" value={String(enCours.length)} />
+              <KpiCard label="Transformées" value={String(transformees.length)} tone="margin" />
+              <KpiCard label="Perdues" value={String(perdues.length)} />
+            </div>
+            <Card className="border-border/60 overflow-hidden">
+              {mesDemandes.length === 0 ? (
+                <EmptyState icon={Inbox} title="Aucune demande"
+                  description="Aucune demande n'est associée à ce client." />
+              ) : (
+                <ul className="divide-y divide-border/60">
+                  {mesDemandes.map((d) => (
+                    <li key={d.id}>
+                      <Link to="/demandes/$id" params={{ id: d.id }}
+                        className="px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-secondary/40 transition-colors">
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{d.destination ?? "Sans destination"}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {formatDate(d.created_at)} · {d.nombre_pax} pax
+                            {d.budget ? ` · ${formatEUR(d.budget)}` : ""}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <Badge variant="outline" className={TONE_CLASS[DEMANDE_STATUT_TONES[d.statut]]}>
+                            {DEMANDE_STATUT_LABELS[d.statut]}
+                          </Badge>
+                          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+          </section>
+        );
+      })()}
+
       {/* Cotations (clients uniquement) */}
       {isClient && (() => {
         const stats = computeClientCotationStats(contact.id, cotations, cotLignes);
