@@ -563,6 +563,15 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
         </div>
       )}
 
+      {acompteClientRecu && fournisseurOptions.some((o) => o.statut !== "confirmee" && o.statut !== "annulee") && (
+        <div className="px-4 pt-4">
+          <div className="flex items-center gap-2 text-sm p-2 rounded border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            Acompte client reçu — confirmez les fournisseurs et envoyez-leur les emails de confirmation.
+          </div>
+        </div>
+      )}
+
       {/* Options fournisseurs */}
       <div className="p-4 space-y-3">
         <div className="flex items-center justify-between">
