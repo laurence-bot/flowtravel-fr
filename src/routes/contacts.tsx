@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { RequireAuth } from "@/components/require-auth";
@@ -19,12 +19,18 @@ import { Plus, Mail, Phone, Users, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/contacts")({
-  component: () => (
+  component: ContactsRoute,
+});
+
+function ContactsRoute() {
+  const location = useLocation();
+  if (location.pathname !== "/contacts") return <Outlet />;
+  return (
     <RequireAuth>
       <ContactsPage />
     </RequireAuth>
-  ),
-});
+  );
+}
 
 const contactSchema = z.object({
   nom: z.string().trim().min(1, "Le nom est requis").max(120),

@@ -102,14 +102,14 @@ function CotationDetailPage() {
   const navigate = useNavigate();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: cotations, refetch: refetchCot } = useTable<Cotation>("cotations" as any);
+  const { data: cotations, loading: cotationsLoading, refetch: refetchCot } = useTable<Cotation>("cotations" as any);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: lignes, refetch: refetchLignes } = useTable<CotationLigne>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     "cotation_lignes_fournisseurs" as any,
   );
-  const { data: contacts } = useTable<Contact>("contacts");
-  const { data: paiements } = useTable<Paiement>("paiements");
+  const { data: contacts, loading: contactsLoading } = useTable<Contact>("contacts");
+  const { data: paiements, loading: paiementsLoading } = useTable<Paiement>("paiements");
 
   const cot = cotations.find((c) => c.id === id);
   const lignesCot = useMemo(
@@ -148,6 +148,10 @@ function CotationDetailPage() {
   // Dialog perte
   const [perteOpen, setPerteOpen] = useState(false);
   const [raisonPerte, setRaisonPerte] = useState("");
+
+  if (cotationsLoading || contactsLoading || paiementsLoading) {
+    return <div className="text-muted-foreground text-sm">Chargement de la cotation…</div>;
+  }
 
   if (!cot) {
     return (

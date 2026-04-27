@@ -40,9 +40,9 @@ function DemandeDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { canWrite } = usePageWriteAccess();
-  const { data: contacts, refetch: refetchContacts } = useTable<Contact>("contacts");
+  const { data: contacts, loading: contactsLoading, refetch: refetchContacts } = useTable<Contact>("contacts");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: demandes, refetch } = useTable<Demande>("demandes" as any);
+  const { data: demandes, loading: demandesLoading, refetch } = useTable<Demande>("demandes" as any);
 
   const demande = demandes.find((d) => d.id === id);
 
@@ -58,6 +58,10 @@ function DemandeDetail() {
       setTransformTitre(demande.destination ? `Voyage ${demande.destination}` : `Voyage ${demande.nom_client}`);
     }
   }, [demande]);
+
+  if (demandesLoading || contactsLoading) {
+    return <div className="text-muted-foreground text-sm">Chargement de la demande…</div>;
+  }
 
   if (!demande) {
     return (

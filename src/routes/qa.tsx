@@ -45,8 +45,8 @@ export const Route = createFileRoute("/qa")({
   component: QaPage,
 });
 
-const DEMO_EMAIL = "demo2@flowtravel.test";
-const DEMO_PASSWORD = "DemoFlow!2026";
+const DEMO_EMAIL = "qa-clean@flowtravel.test";
+const DEMO_PASSWORD = "FlowTravel!2026";
 
 function makeInitialSteps(): QaStep[] {
   return QA_STEPS.map((s) => ({
