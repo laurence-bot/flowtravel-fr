@@ -31,7 +31,10 @@ export type QaState = {
   dossier?: any;
 };
 
-const coutTotal = 4200 + 5600 / 1.08;
+// Taux FX QA : 1 USD = 0,9259 EUR (≈ 1 EUR = 1,08 USD).
+// La colonne `taux_change` stocke combien d'EUR vaut 1 unité de devise.
+const USD_TO_EUR = 0.9259;
+const coutTotal = 4200 + 5600 * USD_TO_EUR;
 
 /** Définition ordonnée des étapes — chacune est une fonction async indépendante. */
 export const QA_STEPS: Array<{
@@ -122,9 +125,9 @@ export const QA_STEPS: Array<{
   },
   {
     key: "fx",
-    label: "3. Acheter une couverture FX 10 000 USD @ 1.08",
+    label: "3. Acheter une couverture FX 10 000 USD @ 0,9259",
     description:
-      "Crée une couverture de change pour sécuriser un futur paiement fournisseur en USD.",
+      "Crée une couverture de change pour sécuriser un futur paiement fournisseur en USD (1 USD = 0,9259 EUR).",
     viewRoute: "/couvertures-fx",
     run: async (userId, state) => {
       const { data, error } = await supabase
@@ -134,7 +137,7 @@ export const QA_STEPS: Array<{
           devise: "USD",
           reference: "[QA] Couverture USD",
           montant_devise: 10000,
-          taux_change: 1.08,
+          taux_change: USD_TO_EUR,
           date_ouverture: plus(0),
           date_echeance: plus(90),
           statut: "ouverte",
@@ -143,7 +146,7 @@ export const QA_STEPS: Array<{
         .single();
       if (error) throw error;
       state.cov = data;
-      return "Couverture 10 000 USD @ 1.08 créée";
+      return `Couverture 10 000 USD @ ${USD_TO_EUR} créée (≈ ${(10000 * USD_TO_EUR).toFixed(0)} €)`;
     },
   },
   {
