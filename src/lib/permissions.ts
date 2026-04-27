@@ -18,16 +18,16 @@ export const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
 const ROUTE_ACCESS: Record<AppRole, string[]> = {
   administrateur: [
     "/", "/pilotage", "/contacts", "/dossiers", "/paiements",
-    "/comptes", "/previsions", "/import-bancaire", "/rapprochement",
+    "/comptes", "/couvertures-fx", "/previsions", "/import-bancaire", "/rapprochement",
     "/export", "/audit", "/utilisateurs",
   ],
   gestion: [
     "/", "/pilotage", "/contacts", "/dossiers", "/paiements",
-    "/comptes", "/previsions", "/import-bancaire", "/rapprochement", "/export",
+    "/comptes", "/couvertures-fx", "/previsions", "/import-bancaire", "/rapprochement", "/export",
   ],
   lecture_seule: [
     "/", "/pilotage", "/contacts", "/dossiers", "/paiements",
-    "/comptes", "/previsions", "/rapprochement", "/export", "/audit",
+    "/comptes", "/couvertures-fx", "/previsions", "/rapprochement", "/export", "/audit",
   ],
   comptable: ["/", "/paiements", "/dossiers", "/export", "/audit"],
 };
