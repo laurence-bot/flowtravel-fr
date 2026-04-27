@@ -18,6 +18,7 @@ const nav = [
   { to: "/couvertures-fx", label: "Couvertures FX", icon: Shield },
   { to: "/previsions", label: "Prévisions", icon: LineChart },
   { to: "/import-bancaire", label: "Import bancaire", icon: Upload },
+  { to: "/import-pdf", label: "Import PDF", icon: FileScan },
   { to: "/rapprochement", label: "Rapprochement", icon: Link2 },
   { to: "/export", label: "Export comptable", icon: FileDown },
   { to: "/audit", label: "Journal d'audit", icon: ScrollText },
