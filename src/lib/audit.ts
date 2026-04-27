@@ -8,7 +8,10 @@ export type AuditEntity =
   | "transfert"
   | "bank_transaction"
   | "rapprochement"
-  | "export_comptable";
+  | "export_comptable"
+  | "fx_coverage"
+  | "fx_reservation"
+  | "facture_echeance";
 
 export type AuditAction =
   | "create"
