@@ -166,21 +166,22 @@ export const QA_STEPS: Array<{
           demande_id: state.demande.id,
           titre: "[QA] Tanzanie · Dupont · Safari + Zanzibar",
           destination: "Tanzanie",
+          pays_destination: "Tanzanie",
           date_depart: state.demande.date_depart_souhaitee,
           date_retour: state.demande.date_retour_souhaitee,
           nombre_pax: 4,
           nombre_chambres: 2,
           statut: "brouillon",
-          regime_tva: "marge_ue",
-          taux_tva_marge: 20,
+          regime_tva: "hors_ue",
+          taux_tva_marge: 0,
           prix_vente_ttc: 12800,
-          prix_vente_ht: 12800 / 1.2,
+          prix_vente_ht: 12800,
         } as any)
         .select()
         .single();
       if (error) throw error;
       state.cotation = data;
-      return `Cotation créée · marge nette ≈ ${(((12800 - coutTotal) / 1.2) * 0.8).toFixed(0)} €`;
+      return `Cotation créée (Tanzanie hors UE, 0 % TVA) · marge brute ≈ ${(12800 - coutTotal).toFixed(0)} €`;
     },
   },
   {
