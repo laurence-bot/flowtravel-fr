@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UtilisateursRouteImport } from './routes/utilisateurs'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
 import { Route as RapprochementRouteImport } from './routes/rapprochement'
+import { Route as QaRouteImport } from './routes/qa'
 import { Route as PrevisionsRouteImport } from './routes/previsions'
 import { Route as PilotageRouteImport } from './routes/pilotage'
 import { Route as ParametresAgenceRouteImport } from './routes/parametres-agence'
@@ -48,6 +49,11 @@ const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
 const RapprochementRoute = RapprochementRouteImport.update({
   id: '/rapprochement',
   path: '/rapprochement',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QaRoute = QaRouteImport.update({
+  id: '/qa',
+  path: '/qa',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrevisionsRoute = PrevisionsRouteImport.update({
@@ -179,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/parametres-agence': typeof ParametresAgenceRoute
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
+  '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/utilisateurs': typeof UtilisateursRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/parametres-agence': typeof ParametresAgenceRoute
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
+  '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/utilisateurs': typeof UtilisateursRoute
@@ -234,6 +242,7 @@ export interface FileRoutesById {
   '/parametres-agence': typeof ParametresAgenceRoute
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
+  '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/utilisateurs': typeof UtilisateursRoute
@@ -263,6 +272,7 @@ export interface FileRouteTypes {
     | '/parametres-agence'
     | '/pilotage'
     | '/previsions'
+    | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
     | '/utilisateurs'
@@ -290,6 +300,7 @@ export interface FileRouteTypes {
     | '/parametres-agence'
     | '/pilotage'
     | '/previsions'
+    | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
     | '/utilisateurs'
@@ -317,6 +328,7 @@ export interface FileRouteTypes {
     | '/parametres-agence'
     | '/pilotage'
     | '/previsions'
+    | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
     | '/utilisateurs'
@@ -345,6 +357,7 @@ export interface RootRouteChildren {
   ParametresAgenceRoute: typeof ParametresAgenceRoute
   PilotageRoute: typeof PilotageRoute
   PrevisionsRoute: typeof PrevisionsRoute
+  QaRoute: typeof QaRoute
   RapprochementRoute: typeof RapprochementRoute
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
   UtilisateursRoute: typeof UtilisateursRoute
@@ -372,6 +385,13 @@ declare module '@tanstack/react-router' {
       path: '/rapprochement'
       fullPath: '/rapprochement'
       preLoaderRoute: typeof RapprochementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qa': {
+      id: '/qa'
+      path: '/qa'
+      fullPath: '/qa'
+      preLoaderRoute: typeof QaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/previsions': {
@@ -597,6 +617,7 @@ const rootRouteChildren: RootRouteChildren = {
   ParametresAgenceRoute: ParametresAgenceRoute,
   PilotageRoute: PilotageRoute,
   PrevisionsRoute: PrevisionsRoute,
+  QaRoute: QaRoute,
   RapprochementRoute: RapprochementRoute,
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
   UtilisateursRoute: UtilisateursRoute,
