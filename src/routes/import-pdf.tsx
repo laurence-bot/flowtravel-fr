@@ -27,7 +27,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { logAudit } from "@/lib/audit";
 import { toast } from "sonner";
 import {
-  FileScan,
   Upload,
   Loader2,
   CheckCircle2,
