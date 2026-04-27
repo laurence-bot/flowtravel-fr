@@ -529,6 +529,18 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
                   <Send className="h-4 w-4 mr-1" /> Passer en option
                 </Button>
               )}
+            {acompteClientRecu && fournisseurOptions.length > 0 && (
+              <Button size="sm" variant="default" onClick={confirmerToutesOptions} className="bg-emerald-600 hover:bg-emerald-700">
+                <CheckCircle2 className="h-4 w-4 mr-1" /> Confirmer fournisseurs (acompte reçu)
+              </Button>
+            )}
+            {(cot.statut === "perdue" || cot.statut === "annulee") &&
+              (fournisseurOptions.some((o) => o.statut !== "annulee" && o.statut !== "option_refusee") ||
+                flightOptions.some((f) => f.statut !== "annulee")) && (
+                <Button size="sm" variant="destructive" onClick={annulerToutesOptions}>
+                  <XCircle className="h-4 w-4 mr-1" /> Annuler toutes les options
+                </Button>
+              )}
           </div>
         )}
       </div>
