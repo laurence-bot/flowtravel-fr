@@ -1,6 +1,7 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/hooks/use-auth";
 import { RoleProvider } from "@/hooks/use-role";
+import { AgencySettingsProvider } from "@/hooks/use-agency-settings";
 import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
@@ -75,8 +76,10 @@ function RootComponent() {
   return (
     <AuthProvider>
       <RoleProvider>
-        <Outlet />
-        <Toaster richColors position="top-right" />
+        <AgencySettingsProvider>
+          <Outlet />
+          <Toaster richColors position="top-right" />
+        </AgencySettingsProvider>
       </RoleProvider>
     </AuthProvider>
   );
