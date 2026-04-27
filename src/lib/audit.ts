@@ -14,7 +14,8 @@ export type AuditEntity =
   | "facture_echeance"
   | "pdf_import"
   | "cotation"
-  | "cotation_ligne";
+  | "cotation_ligne"
+  | "demande";
 
 export type AuditAction =
   | "create"
@@ -70,6 +71,7 @@ export const ENTITY_LABELS: Record<AuditEntity, string> = {
   pdf_import: "Import PDF",
   cotation: "Cotation",
   cotation_ligne: "Ligne de cotation",
+  demande: "Demande",
 };
 
 export const ACTION_LABELS: Record<AuditAction, string> = {

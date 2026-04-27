@@ -292,6 +292,7 @@ export type Database = {
           created_at: string
           date_depart: string | null
           date_retour: string | null
+          demande_id: string | null
           destination: string | null
           dossier_id: string | null
           group_id: string
@@ -318,6 +319,7 @@ export type Database = {
           created_at?: string
           date_depart?: string | null
           date_retour?: string | null
+          demande_id?: string | null
           destination?: string | null
           dossier_id?: string | null
           group_id?: string
@@ -344,6 +346,7 @@ export type Database = {
           created_at?: string
           date_depart?: string | null
           date_retour?: string | null
+          demande_id?: string | null
           destination?: string | null
           dossier_id?: string | null
           group_id?: string
@@ -364,6 +367,72 @@ export type Database = {
           updated_at?: string
           user_id?: string
           version_number?: number
+        }
+        Relationships: []
+      }
+      demandes: {
+        Row: {
+          budget: number | null
+          canal: Database["public"]["Enums"]["demande_canal"]
+          client_id: string | null
+          created_at: string
+          date_depart_souhaitee: string | null
+          date_retour_souhaitee: string | null
+          dernier_contact_at: string | null
+          destination: string | null
+          email: string | null
+          id: string
+          message_client: string | null
+          nom_client: string
+          nombre_pax: number
+          notes: string | null
+          raison_perte: string | null
+          statut: Database["public"]["Enums"]["demande_statut"]
+          telephone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget?: number | null
+          canal?: Database["public"]["Enums"]["demande_canal"]
+          client_id?: string | null
+          created_at?: string
+          date_depart_souhaitee?: string | null
+          date_retour_souhaitee?: string | null
+          dernier_contact_at?: string | null
+          destination?: string | null
+          email?: string | null
+          id?: string
+          message_client?: string | null
+          nom_client: string
+          nombre_pax?: number
+          notes?: string | null
+          raison_perte?: string | null
+          statut?: Database["public"]["Enums"]["demande_statut"]
+          telephone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget?: number | null
+          canal?: Database["public"]["Enums"]["demande_canal"]
+          client_id?: string | null
+          created_at?: string
+          date_depart_souhaitee?: string | null
+          date_retour_souhaitee?: string | null
+          dernier_contact_at?: string | null
+          destination?: string | null
+          email?: string | null
+          id?: string
+          message_client?: string | null
+          nom_client?: string
+          nombre_pax?: number
+          notes?: string | null
+          raison_perte?: string | null
+          statut?: Database["public"]["Enums"]["demande_statut"]
+          telephone?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -986,6 +1055,7 @@ export type Database = {
         | "pdf_import"
         | "cotation"
         | "cotation_ligne"
+        | "demande"
       bank_sens: "credit" | "debit"
       bank_source: "sg" | "cic" | "ebury"
       bank_statut: "nouveau" | "rapproche" | "ignore"
@@ -1006,6 +1076,19 @@ export type Database = {
         | "perdue"
         | "transformee_en_dossier"
         | "archivee"
+      demande_canal:
+        | "email"
+        | "telephone"
+        | "site_web"
+        | "whatsapp"
+        | "recommandation"
+        | "autre"
+      demande_statut:
+        | "nouvelle"
+        | "en_cours"
+        | "a_relancer"
+        | "transformee_en_cotation"
+        | "perdue"
       devise_code:
         | "EUR"
         | "USD"
@@ -1189,6 +1272,7 @@ export const Constants = {
         "pdf_import",
         "cotation",
         "cotation_ligne",
+        "demande",
       ],
       bank_sens: ["credit", "debit"],
       bank_source: ["sg", "cic", "ebury"],
@@ -1211,6 +1295,21 @@ export const Constants = {
         "perdue",
         "transformee_en_dossier",
         "archivee",
+      ],
+      demande_canal: [
+        "email",
+        "telephone",
+        "site_web",
+        "whatsapp",
+        "recommandation",
+        "autre",
+      ],
+      demande_statut: [
+        "nouvelle",
+        "en_cours",
+        "a_relancer",
+        "transformee_en_cotation",
+        "perdue",
       ],
       devise_code: [
         "EUR",
