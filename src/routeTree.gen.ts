@@ -17,6 +17,7 @@ import { Route as PaiementsRouteImport } from './routes/paiements'
 import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
 import { Route as ExportRouteImport } from './routes/export'
 import { Route as DossiersRouteImport } from './routes/dossiers'
+import { Route as CouverturesFxRouteImport } from './routes/couvertures-fx'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as ComptesRouteImport } from './routes/comptes'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -65,6 +66,11 @@ const DossiersRoute = DossiersRouteImport.update({
   path: '/dossiers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CouverturesFxRoute = CouverturesFxRouteImport.update({
+  id: '/couvertures-fx',
+  path: '/couvertures-fx',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactsRoute = ContactsRouteImport.update({
   id: '/contacts',
   path: '/contacts',
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
+  '/couvertures-fx': typeof CouverturesFxRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
+  '/couvertures-fx': typeof CouverturesFxRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
+  '/couvertures-fx': typeof CouverturesFxRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/comptes'
     | '/contacts'
+    | '/couvertures-fx'
     | '/dossiers'
     | '/export'
     | '/import-bancaire'
@@ -178,6 +188,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/comptes'
     | '/contacts'
+    | '/couvertures-fx'
     | '/dossiers'
     | '/export'
     | '/import-bancaire'
@@ -195,6 +206,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/comptes'
     | '/contacts'
+    | '/couvertures-fx'
     | '/dossiers'
     | '/export'
     | '/import-bancaire'
@@ -213,6 +225,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ComptesRoute: typeof ComptesRoute
   ContactsRoute: typeof ContactsRouteWithChildren
+  CouverturesFxRoute: typeof CouverturesFxRoute
   DossiersRoute: typeof DossiersRouteWithChildren
   ExportRoute: typeof ExportRoute
   ImportBancaireRoute: typeof ImportBancaireRoute
@@ -279,6 +292,13 @@ declare module '@tanstack/react-router' {
       path: '/dossiers'
       fullPath: '/dossiers'
       preLoaderRoute: typeof DossiersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/couvertures-fx': {
+      id: '/couvertures-fx'
+      path: '/couvertures-fx'
+      fullPath: '/couvertures-fx'
+      preLoaderRoute: typeof CouverturesFxRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contacts': {
@@ -363,6 +383,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ComptesRoute: ComptesRoute,
   ContactsRoute: ContactsRouteWithChildren,
+  CouverturesFxRoute: CouverturesFxRoute,
   DossiersRoute: DossiersRouteWithChildren,
   ExportRoute: ExportRoute,
   ImportBancaireRoute: ImportBancaireRoute,
