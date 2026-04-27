@@ -26,8 +26,10 @@ import {
   runQaScenario,
   cleanupQaData,
   QA_STEPS,
+  getStepDetails,
   type QaStep,
   type QaState,
+  type QaDetail,
 } from "@/lib/qa-scenario";
 
 export const Route = createFileRoute("/qa")({
