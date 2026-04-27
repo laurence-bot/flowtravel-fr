@@ -452,17 +452,31 @@ function QaPage() {
                     <div className="border-t border-border/50 p-4 bg-secondary/30 space-y-4">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <h4 className="font-medium text-sm">{d.title}</h4>
-                        {d.detailRoute && (
-                          <a
-                            href={d.detailRoute}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center h-7 px-3 text-xs rounded-md border border-input bg-background hover:bg-accent"
-                          >
-                            Ouvrir la fiche complète
-                            <ExternalLink className="h-3 w-3 ml-1.5" />
-                          </a>
-                        )}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {d.actions?.map((action) => (
+                            <a
+                              key={action.route}
+                              href={action.route}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center h-7 px-3 text-xs rounded-md border border-input bg-background hover:bg-accent"
+                            >
+                              {action.label}
+                              <ExternalLink className="h-3 w-3 ml-1.5" />
+                            </a>
+                          ))}
+                          {d.detailRoute && !d.actions?.length && (
+                            <a
+                              href={d.detailRoute}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center h-7 px-3 text-xs rounded-md border border-input bg-background hover:bg-accent"
+                            >
+                              Ouvrir la fiche complète
+                              <ExternalLink className="h-3 w-3 ml-1.5" />
+                            </a>
+                          )}
+                        </div>
                       </div>
                       {d.fields.length > 0 && (
                         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
