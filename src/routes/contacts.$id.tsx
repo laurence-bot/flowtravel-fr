@@ -358,6 +358,90 @@ function ContactDetail() {
         </section>
       )}
 
+      {/* Cotations (clients uniquement) */}
+      {isClient && (() => {
+        const stats = computeClientCotationStats(contact.id, cotations, cotLignes);
+        // dernières versions
+        const byGroup = new Map<string, Cotation>();
+        for (const c of cotations.filter((c) => c.client_id === contact.id)) {
+          const cur = byGroup.get(c.group_id);
+          if (!cur || c.version_number > cur.version_number) byGroup.set(c.group_id, c);
+        }
+        const lastCotations = Array.from(byGroup.values()).sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        );
+        return (
+          <section>
+            <h2 className="font-display text-xl mb-4 flex items-center gap-2">
+              <FolderOpen className="h-5 w-5 text-muted-foreground" />
+              Cotations
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+              <KpiCard label="En cours" value={String(stats.enCours + stats.envoyees)} hint={`${stats.enCours} brouillon · ${stats.envoyees} envoyée(s)`} />
+              <KpiCard label="Validées" value={String(stats.validees)} tone="margin" />
+              <KpiCard label="Perdues" value={String(stats.perdues)} />
+              <KpiCard
+                label="Taux transformation"
+                value={stats.tauxTransformation > 0 ? `${stats.tauxTransformation.toFixed(0)}%` : "—"}
+                hint={`${stats.transformees} transformée(s)`}
+              />
+              <KpiCard
+                label="Marge potentielle"
+                value={formatEUR(stats.margePotentielle)}
+                tone="margin"
+                hint={`Total devis ${formatEUR(stats.montantTotal)}`}
+              />
+            </div>
+            <Card className="border-border/60 overflow-hidden">
+              {lastCotations.length === 0 ? (
+                <EmptyState
+                  icon={FolderOpen}
+                  title="Aucune cotation"
+                  description="Créez une cotation pour ce client depuis la page Cotations."
+                />
+              ) : (
+                <ul className="divide-y divide-border/60">
+                  {lastCotations.map((c) => {
+                    const f = computeCotationFinance(c, cotLignes);
+                    const tone = COTATION_STATUT_TONES[c.statut];
+                    const cls =
+                      tone === "success" ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30" :
+                      tone === "danger" ? "bg-destructive/15 text-destructive border-destructive/30" :
+                      tone === "info" ? "bg-blue-500/15 text-blue-700 border-blue-500/30" :
+                      tone === "primary" ? "bg-primary/15 text-primary border-primary/30" :
+                      "bg-secondary text-muted-foreground border-border";
+                    return (
+                      <li key={c.id}>
+                        <Link
+                          to="/cotations/$id"
+                          params={{ id: c.id }}
+                          className="px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-secondary/40 transition-colors"
+                        >
+                          <div className="min-w-0">
+                            <div className="font-medium truncate">
+                              {c.titre} <span className="text-xs text-muted-foreground">v{c.version_number}</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              {c.destination ?? "—"} · prix {formatEUR(f.prixVente)} · marge {formatEUR(f.margeNette)}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <Badge variant="outline" className={cls}>
+                              {COTATION_STATUT_LABELS[c.statut]}
+                            </Badge>
+                            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Card>
+          </section>
+        );
+      })()}
+
       {/* Dossiers liés */}
       <section>
         <h2 className="font-display text-xl mb-4 flex items-center gap-2">
