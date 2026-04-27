@@ -195,10 +195,10 @@ export function computeComptesSoldes(
   return comptes.map((compte) => {
     const entrees = paiements
       .filter((p) => p.compte_id === compte.id && p.type === "paiement_client")
-      .reduce((s, p) => s + num(p.montant), 0);
+      .reduce((s, p) => s + paiementEUR(p), 0);
     const sorties = paiements
       .filter((p) => p.compte_id === compte.id && p.type === "paiement_fournisseur")
-      .reduce((s, p) => s + num(p.montant), 0);
+      .reduce((s, p) => s + paiementEUR(p), 0);
     const transfertsEntrants = transferts
       .filter((t) => t.compte_destination_id === compte.id)
       .reduce((s, t) => s + num(t.montant), 0);
