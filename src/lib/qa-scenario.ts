@@ -58,7 +58,7 @@ export async function runQaScenario(userId: string, onProgress: QaProgress): Pro
       .insert({
         user_id: userId,
         nom: "[QA] Compte EUR",
-        banque: "BNP",
+        banque: "cic",
         categorie: "courant",
         devise: "EUR",
         solde_initial: 0,
@@ -72,7 +72,7 @@ export async function runQaScenario(userId: string, onProgress: QaProgress): Pro
       .insert({
         user_id: userId,
         nom: "[QA] Compte USD",
-        banque: "EBURY",
+        banque: "ebury",
         categorie: "courant",
         devise: "USD",
         solde_initial: 0,
@@ -393,7 +393,7 @@ export async function runQaScenario(userId: string, onProgress: QaProgress): Pro
     const { error } = await supabase.from("bank_transactions").insert({
       user_id: userId,
       compte_id: cEur.id,
-      source_banque: "BNP",
+      source_banque: "cic",
       sens: "credit",
       montant: 4000,
       libelle_normalise: "VIR DUPONT ACOMPTE TANZANIE",
