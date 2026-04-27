@@ -29,7 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useTable, type Contact } from "@/hooks/use-data";
+import { useTable, type Contact, type Paiement } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { usePageWriteAccess } from "@/hooks/use-page-write-access";
@@ -109,6 +109,7 @@ function CotationDetailPage() {
     "cotation_lignes_fournisseurs" as any,
   );
   const { data: contacts } = useTable<Contact>("contacts");
+  const { data: paiements } = useTable<Paiement>("paiements");
 
   const cot = cotations.find((c) => c.id === id);
   const lignesCot = useMemo(
