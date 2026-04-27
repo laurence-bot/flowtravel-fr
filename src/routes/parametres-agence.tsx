@@ -193,7 +193,7 @@ function ParametresAgencePage() {
   if (!canEdit) {
     return (
       <div>
-        <PageHeader title="Paramètres agence" subtitle="Personnalisez l'identité de votre agence" />
+        <PageHeader title="Paramètres agence" description="Personnalisez l&#39;identité de votre agence" />
         <Card className="p-8 mt-6 text-center">
           <ShieldAlert className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
           <p className="text-sm text-muted-foreground">
@@ -211,7 +211,7 @@ function ParametresAgencePage() {
     <div className="space-y-6">
       <PageHeader
         title="Paramètres agence"
-        subtitle="Personnalisez l'identité de votre agence — Flow Travel reste le socle premium."
+        description="Personnalisez l&#39;identité de votre agence — Flow Travel reste le socle premium."
       />
 
       {/* Logo */}

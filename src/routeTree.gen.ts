@@ -13,6 +13,7 @@ import { Route as UtilisateursRouteImport } from './routes/utilisateurs'
 import { Route as RapprochementRouteImport } from './routes/rapprochement'
 import { Route as PrevisionsRouteImport } from './routes/previsions'
 import { Route as PilotageRouteImport } from './routes/pilotage'
+import { Route as ParametresAgenceRouteImport } from './routes/parametres-agence'
 import { Route as PaiementsRouteImport } from './routes/paiements'
 import { Route as ImportPdfRouteImport } from './routes/import-pdf'
 import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
@@ -50,6 +51,11 @@ const PrevisionsRoute = PrevisionsRouteImport.update({
 const PilotageRoute = PilotageRouteImport.update({
   id: '/pilotage',
   path: '/pilotage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParametresAgenceRoute = ParametresAgenceRouteImport.update({
+  id: '/parametres-agence',
+  path: '/parametres-agence',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PaiementsRoute = PaiementsRouteImport.update({
@@ -157,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
   '/paiements': typeof PaiementsRoute
+  '/parametres-agence': typeof ParametresAgenceRoute
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
   '/rapprochement': typeof RapprochementRoute
@@ -181,6 +188,7 @@ export interface FileRoutesByTo {
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
   '/paiements': typeof PaiementsRoute
+  '/parametres-agence': typeof ParametresAgenceRoute
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
   '/rapprochement': typeof RapprochementRoute
@@ -206,6 +214,7 @@ export interface FileRoutesById {
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
   '/paiements': typeof PaiementsRoute
+  '/parametres-agence': typeof ParametresAgenceRoute
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
   '/rapprochement': typeof RapprochementRoute
@@ -232,6 +241,7 @@ export interface FileRouteTypes {
     | '/import-bancaire'
     | '/import-pdf'
     | '/paiements'
+    | '/parametres-agence'
     | '/pilotage'
     | '/previsions'
     | '/rapprochement'
@@ -256,6 +266,7 @@ export interface FileRouteTypes {
     | '/import-bancaire'
     | '/import-pdf'
     | '/paiements'
+    | '/parametres-agence'
     | '/pilotage'
     | '/previsions'
     | '/rapprochement'
@@ -280,6 +291,7 @@ export interface FileRouteTypes {
     | '/import-bancaire'
     | '/import-pdf'
     | '/paiements'
+    | '/parametres-agence'
     | '/pilotage'
     | '/previsions'
     | '/rapprochement'
@@ -305,6 +317,7 @@ export interface RootRouteChildren {
   ImportBancaireRoute: typeof ImportBancaireRoute
   ImportPdfRoute: typeof ImportPdfRoute
   PaiementsRoute: typeof PaiementsRoute
+  ParametresAgenceRoute: typeof ParametresAgenceRoute
   PilotageRoute: typeof PilotageRoute
   PrevisionsRoute: typeof PrevisionsRoute
   RapprochementRoute: typeof RapprochementRoute
@@ -340,6 +353,13 @@ declare module '@tanstack/react-router' {
       path: '/pilotage'
       fullPath: '/pilotage'
       preLoaderRoute: typeof PilotageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parametres-agence': {
+      id: '/parametres-agence'
+      path: '/parametres-agence'
+      fullPath: '/parametres-agence'
+      preLoaderRoute: typeof ParametresAgenceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/paiements': {
@@ -533,6 +553,7 @@ const rootRouteChildren: RootRouteChildren = {
   ImportBancaireRoute: ImportBancaireRoute,
   ImportPdfRoute: ImportPdfRoute,
   PaiementsRoute: PaiementsRoute,
+  ParametresAgenceRoute: ParametresAgenceRoute,
   PilotageRoute: PilotageRoute,
   PrevisionsRoute: PrevisionsRoute,
   RapprochementRoute: RapprochementRoute,

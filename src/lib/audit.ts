@@ -18,7 +18,8 @@ export type AuditEntity =
   | "demande"
   | "dossier_task"
   | "fournisseur_option"
-  | "flight_option";
+  | "flight_option"
+  | "agency_settings";
 
 export type AuditAction =
   | "create"
