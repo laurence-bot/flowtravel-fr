@@ -555,6 +555,16 @@ function CotationDetailPage() {
         {!editing ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <Info label="Destination" value={cot.destination ?? "—"} />
+            <Info
+              label="Pays"
+              value={
+                cot.pays_destination
+                  ? `${cot.pays_destination} ${
+                      isEUCountry(cot.pays_destination) ? "🇪🇺" : "🌍"
+                    }`
+                  : "—"
+              }
+            />
             <Info label="Langue" value={cot.langue ?? "—"} />
             <Info label="Pax" value={String(cot.nombre_pax)} />
             <Info label="Chambres" value={String(cot.nombre_chambres)} />
@@ -564,9 +574,23 @@ function CotationDetailPage() {
             <Info label="Prix TTC" value={formatEUR(cot.prix_vente_ttc)} />
             <Info
               label="Régime TVA"
-              value={REGIME_TVA_LABELS[cot.regime_tva]}
+              value={
+                REGIME_TVA_LABELS[cot.regime_tva] +
+                (cot.pays_destination
+                  ? isEUCountry(cot.pays_destination)
+                    ? " (UE)"
+                    : " (hors UE — 0 %)"
+                  : "")
+              }
             />
-            <Info label="Taux TVA marge" value={`${cot.taux_tva_marge}%`} />
+            <Info
+              label="Taux TVA marge"
+              value={
+                cot.regime_tva === "hors_ue"
+                  ? "0 % (hors UE)"
+                  : `${cot.taux_tva_marge}%`
+              }
+            />
           </div>
         ) : (
           <div className="space-y-3">
