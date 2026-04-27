@@ -19,16 +19,16 @@ const ROUTE_ACCESS: Record<AppRole, string[]> = {
   administrateur: [
     "/", "/pilotage", "/contacts", "/dossiers", "/factures", "/paiements",
     "/comptes", "/couvertures-fx", "/previsions", "/import-bancaire", "/rapprochement",
-    "/export", "/audit", "/utilisateurs", "/import-pdf",
+    "/export", "/audit", "/utilisateurs", "/import-pdf", "/cotations",
   ],
   gestion: [
     "/", "/pilotage", "/contacts", "/dossiers", "/factures", "/paiements",
     "/comptes", "/couvertures-fx", "/previsions", "/import-bancaire", "/rapprochement",
-    "/export", "/import-pdf",
+    "/export", "/import-pdf", "/cotations",
   ],
   lecture_seule: [
     "/", "/pilotage", "/contacts", "/dossiers", "/factures", "/paiements",
-    "/comptes", "/couvertures-fx", "/previsions", "/rapprochement", "/export", "/audit",
+    "/comptes", "/couvertures-fx", "/previsions", "/rapprochement", "/export", "/audit", "/cotations",
   ],
   comptable: ["/", "/paiements", "/dossiers", "/factures", "/export", "/audit"],
 };
