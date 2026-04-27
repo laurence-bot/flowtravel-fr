@@ -601,13 +601,46 @@ function CotationDetailPage() {
                   onChange={(e) => setEdit({ ...edit, titre: e.target.value })}
                 />
               </Field>
-              <Field label="Destination">
+              <Field label="Destination (libre)">
                 <Input
                   value={edit.destination ?? ""}
                   onChange={(e) =>
                     setEdit({ ...edit, destination: e.target.value })
                   }
                 />
+              </Field>
+              <Field label="Pays (pilote la TVA)">
+                <Select
+                  value={edit.pays_destination ?? "none"}
+                  onValueChange={(v) => {
+                    const pays = v === "none" ? null : v;
+                    const regime = suggestRegimeTva(pays);
+                    setEdit({
+                      ...edit,
+                      pays_destination: pays,
+                      regime_tva: regime,
+                      // taux à 0 si hors UE, sinon défaut 20 si actuellement 0
+                      taux_tva_marge:
+                        regime === "hors_ue"
+                          ? 0
+                          : (edit.taux_tva_marge ?? 0) > 0
+                            ? edit.taux_tva_marge
+                            : 20,
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un pays" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    <SelectItem value="none">— Aucun —</SelectItem>
+                    {ALL_COUNTRIES.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {isEUCountry(p) ? "🇪🇺" : "🌍"} {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
               <Field label="Langue">
                 <Input
