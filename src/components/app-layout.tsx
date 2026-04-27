@@ -15,6 +15,7 @@ const nav = [
   { to: "/dossiers", label: "Dossiers", icon: FolderOpen },
   { to: "/paiements", label: "Paiements", icon: Wallet },
   { to: "/comptes", label: "Comptes & Trésorerie", icon: Landmark },
+  { to: "/couvertures-fx", label: "Couvertures FX", icon: Shield },
   { to: "/previsions", label: "Prévisions", icon: LineChart },
   { to: "/import-bancaire", label: "Import bancaire", icon: Upload },
   { to: "/rapprochement", label: "Rapprochement", icon: Link2 },
