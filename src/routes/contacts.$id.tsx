@@ -10,6 +10,15 @@ import {
   type Paiement,
   type Facture,
 } from "@/hooks/use-data";
+import { useTable as useTableGeneric } from "@/hooks/use-data";
+import {
+  computeClientCotationStats,
+  COTATION_STATUT_LABELS,
+  COTATION_STATUT_TONES,
+  computeCotationFinance,
+  type Cotation,
+  type CotationLigne,
+} from "@/lib/cotations";
 import { formatEUR, formatPercent, formatDate } from "@/lib/format";
 import { computeDossierFinance } from "@/lib/finance";
 import { PageHeader } from "@/components/page-header";
