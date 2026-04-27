@@ -18,6 +18,7 @@ import { Route as ImportPdfRouteImport } from './routes/import-pdf'
 import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
 import { Route as ExportRouteImport } from './routes/export'
 import { Route as DossiersRouteImport } from './routes/dossiers'
+import { Route as DemandesRouteImport } from './routes/demandes'
 import { Route as CouverturesFxRouteImport } from './routes/couvertures-fx'
 import { Route as CotationsRouteImport } from './routes/cotations'
 import { Route as ContactsRouteImport } from './routes/contacts'
@@ -27,6 +28,7 @@ import { Route as AuditRouteImport } from './routes/audit'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FacturesIdRouteImport } from './routes/factures.$id'
 import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
+import { Route as DemandesIdRouteImport } from './routes/demandes.$id'
 import { Route as CotationsIdRouteImport } from './routes/cotations.$id'
 import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
 
@@ -75,6 +77,11 @@ const DossiersRoute = DossiersRouteImport.update({
   path: '/dossiers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemandesRoute = DemandesRouteImport.update({
+  id: '/demandes',
+  path: '/demandes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CouverturesFxRoute = CouverturesFxRouteImport.update({
   id: '/couvertures-fx',
   path: '/couvertures-fx',
@@ -120,6 +127,11 @@ const DossiersIdRoute = DossiersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => DossiersRoute,
 } as any)
+const DemandesIdRoute = DemandesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => DemandesRoute,
+} as any)
 const CotationsIdRoute = CotationsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -139,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/contacts': typeof ContactsRouteWithChildren
   '/cotations': typeof CotationsRouteWithChildren
   '/couvertures-fx': typeof CouverturesFxRoute
+  '/demandes': typeof DemandesRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -150,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
+  '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
 }
@@ -161,6 +175,7 @@ export interface FileRoutesByTo {
   '/contacts': typeof ContactsRouteWithChildren
   '/cotations': typeof CotationsRouteWithChildren
   '/couvertures-fx': typeof CouverturesFxRoute
+  '/demandes': typeof DemandesRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -172,6 +187,7 @@ export interface FileRoutesByTo {
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
+  '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
 }
@@ -184,6 +200,7 @@ export interface FileRoutesById {
   '/contacts': typeof ContactsRouteWithChildren
   '/cotations': typeof CotationsRouteWithChildren
   '/couvertures-fx': typeof CouverturesFxRoute
+  '/demandes': typeof DemandesRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -195,6 +212,7 @@ export interface FileRoutesById {
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
+  '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
 }
@@ -208,6 +226,7 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/cotations'
     | '/couvertures-fx'
+    | '/demandes'
     | '/dossiers'
     | '/export'
     | '/import-bancaire'
@@ -219,6 +238,7 @@ export interface FileRouteTypes {
     | '/utilisateurs'
     | '/contacts/$id'
     | '/cotations/$id'
+    | '/demandes/$id'
     | '/dossiers/$id'
     | '/factures/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -230,6 +250,7 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/cotations'
     | '/couvertures-fx'
+    | '/demandes'
     | '/dossiers'
     | '/export'
     | '/import-bancaire'
@@ -241,6 +262,7 @@ export interface FileRouteTypes {
     | '/utilisateurs'
     | '/contacts/$id'
     | '/cotations/$id'
+    | '/demandes/$id'
     | '/dossiers/$id'
     | '/factures/$id'
   id:
@@ -252,6 +274,7 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/cotations'
     | '/couvertures-fx'
+    | '/demandes'
     | '/dossiers'
     | '/export'
     | '/import-bancaire'
@@ -263,6 +286,7 @@ export interface FileRouteTypes {
     | '/utilisateurs'
     | '/contacts/$id'
     | '/cotations/$id'
+    | '/demandes/$id'
     | '/dossiers/$id'
     | '/factures/$id'
   fileRoutesById: FileRoutesById
@@ -275,6 +299,7 @@ export interface RootRouteChildren {
   ContactsRoute: typeof ContactsRouteWithChildren
   CotationsRoute: typeof CotationsRouteWithChildren
   CouverturesFxRoute: typeof CouverturesFxRoute
+  DemandesRoute: typeof DemandesRouteWithChildren
   DossiersRoute: typeof DossiersRouteWithChildren
   ExportRoute: typeof ExportRoute
   ImportBancaireRoute: typeof ImportBancaireRoute
@@ -352,6 +377,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DossiersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/demandes': {
+      id: '/demandes'
+      path: '/demandes'
+      fullPath: '/demandes'
+      preLoaderRoute: typeof DemandesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/couvertures-fx': {
       id: '/couvertures-fx'
       path: '/couvertures-fx'
@@ -415,6 +447,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DossiersIdRouteImport
       parentRoute: typeof DossiersRoute
     }
+    '/demandes/$id': {
+      id: '/demandes/$id'
+      path: '/$id'
+      fullPath: '/demandes/$id'
+      preLoaderRoute: typeof DemandesIdRouteImport
+      parentRoute: typeof DemandesRoute
+    }
     '/cotations/$id': {
       id: '/cotations/$id'
       path: '/$id'
@@ -456,6 +495,18 @@ const CotationsRouteWithChildren = CotationsRoute._addFileChildren(
   CotationsRouteChildren,
 )
 
+interface DemandesRouteChildren {
+  DemandesIdRoute: typeof DemandesIdRoute
+}
+
+const DemandesRouteChildren: DemandesRouteChildren = {
+  DemandesIdRoute: DemandesIdRoute,
+}
+
+const DemandesRouteWithChildren = DemandesRoute._addFileChildren(
+  DemandesRouteChildren,
+)
+
 interface DossiersRouteChildren {
   DossiersIdRoute: typeof DossiersIdRoute
 }
@@ -476,6 +527,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactsRoute: ContactsRouteWithChildren,
   CotationsRoute: CotationsRouteWithChildren,
   CouverturesFxRoute: CouverturesFxRoute,
+  DemandesRoute: DemandesRouteWithChildren,
   DossiersRoute: DossiersRouteWithChildren,
   ExportRoute: ExportRoute,
   ImportBancaireRoute: ImportBancaireRoute,
