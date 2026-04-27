@@ -19,6 +19,10 @@ import {
   type Cotation,
   type CotationLigne,
 } from "@/lib/cotations";
+import {
+  DEMANDE_STATUT_LABELS, DEMANDE_STATUT_TONES,
+  type Demande, type DemandeStatut,
+} from "@/lib/demandes";
 import { formatEUR, formatPercent, formatDate } from "@/lib/format";
 import { computeDossierFinance } from "@/lib/finance";
 import { PageHeader } from "@/components/page-header";
@@ -36,6 +40,7 @@ import {
   TrendingDown,
   PiggyBank,
   CalendarClock,
+  Inbox,
 } from "lucide-react";
 
 export const Route = createFileRoute("/contacts/$id")({
@@ -87,6 +92,8 @@ function ContactDetail() {
   const { data: cotations } = useTable<Cotation>("cotations" as any);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: cotLignes } = useTable<CotationLigne>("cotation_lignes_fournisseurs" as any);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: demandes } = useTable<Demande>("demandes" as any);
 
   const contact = contacts.find((c) => c.id === id);
 
