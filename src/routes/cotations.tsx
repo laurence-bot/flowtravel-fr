@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import { RequireAuth } from "@/components/require-auth";
@@ -49,12 +49,18 @@ import { FileText, Plus, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cotations")({
-  component: () => (
+  component: CotationsRoute,
+});
+
+function CotationsRoute() {
+  const location = useLocation();
+  if (location.pathname !== "/cotations") return <Outlet />;
+  return (
     <RequireAuth>
       <CotationsPage />
     </RequireAuth>
-  ),
-});
+  );
+}
 
 const newSchema = z.object({
   titre: z.string().trim().min(1, "Titre requis").max(200),
