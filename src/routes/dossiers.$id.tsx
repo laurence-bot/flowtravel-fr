@@ -283,7 +283,7 @@ function PaiementBloc({
   contacts: Contact[];
   variant: "entrant" | "sortant";
 }) {
-  const total = paiements.reduce((s, p) => s + Number(p.montant), 0);
+  const total = paiements.reduce((s, p) => s + paiementEUR(p), 0);
   const colorClass = variant === "entrant" ? "text-[color:var(--revenue)]" : "text-[color:var(--cost)]";
   const sign = variant === "entrant" ? "+" : "−";
   return (
