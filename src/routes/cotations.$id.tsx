@@ -744,6 +744,15 @@ function CotationDetailPage() {
         )}
       </Card>
 
+      {/* Bloc Options & deadlines */}
+      <CotationOptionsBlock
+        cot={cot}
+        lignes={lignesCot}
+        client={client}
+        canWrite={canWrite && !isLocked}
+        onChange={refetchCot}
+      />
+
       {/* Dialog ajout ligne */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-2xl">
