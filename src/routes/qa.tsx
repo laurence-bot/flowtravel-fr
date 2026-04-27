@@ -347,55 +347,133 @@ function QaPage() {
 
           {/* Liste de toutes les étapes */}
           <ul className="space-y-2">
-            {steps.map((s, idx) => (
-              <li
-                key={s.key}
-                className={`flex items-start gap-3 text-sm rounded-md p-3 border ${
-                  idx === currentIdx && !stepDone
-                    ? "border-[color:var(--gold)]/40 bg-[color:var(--gold)]/5"
-                    : "border-transparent"
-                }`}
-              >
-                <span className="mt-0.5">
-                  {s.status === "ok" && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
-                  {s.status === "ko" && <XCircle className="h-4 w-4 text-destructive" />}
-                  {s.status === "running" && (
-                    <Loader2 className="h-4 w-4 animate-spin text-[color:var(--gold)]" />
-                  )}
-                  {s.status === "pending" && (
-                    <Circle className="h-4 w-4 text-muted-foreground/40" />
-                  )}
-                </span>
-                <div className="flex-1">
-                  <div
-                    className={
-                      s.status === "ok"
-                        ? "text-foreground font-medium"
-                        : s.status === "ko"
-                          ? "text-destructive font-medium"
-                          : "text-foreground"
-                    }
-                  >
-                    {s.label}
+            {steps.map((s, idx) => {
+              const d = details[s.key];
+              const isOpen = openDetails[s.key];
+              return (
+                <li
+                  key={s.key}
+                  className={`text-sm rounded-md border ${
+                    idx === currentIdx && !stepDone
+                      ? "border-[color:var(--gold)]/40 bg-[color:var(--gold)]/5"
+                      : "border-border/50"
+                  }`}
+                >
+                  <div className="flex items-start gap-3 p-3">
+                    <span className="mt-0.5">
+                      {s.status === "ok" && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
+                      {s.status === "ko" && <XCircle className="h-4 w-4 text-destructive" />}
+                      {s.status === "running" && (
+                        <Loader2 className="h-4 w-4 animate-spin text-[color:var(--gold)]" />
+                      )}
+                      {s.status === "pending" && (
+                        <Circle className="h-4 w-4 text-muted-foreground/40" />
+                      )}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className={
+                          s.status === "ok"
+                            ? "text-foreground font-medium"
+                            : s.status === "ko"
+                              ? "text-destructive font-medium"
+                              : "text-foreground"
+                        }
+                      >
+                        {s.label}
+                      </div>
+                      {s.detail && (
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                          {s.detail}
+                        </div>
+                      )}
+                    </div>
+                    {s.status === "ok" && d && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          setOpenDetails((prev) => ({ ...prev, [s.key]: !prev[s.key] }))
+                        }
+                        className="shrink-0 h-7 text-xs"
+                      >
+                        {isOpen ? "Masquer" : "Détails"}
+                      </Button>
+                    )}
+                    {s.status === "ok" && s.viewRoute && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => navigate({ to: s.viewRoute! as any })}
+                        className="shrink-0 h-7 text-xs"
+                      >
+                        Page <ArrowRight className="h-3 w-3 ml-1" />
+                      </Button>
+                    )}
                   </div>
-                  {s.detail && (
-                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                      {s.detail}
+
+                  {s.status === "ok" && d && isOpen && (
+                    <div className="border-t border-border/50 p-4 bg-secondary/30 space-y-4">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <h4 className="font-medium text-sm">{d.title}</h4>
+                        {d.detailRoute && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            onClick={() => navigate({ to: d.detailRoute! as any })}
+                          >
+                            Ouvrir la fiche complète
+                            <ExternalLink className="h-3 w-3 ml-1.5" />
+                          </Button>
+                        )}
+                      </div>
+                      {d.fields.length > 0 && (
+                        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
+                          {d.fields.map((f, i) => (
+                            <div key={i} className="flex justify-between gap-3 border-b border-border/40 py-1">
+                              <dt className="text-muted-foreground">{f.label}</dt>
+                              <dd
+                                className={
+                                  f.mono
+                                    ? "font-mono text-foreground text-right"
+                                    : "text-foreground text-right"
+                                }
+                              >
+                                {f.value}
+                              </dd>
+                            </div>
+                          ))}
+                        </dl>
+                      )}
+                      {d.groups?.map((g, gi) => (
+                        <div key={gi} className="rounded-md bg-background/60 border border-border/40 p-3">
+                          <div className="text-xs font-semibold text-[color:var(--gold)] mb-2">
+                            {g.title}
+                          </div>
+                          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-xs">
+                            {g.fields.map((f, i) => (
+                              <div key={i} className="flex justify-between gap-3 border-b border-border/30 py-1">
+                                <dt className="text-muted-foreground">{f.label}</dt>
+                                <dd
+                                  className={
+                                    f.mono
+                                      ? "font-mono text-foreground text-right"
+                                      : "text-foreground text-right"
+                                  }
+                                >
+                                  {f.value}
+                                </dd>
+                              </div>
+                            ))}
+                          </dl>
+                        </div>
+                      ))}
                     </div>
                   )}
-                </div>
-                {s.status === "ok" && s.viewRoute && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => navigate({ to: s.viewRoute! as any })}
-                    className="shrink-0 h-7 text-xs"
-                  >
-                    Voir <ArrowRight className="h-3 w-3 ml-1" />
-                  </Button>
-                )}
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         </Card>
 
