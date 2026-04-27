@@ -26,9 +26,12 @@ import {
   coverageBalance, formatMoney,
   type DeviseCode, type FxCoverage, type FxCoverageStatut, type FxReservation,
 } from "@/lib/fx";
+import { computeCoverageUsage, computeFxPnl } from "@/lib/fx-pnl";
+import { useTable as useTable2 } from "@/hooks/use-data";
+import type { FactureEcheance, Paiement } from "@/hooks/use-data";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { Plus, Shield, ShieldAlert, ShieldCheck, TrendingUp } from "lucide-react";
+import { Plus, Shield, ShieldAlert, ShieldCheck, TrendingUp, TrendingDown } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 
