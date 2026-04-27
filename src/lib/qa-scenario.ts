@@ -831,14 +831,18 @@ export async function getStepDetails(
  * ou après un rechargement de page pour réafficher tous les détails. */
 export async function loadQaStateFromDb(userId: string): Promise<QaState> {
   const state: QaState = {};
-  const [{ data: client }, { data: comptes }, { data: cov }, { data: cotation }, { data: dossier }] =
+  const [{ data: clients }, { data: comptes }, { data: covs }, { data: cotations }, { data: dossiers }] =
     await Promise.all([
-      supabase.from("contacts").select("*").eq("user_id", userId).ilike("nom", "[QA]%").maybeSingle(),
+      supabase.from("contacts").select("*").eq("user_id", userId).ilike("nom", "[QA]%").order("created_at", { ascending: false }).limit(1),
       supabase.from("comptes").select("*").eq("user_id", userId).ilike("nom", "[QA]%"),
-      supabase.from("fx_coverages").select("*").eq("user_id", userId).ilike("reference", "[QA]%").maybeSingle(),
-      supabase.from("cotations").select("*").eq("user_id", userId).ilike("titre", "[QA]%").maybeSingle(),
-      supabase.from("dossiers").select("*").eq("user_id", userId).ilike("titre", "[QA]%").maybeSingle(),
+      supabase.from("fx_coverages").select("*").eq("user_id", userId).ilike("reference", "[QA]%").order("created_at", { ascending: false }).limit(1),
+      supabase.from("cotations").select("*").eq("user_id", userId).ilike("titre", "[QA]%").order("created_at", { ascending: false }).limit(1),
+      supabase.from("dossiers").select("*").eq("user_id", userId).ilike("titre", "[QA]%").order("created_at", { ascending: false }).limit(1),
     ]);
+  const client = clients?.[0];
+  const cov = covs?.[0];
+  const cotation = cotations?.[0];
+  const dossier = dossiers?.[0];
   if (client) state.client = client;
   if (cov) state.cov = cov;
   if (cotation) state.cotation = cotation;
@@ -848,9 +852,10 @@ export async function loadQaStateFromDb(userId: string): Promise<QaState> {
     state.cUsd = comptes.find((c: any) => c.devise === "USD");
   }
   if (client) {
-    const { data: demande } = await supabase
+    const { data: demandes } = await supabase
       .from("demandes").select("*").eq("user_id", userId)
-      .eq("client_id", client.id).order("created_at", { ascending: false }).maybeSingle();
+      .eq("client_id", client.id).order("created_at", { ascending: false }).limit(1);
+    const demande = demandes?.[0];
     if (demande) state.demande = demande;
   }
   return state;
