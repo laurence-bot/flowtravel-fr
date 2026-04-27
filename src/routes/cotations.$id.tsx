@@ -181,6 +181,7 @@ function CotationDetailPage() {
     setEdit({
       titre: cot.titre,
       destination: cot.destination,
+      pays_destination: cot.pays_destination,
       langue: cot.langue,
       date_depart: cot.date_depart,
       date_retour: cot.date_retour,
