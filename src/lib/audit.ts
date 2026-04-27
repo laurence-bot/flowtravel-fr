@@ -16,7 +16,9 @@ export type AuditEntity =
   | "cotation"
   | "cotation_ligne"
   | "demande"
-  | "dossier_task";
+  | "dossier_task"
+  | "fournisseur_option"
+  | "flight_option";
 
 export type AuditAction =
   | "create"
@@ -74,6 +76,8 @@ export const ENTITY_LABELS: Record<AuditEntity, string> = {
   cotation_ligne: "Ligne de cotation",
   demande: "Demande",
   dossier_task: "Tâche dossier",
+  fournisseur_option: "Option fournisseur",
+  flight_option: "Option vol",
 };
 
 export const ACTION_LABELS: Record<AuditAction, string> = {

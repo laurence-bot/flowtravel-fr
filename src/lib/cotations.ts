@@ -6,9 +6,13 @@ import type { DeviseCode, FxSource } from "@/lib/fx";
 
 export type CotationStatut =
   | "brouillon"
+  | "en_cours"
   | "envoyee"
+  | "en_option"
   | "validee"
+  | "confirmee"
   | "perdue"
+  | "annulee"
   | "transformee_en_dossier"
   | "archivee";
 
@@ -75,21 +79,29 @@ export type CotationLigne = {
 
 export const COTATION_STATUT_LABELS: Record<CotationStatut, string> = {
   brouillon: "Brouillon",
+  en_cours: "En cours",
   envoyee: "Envoyée",
+  en_option: "En option",
   validee: "Validée",
+  confirmee: "Confirmée",
   perdue: "Perdue",
+  annulee: "Annulée",
   transformee_en_dossier: "Transformée en dossier",
   archivee: "Archivée",
 };
 
 export const COTATION_STATUT_TONES: Record<
   CotationStatut,
-  "neutral" | "info" | "success" | "danger" | "primary" | "muted"
+  "neutral" | "info" | "success" | "danger" | "primary" | "muted" | "warn"
 > = {
   brouillon: "neutral",
+  en_cours: "info",
   envoyee: "info",
+  en_option: "warn",
   validee: "success",
+  confirmee: "success",
   perdue: "danger",
+  annulee: "danger",
   transformee_en_dossier: "primary",
   archivee: "muted",
 };

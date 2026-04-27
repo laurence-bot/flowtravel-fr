@@ -692,6 +692,120 @@ export type Database = {
           },
         ]
       }
+      flight_options: {
+        Row: {
+          compagnie: string
+          cotation_id: string
+          created_at: string
+          date_depart: string | null
+          date_retour: string | null
+          deadline_option_date: string | null
+          deadline_option_time: string | null
+          devise: Database["public"]["Enums"]["devise_code"]
+          heure_depart: string | null
+          heure_retour: string | null
+          id: string
+          notes: string | null
+          numero_vol: string | null
+          prix: number
+          routing: string
+          statut: Database["public"]["Enums"]["flight_option_statut"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          compagnie: string
+          cotation_id: string
+          created_at?: string
+          date_depart?: string | null
+          date_retour?: string | null
+          deadline_option_date?: string | null
+          deadline_option_time?: string | null
+          devise?: Database["public"]["Enums"]["devise_code"]
+          heure_depart?: string | null
+          heure_retour?: string | null
+          id?: string
+          notes?: string | null
+          numero_vol?: string | null
+          prix?: number
+          routing: string
+          statut?: Database["public"]["Enums"]["flight_option_statut"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          compagnie?: string
+          cotation_id?: string
+          created_at?: string
+          date_depart?: string | null
+          date_retour?: string | null
+          deadline_option_date?: string | null
+          deadline_option_time?: string | null
+          devise?: Database["public"]["Enums"]["devise_code"]
+          heure_depart?: string | null
+          heure_retour?: string | null
+          id?: string
+          notes?: string | null
+          numero_vol?: string | null
+          prix?: number
+          routing?: string
+          statut?: Database["public"]["Enums"]["flight_option_statut"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      fournisseur_options: {
+        Row: {
+          cotation_id: string
+          created_at: string
+          deadline_option_date: string | null
+          deadline_option_time: string | null
+          email_fournisseur: string | null
+          fournisseur_id: string | null
+          id: string
+          ligne_fournisseur_id: string | null
+          nom_fournisseur: string
+          notes: string | null
+          prestation: string | null
+          statut: Database["public"]["Enums"]["fournisseur_option_statut"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cotation_id: string
+          created_at?: string
+          deadline_option_date?: string | null
+          deadline_option_time?: string | null
+          email_fournisseur?: string | null
+          fournisseur_id?: string | null
+          id?: string
+          ligne_fournisseur_id?: string | null
+          nom_fournisseur: string
+          notes?: string | null
+          prestation?: string | null
+          statut?: Database["public"]["Enums"]["fournisseur_option_statut"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cotation_id?: string
+          created_at?: string
+          deadline_option_date?: string | null
+          deadline_option_time?: string | null
+          email_fournisseur?: string | null
+          fournisseur_id?: string | null
+          id?: string
+          ligne_fournisseur_id?: string | null
+          nom_fournisseur?: string
+          notes?: string | null
+          prestation?: string | null
+          statut?: Database["public"]["Enums"]["fournisseur_option_statut"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       fx_coverage_reservations: {
         Row: {
           coverage_id: string
@@ -1108,6 +1222,8 @@ export type Database = {
         | "cotation_ligne"
         | "demande"
         | "dossier_task"
+        | "fournisseur_option"
+        | "flight_option"
       bank_sens: "credit" | "debit"
       bank_source: "sg" | "cic" | "ebury"
       bank_statut: "nouveau" | "rapproche" | "ignore"
@@ -1128,6 +1244,10 @@ export type Database = {
         | "perdue"
         | "transformee_en_dossier"
         | "archivee"
+        | "en_cours"
+        | "en_option"
+        | "confirmee"
+        | "annulee"
       demande_canal:
         | "email"
         | "telephone"
@@ -1159,6 +1279,15 @@ export type Database = {
       dossier_task_statut: "a_faire" | "en_cours" | "termine"
       echeance_statut: "a_payer" | "paye" | "en_retard" | "annule"
       echeance_type: "acompte_1" | "acompte_2" | "acompte_3" | "solde" | "autre"
+      flight_option_statut: "en_option" | "confirmee" | "expiree" | "annulee"
+      fournisseur_option_statut:
+        | "a_demander"
+        | "demandee"
+        | "option_confirmee"
+        | "option_refusee"
+        | "option_expiree"
+        | "annulee"
+        | "confirmee"
       fx_coverage_statut:
         | "ouverte"
         | "reservee"
@@ -1329,6 +1458,8 @@ export const Constants = {
         "cotation_ligne",
         "demande",
         "dossier_task",
+        "fournisseur_option",
+        "flight_option",
       ],
       bank_sens: ["credit", "debit"],
       bank_source: ["sg", "cic", "ebury"],
@@ -1351,6 +1482,10 @@ export const Constants = {
         "perdue",
         "transformee_en_dossier",
         "archivee",
+        "en_cours",
+        "en_option",
+        "confirmee",
+        "annulee",
       ],
       demande_canal: [
         "email",
@@ -1386,6 +1521,16 @@ export const Constants = {
       dossier_task_statut: ["a_faire", "en_cours", "termine"],
       echeance_statut: ["a_payer", "paye", "en_retard", "annule"],
       echeance_type: ["acompte_1", "acompte_2", "acompte_3", "solde", "autre"],
+      flight_option_statut: ["en_option", "confirmee", "expiree", "annulee"],
+      fournisseur_option_statut: [
+        "a_demander",
+        "demandee",
+        "option_confirmee",
+        "option_refusee",
+        "option_expiree",
+        "annulee",
+        "confirmee",
+      ],
       fx_coverage_statut: [
         "ouverte",
         "reservee",
