@@ -221,8 +221,8 @@ export const QA_STEPS: Array<{
         quantite: 1,
         devise: "USD",
         montant_devise: 5600,
-        taux_change_vers_eur: 1.08,
-        montant_eur: +(5600 / 1.08).toFixed(2),
+        taux_change_vers_eur: USD_TO_EUR,
+        montant_eur: +(5600 * USD_TO_EUR).toFixed(2),
         source_fx: "couverture",
         couverture_id: state.cov.id,
         mode_tarifaire: "global",
@@ -232,7 +232,7 @@ export const QA_STEPS: Array<{
         date_solde: plus(70),
       } as any);
       if (e2) throw e2;
-      return "EUR 4 200 + USD 5 600 (couverts à 1.08)";
+      return `EUR 4 200 + USD 5 600 (couverts à ${USD_TO_EUR})`;
     },
   },
   {
