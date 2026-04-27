@@ -83,6 +83,10 @@ function ContactDetail() {
   const { data: dossiers } = useTable<Dossier>("dossiers");
   const { data: paiements } = useTable<Paiement>("paiements");
   const { data: factures } = useTable<Facture>("factures_fournisseurs");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: cotations } = useTable<Cotation>("cotations" as any);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: cotLignes } = useTable<CotationLigne>("cotation_lignes_fournisseurs" as any);
 
   const contact = contacts.find((c) => c.id === id);
 
