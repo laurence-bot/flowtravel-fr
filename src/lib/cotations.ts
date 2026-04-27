@@ -323,7 +323,6 @@ export async function transformerCotationEnDossier(
             Number(l.quantite || 1)) * l.taux_change_vers_eur,
           fx_source: l.source_fx,
           coverage_id: l.couverture_id,
-          statut: "a_payer",
         })),
       );
     }
