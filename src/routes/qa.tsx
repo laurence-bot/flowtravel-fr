@@ -32,7 +32,7 @@ export const Route = createFileRoute("/qa")({
   component: QaPage,
 });
 
-const DEMO_EMAIL = "demo@flowtravel.test";
+const DEMO_EMAIL = "demo2@flowtravel.test";
 const DEMO_PASSWORD = "DemoFlow!2026";
 
 function QaPage() {
@@ -171,7 +171,7 @@ function QaPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="demo@flowtravel.test"
+                    placeholder="demo2@flowtravel.test"
                   />
                 </div>
                 <div className="space-y-2">
