@@ -453,15 +453,15 @@ function QaPage() {
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <h4 className="font-medium text-sm">{d.title}</h4>
                         {d.detailRoute && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs"
-                            onClick={() => navigate({ to: d.detailRoute! as any })}
+                          <a
+                            href={d.detailRoute}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center h-7 px-3 text-xs rounded-md border border-input bg-background hover:bg-accent"
                           >
                             Ouvrir la fiche complète
                             <ExternalLink className="h-3 w-3 ml-1.5" />
-                          </Button>
+                          </a>
                         )}
                       </div>
                       {d.fields.length > 0 && (
