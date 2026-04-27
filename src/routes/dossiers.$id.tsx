@@ -319,8 +319,12 @@ function PaiementBloc({
                   <TableCell className="text-sm text-muted-foreground">{personne?.nom ?? "—"}</TableCell>
                   <TableCell className="capitalize text-sm text-muted-foreground">{p.methode}</TableCell>
                   <TableCell className={`text-right tabular font-medium ${colorClass}`}>
-                    {sign}
-                    {formatEUR(p.montant)}
+                    <div>{sign}{formatEUR(paiementEUR(p))}</div>
+                    {p.devise !== "EUR" && (
+                      <div className="text-[11px] text-muted-foreground font-normal mt-0.5">
+                        {formatMoney(p.montant_devise ?? 0, p.devise)} @ {Number(p.taux_change).toFixed(4)}
+                      </div>
+                    )}
                   </TableCell>
                 </TableRow>
               );
