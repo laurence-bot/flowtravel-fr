@@ -14,6 +14,9 @@ import { useTable, type Contact, type Dossier, type Paiement, type Compte } from
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { formatEUR, formatDate } from "@/lib/format";
+import { formatMoney } from "@/lib/fx";
+import { paiementEUR } from "@/lib/finance";
+import { FxFieldGroup, fxValueToDb, emptyFxValue, type FxFieldValue } from "@/components/fx-field-group";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { Plus, Wallet, ArrowDownLeft, ArrowUpRight } from "lucide-react";
