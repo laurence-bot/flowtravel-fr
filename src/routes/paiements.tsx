@@ -359,8 +359,15 @@ function PaiementsPage() {
                       p.type === "paiement_client" ? "text-[color:var(--revenue)]" : "text-[color:var(--cost)]"
                     }`}
                   >
-                    {p.type === "paiement_client" ? "+" : "−"}
-                    {formatEUR(p.montant)}
+                    <div>
+                      {p.type === "paiement_client" ? "+" : "−"}
+                      {formatEUR(paiementEUR(p))}
+                    </div>
+                    {p.devise !== "EUR" && (
+                      <div className="text-[11px] text-muted-foreground font-normal mt-0.5">
+                        {formatMoney(p.montant_devise ?? 0, p.devise)} @ {Number(p.taux_change).toFixed(4)}
+                      </div>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
