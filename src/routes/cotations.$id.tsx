@@ -78,6 +78,7 @@ const TONE_CLASS: Record<string, string> = {
   danger: "bg-destructive/15 text-destructive border-destructive/30",
   primary: "bg-primary/15 text-primary border-primary/30",
   muted: "bg-muted text-muted-foreground border-border",
+  warn: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
 };
 
 const ligneSchema = z.object({
