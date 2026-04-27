@@ -707,7 +707,7 @@ function CotationDetailPage() {
                   }
                 />
               </Field>
-              <Field label="Régime TVA">
+              <Field label="Régime TVA (auto selon pays)">
                 <Select
                   value={edit.regime_tva ?? "hors_ue"}
                   onValueChange={(v) =>
@@ -722,6 +722,13 @@ function CotationDetailPage() {
                     <SelectItem value="marge_ue">TVA sur marge (UE)</SelectItem>
                   </SelectContent>
                 </Select>
+                {edit.pays_destination && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {isEUCountry(edit.pays_destination)
+                      ? `${edit.pays_destination} est dans l'UE → TVA sur marge applicable.`
+                      : `${edit.pays_destination} est hors UE → exonéré (0 %).`}
+                  </p>
+                )}
               </Field>
               <Field label="Taux TVA marge (%)">
                 <Input
