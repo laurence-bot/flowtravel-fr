@@ -66,10 +66,10 @@ function PaiementsPage() {
   const filtered = paiements.filter((p) => filter === "all" || p.type === filter);
   const totalEncaisse = paiements
     .filter((p) => p.type === "paiement_client")
-    .reduce((s, p) => s + Number(p.montant), 0);
+    .reduce((s, p) => s + paiementEUR(p), 0);
   const totalDecaisse = paiements
     .filter((p) => p.type === "paiement_fournisseur")
-    .reduce((s, p) => s + Number(p.montant), 0);
+    .reduce((s, p) => s + paiementEUR(p), 0);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
