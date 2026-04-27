@@ -33,7 +33,6 @@ export const Route = createFileRoute("/paiements")({
 
 const paiementSchema = z.object({
   type: z.enum(["paiement_client", "paiement_fournisseur"]),
-  montant: z.number().positive("Le montant doit être supérieur à 0"),
   date: z.string().min(1, "Date requise"),
   methode: z.enum(["virement", "carte", "especes"]),
   source: z.enum(["banque", "manuel"]),
