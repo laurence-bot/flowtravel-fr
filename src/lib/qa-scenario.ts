@@ -507,6 +507,7 @@ export type QaDetail = {
   title: string;
   fields: QaDetailField[];
   detailRoute?: string;
+  actions?: { label: string; route: string }[];
   groups?: { title: string; fields: QaDetailField[] }[];
 };
 
@@ -528,6 +529,10 @@ export async function getStepDetails(
       return {
         title: "Client + demande créés",
         detailRoute: `/demandes/${state.demande.id}`,
+        actions: [
+          { label: "Ouvrir la fiche client", route: `/contacts/${state.client.id}` },
+          { label: "Ouvrir la demande", route: `/demandes/${state.demande.id}` },
+        ],
         fields: [
           { label: "Client", value: state.client.nom },
           { label: "Email", value: state.client.email ?? "—" },
