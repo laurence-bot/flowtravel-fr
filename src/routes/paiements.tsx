@@ -164,31 +164,17 @@ function PaiementsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Montant (€)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0.01"
-                required
-                autoFocus
-                value={form.montant}
-                onChange={(e) => setForm({ ...form, montant: e.target.value })}
-                placeholder="0,00"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Date</Label>
-              <Input
-                type="date"
-                required
-                value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-              />
-            </div>
-          </div>
+          <FxFieldGroup value={fx} onChange={setFx} amountLabel="Montant" />
 
+          <div className="space-y-2">
+            <Label>Date</Label>
+            <Input
+              type="date"
+              required
+              value={form.date}
+              onChange={(e) => setForm({ ...form, date: e.target.value })}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Méthode</Label>
