@@ -91,8 +91,11 @@ function Pilotage() {
   const { data: transferts } = useTable<Transfert>("transferts");
   const { data: bankTx } = useTable<BankTransaction>("bank_transactions");
   const { data: contacts } = useTable<Contact>("contacts");
+  const { data: echeances } = useTable<FactureEcheance>("facture_echeances");
+  const { data: reservations } = useTable<FxReservation>("fx_coverage_reservations");
 
   const f = computeGlobalFinance(dossiers, paiements, factures);
+  const fxPnl = computeFxPnl({ echeances, paiements, reservations });
   const soldes = computeComptesSoldes(comptes, paiements, transferts);
   const tresorerieReelle = soldes.reduce((s, c) => s + c.solde, 0);
   const forecast = computeCashForecast(30, {
