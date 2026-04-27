@@ -12,7 +12,9 @@ export type AuditEntity =
   | "fx_coverage"
   | "fx_reservation"
   | "facture_echeance"
-  | "pdf_import";
+  | "pdf_import"
+  | "cotation"
+  | "cotation_ligne";
 
 export type AuditAction =
   | "create"
