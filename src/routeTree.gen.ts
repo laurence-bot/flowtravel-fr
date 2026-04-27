@@ -10,11 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UtilisateursRouteImport } from './routes/utilisateurs'
+import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
 import { Route as RapprochementRouteImport } from './routes/rapprochement'
 import { Route as PrevisionsRouteImport } from './routes/previsions'
 import { Route as PilotageRouteImport } from './routes/pilotage'
 import { Route as ParametresAgenceRouteImport } from './routes/parametres-agence'
 import { Route as PaiementsRouteImport } from './routes/paiements'
+import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
 import { Route as ImportPdfRouteImport } from './routes/import-pdf'
 import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
 import { Route as ExportRouteImport } from './routes/export'
@@ -36,6 +38,11 @@ import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
 const UtilisateursRoute = UtilisateursRouteImport.update({
   id: '/utilisateurs',
   path: '/utilisateurs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
+  id: '/reinitialiser-mot-de-passe',
+  path: '/reinitialiser-mot-de-passe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RapprochementRoute = RapprochementRouteImport.update({
@@ -61,6 +68,11 @@ const ParametresAgenceRoute = ParametresAgenceRouteImport.update({
 const PaiementsRoute = PaiementsRouteImport.update({
   id: '/paiements',
   path: '/paiements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
+  id: '/mot-de-passe-oublie',
+  path: '/mot-de-passe-oublie',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ImportPdfRoute = ImportPdfRouteImport.update({
@@ -162,11 +174,13 @@ export interface FileRoutesByFullPath {
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
+  '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
   '/rapprochement': typeof RapprochementRoute
+  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
@@ -187,11 +201,13 @@ export interface FileRoutesByTo {
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
+  '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
   '/rapprochement': typeof RapprochementRoute
+  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
@@ -213,11 +229,13 @@ export interface FileRoutesById {
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
+  '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
   '/pilotage': typeof PilotageRoute
   '/previsions': typeof PrevisionsRoute
   '/rapprochement': typeof RapprochementRoute
+  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
@@ -240,11 +258,13 @@ export interface FileRouteTypes {
     | '/export'
     | '/import-bancaire'
     | '/import-pdf'
+    | '/mot-de-passe-oublie'
     | '/paiements'
     | '/parametres-agence'
     | '/pilotage'
     | '/previsions'
     | '/rapprochement'
+    | '/reinitialiser-mot-de-passe'
     | '/utilisateurs'
     | '/contacts/$id'
     | '/cotations/$id'
@@ -265,11 +285,13 @@ export interface FileRouteTypes {
     | '/export'
     | '/import-bancaire'
     | '/import-pdf'
+    | '/mot-de-passe-oublie'
     | '/paiements'
     | '/parametres-agence'
     | '/pilotage'
     | '/previsions'
     | '/rapprochement'
+    | '/reinitialiser-mot-de-passe'
     | '/utilisateurs'
     | '/contacts/$id'
     | '/cotations/$id'
@@ -290,11 +312,13 @@ export interface FileRouteTypes {
     | '/export'
     | '/import-bancaire'
     | '/import-pdf'
+    | '/mot-de-passe-oublie'
     | '/paiements'
     | '/parametres-agence'
     | '/pilotage'
     | '/previsions'
     | '/rapprochement'
+    | '/reinitialiser-mot-de-passe'
     | '/utilisateurs'
     | '/contacts/$id'
     | '/cotations/$id'
@@ -316,11 +340,13 @@ export interface RootRouteChildren {
   ExportRoute: typeof ExportRoute
   ImportBancaireRoute: typeof ImportBancaireRoute
   ImportPdfRoute: typeof ImportPdfRoute
+  MotDePasseOublieRoute: typeof MotDePasseOublieRoute
   PaiementsRoute: typeof PaiementsRoute
   ParametresAgenceRoute: typeof ParametresAgenceRoute
   PilotageRoute: typeof PilotageRoute
   PrevisionsRoute: typeof PrevisionsRoute
   RapprochementRoute: typeof RapprochementRoute
+  ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
   UtilisateursRoute: typeof UtilisateursRoute
   FacturesIdRoute: typeof FacturesIdRoute
 }
@@ -332,6 +358,13 @@ declare module '@tanstack/react-router' {
       path: '/utilisateurs'
       fullPath: '/utilisateurs'
       preLoaderRoute: typeof UtilisateursRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reinitialiser-mot-de-passe': {
+      id: '/reinitialiser-mot-de-passe'
+      path: '/reinitialiser-mot-de-passe'
+      fullPath: '/reinitialiser-mot-de-passe'
+      preLoaderRoute: typeof ReinitialiserMotDePasseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rapprochement': {
@@ -367,6 +400,13 @@ declare module '@tanstack/react-router' {
       path: '/paiements'
       fullPath: '/paiements'
       preLoaderRoute: typeof PaiementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mot-de-passe-oublie': {
+      id: '/mot-de-passe-oublie'
+      path: '/mot-de-passe-oublie'
+      fullPath: '/mot-de-passe-oublie'
+      preLoaderRoute: typeof MotDePasseOublieRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/import-pdf': {
@@ -552,11 +592,13 @@ const rootRouteChildren: RootRouteChildren = {
   ExportRoute: ExportRoute,
   ImportBancaireRoute: ImportBancaireRoute,
   ImportPdfRoute: ImportPdfRoute,
+  MotDePasseOublieRoute: MotDePasseOublieRoute,
   PaiementsRoute: PaiementsRoute,
   ParametresAgenceRoute: ParametresAgenceRoute,
   PilotageRoute: PilotageRoute,
   PrevisionsRoute: PrevisionsRoute,
   RapprochementRoute: RapprochementRoute,
+  ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
   UtilisateursRoute: UtilisateursRoute,
   FacturesIdRoute: FacturesIdRoute,
 }
