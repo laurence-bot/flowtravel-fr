@@ -80,6 +80,18 @@ function Dashboard() {
   const { data: transferts } = useTable<Transfert>("transferts");
   const { data: bankTx } = useTable<BankTransaction>("bank_transactions");
   const { data: contacts } = useTable<Contact>("contacts");
+  const { user } = useAuth();
+  const [tasks, setTasks] = useState<DossierTask[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .from("dossier_tasks")
+      .select("*")
+      .neq("statut", "termine")
+      .then(({ data }: { data: DossierTask[] | null }) => setTasks(data ?? []));
+  }, [user, dossiers.length]);
 
   const f = computeGlobalFinance(dossiers, paiements, factures);
   const soldes = computeComptesSoldes(comptes, paiements, transferts);
@@ -88,6 +100,14 @@ function Dashboard() {
   const forecast = computeCashForecast(30, { comptes, paiements, transferts, dossiers, factures, contacts });
   const recentDossiers = dossiers.slice(0, 5);
   const recentPaiements = paiements.slice(0, 5);
+
+  const tasksRetard = tasks.filter(isEnRetard);
+  const tasksToday = tasks.filter(isAujourdhui);
+  const tasksCritiques = tasks.filter((t) => t.priorite === "critique");
+  const tasksUrgentes = [...tasksRetard, ...tasksToday, ...tasksCritiques]
+    .filter((t, i, arr) => arr.findIndex((x) => x.id === t.id) === i)
+    .sort(sortByUrgence)
+    .slice(0, 6);
 
   return (
     <div className="space-y-10">
