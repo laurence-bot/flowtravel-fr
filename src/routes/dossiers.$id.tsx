@@ -223,24 +223,30 @@ function DossierDetail() {
               {facturesDossier.map((fact) => {
                 const fournisseur = contacts.find((c) => c.id === fact.fournisseur_id);
                 return (
-                  <li key={fact.id} className="py-3 flex justify-between items-start text-sm">
-                    <div>
-                      <div className="font-medium">{fournisseur?.nom ?? "Fournisseur"}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        Échéance : {formatDate(fact.date_echeance)}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="tabular font-medium">{formatEUR(factureEUR(fact))}</div>
-                      {fact.devise !== "EUR" && (
-                        <div className="text-[11px] text-muted-foreground mt-0.5">
-                          {formatMoney(fact.montant_devise ?? 0, fact.devise)} @ {Number(fact.taux_change).toFixed(4)}
+                  <li key={fact.id}>
+                    <Link
+                      to="/factures/$id"
+                      params={{ id: fact.id }}
+                      className="py-3 flex justify-between items-start text-sm hover:bg-secondary/30 -mx-2 px-2 rounded-md transition-colors"
+                    >
+                      <div>
+                        <div className="font-medium">{fournisseur?.nom ?? "Fournisseur"}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          Échéance : {formatDate(fact.date_echeance)}
                         </div>
-                      )}
-                      <Badge variant={fact.paye ? "default" : "outline"} className="mt-1 text-[10px]">
-                        {fact.paye ? "Payée" : "À payer"}
-                      </Badge>
-                    </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="tabular font-medium">{formatEUR(factureEUR(fact))}</div>
+                        {fact.devise !== "EUR" && (
+                          <div className="text-[11px] text-muted-foreground mt-0.5">
+                            {formatMoney(fact.montant_devise ?? 0, fact.devise)} @ {Number(fact.taux_change).toFixed(4)}
+                          </div>
+                        )}
+                        <Badge variant={fact.paye ? "default" : "outline"} className="mt-1 text-[10px]">
+                          {fact.paye ? "Payée" : "À payer"}
+                        </Badge>
+                      </div>
+                    </Link>
                   </li>
                 );
               })}
