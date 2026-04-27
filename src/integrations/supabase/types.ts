@@ -185,6 +185,188 @@ export type Database = {
         }
         Relationships: []
       }
+      cotation_lignes_fournisseurs: {
+        Row: {
+          cotation_id: string
+          couverture_id: string | null
+          created_at: string
+          date_acompte_1: string | null
+          date_acompte_2: string | null
+          date_acompte_3: string | null
+          date_prestation: string | null
+          date_solde: string | null
+          devise: Database["public"]["Enums"]["devise_code"]
+          fournisseur_id: string | null
+          id: string
+          mode_tarifaire: Database["public"]["Enums"]["cotation_ligne_mode_tarifaire"]
+          montant_devise: number
+          montant_eur: number
+          nom_fournisseur: string
+          notes: string | null
+          ordre: number
+          payeur: string | null
+          pct_acompte_1: number
+          pct_acompte_2: number
+          pct_acompte_3: number
+          pct_solde: number
+          prestation: string | null
+          quantite: number
+          source_fx: Database["public"]["Enums"]["fx_source"]
+          taux_change_vers_eur: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cotation_id: string
+          couverture_id?: string | null
+          created_at?: string
+          date_acompte_1?: string | null
+          date_acompte_2?: string | null
+          date_acompte_3?: string | null
+          date_prestation?: string | null
+          date_solde?: string | null
+          devise?: Database["public"]["Enums"]["devise_code"]
+          fournisseur_id?: string | null
+          id?: string
+          mode_tarifaire?: Database["public"]["Enums"]["cotation_ligne_mode_tarifaire"]
+          montant_devise?: number
+          montant_eur?: number
+          nom_fournisseur: string
+          notes?: string | null
+          ordre?: number
+          payeur?: string | null
+          pct_acompte_1?: number
+          pct_acompte_2?: number
+          pct_acompte_3?: number
+          pct_solde?: number
+          prestation?: string | null
+          quantite?: number
+          source_fx?: Database["public"]["Enums"]["fx_source"]
+          taux_change_vers_eur?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cotation_id?: string
+          couverture_id?: string | null
+          created_at?: string
+          date_acompte_1?: string | null
+          date_acompte_2?: string | null
+          date_acompte_3?: string | null
+          date_prestation?: string | null
+          date_solde?: string | null
+          devise?: Database["public"]["Enums"]["devise_code"]
+          fournisseur_id?: string | null
+          id?: string
+          mode_tarifaire?: Database["public"]["Enums"]["cotation_ligne_mode_tarifaire"]
+          montant_devise?: number
+          montant_eur?: number
+          nom_fournisseur?: string
+          notes?: string | null
+          ordre?: number
+          payeur?: string | null
+          pct_acompte_1?: number
+          pct_acompte_2?: number
+          pct_acompte_3?: number
+          pct_solde?: number
+          prestation?: string | null
+          quantite?: number
+          source_fx?: Database["public"]["Enums"]["fx_source"]
+          taux_change_vers_eur?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotation_lignes_fournisseurs_cotation_id_fkey"
+            columns: ["cotation_id"]
+            isOneToOne: false
+            referencedRelation: "cotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cotations: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          date_depart: string | null
+          date_retour: string | null
+          destination: string | null
+          dossier_id: string | null
+          group_id: string
+          id: string
+          langue: string | null
+          nombre_chambres: number
+          nombre_pax: number
+          notes: string | null
+          prix_vente_ht: number
+          prix_vente_ttc: number
+          prix_vente_usd: number | null
+          raison_perte: string | null
+          regime_tva: Database["public"]["Enums"]["cotation_regime_tva"]
+          statut: Database["public"]["Enums"]["cotation_statut"]
+          tags_destination: string[]
+          taux_tva_marge: number
+          titre: string
+          updated_at: string
+          user_id: string
+          version_number: number
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          date_depart?: string | null
+          date_retour?: string | null
+          destination?: string | null
+          dossier_id?: string | null
+          group_id?: string
+          id?: string
+          langue?: string | null
+          nombre_chambres?: number
+          nombre_pax?: number
+          notes?: string | null
+          prix_vente_ht?: number
+          prix_vente_ttc?: number
+          prix_vente_usd?: number | null
+          raison_perte?: string | null
+          regime_tva?: Database["public"]["Enums"]["cotation_regime_tva"]
+          statut?: Database["public"]["Enums"]["cotation_statut"]
+          tags_destination?: string[]
+          taux_tva_marge?: number
+          titre: string
+          updated_at?: string
+          user_id: string
+          version_number?: number
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          date_depart?: string | null
+          date_retour?: string | null
+          destination?: string | null
+          dossier_id?: string | null
+          group_id?: string
+          id?: string
+          langue?: string | null
+          nombre_chambres?: number
+          nombre_pax?: number
+          notes?: string | null
+          prix_vente_ht?: number
+          prix_vente_ttc?: number
+          prix_vente_usd?: number | null
+          raison_perte?: string | null
+          regime_tva?: Database["public"]["Enums"]["cotation_regime_tva"]
+          statut?: Database["public"]["Enums"]["cotation_statut"]
+          tags_destination?: string[]
+          taux_tva_marge?: number
+          titre?: string
+          updated_at?: string
+          user_id?: string
+          version_number?: number
+        }
+        Relationships: []
+      }
       dossiers: {
         Row: {
           client_id: string | null
@@ -802,6 +984,8 @@ export type Database = {
         | "fx_reservation"
         | "facture_echeance"
         | "pdf_import"
+        | "cotation"
+        | "cotation_ligne"
       bank_sens: "credit" | "debit"
       bank_source: "sg" | "cic" | "ebury"
       bank_statut: "nouveau" | "rapproche" | "ignore"
@@ -813,6 +997,15 @@ export type Database = {
         | "fournisseurs"
         | "plateforme"
       contact_type: "client" | "fournisseur"
+      cotation_ligne_mode_tarifaire: "global" | "par_personne"
+      cotation_regime_tva: "marge_ue" | "hors_ue"
+      cotation_statut:
+        | "brouillon"
+        | "envoyee"
+        | "validee"
+        | "perdue"
+        | "transformee_en_dossier"
+        | "archivee"
       devise_code:
         | "EUR"
         | "USD"
@@ -994,6 +1187,8 @@ export const Constants = {
         "fx_reservation",
         "facture_echeance",
         "pdf_import",
+        "cotation",
+        "cotation_ligne",
       ],
       bank_sens: ["credit", "debit"],
       bank_source: ["sg", "cic", "ebury"],
@@ -1007,6 +1202,16 @@ export const Constants = {
         "plateforme",
       ],
       contact_type: ["client", "fournisseur"],
+      cotation_ligne_mode_tarifaire: ["global", "par_personne"],
+      cotation_regime_tva: ["marge_ue", "hors_ue"],
+      cotation_statut: [
+        "brouillon",
+        "envoyee",
+        "validee",
+        "perdue",
+        "transformee_en_dossier",
+        "archivee",
+      ],
       devise_code: [
         "EUR",
         "USD",
