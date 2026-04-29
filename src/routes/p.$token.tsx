@@ -435,13 +435,40 @@ function PublicQuotePage() {
                                       </div>
                                     </div>
                                   </div>
-                                  {idx < volSegments.length - 1 && seg.duree_escale_minutes && (
-                                    <div className="text-xs text-stone-500 italic mt-2 pl-3 border-l-2 border-stone-300">
-                                      Escale {Math.floor(seg.duree_escale_minutes / 60)}h
-                                      {String(seg.duree_escale_minutes % 60).padStart(2, "0")} à{" "}
-                                      {iataToCity(seg.aeroport_arrivee)}
-                                    </div>
-                                  )}
+                                  {(() => {
+                                    if (idx >= volSegments.length - 1) return null;
+                                    const next = volSegments[idx + 1];
+                                    // 1. Calcul auto à partir des dates/heures
+                                    let mins: number | null = null;
+                                    if (
+                                      seg.date_arrivee &&
+                                      seg.heure_arrivee &&
+                                      next.date_depart &&
+                                      next.heure_depart
+                                    ) {
+                                      const arr = new Date(
+                                        `${seg.date_arrivee}T${seg.heure_arrivee}`,
+                                      ).getTime();
+                                      const dep = new Date(
+                                        `${next.date_depart}T${next.heure_depart}`,
+                                      ).getTime();
+                                      const diff = Math.round((dep - arr) / 60000);
+                                      if (diff > 0 && diff < 60 * 48) mins = diff;
+                                    }
+                                    // 2. Fallback sur la valeur saisie manuellement
+                                    if (mins == null && seg.duree_escale_minutes) {
+                                      mins = seg.duree_escale_minutes;
+                                    }
+                                    if (!mins) return null;
+                                    const h = Math.floor(mins / 60);
+                                    const m = mins % 60;
+                                    return (
+                                      <div className="text-xs text-stone-500 italic mt-2 pl-3 border-l-2 border-stone-300">
+                                        Escale {h}h{String(m).padStart(2, "0")} à{" "}
+                                        {iataToCity(seg.aeroport_arrivee)}
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                               );
                             })}
