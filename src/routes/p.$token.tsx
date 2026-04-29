@@ -591,6 +591,24 @@ function PublicQuotePage() {
                 {cotation.nombre_pax > 1 && `soit ${formatEUR(pricePerPax)} / personne`}
               </div>
 
+              {acompteInfo.acompte > 0 && (
+                <div className="border-t brand-border-ornament pt-4 mb-6">
+                  <div className="text-xs uppercase tracking-widest text-stone-500 mb-3">
+                    À verser à la confirmation
+                  </div>
+                  <div className="flex justify-between items-baseline mb-2">
+                    <span className="text-sm text-stone-600">Acompte</span>
+                    <span className="brand-heading text-2xl brand-signature font-medium">
+                      {formatEUR(acompteInfo.acompte)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm text-stone-600">
+                    <span>Solde au départ</span>
+                    <span>{formatEUR(acompteInfo.solde)}</span>
+                  </div>
+                </div>
+              )}
+
               {echeancier.length > 0 && (
                 <div className="border-t brand-border-ornament pt-4 mb-6">
                   <div className="text-xs uppercase tracking-widest text-stone-500 mb-3">
