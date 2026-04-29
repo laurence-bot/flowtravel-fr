@@ -86,6 +86,25 @@ export function QuoteContentEditorBlock({
     else toast.success("Introduction enregistrée.");
   };
 
+  const saveInclus = async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("cotations")
+      .update({ inclus_text: inclus || null })
+      .eq("id", cotationId);
+    if (error) toast.error(error.message);
+  };
+
+  const saveNonInclus = async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("cotations")
+      .update({ non_inclus_text: nonInclus || null })
+      .eq("id", cotationId);
+    if (error) toast.error(error.message);
+    else toast.success("Introduction enregistrée.");
+  };
+
   const addJour = async () => {
     const ordre = jours.length > 0 ? Math.max(...jours.map((j) => j.ordre)) + 1 : 1;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
