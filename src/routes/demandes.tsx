@@ -100,6 +100,7 @@ function DemandesPage() {
     budget: "",
     nombre_pax: "1",
     message_client: "",
+    creer_client: false,
   });
 
   const [fStatut, setFStatut] = useState<string>("tous");
