@@ -485,7 +485,7 @@ function CotationDetailPage() {
         <PublicQuoteLinkBlock
           cotationId={cot.id}
           userId={user.id}
-          canWrite={canWrite && !isLocked}
+          canWrite={canWrite}
         />
       )}
 
