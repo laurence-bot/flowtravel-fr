@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { formatEUR } from "@/lib/format";
 
-type Mode = "pct_cout" | "pct_ca" | "montant";
+type Mode = "pct_ca" | "montant";
 
 type Props = {
   coutTotal: number;
@@ -27,8 +27,7 @@ type Props = {
 };
 
 export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }: Props) {
-  const [mode, setMode] = useState<Mode>("pct_cout");
-  const [pctCout, setPctCout] = useState<number>(25);
+  const [mode, setMode] = useState<Mode>("pct_ca");
   const [pctCa, setPctCa] = useState<number>(20);
   const [montant, setMontant] = useState<number>(1000);
 
