@@ -59,6 +59,7 @@ import {
   type EmailDraft,
 } from "@/lib/options";
 import { EmailDraftModal } from "@/components/email-draft-modal";
+import { FlightSegmentsDialog } from "@/components/flight-segments-dialog";
 import { useAgencySettings } from "@/hooks/use-agency-settings";
 import { appendSignature } from "@/lib/agency-settings";
 import type { Cotation, CotationLigne } from "@/lib/cotations";
