@@ -1,5 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { RequireAuth } from "@/components/require-auth";
+import { useState } from "react";
+import { ContactEditDialog } from "@/components/contact-edit-dialog";
+import { FournisseurConditionsBlock } from "@/components/fournisseur-conditions-block";
+import { usePageWriteAccess } from "@/hooks/use-page-write-access";
+import { Pencil, Globe, MapPin, User as UserIcon, StickyNote } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
