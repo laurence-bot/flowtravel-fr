@@ -117,7 +117,6 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }:
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="pct_cout">% de marge sur coût</SelectItem>
               <SelectItem value="pct_ca">% de marge nette sur CA</SelectItem>
               <SelectItem value="montant">Montant fixe en €</SelectItem>
             </SelectContent>
@@ -125,18 +124,6 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }:
         </div>
 
         <div>
-          {mode === "pct_cout" && (
-            <>
-              <Label className="text-xs">Marge sur coût (%)</Label>
-              <Input
-                type="number"
-                step="0.5"
-                value={pctCout}
-                onChange={(e) => setPctCout(Number(e.target.value))}
-                className="h-9"
-              />
-            </>
-          )}
           {mode === "pct_ca" && (
             <>
               <Label className="text-xs">Marge nette / CA (%)</Label>
