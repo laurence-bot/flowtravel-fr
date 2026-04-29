@@ -36,6 +36,7 @@ import { usePageWriteAccess } from "@/hooks/use-page-write-access";
 import { formatEUR } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { logAudit } from "@/lib/audit";
+import { engageReservationsForCotation, releaseReservationsForCotation } from "@/lib/fx-reservations";
 import {
   COTATION_STATUT_LABELS,
   COTATION_STATUT_TONES,
