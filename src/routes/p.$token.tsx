@@ -143,17 +143,20 @@ function PublicQuotePage() {
 
           {/* Header agence */}
           <div className="relative z-10 flex items-center justify-between px-6 md:px-12 py-6 text-white">
-            {agency?.logo_url || agency?.logo_dark_url ? (
-              <img
-                src={agency.logo_dark_url || agency.logo_url || ""}
-                alt={agency.agency_name || ""}
-                className="h-10 md:h-12 object-contain brightness-0 invert"
-              />
-            ) : (
-              <div className="brand-heading text-xl md:text-2xl font-medium">
-                {agency?.agency_name || "Agence"}
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              {(agency?.logo_dark_url || agency?.logo_url) && (
+                <img
+                  src={agency.logo_dark_url || agency.logo_url || ""}
+                  alt={agency.agency_name || ""}
+                  className="h-12 md:h-16 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]"
+                />
+              )}
+              {agency?.agency_name && (
+                <div className="brand-heading text-xl md:text-2xl font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                  {agency.agency_name}
+                </div>
+              )}
+            </div>
             {agency?.brand_baseline && (
               <div className="hidden md:block text-xs uppercase tracking-[0.25em] opacity-80">
                 {agency.brand_baseline}
