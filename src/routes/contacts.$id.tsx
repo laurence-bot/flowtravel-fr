@@ -260,7 +260,7 @@ function ContactDetail() {
 
   return (
     <div className="space-y-8">
-      <ContactHeaderAndInfo contact={contact} isClient={isClient} />
+      <ContactHeaderAndInfo contact={contact} isClient={isClient} onSaved={refetchContacts} />
 
       {!isClient && (
         <FournisseurConditionsBlock fournisseurId={contact.id} canWrite={true} />
