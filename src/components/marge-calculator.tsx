@@ -93,7 +93,7 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }:
       margeNettePct,
       tvaSurMarge,
     };
-  }, [mode, pctCout, pctCa, montant, coutTotal, regimeTva, tauxTvaMarge]);
+  }, [mode, pctCa, montant, coutTotal, regimeTva, tauxTvaMarge]);
 
   return (
     <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-3">
