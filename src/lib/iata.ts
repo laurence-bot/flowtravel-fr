@@ -196,7 +196,21 @@ export function iataToCity(code: string): string {
  */
 export function formatRoutingForClient(routing: string | null | undefined): string {
   if (!routing) return "";
-  // Remplace tout token isolé de 3 lettres majuscules par son nom lisible.
-  // \b évite de toucher aux mots plus longs ; on garde les chiffres/numéros de vol intacts.
-  return routing.replace(/\b([A-Z]{3})\b/g, (m) => IATA_AIRPORTS[m] ?? m);
+  // Traite chaque ligne séparément (préserve aller / retour saisis sur 2 lignes).
+  return routing
+    .split(/\r?\n/)
+    .map((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return "";
+      // Si la ligne ne contient QUE des codes IATA + séparateurs (espaces, virgules,
+      // tirets, slashes, flèches), on la reconstruit proprement avec " → ".
+      const codesOnly = /^[A-Z]{3}([\s,\-/>→•·|]+[A-Z]{3})*$/i.test(trimmed);
+      if (codesOnly) {
+        const codes = trimmed.match(/[A-Z]{3}/gi) ?? [];
+        return codes.map((c) => iataToCity(c)).join(" → ");
+      }
+      // Sinon : remplace simplement les codes isolés par leur nom lisible.
+      return trimmed.replace(/\b([A-Z]{3})\b/g, (m) => IATA_AIRPORTS[m.toUpperCase()] ?? m);
+    })
+    .join("\n");
 }
