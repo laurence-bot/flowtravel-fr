@@ -68,6 +68,7 @@ import { toast } from "sonner";
 import { CotationOptionsBlock } from "@/components/cotation-options-block";
 import { PublicQuoteLinkBlock } from "@/components/public-quote-link-block";
 import { QuoteContentEditorBlock } from "@/components/quote-content-editor-block";
+import { FxOptimizerBlock } from "@/components/fx-optimizer-block";
 
 export const Route = createFileRoute("/cotations/$id")({
   component: () => (
@@ -133,7 +134,7 @@ function CotationDetailPage() {
     nom_fournisseur: "",
     fournisseur_id: "",
     prestation: "",
-    payeur: "",
+    // payeur supprimé
     date_prestation: "",
     mode_tarifaire: "global" as CotationLigneModeTarifaire,
     quantite: "1",
@@ -255,7 +256,7 @@ function CotationDetailPage() {
         cotation_id: cot.id,
         fournisseur_id: ligneForm.fournisseur_id || null,
         nom_fournisseur: parsed.data.nom_fournisseur,
-        payeur: ligneForm.payeur || null,
+        payeur: null,
         prestation: parsed.data.prestation || null,
         date_prestation: ligneForm.date_prestation || null,
         mode_tarifaire: ligneForm.mode_tarifaire,
