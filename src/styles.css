@@ -1,8 +1,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
-
-@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+/* Google Fonts chargées via <link> dans __root.tsx (TanStack Start) */
 
 @custom-variant dark (&:is(.dark *));
 
