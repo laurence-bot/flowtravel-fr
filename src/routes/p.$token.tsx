@@ -81,6 +81,7 @@ function PublicQuotePage() {
     notes: string | null;
   }> }).segments ?? [];
   const fin = computeCotationFinance(cotation, lignes);
+  const acompteInfo = computeAcompteClient(cotation, lignes);
   const pricePerPax = cotation.nombre_pax > 0 ? fin.prixVente / cotation.nombre_pax : 0;
 
   // Échéancier consolidé
