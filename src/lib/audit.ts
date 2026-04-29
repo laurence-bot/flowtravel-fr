@@ -19,7 +19,9 @@ export type AuditEntity =
   | "dossier_task"
   | "fournisseur_option"
   | "flight_option"
-  | "agency_settings";
+  | "agency_settings"
+  | "contact"
+  | "fournisseur_condition";
 
 export type AuditAction =
   | "create"
@@ -80,6 +82,8 @@ export const ENTITY_LABELS: Record<AuditEntity, string> = {
   fournisseur_option: "Option fournisseur",
   flight_option: "Option vol",
   agency_settings: "Paramètres agence",
+  contact: "Contact",
+  fournisseur_condition: "Conditions fournisseur",
 };
 
 export const ACTION_LABELS: Record<AuditAction, string> = {
