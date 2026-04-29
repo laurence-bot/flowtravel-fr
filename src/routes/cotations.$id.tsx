@@ -299,6 +299,8 @@ function CotationDetailPage() {
       nom_fournisseur: "",
       prestation: "",
       montant_devise: "0",
+      couverture_id: "",
+      source_fx: "taux_du_jour",
     });
     refetchLignes();
     toast.success("Ligne ajoutée.");
