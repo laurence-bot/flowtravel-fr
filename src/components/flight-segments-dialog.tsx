@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, ArrowDown, Plane } from "lucide-react";
+import { Plus, Trash2, ArrowDown, Plane, Sparkles, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
@@ -157,6 +157,76 @@ export function FlightSegmentsDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, open]);
 
+  // ===== Import depuis capture d'écran (Lovable AI / Gemini vision) =====
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [importing, setImporting] = useState(false);
+
+  const fileToDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error("Lecture image impossible"));
+      reader.readAsDataURL(file);
+    });
+
+  const handleImportImage = async (file: File) => {
+    if (!user) return;
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("Image trop lourde (max 8 Mo).");
+      return;
+    }
+    setImporting(true);
+    try {
+      const imageDataUrl = await fileToDataUrl(file);
+      const { data, error } = await supabase.functions.invoke("extract-flights", {
+        body: { imageDataUrl },
+      });
+      if (error) throw error;
+      const extracted = (data?.segments ?? []) as Array<{
+        compagnie?: string;
+        numero_vol?: string;
+        aeroport_depart?: string;
+        aeroport_arrivee?: string;
+        date_depart?: string;
+        heure_depart?: string;
+        date_arrivee?: string;
+        heure_arrivee?: string;
+      }>;
+      if (extracted.length === 0) {
+        toast.warning("Aucun vol détecté sur cette image.");
+        return;
+      }
+      // Remplace tous les segments tmp non sauvegardés ; conserve ceux déjà en DB.
+      const persisted = segments.filter((s) => !s.id.startsWith("tmp-"));
+      const startOrdre =
+        persisted.length > 0 ? Math.max(...persisted.map((s) => s.ordre)) + 1 : 1;
+      const newSegs: FlightSegment[] = extracted.map((seg, i) => ({
+        id: `tmp-${crypto.randomUUID()}`,
+        flight_option_id: flightOptionId,
+        user_id: user.id,
+        ordre: startOrdre + i,
+        compagnie: seg.compagnie?.toUpperCase().trim() || defaultCompagnie || null,
+        numero_vol: seg.numero_vol?.toUpperCase().trim() || null,
+        aeroport_depart: (seg.aeroport_depart || "").toUpperCase().trim(),
+        aeroport_arrivee: (seg.aeroport_arrivee || "").toUpperCase().trim(),
+        date_depart: seg.date_depart || null,
+        heure_depart: seg.heure_depart || null,
+        date_arrivee: seg.date_arrivee || null,
+        heure_arrivee: seg.heure_arrivee || null,
+        duree_escale_minutes: null,
+        notes: null,
+      }));
+      setSegments([...persisted, ...newSegs]);
+      toast.success(`${newSegs.length} segment(s) extrait(s). Vérifiez puis enregistrez.`);
+    } catch (e) {
+      console.error("[import vol image]", e);
+      toast.error(e instanceof Error ? e.message : "Erreur lors de l'analyse de l'image.");
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const updateSegment = (id: string, patch: Partial<FlightSegment>) => {
     setSegments((prev) => {
       const next = prev.map((s) => (s.id === id ? { ...s, ...patch } : s));
@@ -250,6 +320,37 @@ export function FlightSegmentsDialog({
             Segments du vol
           </DialogTitle>
         </DialogHeader>
+
+        {canWrite && (
+          <div className="flex items-center gap-2 p-3 rounded-md border bg-primary/5">
+            <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+            <div className="flex-1 text-xs">
+              <div className="font-medium">Import auto depuis capture d'écran</div>
+              <div className="text-muted-foreground">
+                Collez une capture (Amadeus, GDS, mail compagnie…) — l'IA extrait les segments.
+              </div>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void handleImportImage(f);
+              }}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importing}
+            >
+              <Upload className="h-3 w-3 mr-1" />
+              {importing ? "Analyse…" : "Importer"}
+            </Button>
+          </div>
+        )}
 
         {loading ? (
           <div className="py-8 text-center text-sm text-muted-foreground">Chargement…</div>
