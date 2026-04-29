@@ -96,6 +96,11 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     "flight_options" as any,
   );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: segAll } = useTable<{ id: string; flight_option_id: string }>(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    "flight_segments" as any,
+  );
 
   const fournisseurOptions = useMemo(
     () => foAll.filter((o) => o.cotation_id === cot.id),
