@@ -27,7 +27,25 @@ import {
   Sparkles,
   Wand2,
   X,
+  Plane,
+  RefreshCw,
 } from "lucide-react";
+import {
+  buildItineraryFromFlights,
+  pickReferenceFlight,
+  type FlightOptionLite,
+  type FlightSegmentLite,
+} from "@/lib/itinerary-from-flights";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
   DndContext,
