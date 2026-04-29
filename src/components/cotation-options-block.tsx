@@ -1121,6 +1121,16 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
         draft={draft}
         onSent={onDraftSent}
       />
+
+      {segmentsOpenFor && (
+        <FlightSegmentsDialog
+          open={!!segmentsOpenFor}
+          onOpenChange={(v) => !v && setSegmentsOpenFor(null)}
+          flightOptionId={segmentsOpenFor.id}
+          defaultCompagnie={segmentsOpenFor.compagnie}
+          canWrite={canWrite}
+        />
+      )}
     </Card>
   );
 }
