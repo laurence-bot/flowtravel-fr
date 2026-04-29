@@ -415,15 +415,45 @@ export function QuoteContentEditorBlock({
 
       {/* JOURS */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <Label>Itinéraire jour par jour ({jours.length})</Label>
           {canWrite && (
-            <Button size="sm" variant="outline" onClick={addJour}>
-              <Plus className="h-4 w-4 mr-1" />
-              Ajouter un jour
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRegenClick}
+                disabled={regenLoading || !hasFlights}
+                title={
+                  hasFlights
+                    ? "Construit l'itinéraire à partir des vols saisis"
+                    : "Ajoutez d'abord les vols pour activer cette option"
+                }
+              >
+                {regenLoading ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Plane className="h-4 w-4 mr-1" />
+                )}
+                {jours.length === 0 ? "Générer depuis les vols" : "Régénérer depuis les vols"}
+              </Button>
+              <Button size="sm" variant="outline" onClick={addJour}>
+                <Plus className="h-4 w-4 mr-1" />
+                Ajouter un jour
+              </Button>
+            </div>
           )}
         </div>
+        {!hasFlights && jours.length === 0 && (
+          <div className="text-xs text-muted-foreground bg-muted/50 border border-dashed rounded p-3 flex items-start gap-2">
+            <Plane className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[color:var(--gold)]" />
+            <div>
+              <strong>Les vols définissent la structure du voyage.</strong> Saisissez d'abord
+              vos vols (option vol + segments) puis cliquez sur <em>« Générer depuis les vols »</em>
+              pour construire automatiquement le calendrier jour par jour.
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="text-sm text-muted-foreground text-center py-6">Chargement…</div>
