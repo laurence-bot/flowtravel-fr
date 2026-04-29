@@ -231,6 +231,10 @@ function ConditionRow({
       delai_acompte_2_jours: form.delai_acompte_2_jours ? Number(form.delai_acompte_2_jours) : null,
       delai_acompte_3_jours: form.delai_acompte_3_jours ? Number(form.delai_acompte_3_jours) : null,
       delai_solde_jours: form.delai_solde_jours ? Number(form.delai_solde_jours) : null,
+      acompte_1_a_reservation: form.acompte_1_a_reservation,
+      acompte_2_a_reservation: form.acompte_2_a_reservation,
+      acompte_3_a_reservation: form.acompte_3_a_reservation,
+      solde_a_reservation: form.solde_a_reservation,
       conditions_annulation: form.conditions_annulation,
       notes: form.notes || null,
     };
