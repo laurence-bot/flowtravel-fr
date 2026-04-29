@@ -41,6 +41,7 @@ import {
   COTATION_STATUT_TONES,
   REGIME_TVA_LABELS,
   computeCotationFinance,
+  computeAcompteClient,
   duplicateCotation,
   ligneCoutEur,
   transformerCotationEnDossier,
