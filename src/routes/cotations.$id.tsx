@@ -64,6 +64,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { CotationOptionsBlock } from "@/components/cotation-options-block";
+import { PublicQuoteLinkBlock } from "@/components/public-quote-link-block";
 
 export const Route = createFileRoute("/cotations/$id")({
   component: () => (
@@ -478,6 +479,15 @@ function CotationDetailPage() {
           </div>
         </Card>
       </div>
+
+      {/* Devis web client (lien partageable) */}
+      {user && (
+        <PublicQuoteLinkBlock
+          cotationId={cot.id}
+          userId={user.id}
+          canWrite={canWrite && !isLocked}
+        />
+      )}
 
       {/* Alertes qualité */}
       {(() => {
