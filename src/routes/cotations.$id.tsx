@@ -76,6 +76,7 @@ import { PublicQuoteLinkBlock } from "@/components/public-quote-link-block";
 import { QuoteContentEditorBlock } from "@/components/quote-content-editor-block";
 import { FxOptimizerBlock } from "@/components/fx-optimizer-block";
 import { InlineFxCoveragePicker } from "@/components/inline-fx-coverage-picker";
+import { MargeCalculator } from "@/components/marge-calculator";
 
 export const Route = createFileRoute("/cotations/$id")({
   component: () => (
@@ -839,6 +840,16 @@ function CotationDetailPage() {
                   }
                 />
               </Field>
+              <div className="md:col-span-2">
+                <MargeCalculator
+                  coutTotal={fin.coutTotal}
+                  regimeTva={(edit.regime_tva ?? "hors_ue") as "marge_ue" | "hors_ue"}
+                  tauxTvaMarge={Number(edit.taux_tva_marge ?? 20)}
+                  onApply={({ prixHt, prixTtc }) =>
+                    setEdit({ ...edit, prix_vente_ht: prixHt, prix_vente_ttc: prixTtc })
+                  }
+                />
+              </div>
               <Field label="Prix HT">
                 <Input
                   type="number"
