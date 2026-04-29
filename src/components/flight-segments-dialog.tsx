@@ -33,6 +33,10 @@ type Props = {
   onOpenChange: (v: boolean) => void;
   flightOptionId: string;
   defaultCompagnie?: string;
+  defaultDateDepart?: string | null;
+  defaultHeureDepart?: string | null;
+  defaultDateRetour?: string | null;
+  defaultHeureRetour?: string | null;
   canWrite: boolean;
 };
 
@@ -41,27 +45,56 @@ const empty = (
   userId: string,
   ordre: number,
   defaultCompagnie?: string,
-): Omit<FlightSegment, "id"> => ({
-  flight_option_id: flightOptionId,
-  user_id: userId,
-  ordre,
-  compagnie: defaultCompagnie ?? null,
-  numero_vol: null,
-  aeroport_depart: "",
-  date_depart: null,
-  heure_depart: null,
-  aeroport_arrivee: "",
-  date_arrivee: null,
-  heure_arrivee: null,
-  duree_escale_minutes: null,
-  notes: null,
-});
+  prev?: FlightSegment | null,
+  fallbackDateDepart?: string | null,
+  fallbackHeureDepart?: string | null,
+): Omit<FlightSegment, "id"> => {
+  // Calcule la date/heure de départ du nouveau segment :
+  // - si segment précédent : on part de l'arrivée du précédent + escale (défaut 120 min)
+  // - sinon : on prend les valeurs de l'option vol
+  let date_depart: string | null = fallbackDateDepart ?? null;
+  let heure_depart: string | null = fallbackHeureDepart ?? null;
+  let aeroport_depart = "";
+
+  if (prev) {
+    aeroport_depart = prev.aeroport_arrivee || "";
+    if (prev.date_arrivee && prev.heure_arrivee) {
+      const escaleMin = prev.duree_escale_minutes ?? 120;
+      const base = new Date(`${prev.date_arrivee}T${prev.heure_arrivee}`);
+      base.setMinutes(base.getMinutes() + escaleMin);
+      date_depart = base.toISOString().slice(0, 10);
+      heure_depart = base.toTimeString().slice(0, 5);
+    } else if (prev.date_arrivee) {
+      date_depart = prev.date_arrivee;
+    }
+  }
+
+  return {
+    flight_option_id: flightOptionId,
+    user_id: userId,
+    ordre,
+    compagnie: defaultCompagnie ?? null,
+    numero_vol: null,
+    aeroport_depart,
+    date_depart,
+    heure_depart,
+    aeroport_arrivee: "",
+    date_arrivee: null,
+    heure_arrivee: null,
+    duree_escale_minutes: null,
+    notes: null,
+  };
+};
 
 export function FlightSegmentsDialog({
   open,
   onOpenChange,
   flightOptionId,
   defaultCompagnie,
+  defaultDateDepart,
+  defaultHeureDepart,
+  defaultDateRetour,
+  defaultHeureRetour,
   canWrite,
 }: Props) {
   const { user } = useAuth();
@@ -89,14 +122,60 @@ export function FlightSegmentsDialog({
   const addSegment = () => {
     if (!user) return;
     const nextOrdre = segments.length > 0 ? Math.max(...segments.map((s) => s.ordre)) + 1 : 1;
+    const prev = segments.length > 0 ? segments[segments.length - 1] : null;
+    // 1er segment : valeurs de l'option (aller).
+    // Suivants : reprend l'arrivée du précédent + escale.
+    const fallbackDate = !prev ? defaultDateDepart ?? null : null;
+    const fallbackHeure = !prev ? defaultHeureDepart ?? null : null;
     setSegments([
       ...segments,
-      { id: `tmp-${crypto.randomUUID()}`, ...empty(flightOptionId, user.id, nextOrdre, defaultCompagnie) },
+      {
+        id: `tmp-${crypto.randomUUID()}`,
+        ...empty(flightOptionId, user.id, nextOrdre, defaultCompagnie, prev, fallbackDate, fallbackHeure),
+      },
     ]);
   };
 
+  // Ajoute automatiquement un 1er segment vide pré-rempli si la fenêtre s'ouvre vide.
+  useEffect(() => {
+    if (!loading && open && segments.length === 0 && user && canWrite) {
+      setSegments([
+        {
+          id: `tmp-${crypto.randomUUID()}`,
+          ...empty(
+            flightOptionId,
+            user.id,
+            1,
+            defaultCompagnie,
+            null,
+            defaultDateDepart ?? null,
+            defaultHeureDepart ?? null,
+          ),
+        },
+      ]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, open]);
+
   const updateSegment = (id: string, patch: Partial<FlightSegment>) => {
-    setSegments(segments.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+    setSegments((prev) => {
+      const next = prev.map((s) => (s.id === id ? { ...s, ...patch } : s));
+      // Auto-recalcule les durées d'escale entre segments consécutifs
+      // dès qu'on a arrivée(N) et départ(N+1) complets.
+      for (let i = 0; i < next.length - 1; i++) {
+        const cur = next[i];
+        const nxt = next[i + 1];
+        if (cur.date_arrivee && cur.heure_arrivee && nxt.date_depart && nxt.heure_depart) {
+          const arr = new Date(`${cur.date_arrivee}T${cur.heure_arrivee}`);
+          const dep = new Date(`${nxt.date_depart}T${nxt.heure_depart}`);
+          const diffMin = Math.round((dep.getTime() - arr.getTime()) / 60000);
+          if (diffMin > 0 && diffMin < 24 * 60 && cur.duree_escale_minutes !== diffMin) {
+            next[i] = { ...cur, duree_escale_minutes: diffMin };
+          }
+        }
+      }
+      return next;
+    });
   };
 
   const removeSegment = async (id: string) => {

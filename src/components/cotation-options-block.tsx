@@ -375,7 +375,14 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
 
   // -------------------- Flight options --------------------
   const [flAddOpen, setFlAddOpen] = useState(false);
-  const [segmentsOpenFor, setSegmentsOpenFor] = useState<{ id: string; compagnie: string } | null>(null);
+  const [segmentsOpenFor, setSegmentsOpenFor] = useState<{
+    id: string;
+    compagnie: string;
+    date_depart?: string | null;
+    heure_depart?: string | null;
+    date_retour?: string | null;
+    heure_retour?: string | null;
+  } | null>(null);
   const [flEmailTo, setFlEmailTo] = useState("");
   const [flForm, setFlForm] = useState({
     compagnie: "",
@@ -827,7 +834,16 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
                               <Button
                                 size="sm"
                                 variant={segCount > 0 ? "default" : "outline"}
-                                onClick={() => setSegmentsOpenFor({ id: f.id, compagnie: f.compagnie })}
+                                onClick={() =>
+                                  setSegmentsOpenFor({
+                                    id: f.id,
+                                    compagnie: f.compagnie,
+                                    date_depart: f.date_depart,
+                                    heure_depart: f.heure_depart,
+                                    date_retour: f.date_retour,
+                                    heure_retour: f.heure_retour,
+                                  })
+                                }
                                 title={segCount > 0 ? `${segCount} segment(s) - éditer` : "Détailler les segments / escales"}
                                 className="h-8 gap-1 text-xs"
                               >
@@ -1143,6 +1159,10 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
           onOpenChange={(v) => !v && setSegmentsOpenFor(null)}
           flightOptionId={segmentsOpenFor.id}
           defaultCompagnie={segmentsOpenFor.compagnie}
+          defaultDateDepart={segmentsOpenFor.date_depart ?? null}
+          defaultHeureDepart={segmentsOpenFor.heure_depart ?? null}
+          defaultDateRetour={segmentsOpenFor.date_retour ?? null}
+          defaultHeureRetour={segmentsOpenFor.heure_retour ?? null}
           canWrite={canWrite}
         />
       )}
