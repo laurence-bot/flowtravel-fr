@@ -83,8 +83,8 @@ export function ImagePicker({
             userId={userId}
             cotationId={cotationId}
             pathPrefix={pathPrefix}
-            onPick={(url) => {
-              onChange(url);
+            onPick={(url, meta) => {
+              onChange(url, meta);
               setOpen(false);
             }}
           />
