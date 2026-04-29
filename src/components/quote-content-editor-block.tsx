@@ -239,6 +239,7 @@ export function QuoteContentEditorBlock({
             ))}
           </div>
         )}
+      </div>
 
       {/* INCLUS / NON INCLUS */}
       <div className="grid md:grid-cols-2 gap-4 pt-2 border-t">
