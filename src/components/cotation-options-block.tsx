@@ -834,7 +834,16 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
                               <Button
                                 size="sm"
                                 variant={segCount > 0 ? "default" : "outline"}
-                                onClick={() => setSegmentsOpenFor({ id: f.id, compagnie: f.compagnie })}
+                                onClick={() =>
+                                  setSegmentsOpenFor({
+                                    id: f.id,
+                                    compagnie: f.compagnie,
+                                    date_depart: f.date_depart,
+                                    heure_depart: f.heure_depart,
+                                    date_retour: f.date_retour,
+                                    heure_retour: f.heure_retour,
+                                  })
+                                }
                                 title={segCount > 0 ? `${segCount} segment(s) - éditer` : "Détailler les segments / escales"}
                                 className="h-8 gap-1 text-xs"
                               >
