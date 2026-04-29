@@ -100,6 +100,9 @@ export function QuoteContentEditorBlock({
   const [savingHero, setSavingHero] = useState(false);
   const [jours, setJours] = useState<CotationJour[]>([]);
   const [loading, setLoading] = useState(true);
+  const [regenOpen, setRegenOpen] = useState(false);
+  const [regenLoading, setRegenLoading] = useState(false);
+  const [hasFlights, setHasFlights] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -108,8 +111,18 @@ export function QuoteContentEditorBlock({
 
   useEffect(() => {
     loadJours();
+    void checkFlights();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cotationId]);
+
+  const checkFlights = async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { count } = await (supabase as any)
+      .from("flight_options")
+      .select("id", { count: "exact", head: true })
+      .eq("cotation_id", cotationId);
+    setHasFlights((count ?? 0) > 0);
+  };
 
   const loadJours = async () => {
     setLoading(true);
