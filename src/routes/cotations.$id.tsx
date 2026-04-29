@@ -403,7 +403,44 @@ function CotationDetailPage() {
     refetchCot();
   };
 
-  const nouvelleVersion = async () => {
+  const rouvrirCotation = async () => {
+    if (!user) return;
+    if (
+      !confirm(
+        "Rouvrir cette cotation ? Le statut repassera en 'envoyée' et les réservations FX libérées seront restaurées si les couvertures ont encore du solde.",
+      )
+    )
+      return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
+      .from("cotations")
+      .update({ statut: "envoyee", raison_perte: null })
+      .eq("id", cot.id);
+    const restoration = await reactivateReleasedReservationsForCotation({
+      userId: user.id,
+      cotationId: cot.id,
+    });
+    await logAudit({
+      userId: user.id,
+      entity: "cotation",
+      entityId: cot.id,
+      action: "update",
+      description: `Cotation rouverte : ${cot.titre}${restoration.restored > 0 ? ` — ${restoration.restored} réservation(s) FX restaurée(s)` : ""}${restoration.skipped > 0 ? `, ${restoration.skipped} non restaurée(s) (solde insuffisant)` : ""}`,
+    });
+    if (restoration.skipped > 0) {
+      toast.warning(
+        `Cotation rouverte. ${restoration.restored} réservation(s) restaurée(s), ${restoration.skipped} ignorée(s) — solde de couverture insuffisant.`,
+      );
+    } else {
+      toast.success(
+        restoration.restored > 0
+          ? `Cotation rouverte. ${restoration.restored} réservation(s) FX restaurée(s).`
+          : "Cotation rouverte.",
+      );
+    }
+    refetchCot();
+  };
+
     if (!user) return;
     const res = await duplicateCotation(user.id, cot, lignes);
     if (!res) return toast.error("Duplication impossible.");
