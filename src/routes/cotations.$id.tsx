@@ -144,6 +144,8 @@ function CotationDetailPage() {
     devise: "EUR" as DeviseCode,
     montant_devise: "0",
     taux_change_vers_eur: "1",
+    couverture_id: "" as string | "",
+    source_fx: "taux_du_jour" as "taux_du_jour" | "couverture" | "manuel",
     pct_acompte_1: "30",
     pct_acompte_2: "0",
     pct_acompte_3: "0",
