@@ -923,6 +923,71 @@ export type Database = {
         }
         Relationships: []
       }
+      flight_segments: {
+        Row: {
+          aeroport_arrivee: string
+          aeroport_depart: string
+          compagnie: string | null
+          created_at: string
+          date_arrivee: string | null
+          date_depart: string | null
+          duree_escale_minutes: number | null
+          flight_option_id: string
+          heure_arrivee: string | null
+          heure_depart: string | null
+          id: string
+          notes: string | null
+          numero_vol: string | null
+          ordre: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aeroport_arrivee: string
+          aeroport_depart: string
+          compagnie?: string | null
+          created_at?: string
+          date_arrivee?: string | null
+          date_depart?: string | null
+          duree_escale_minutes?: number | null
+          flight_option_id: string
+          heure_arrivee?: string | null
+          heure_depart?: string | null
+          id?: string
+          notes?: string | null
+          numero_vol?: string | null
+          ordre?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aeroport_arrivee?: string
+          aeroport_depart?: string
+          compagnie?: string | null
+          created_at?: string
+          date_arrivee?: string | null
+          date_depart?: string | null
+          duree_escale_minutes?: number | null
+          flight_option_id?: string
+          heure_arrivee?: string | null
+          heure_depart?: string | null
+          id?: string
+          notes?: string | null
+          numero_vol?: string | null
+          ordre?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flight_segments_flight_option_id_fkey"
+            columns: ["flight_option_id"]
+            isOneToOne: false
+            referencedRelation: "flight_options"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fournisseur_options: {
         Row: {
           cotation_id: string
