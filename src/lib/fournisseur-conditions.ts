@@ -1,4 +1,4 @@
-// Module : conditions commerciales fournisseur (stockées directement sur contacts)
+// Module : conditions commerciales fournisseur (1 ou plusieurs par fournisseur)
 
 import type { DeviseCode } from "@/lib/fx";
 
@@ -7,8 +7,12 @@ export type CancelationTier = {
   pct_penalite: number;
 };
 
-/** Conditions commerciales d'un fournisseur (sous-ensemble de la fiche contact). */
-export type FournisseurConditions = {
+export type FournisseurCondition = {
+  id: string;
+  user_id: string;
+  fournisseur_id: string;
+  nom: string;
+  est_principale: boolean;
   devises_acceptees: DeviseCode[];
   pct_acompte_1: number;
   pct_acompte_2: number;
@@ -19,41 +23,26 @@ export type FournisseurConditions = {
   delai_acompte_3_jours: number | null;
   delai_solde_jours: number | null;
   conditions_annulation: CancelationTier[];
-  conditions_notes: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
-export const DEFAULT_CONDITIONS: FournisseurConditions = {
-  devises_acceptees: ["EUR"],
+export const DEFAULT_CONDITION_VALUES = {
+  nom: "Standard",
+  est_principale: true,
+  devises_acceptees: ["EUR"] as DeviseCode[],
   pct_acompte_1: 30,
   pct_acompte_2: 0,
   pct_acompte_3: 0,
   pct_solde: 70,
-  delai_acompte_1_jours: 0,
-  delai_acompte_2_jours: null,
-  delai_acompte_3_jours: null,
-  delai_solde_jours: 30,
-  conditions_annulation: [],
-  conditions_notes: null,
+  delai_acompte_1_jours: 0 as number | null,
+  delai_acompte_2_jours: null as number | null,
+  delai_acompte_3_jours: null as number | null,
+  delai_solde_jours: 30 as number | null,
+  conditions_annulation: [] as CancelationTier[],
+  notes: null as string | null,
 };
-
-/** Extrait les conditions commerciales depuis une fiche contact (avec valeurs par défaut). */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getConditionsFromContact(contact: any): FournisseurConditions {
-  if (!contact) return DEFAULT_CONDITIONS;
-  return {
-    devises_acceptees: (contact.devises_acceptees ?? ["EUR"]) as DeviseCode[],
-    pct_acompte_1: Number(contact.pct_acompte_1 ?? 30),
-    pct_acompte_2: Number(contact.pct_acompte_2 ?? 0),
-    pct_acompte_3: Number(contact.pct_acompte_3 ?? 0),
-    pct_solde: Number(contact.pct_solde ?? 70),
-    delai_acompte_1_jours: contact.delai_acompte_1_jours ?? null,
-    delai_acompte_2_jours: contact.delai_acompte_2_jours ?? null,
-    delai_acompte_3_jours: contact.delai_acompte_3_jours ?? null,
-    delai_solde_jours: contact.delai_solde_jours ?? null,
-    conditions_annulation: (contact.conditions_annulation ?? []) as CancelationTier[],
-    conditions_notes: contact.conditions_notes ?? null,
-  };
-}
 
 /** Calcule la date d'échéance (YYYY-MM-DD) à partir de la date prestation et d'un délai en jours avant. */
 export function dateFromDelai(datePrestation: string | null, delaiJours: number | null): string | null {
@@ -76,4 +65,12 @@ export function penaliteAt(
     if (joursAvantPrestation <= tier.jours_avant) pct = tier.pct_penalite;
   }
   return pct;
+}
+
+export function getMainCondition(
+  conditions: FournisseurCondition[],
+  fournisseurId: string,
+): FournisseurCondition | undefined {
+  const list = conditions.filter((c) => c.fournisseur_id === fournisseurId);
+  return list.find((c) => c.est_principale) ?? list[0];
 }
