@@ -441,6 +441,7 @@ function CotationDetailPage() {
     refetchCot();
   };
 
+  const nouvelleVersion = async () => {
     if (!user) return;
     const res = await duplicateCotation(user.id, cot, lignes);
     if (!res) return toast.error("Duplication impossible.");
