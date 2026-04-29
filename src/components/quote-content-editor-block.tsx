@@ -264,6 +264,116 @@ export function QuoteContentEditorBlock({
     if (failed) toast.error("Erreur lors du réordonnancement.");
   };
 
+  /** A-t-on déjà du contenu utilisateur dans les jours ? */
+  const joursHaveContent = (): boolean => {
+    return jours.some(
+      (j) =>
+        (j.description && j.description.trim().length > 0) ||
+        (j.image_url && j.image_url.length > 0) ||
+        (j.gallery_urls && j.gallery_urls.length > 0) ||
+        (j.lieu && j.lieu.trim().length > 0),
+    );
+  };
+
+  const handleRegenClick = () => {
+    if (!hasFlights) {
+      toast.error("Aucun vol renseigné. Ajoutez d'abord les vols pour générer l'itinéraire.");
+      return;
+    }
+    if (jours.length > 0 && joursHaveContent()) {
+      setRegenOpen(true);
+    } else {
+      void runRegenerate();
+    }
+  };
+
+  const runRegenerate = async () => {
+    setRegenOpen(false);
+    setRegenLoading(true);
+    try {
+      // 1. Charger vols + segments + lien public (pour vol choisi)
+      const [volsRes, linkRes] = await Promise.all([
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from("flight_options")
+          .select("*")
+          .eq("cotation_id", cotationId)
+          .order("created_at", { ascending: true }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from("quote_public_links")
+          .select("chosen_flight_option_id")
+          .eq("cotation_id", cotationId)
+          .maybeSingle(),
+      ]);
+      const vols = (volsRes.data ?? []) as FlightOptionLite[];
+      if (vols.length === 0) {
+        toast.error("Aucun vol trouvé.");
+        return;
+      }
+      const chosenId = (linkRes.data?.chosen_flight_option_id ?? null) as string | null;
+      const refVol = pickReferenceFlight(vols, chosenId);
+      if (!refVol) {
+        toast.error("Vol de référence introuvable.");
+        return;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: segs } = await (supabase as any)
+        .from("flight_segments")
+        .select("*")
+        .eq("flight_option_id", refVol.id)
+        .order("ordre", { ascending: true });
+      const segments = (segs ?? []) as FlightSegmentLite[];
+      if (segments.length === 0) {
+        toast.error("Aucun segment de vol — saisissez les segments du vol d'abord.");
+        return;
+      }
+
+      const generated = buildItineraryFromFlights(
+        refVol,
+        segments,
+        dateDepart ?? null,
+        dateRetour ?? null,
+      );
+      if (generated.length === 0) {
+        toast.error("Impossible de calculer les dates depuis les vols.");
+        return;
+      }
+
+      // 2. Effacer les jours existants
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: delErr } = await (supabase as any)
+        .from("cotation_jours")
+        .delete()
+        .eq("cotation_id", cotationId);
+      if (delErr) throw delErr;
+
+      // 3. Insérer les nouveaux jours
+      const payload = generated.map((g) => ({
+        user_id: userId,
+        cotation_id: cotationId,
+        ordre: g.ordre,
+        titre: g.titre,
+        description: g.description,
+        lieu: g.lieu,
+        date_jour: g.date_jour,
+      }));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: insErr } = await (supabase as any)
+        .from("cotation_jours")
+        .insert(payload);
+      if (insErr) throw insErr;
+
+      toast.success(`${generated.length} jours générés depuis les vols.`);
+      await loadJours();
+    } catch (e) {
+      console.error("[regen itinerary] erreur:", e);
+      toast.error(e instanceof Error ? e.message : "Erreur lors de la régénération.");
+    } finally {
+      setRegenLoading(false);
+    }
+  };
+
   return (
     <Card className="p-5 space-y-6">
       <div className="flex items-center gap-2">
