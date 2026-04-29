@@ -9,7 +9,7 @@ import {
 } from "@/server/quote-public.functions";
 import { themeStyle } from "@/lib/agency-theme";
 import { formatEUR, formatDate } from "@/lib/format";
-import { computeCotationFinance, ligneEcheances } from "@/lib/cotations";
+import { computeCotationFinance, ligneEcheances, computeAcompteClient } from "@/lib/cotations";
 import { formatRoutingForClient, iataToCity } from "@/lib/iata";
 import { airlineName } from "@/lib/airlines";
 import { Check, Phone, MessageSquare, MapPin, Calendar, Users, Sparkles, Plane, Clock } from "lucide-react";
