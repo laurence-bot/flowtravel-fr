@@ -43,6 +43,33 @@ export const getPublicQuote = createServerFn({ method: "POST" })
         .order("created_at", { ascending: true }),
     ]);
 
+    // Récupère les segments de tous les vols en une requête (RLS via token autorise la lecture).
+    const flightIds = (volsRes.data ?? []).map((v) => v.id);
+    type FlightSegmentRow = {
+      id: string;
+      flight_option_id: string;
+      ordre: number;
+      compagnie: string | null;
+      numero_vol: string | null;
+      aeroport_depart: string;
+      date_depart: string | null;
+      heure_depart: string | null;
+      aeroport_arrivee: string;
+      date_arrivee: string | null;
+      heure_arrivee: string | null;
+      duree_escale_minutes: number | null;
+      notes: string | null;
+    };
+    let segments: FlightSegmentRow[] = [];
+    if (flightIds.length > 0) {
+      const { data: segs } = await supabaseAdmin
+        .from("flight_segments")
+        .select("*")
+        .in("flight_option_id", flightIds)
+        .order("ordre", { ascending: true });
+      segments = (segs ?? []) as FlightSegmentRow[];
+    }
+
     if (cotRes.error || !cotRes.data) {
       return { ok: false as const, error: "Devis introuvable." };
     }
@@ -70,6 +97,7 @@ export const getPublicQuote = createServerFn({ method: "POST" })
       lignes: lignesRes.data ?? [],
       jours: joursRes.data ?? [],
       vols: volsRes.data ?? [],
+      segments,
       agency: agencyRes.data,
       contact: contactRes.data,
     };

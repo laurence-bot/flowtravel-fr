@@ -40,6 +40,7 @@ import {
   XCircle,
   Trash2,
   Send,
+  Layers,
 } from "lucide-react";
 import {
   FOURN_OPTION_STATUT_LABELS,
@@ -58,6 +59,7 @@ import {
   type EmailDraft,
 } from "@/lib/options";
 import { EmailDraftModal } from "@/components/email-draft-modal";
+import { FlightSegmentsDialog } from "@/components/flight-segments-dialog";
 import { useAgencySettings } from "@/hooks/use-agency-settings";
 import { appendSignature } from "@/lib/agency-settings";
 import type { Cotation, CotationLigne } from "@/lib/cotations";
@@ -368,6 +370,7 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
 
   // -------------------- Flight options --------------------
   const [flAddOpen, setFlAddOpen] = useState(false);
+  const [segmentsOpenFor, setSegmentsOpenFor] = useState<{ id: string; compagnie: string } | null>(null);
   const [flEmailTo, setFlEmailTo] = useState("");
   const [flForm, setFlForm] = useState({
     compagnie: "",
@@ -810,6 +813,14 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
                           >
                             <Mail className="h-3 w-3" />
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSegmentsOpenFor({ id: f.id, compagnie: f.compagnie })}
+                            title="Détails segments / escales"
+                          >
+                            <Layers className="h-3 w-3" />
+                          </Button>
                           {canWrite && (
                             <>
                               <Select
@@ -1110,6 +1121,16 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
         draft={draft}
         onSent={onDraftSent}
       />
+
+      {segmentsOpenFor && (
+        <FlightSegmentsDialog
+          open={!!segmentsOpenFor}
+          onOpenChange={(v) => !v && setSegmentsOpenFor(null)}
+          flightOptionId={segmentsOpenFor.id}
+          defaultCompagnie={segmentsOpenFor.compagnie}
+          canWrite={canWrite}
+        />
+      )}
     </Card>
   );
 }
