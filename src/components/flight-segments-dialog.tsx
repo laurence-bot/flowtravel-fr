@@ -91,6 +91,10 @@ export function FlightSegmentsDialog({
   onOpenChange,
   flightOptionId,
   defaultCompagnie,
+  defaultDateDepart,
+  defaultHeureDepart,
+  defaultDateRetour,
+  defaultHeureRetour,
   canWrite,
 }: Props) {
   const { user } = useAuth();
@@ -118,11 +122,40 @@ export function FlightSegmentsDialog({
   const addSegment = () => {
     if (!user) return;
     const nextOrdre = segments.length > 0 ? Math.max(...segments.map((s) => s.ordre)) + 1 : 1;
+    const prev = segments.length > 0 ? segments[segments.length - 1] : null;
+    // 1er segment : valeurs de l'option (aller).
+    // Suivants : reprend l'arrivée du précédent + escale.
+    const fallbackDate = !prev ? defaultDateDepart ?? null : null;
+    const fallbackHeure = !prev ? defaultHeureDepart ?? null : null;
     setSegments([
       ...segments,
-      { id: `tmp-${crypto.randomUUID()}`, ...empty(flightOptionId, user.id, nextOrdre, defaultCompagnie) },
+      {
+        id: `tmp-${crypto.randomUUID()}`,
+        ...empty(flightOptionId, user.id, nextOrdre, defaultCompagnie, prev, fallbackDate, fallbackHeure),
+      },
     ]);
   };
+
+  // Ajoute automatiquement un 1er segment vide pré-rempli si la fenêtre s'ouvre vide.
+  useEffect(() => {
+    if (!loading && open && segments.length === 0 && user && canWrite) {
+      setSegments([
+        {
+          id: `tmp-${crypto.randomUUID()}`,
+          ...empty(
+            flightOptionId,
+            user.id,
+            1,
+            defaultCompagnie,
+            null,
+            defaultDateDepart ?? null,
+            defaultHeureDepart ?? null,
+          ),
+        },
+      ]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, open]);
 
   const updateSegment = (id: string, patch: Partial<FlightSegment>) => {
     setSegments(segments.map((s) => (s.id === id ? { ...s, ...patch } : s)));
