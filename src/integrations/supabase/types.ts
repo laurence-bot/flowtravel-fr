@@ -1149,11 +1149,13 @@ export type Database = {
       }
       fx_coverage_reservations: {
         Row: {
+          cotation_id: string | null
           coverage_id: string
           created_at: string
           echeance_id: string | null
           facture_fournisseur_id: string | null
           id: string
+          ligne_fournisseur_id: string | null
           montant_devise: number
           paiement_id: string | null
           statut: Database["public"]["Enums"]["fx_reservation_statut"]
@@ -1161,11 +1163,13 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cotation_id?: string | null
           coverage_id: string
           created_at?: string
           echeance_id?: string | null
           facture_fournisseur_id?: string | null
           id?: string
+          ligne_fournisseur_id?: string | null
           montant_devise: number
           paiement_id?: string | null
           statut?: Database["public"]["Enums"]["fx_reservation_statut"]
@@ -1173,11 +1177,13 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cotation_id?: string | null
           coverage_id?: string
           created_at?: string
           echeance_id?: string | null
           facture_fournisseur_id?: string | null
           id?: string
+          ligne_fournisseur_id?: string | null
           montant_devise?: number
           paiement_id?: string | null
           statut?: Database["public"]["Enums"]["fx_reservation_statut"]
@@ -1689,7 +1695,13 @@ export type Database = {
         | "utilisee"
         | "expiree"
         | "anomalie"
-      fx_reservation_statut: "active" | "utilisee" | "annulee"
+      fx_reservation_statut:
+        | "active"
+        | "utilisee"
+        | "annulee"
+        | "reservee"
+        | "engagee"
+        | "liberee"
       fx_source: "taux_du_jour" | "couverture" | "manuel"
       paiement_methode: "virement" | "carte" | "especes"
       paiement_source: "banque" | "manuel"
@@ -1936,7 +1948,14 @@ export const Constants = {
         "expiree",
         "anomalie",
       ],
-      fx_reservation_statut: ["active", "utilisee", "annulee"],
+      fx_reservation_statut: [
+        "active",
+        "utilisee",
+        "annulee",
+        "reservee",
+        "engagee",
+        "liberee",
+      ],
       fx_source: ["taux_du_jour", "couverture", "manuel"],
       paiement_methode: ["virement", "carte", "especes"],
       paiement_source: ["banque", "manuel"],
