@@ -25,6 +25,9 @@ export type CotationJour = {
   lieu: string | null;
   date_jour: string | null;
   image_url: string | null;
+  image_credit: string | null;
+  gallery_urls: string[];
+  gallery_credits: string[];
   created_at: string;
   updated_at: string;
 };

@@ -296,7 +296,10 @@ export type Database = {
           created_at: string
           date_jour: string | null
           description: string | null
+          gallery_credits: Json
+          gallery_urls: Json
           id: string
+          image_credit: string | null
           image_url: string | null
           lieu: string | null
           ordre: number
@@ -309,7 +312,10 @@ export type Database = {
           created_at?: string
           date_jour?: string | null
           description?: string | null
+          gallery_credits?: Json
+          gallery_urls?: Json
           id?: string
+          image_credit?: string | null
           image_url?: string | null
           lieu?: string | null
           ordre?: number
@@ -322,7 +328,10 @@ export type Database = {
           created_at?: string
           date_jour?: string | null
           description?: string | null
+          gallery_credits?: Json
+          gallery_urls?: Json
           id?: string
+          image_credit?: string | null
           image_url?: string | null
           lieu?: string | null
           ordre?: number

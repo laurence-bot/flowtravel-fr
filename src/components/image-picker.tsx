@@ -18,7 +18,7 @@ import { toast } from "sonner";
 
 type Props = {
   value: string | null | undefined;
-  onChange: (url: string | null) => void;
+  onChange: (url: string | null, meta?: { credit?: string | null }) => void;
   userId: string;
   cotationId: string;
   /** Préfixe de stockage : "hero" | "jour-{id}" etc. */
@@ -83,8 +83,8 @@ export function ImagePicker({
             userId={userId}
             cotationId={cotationId}
             pathPrefix={pathPrefix}
-            onPick={(url) => {
-              onChange(url);
+            onPick={(url, meta) => {
+              onChange(url, meta);
               setOpen(false);
             }}
           />
@@ -103,7 +103,7 @@ function PickerTabs({
   userId: string;
   cotationId: string;
   pathPrefix: string;
-  onPick: (url: string) => void;
+  onPick: (url: string, meta?: { credit?: string | null }) => void;
 }) {
   return (
     <Tabs defaultValue="upload" className="w-full">
@@ -115,16 +115,16 @@ function PickerTabs({
       </TabsList>
 
       <TabsContent value="upload" className="mt-4">
-        <UploadPanel userId={userId} cotationId={cotationId} pathPrefix={pathPrefix} onPick={onPick} />
+        <UploadPanel userId={userId} cotationId={cotationId} pathPrefix={pathPrefix} onPick={(url) => onPick(url, { credit: null })} />
       </TabsContent>
       <TabsContent value="unsplash" className="mt-4">
         <UnsplashPanel userId={userId} cotationId={cotationId} pathPrefix={pathPrefix} onPick={onPick} />
       </TabsContent>
       <TabsContent value="ai" className="mt-4">
-        <AiPanel userId={userId} cotationId={cotationId} pathPrefix={pathPrefix} onPick={onPick} />
+        <AiPanel userId={userId} cotationId={cotationId} pathPrefix={pathPrefix} onPick={(url) => onPick(url, { credit: null })} />
       </TabsContent>
       <TabsContent value="url" className="mt-4">
-        <UrlPanel onPick={onPick} />
+        <UrlPanel onPick={(url) => onPick(url, { credit: null })} />
       </TabsContent>
     </Tabs>
   );
@@ -231,7 +231,7 @@ function UnsplashPanel({
   userId: string;
   cotationId: string;
   pathPrefix: string;
-  onPick: (url: string) => void;
+  onPick: (url: string, meta?: { credit?: string | null }) => void;
 }) {
   const search = useServerFn(searchUnsplash);
   const [query, setQuery] = useState("");
@@ -256,7 +256,7 @@ function UnsplashPanel({
       const res = await fetch(img.full);
       const blob = await res.blob();
       const url = await uploadBlob(blob, userId, cotationId, pathPrefix, "jpg");
-      onPick(url);
+      onPick(url, { credit: `Photo : ${img.author} / Unsplash` });
       toast.success("Image importée depuis Unsplash.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erreur d'import.");
