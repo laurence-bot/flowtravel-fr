@@ -82,6 +82,7 @@ export const getPublicQuote = createServerFn({ method: "POST" })
       lignes: lignesRes.data ?? [],
       jours: joursRes.data ?? [],
       vols: volsRes.data ?? [],
+      segments,
       agency: agencyRes.data,
       contact: contactRes.data,
     };
