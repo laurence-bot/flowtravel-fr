@@ -18,15 +18,31 @@ export type Database = {
         Row: {
           address: string | null
           agency_name: string | null
+          brand_baseline: string | null
+          brand_signature_quote: string | null
+          cgv_text: string | null
           city: string | null
+          color_background: string | null
+          color_muted: string | null
+          color_ornament: string | null
+          color_primary: string | null
+          color_secondary: string | null
+          color_signature: string | null
           country: string | null
           created_at: string
           email: string | null
+          favicon_url: string | null
+          font_body: string | null
+          font_heading: string | null
           id: string
           legal_name: string | null
+          logo_dark_url: string | null
+          logo_symbol_url: string | null
           logo_url: string | null
+          pdf_footer_text: string | null
           phone: string | null
           primary_contact_name: string | null
+          public_subdomain_slug: string | null
           siret: string | null
           updated_at: string
           user_id: string
@@ -36,15 +52,31 @@ export type Database = {
         Insert: {
           address?: string | null
           agency_name?: string | null
+          brand_baseline?: string | null
+          brand_signature_quote?: string | null
+          cgv_text?: string | null
           city?: string | null
+          color_background?: string | null
+          color_muted?: string | null
+          color_ornament?: string | null
+          color_primary?: string | null
+          color_secondary?: string | null
+          color_signature?: string | null
           country?: string | null
           created_at?: string
           email?: string | null
+          favicon_url?: string | null
+          font_body?: string | null
+          font_heading?: string | null
           id?: string
           legal_name?: string | null
+          logo_dark_url?: string | null
+          logo_symbol_url?: string | null
           logo_url?: string | null
+          pdf_footer_text?: string | null
           phone?: string | null
           primary_contact_name?: string | null
+          public_subdomain_slug?: string | null
           siret?: string | null
           updated_at?: string
           user_id: string
@@ -54,15 +86,31 @@ export type Database = {
         Update: {
           address?: string | null
           agency_name?: string | null
+          brand_baseline?: string | null
+          brand_signature_quote?: string | null
+          cgv_text?: string | null
           city?: string | null
+          color_background?: string | null
+          color_muted?: string | null
+          color_ornament?: string | null
+          color_primary?: string | null
+          color_secondary?: string | null
+          color_signature?: string | null
           country?: string | null
           created_at?: string
           email?: string | null
+          favicon_url?: string | null
+          font_body?: string | null
+          font_heading?: string | null
           id?: string
           legal_name?: string | null
+          logo_dark_url?: string | null
+          logo_symbol_url?: string | null
           logo_url?: string | null
+          pdf_footer_text?: string | null
           phone?: string | null
           primary_contact_name?: string | null
+          public_subdomain_slug?: string | null
           siret?: string | null
           updated_at?: string
           user_id?: string
@@ -242,6 +290,48 @@ export type Database = {
         }
         Relationships: []
       }
+      cotation_jours: {
+        Row: {
+          cotation_id: string
+          created_at: string
+          date_jour: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          lieu: string | null
+          ordre: number
+          titre: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cotation_id: string
+          created_at?: string
+          date_jour?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          lieu?: string | null
+          ordre?: number
+          titre: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cotation_id?: string
+          created_at?: string
+          date_jour?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          lieu?: string | null
+          ordre?: number
+          titre?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cotation_lignes_fournisseurs: {
         Row: {
           cotation_id: string
@@ -353,10 +443,13 @@ export type Database = {
           destination: string | null
           dossier_id: string | null
           group_id: string
+          hero_image_url: string | null
           id: string
+          inclus_text: string | null
           langue: string | null
           nombre_chambres: number
           nombre_pax: number
+          non_inclus_text: string | null
           notes: string | null
           pays_destination: string | null
           prix_vente_ht: number
@@ -365,6 +458,7 @@ export type Database = {
           raison_perte: string | null
           regime_tva: Database["public"]["Enums"]["cotation_regime_tva"]
           statut: Database["public"]["Enums"]["cotation_statut"]
+          storytelling_intro: string | null
           tags_destination: string[]
           taux_tva_marge: number
           titre: string
@@ -381,10 +475,13 @@ export type Database = {
           destination?: string | null
           dossier_id?: string | null
           group_id?: string
+          hero_image_url?: string | null
           id?: string
+          inclus_text?: string | null
           langue?: string | null
           nombre_chambres?: number
           nombre_pax?: number
+          non_inclus_text?: string | null
           notes?: string | null
           pays_destination?: string | null
           prix_vente_ht?: number
@@ -393,6 +490,7 @@ export type Database = {
           raison_perte?: string | null
           regime_tva?: Database["public"]["Enums"]["cotation_regime_tva"]
           statut?: Database["public"]["Enums"]["cotation_statut"]
+          storytelling_intro?: string | null
           tags_destination?: string[]
           taux_tva_marge?: number
           titre: string
@@ -409,10 +507,13 @@ export type Database = {
           destination?: string | null
           dossier_id?: string | null
           group_id?: string
+          hero_image_url?: string | null
           id?: string
+          inclus_text?: string | null
           langue?: string | null
           nombre_chambres?: number
           nombre_pax?: number
+          non_inclus_text?: string | null
           notes?: string | null
           pays_destination?: string | null
           prix_vente_ht?: number
@@ -421,6 +522,7 @@ export type Database = {
           raison_perte?: string | null
           regime_tva?: Database["public"]["Enums"]["cotation_regime_tva"]
           statut?: Database["public"]["Enums"]["cotation_statut"]
+          storytelling_intro?: string | null
           tags_destination?: string[]
           taux_tva_marge?: number
           titre?: string
@@ -1121,6 +1223,51 @@ export type Database = {
           type?: Database["public"]["Enums"]["pdf_import_type"]
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      quote_public_links: {
+        Row: {
+          accepted_at: string | null
+          callback_requested_at: string | null
+          cotation_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          modification_request_text: string | null
+          modification_requested_at: string | null
+          token: string
+          updated_at: string
+          user_id: string
+          viewed_at: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          callback_requested_at?: string | null
+          cotation_id: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          modification_request_text?: string | null
+          modification_requested_at?: string | null
+          token: string
+          updated_at?: string
+          user_id: string
+          viewed_at?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          callback_requested_at?: string | null
+          cotation_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          modification_request_text?: string | null
+          modification_requested_at?: string | null
+          token?: string
+          updated_at?: string
+          user_id?: string
+          viewed_at?: string | null
         }
         Relationships: []
       }
