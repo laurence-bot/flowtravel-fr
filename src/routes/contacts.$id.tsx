@@ -262,6 +262,10 @@ function ContactDetail() {
     <div className="space-y-8">
       <ContactHeaderAndInfo contact={contact} isClient={isClient} />
 
+      {!isClient && (
+        <FournisseurConditionsBlock fournisseurId={contact.id} canWrite={true} />
+      )}
+
       {/* Alertes */}
       {alertes.length > 0 && (
         <Card className="p-4 border-border/60">
