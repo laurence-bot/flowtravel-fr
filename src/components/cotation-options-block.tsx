@@ -96,6 +96,11 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     "flight_options" as any,
   );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: segAll } = useTable<{ id: string; flight_option_id: string }>(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    "flight_segments" as any,
+  );
 
   const fournisseurOptions = useMemo(
     () => foAll.filter((o) => o.cotation_id === cot.id),
@@ -751,6 +756,9 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
                 className="h-8 text-sm"
               />
             </div>
+            <div className="text-xs text-muted-foreground bg-muted/40 border border-dashed rounded px-3 py-2">
+              💡 <strong>1 option = 1 vol complet (aller-retour ou aller simple).</strong> Pour un vol avec escale(s), créez UNE seule option puis cliquez sur <strong>« Segments »</strong> pour saisir chaque tronçon (MRS→ADD, ADD→WDH…) avec ses horaires et durées d'escale.
+            </div>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -813,14 +821,21 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
                           >
                             <Mail className="h-3 w-3" />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSegmentsOpenFor({ id: f.id, compagnie: f.compagnie })}
-                            title="Détails segments / escales"
-                          >
-                            <Layers className="h-3 w-3" />
-                          </Button>
+                          {(() => {
+                            const segCount = segAll.filter((s) => s.flight_option_id === f.id).length;
+                            return (
+                              <Button
+                                size="sm"
+                                variant={segCount > 0 ? "default" : "outline"}
+                                onClick={() => setSegmentsOpenFor({ id: f.id, compagnie: f.compagnie })}
+                                title={segCount > 0 ? `${segCount} segment(s) - éditer` : "Détailler les segments / escales"}
+                                className="h-8 gap-1 text-xs"
+                              >
+                                <Layers className="h-3 w-3" />
+                                {segCount > 0 ? `${segCount} seg.` : "Segments"}
+                              </Button>
+                            );
+                          })()}
                           {canWrite && (
                             <>
                               <Select
