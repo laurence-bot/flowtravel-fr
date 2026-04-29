@@ -813,6 +813,14 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
                           >
                             <Mail className="h-3 w-3" />
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSegmentsOpenFor({ id: f.id, compagnie: f.compagnie })}
+                            title="Détails segments / escales"
+                          >
+                            <Layers className="h-3 w-3" />
+                          </Button>
                           {canWrite && (
                             <>
                               <Select
