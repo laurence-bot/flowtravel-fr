@@ -756,6 +756,9 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
                 className="h-8 text-sm"
               />
             </div>
+            <div className="text-xs text-muted-foreground bg-muted/40 border border-dashed rounded px-3 py-2">
+              💡 <strong>1 option = 1 vol complet (aller-retour ou aller simple).</strong> Pour un vol avec escale(s), créez UNE seule option puis cliquez sur <strong>« Segments »</strong> pour saisir chaque tronçon (MRS→ADD, ADD→WDH…) avec ses horaires et durées d'escale.
+            </div>
             <Table>
               <TableHeader>
                 <TableRow>
