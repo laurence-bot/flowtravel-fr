@@ -35,9 +35,7 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }:
     const cout = Math.max(0, coutTotal);
     let margeNetteSouhaitee = 0;
 
-    if (mode === "pct_cout") {
-      margeNetteSouhaitee = cout * (pctCout / 100);
-    } else if (mode === "montant") {
+    if (mode === "montant") {
       margeNetteSouhaitee = montant;
     } else {
       // pct_ca : marge nette = pct_ca % du prix TTC final
