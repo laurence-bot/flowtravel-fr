@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -99,6 +100,7 @@ function DemandesPage() {
     budget: "",
     nombre_pax: "1",
     message_client: "",
+    creer_client: false,
   });
 
   const [fStatut, setFStatut] = useState<string>("tous");
@@ -128,13 +130,43 @@ function DemandesPage() {
       return;
     }
     setSubmitting(true);
+
+    // Si on demande de créer un nouveau client, on insère d'abord le contact.
+    let clientId: string | null = parsed.data.client_id || null;
+    if (form.creer_client && !clientId) {
+      const { data: createdContact, error: errContact } = await supabase
+        .from("contacts")
+        .insert({
+          user_id: user.id,
+          type: "client",
+          nom: parsed.data.nom_client,
+          email: parsed.data.email || null,
+          telephone: parsed.data.telephone || null,
+        })
+        .select()
+        .single();
+      if (errContact || !createdContact) {
+        setSubmitting(false);
+        toast.error(errContact?.message ?? "Création du client impossible.");
+        return;
+      }
+      clientId = createdContact.id;
+      await logAudit({
+        userId: user.id,
+        entity: "contact",
+        entityId: createdContact.id,
+        action: "create",
+        description: `Client créé depuis demande : ${parsed.data.nom_client}`,
+      });
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: created, error } = await (supabase as any)
       .from("demandes")
       .insert({
         user_id: user.id,
         nom_client: parsed.data.nom_client,
-        client_id: parsed.data.client_id || null,
+        client_id: clientId,
         email: parsed.data.email || null,
         telephone: parsed.data.telephone || null,
         canal: parsed.data.canal,
@@ -164,9 +196,11 @@ function DemandesPage() {
     setForm({
       nom_client: "", client_id: "", email: "", telephone: "", canal: "email",
       destination: "", date_depart_souhaitee: "", date_retour_souhaitee: "",
-      budget: "", nombre_pax: "1", message_client: "",
+      budget: "", nombre_pax: "1", message_client: "", creer_client: false,
     });
-    toast.success("Demande créée.");
+    toast.success(form.creer_client && !parsed.data.client_id
+      ? "Demande et client créés."
+      : "Demande créée.");
     refetch();
   };
 
@@ -192,12 +226,37 @@ function DemandesPage() {
                     </div>
                     <div>
                       <Label>Client existant</Label>
-                      <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
-                        <SelectTrigger><SelectValue placeholder="Optionnel" /></SelectTrigger>
+                      <Select
+                        value={form.client_id}
+                        onValueChange={(v) => setForm({ ...form, client_id: v, creer_client: false })}
+                        disabled={form.creer_client}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={form.creer_client ? "Nouveau client" : "Optionnel"} />
+                        </SelectTrigger>
                         <SelectContent>
                           {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div className="col-span-2 flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
+                      <Checkbox
+                        id="creer-client"
+                        checked={form.creer_client}
+                        onCheckedChange={(c) =>
+                          setForm({
+                            ...form,
+                            creer_client: c === true,
+                            client_id: c === true ? "" : form.client_id,
+                          })
+                        }
+                      />
+                      <Label htmlFor="creer-client" className="cursor-pointer text-sm font-normal">
+                        Créer aussi le contact dans ma base clients
+                        <span className="block text-xs text-muted-foreground">
+                          Le nom, email et téléphone saisis ci-dessus seront utilisés pour créer un nouveau client.
+                        </span>
+                      </Label>
                     </div>
                     <div>
                       <Label>Email</Label>
