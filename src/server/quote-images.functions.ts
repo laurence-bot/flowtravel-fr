@@ -69,7 +69,6 @@ export const searchUnsplash = createServerFn({ method: "POST" })
  * Renvoie une data URL base64 que le client peut uploader vers le bucket.
  */
 export const generateAiImage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d: { prompt: string }) =>
     z.object({ prompt: z.string().min(3).max(1000) }).parse(d),
   )
