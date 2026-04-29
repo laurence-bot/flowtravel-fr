@@ -799,7 +799,7 @@ function ContactHeaderAndInfo({
           )}
         </div>
       </Card>
-      <ContactEditDialog contact={contact} open={editOpen} onOpenChange={setEditOpen} />
+      <ContactEditDialog contact={contact} open={editOpen} onOpenChange={setEditOpen} onSaved={refetchContacts} />
     </div>
   );
 }
