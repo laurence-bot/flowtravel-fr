@@ -231,7 +231,7 @@ function UnsplashPanel({
   userId: string;
   cotationId: string;
   pathPrefix: string;
-  onPick: (url: string) => void;
+  onPick: (url: string, meta?: { credit?: string | null }) => void;
 }) {
   const search = useServerFn(searchUnsplash);
   const [query, setQuery] = useState("");
@@ -256,7 +256,7 @@ function UnsplashPanel({
       const res = await fetch(img.full);
       const blob = await res.blob();
       const url = await uploadBlob(blob, userId, cotationId, pathPrefix, "jpg");
-      onPick(url);
+      onPick(url, { credit: `Photo : ${img.author} / Unsplash` });
       toast.success("Image importée depuis Unsplash.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erreur d'import.");
