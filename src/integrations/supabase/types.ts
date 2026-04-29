@@ -1230,9 +1230,11 @@ export type Database = {
         Row: {
           accepted_at: string | null
           callback_requested_at: string | null
+          chosen_flight_option_id: string | null
           cotation_id: string
           created_at: string
           expires_at: string
+          flight_chosen_at: string | null
           id: string
           modification_request_text: string | null
           modification_requested_at: string | null
@@ -1244,9 +1246,11 @@ export type Database = {
         Insert: {
           accepted_at?: string | null
           callback_requested_at?: string | null
+          chosen_flight_option_id?: string | null
           cotation_id: string
           created_at?: string
           expires_at?: string
+          flight_chosen_at?: string | null
           id?: string
           modification_request_text?: string | null
           modification_requested_at?: string | null
@@ -1258,9 +1262,11 @@ export type Database = {
         Update: {
           accepted_at?: string | null
           callback_requested_at?: string | null
+          chosen_flight_option_id?: string | null
           cotation_id?: string
           created_at?: string
           expires_at?: string
+          flight_chosen_at?: string | null
           id?: string
           modification_request_text?: string | null
           modification_requested_at?: string | null

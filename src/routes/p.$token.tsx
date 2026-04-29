@@ -5,11 +5,12 @@ import {
   acceptPublicQuote,
   requestCallback,
   requestModification,
+  chooseFlightOption,
 } from "@/server/quote-public.functions";
 import { themeStyle } from "@/lib/agency-theme";
 import { formatEUR, formatDate } from "@/lib/format";
 import { computeCotationFinance, ligneEcheances } from "@/lib/cotations";
-import { Check, Phone, MessageSquare, MapPin, Calendar, Users, Sparkles } from "lucide-react";
+import { Check, Phone, MessageSquare, MapPin, Calendar, Users, Sparkles, Plane, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/p/$token")({
@@ -57,8 +58,11 @@ function PublicQuotePage() {
   const [modifMsg, setModifMsg] = useState("");
   const [modifSent, setModifSent] = useState(Boolean(data.link.modification_requested_at));
   const [submitting, setSubmitting] = useState(false);
+  const [chosenFlightId, setChosenFlightId] = useState<string | null>(
+    (data.link as { chosen_flight_option_id?: string | null }).chosen_flight_option_id ?? null,
+  );
 
-  const { cotation, lignes, jours, agency, contact } = data;
+  const { cotation, lignes, jours, vols, agency, contact } = data;
   const fin = computeCotationFinance(cotation, lignes);
   const pricePerPax = cotation.nombre_pax > 0 ? fin.prixVente / cotation.nombre_pax : 0;
 
@@ -106,6 +110,16 @@ function PublicQuotePage() {
       setModifSent(true);
       setShowModifModal(false);
       toast.success("Demande de modification envoyée.");
+    } else toast.error(r.error || "Erreur");
+  };
+
+  const handleChooseFlight = async (flightOptionId: string) => {
+    setSubmitting(true);
+    const r = await chooseFlightOption({ data: { token: params.token, flightOptionId } });
+    setSubmitting(false);
+    if (r.ok) {
+      setChosenFlightId(flightOptionId);
+      toast.success("Votre choix de vol a bien été transmis.");
     } else toast.error(r.error || "Erreur");
   };
 
@@ -313,6 +327,97 @@ function PublicQuotePage() {
                       )}
                     </div>
                   ))}
+                </div>
+              </section>
+            )}
+
+            {/* VOLS */}
+            {vols.length > 0 && (
+              <section className="mb-20">
+                <SectionTitle eyebrow="Aérien" title="Vos options de vol" />
+                <div className="grid gap-4">
+                  {vols.map((v) => {
+                    const isChosen = chosenFlightId === v.id;
+                    return (
+                      <div
+                        key={v.id}
+                        className={`brand-bg-muted p-6 rounded-sm border-2 transition-all ${
+                          isChosen ? "brand-border-ornament" : "border-transparent"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <div className="flex items-center gap-3">
+                            <Plane className="h-5 w-5 brand-signature shrink-0" />
+                            <div>
+                              <div className="brand-heading text-xl brand-primary">
+                                {v.compagnie}
+                              </div>
+                              {v.numero_vol && (
+                                <div className="text-xs text-stone-500 font-mono">
+                                  Vol {v.numero_vol}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="brand-heading text-2xl brand-primary font-light">
+                              {formatEUR(Number(v.prix) || 0)}
+                            </div>
+                            <div className="text-[10px] uppercase tracking-widest text-stone-500">
+                              par personne
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-sm text-stone-700 mb-3 whitespace-pre-line">
+                          {v.routing}
+                        </div>
+                        <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-stone-600">
+                          {v.date_depart && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              Aller : {formatDate(v.date_depart)}
+                              {v.heure_depart && ` · ${v.heure_depart.slice(0, 5)}`}
+                            </span>
+                          )}
+                          {v.date_retour && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              Retour : {formatDate(v.date_retour)}
+                              {v.heure_retour && ` · ${v.heure_retour.slice(0, 5)}`}
+                            </span>
+                          )}
+                          {v.deadline_option_date && (
+                            <span className="flex items-center gap-1 text-stone-500">
+                              <Clock className="h-3 w-3" />
+                              Option valable jusqu'au {formatDate(v.deadline_option_date)}
+                            </span>
+                          )}
+                        </div>
+                        {v.notes && (
+                          <div className="text-xs text-stone-600 italic mt-2">{v.notes}</div>
+                        )}
+                        <div className="mt-4 flex justify-end">
+                          <button
+                            onClick={() => handleChooseFlight(v.id)}
+                            disabled={submitting || isChosen}
+                            className={`px-5 py-2 text-xs uppercase tracking-widest transition-all disabled:opacity-60 flex items-center gap-2 ${
+                              isChosen
+                                ? "brand-bg-signature text-white cursor-default"
+                                : "border brand-border-ornament brand-primary hover:brand-bg-signature hover:text-white"
+                            }`}
+                          >
+                            {isChosen ? (
+                              <>
+                                <Check className="h-3.5 w-3.5" /> Vol choisi
+                              </>
+                            ) : (
+                              "Choisir cette option"
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             )}
