@@ -43,6 +43,18 @@ export const getPublicQuote = createServerFn({ method: "POST" })
         .order("created_at", { ascending: true }),
     ]);
 
+    // Récupère les segments de tous les vols en une requête (RLS via token autorise la lecture).
+    const flightIds = (volsRes.data ?? []).map((v) => v.id);
+    let segments: Array<Record<string, unknown>> = [];
+    if (flightIds.length > 0) {
+      const { data: segs } = await supabaseAdmin
+        .from("flight_segments")
+        .select("*")
+        .in("flight_option_id", flightIds)
+        .order("ordre", { ascending: true });
+      segments = segs ?? [];
+    }
+
     if (cotRes.error || !cotRes.data) {
       return { ok: false as const, error: "Devis introuvable." };
     }
