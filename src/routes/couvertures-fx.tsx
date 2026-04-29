@@ -106,6 +106,8 @@ function CouverturesFXPage() {
                 <TableHead className="text-right">Montant devise</TableHead>
                 <TableHead className="text-right">Taux</TableHead>
                 <TableHead className="text-right">Équivalent EUR</TableHead>
+                <TableHead className="min-w-[160px]">Utilisation</TableHead>
+                <TableHead className="text-right">Engagé</TableHead>
                 <TableHead className="text-right">Réservé</TableHead>
                 <TableHead className="text-right">Disponible</TableHead>
                 <TableHead>Échéance</TableHead>
@@ -114,7 +116,7 @@ function CouverturesFXPage() {
             </TableHeader>
             <TableBody>
               {coverages.map((c) => {
-                const { reserve, disponible } = coverageBalance(c, reservations);
+                const { reserve, engage, disponible } = coverageBalance(c, reservations);
                 const eur = Number(c.montant_devise) * Number(c.taux_change);
                 return (
                   <TableRow key={c.id}>
@@ -131,7 +133,13 @@ function CouverturesFXPage() {
                     <TableCell className="text-right tabular-nums font-medium">
                       {formatEUR(eur)}
                     </TableCell>
-                    <TableCell className="text-right tabular-nums text-muted-foreground">
+                    <TableCell>
+                      <UsageBar engage={engage} reserve={reserve} disponible={disponible} total={Number(c.montant_devise)} />
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-destructive">
+                      {formatMoney(engage, c.devise)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-amber-600 dark:text-amber-400">
                       {formatMoney(reserve, c.devise)}
                     </TableCell>
                     <TableCell className="text-right tabular-nums text-emerald-600 dark:text-emerald-400">
