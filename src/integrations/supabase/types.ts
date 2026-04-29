@@ -261,13 +261,24 @@ export type Database = {
         Row: {
           adresse: string | null
           code_postal: string | null
+          conditions_annulation: Json
+          conditions_notes: string | null
           contact_principal: string | null
           created_at: string
+          delai_acompte_1_jours: number | null
+          delai_acompte_2_jours: number | null
+          delai_acompte_3_jours: number | null
+          delai_solde_jours: number | null
+          devises_acceptees: string[]
           email: string | null
           id: string
           nom: string
           notes: string | null
           pays: string | null
+          pct_acompte_1: number
+          pct_acompte_2: number
+          pct_acompte_3: number
+          pct_solde: number
           site_web: string | null
           telephone: string | null
           type: Database["public"]["Enums"]["contact_type"]
@@ -278,13 +289,24 @@ export type Database = {
         Insert: {
           adresse?: string | null
           code_postal?: string | null
+          conditions_annulation?: Json
+          conditions_notes?: string | null
           contact_principal?: string | null
           created_at?: string
+          delai_acompte_1_jours?: number | null
+          delai_acompte_2_jours?: number | null
+          delai_acompte_3_jours?: number | null
+          delai_solde_jours?: number | null
+          devises_acceptees?: string[]
           email?: string | null
           id?: string
           nom: string
           notes?: string | null
           pays?: string | null
+          pct_acompte_1?: number
+          pct_acompte_2?: number
+          pct_acompte_3?: number
+          pct_solde?: number
           site_web?: string | null
           telephone?: string | null
           type: Database["public"]["Enums"]["contact_type"]
@@ -295,13 +317,24 @@ export type Database = {
         Update: {
           adresse?: string | null
           code_postal?: string | null
+          conditions_annulation?: Json
+          conditions_notes?: string | null
           contact_principal?: string | null
           created_at?: string
+          delai_acompte_1_jours?: number | null
+          delai_acompte_2_jours?: number | null
+          delai_acompte_3_jours?: number | null
+          delai_solde_jours?: number | null
+          devises_acceptees?: string[]
           email?: string | null
           id?: string
           nom?: string
           notes?: string | null
           pays?: string | null
+          pct_acompte_1?: number
+          pct_acompte_2?: number
+          pct_acompte_3?: number
+          pct_solde?: number
           site_web?: string | null
           telephone?: string | null
           type?: Database["public"]["Enums"]["contact_type"]
@@ -364,7 +397,6 @@ export type Database = {
       }
       cotation_lignes_fournisseurs: {
         Row: {
-          condition_profil_id: string | null
           cotation_id: string
           couverture_id: string | null
           created_at: string
@@ -395,7 +427,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          condition_profil_id?: string | null
           cotation_id: string
           couverture_id?: string | null
           created_at?: string
@@ -426,7 +457,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          condition_profil_id?: string | null
           cotation_id?: string
           couverture_id?: string | null
           created_at?: string
@@ -1020,69 +1050,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      fournisseur_conditions: {
-        Row: {
-          conditions_annulation: Json
-          created_at: string
-          delai_acompte_1_jours: number | null
-          delai_acompte_2_jours: number | null
-          delai_acompte_3_jours: number | null
-          delai_solde_jours: number | null
-          devises_acceptees: string[]
-          est_defaut: boolean
-          fournisseur_id: string
-          id: string
-          nom_profil: string
-          notes: string | null
-          pct_acompte_1: number
-          pct_acompte_2: number
-          pct_acompte_3: number
-          pct_solde: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          conditions_annulation?: Json
-          created_at?: string
-          delai_acompte_1_jours?: number | null
-          delai_acompte_2_jours?: number | null
-          delai_acompte_3_jours?: number | null
-          delai_solde_jours?: number | null
-          devises_acceptees?: string[]
-          est_defaut?: boolean
-          fournisseur_id: string
-          id?: string
-          nom_profil: string
-          notes?: string | null
-          pct_acompte_1?: number
-          pct_acompte_2?: number
-          pct_acompte_3?: number
-          pct_solde?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          conditions_annulation?: Json
-          created_at?: string
-          delai_acompte_1_jours?: number | null
-          delai_acompte_2_jours?: number | null
-          delai_acompte_3_jours?: number | null
-          delai_solde_jours?: number | null
-          devises_acceptees?: string[]
-          est_defaut?: boolean
-          fournisseur_id?: string
-          id?: string
-          nom_profil?: string
-          notes?: string | null
-          pct_acompte_1?: number
-          pct_acompte_2?: number
-          pct_acompte_3?: number
-          pct_solde?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       fournisseur_options: {
         Row: {
