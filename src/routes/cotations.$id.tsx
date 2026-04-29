@@ -61,6 +61,7 @@ import {
   XCircle,
   ArrowRight,
   AlertTriangle,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { CotationOptionsBlock } from "@/components/cotation-options-block";
@@ -419,12 +420,31 @@ function CotationDetailPage() {
           title={cot.titre}
           description={`Version ${cot.version_number}${client ? ` · ${client.nom}` : ""}${cot.destination ? ` · ${cot.destination}` : ""}`}
           action={
-            <Badge variant="outline" className={TONE_CLASS[tone]}>
-              {COTATION_STATUT_LABELS[cot.statut]}
-            </Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              {user && (
+                <Button asChild size="sm">
+                  <a href="#devis-web-client">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Générer le lien client
+                  </a>
+                </Button>
+              )}
+              <Badge variant="outline" className={TONE_CLASS[tone]}>
+                {COTATION_STATUT_LABELS[cot.statut]}
+              </Badge>
+            </div>
           }
         />
       </div>
+
+      {/* Devis web client (lien partageable) */}
+      {user && (
+        <PublicQuoteLinkBlock
+          cotationId={cot.id}
+          userId={user.id}
+          canWrite={canWrite}
+        />
+      )}
 
       {/* Résumé financier */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -479,15 +499,6 @@ function CotationDetailPage() {
           </div>
         </Card>
       </div>
-
-      {/* Devis web client (lien partageable) */}
-      {user && (
-        <PublicQuoteLinkBlock
-          cotationId={cot.id}
-          userId={user.id}
-          canWrite={canWrite}
-        />
-      )}
 
       {/* Alertes qualité */}
       {(() => {
