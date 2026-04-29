@@ -304,11 +304,18 @@ function PublicQuotePage() {
                       </div>
                       <div>
                         {j.image_url && (
-                          <img
-                            src={j.image_url}
-                            alt={j.titre}
-                            className="w-full aspect-[16/9] object-cover rounded-sm mb-4"
-                          />
+                          <figure className="mb-4">
+                            <img
+                              src={j.image_url}
+                              alt={j.titre}
+                              className="w-full aspect-[16/9] object-cover rounded-sm"
+                            />
+                            {j.image_credit && (
+                              <figcaption className="text-[10px] text-stone-400 italic mt-1 text-right">
+                                {j.image_credit}
+                              </figcaption>
+                            )}
+                          </figure>
                         )}
                         <h3 className="brand-heading text-2xl md:text-3xl font-light brand-primary mb-3">
                           {j.titre}
@@ -317,6 +324,24 @@ function PublicQuotePage() {
                           <p className="text-stone-700 leading-relaxed whitespace-pre-line">
                             {j.description}
                           </p>
+                        )}
+                        {Array.isArray(j.gallery_urls) && j.gallery_urls.length > 0 && (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+                            {j.gallery_urls.map((url: string, gi: number) => (
+                              <figure key={gi} className="relative group">
+                                <img
+                                  src={url}
+                                  alt=""
+                                  className="w-full aspect-square object-cover rounded-sm"
+                                />
+                                {j.gallery_credits?.[gi] && (
+                                  <figcaption className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent text-white text-[9px] p-1 italic opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {j.gallery_credits[gi]}
+                                  </figcaption>
+                                )}
+                              </figure>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </article>
