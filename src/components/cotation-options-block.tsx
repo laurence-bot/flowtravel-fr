@@ -848,9 +848,31 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
             <Plane className="h-4 w-4" /> Options vols
           </h4>
           {canWrite && (
-            <Button size="sm" onClick={() => setFlAddOpen(true)}>
-              <Plus className="h-4 w-4 mr-1" /> Ajouter un vol
-            </Button>
+            <div className="flex items-center gap-2">
+              <input
+                ref={flImportInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void importerVolDepuisCapture(f);
+                }}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => flImportInputRef.current?.click()}
+                disabled={flImporting}
+                title="Importer une capture d'écran (Amadeus, GDS, mail compagnie…)"
+              >
+                <Sparkles className="h-4 w-4 mr-1" />
+                {flImporting ? "Analyse…" : "Importer capture"}
+              </Button>
+              <Button size="sm" onClick={() => setFlAddOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" /> Ajouter un vol
+              </Button>
+            </div>
           )}
         </div>
 
