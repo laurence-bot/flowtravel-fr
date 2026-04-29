@@ -89,7 +89,7 @@ function KpiCard({
 
 function ContactDetail() {
   const { id } = Route.useParams();
-  const { data: contacts, loading } = useTable<Contact>("contacts");
+  const { data: contacts, loading, refetch: refetchContacts } = useTable<Contact>("contacts");
   const { data: dossiers, loading: dossiersLoading } = useTable<Dossier>("dossiers");
   const { data: paiements, loading: paiementsLoading } = useTable<Paiement>("paiements");
   const { data: factures, loading: facturesLoading } = useTable<Facture>("factures_fournisseurs");
@@ -260,7 +260,7 @@ function ContactDetail() {
 
   return (
     <div className="space-y-8">
-      <ContactHeaderAndInfo contact={contact} isClient={isClient} />
+      <ContactHeaderAndInfo contact={contact} isClient={isClient} onSaved={refetchContacts} />
 
       {!isClient && (
         <FournisseurConditionsBlock fournisseurId={contact.id} canWrite={true} />
@@ -723,9 +723,11 @@ function ContactDetail() {
 function ContactHeaderAndInfo({
   contact,
   isClient,
+  onSaved,
 }: {
   contact: Contact;
   isClient: boolean;
+  onSaved?: () => void;
 }) {
   const { canWrite } = usePageWriteAccess();
   const [editOpen, setEditOpen] = useState(false);
@@ -799,7 +801,7 @@ function ContactHeaderAndInfo({
           )}
         </div>
       </Card>
-      <ContactEditDialog contact={contact} open={editOpen} onOpenChange={setEditOpen} />
+      <ContactEditDialog contact={contact} open={editOpen} onOpenChange={setEditOpen} onSaved={onSaved} />
     </div>
   );
 }
