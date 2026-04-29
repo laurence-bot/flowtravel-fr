@@ -226,12 +226,37 @@ function DemandesPage() {
                     </div>
                     <div>
                       <Label>Client existant</Label>
-                      <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
-                        <SelectTrigger><SelectValue placeholder="Optionnel" /></SelectTrigger>
+                      <Select
+                        value={form.client_id}
+                        onValueChange={(v) => setForm({ ...form, client_id: v, creer_client: false })}
+                        disabled={form.creer_client}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={form.creer_client ? "Nouveau client" : "Optionnel"} />
+                        </SelectTrigger>
                         <SelectContent>
                           {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div className="col-span-2 flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
+                      <Checkbox
+                        id="creer-client"
+                        checked={form.creer_client}
+                        onCheckedChange={(c) =>
+                          setForm({
+                            ...form,
+                            creer_client: c === true,
+                            client_id: c === true ? "" : form.client_id,
+                          })
+                        }
+                      />
+                      <Label htmlFor="creer-client" className="cursor-pointer text-sm font-normal">
+                        Créer aussi le contact dans ma base clients
+                        <span className="block text-xs text-muted-foreground">
+                          Le nom, email et téléphone saisis ci-dessus seront utilisés pour créer un nouveau client.
+                        </span>
+                      </Label>
                     </div>
                     <div>
                       <Label>Email</Label>
