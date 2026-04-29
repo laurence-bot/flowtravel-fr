@@ -342,33 +342,70 @@ function ConditionRow({
 
           <div>
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">Échéances de paiement</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
               {(
                 [
-                  ["pct_acompte_1", "delai_acompte_1_jours", "Acompte 1"],
-                  ["pct_acompte_2", "delai_acompte_2_jours", "Acompte 2"],
-                  ["pct_acompte_3", "delai_acompte_3_jours", "Acompte 3"],
-                  ["pct_solde", "delai_solde_jours", "Solde"],
+                  ["pct_acompte_1", "delai_acompte_1_jours", "acompte_1_a_reservation", "Acompte 1"],
+                  ["pct_acompte_2", "delai_acompte_2_jours", "acompte_2_a_reservation", "Acompte 2"],
+                  ["pct_acompte_3", "delai_acompte_3_jours", "acompte_3_a_reservation", "Acompte 3"],
+                  ["pct_solde", "delai_solde_jours", "solde_a_reservation", "Solde"],
                 ] as const
-              ).map(([pctK, delaiK, label]) => (
-                <div key={pctK}>
-                  <Label className="text-xs">{label} %</Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    value={form[pctK]}
-                    onChange={(e) => update(pctK, e.target.value)}
-                  />
-                  <Label className="text-[10px] text-muted-foreground mt-1">Jours avant</Label>
-                  <Input
-                    type="number"
-                    value={form[delaiK]}
-                    onChange={(e) => update(delaiK, e.target.value)}
-                    placeholder="—"
-                  />
-                </div>
-              ))}
+              ).map(([pctK, delaiK, resK, label]) => {
+                const aReservation = form[resK];
+                return (
+                  <div key={pctK} className="border border-border/50 rounded-md p-2.5 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-xs font-medium">{label}</Label>
+                      <div className="flex items-center gap-2 text-[11px]">
+                        <span className={aReservation ? "text-muted-foreground" : ""}>J-X</span>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={aReservation}
+                          onClick={() => update(resK, !aReservation)}
+                          className={`relative w-8 h-4 rounded-full transition-colors ${
+                            aReservation ? "bg-primary" : "bg-muted"
+                          }`}
+                        >
+                          <span
+                            className={`absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-background transition-transform ${
+                              aReservation ? "translate-x-4" : ""
+                            }`}
+                          />
+                        </button>
+                        <span className={!aReservation ? "text-muted-foreground" : ""}>Réservation</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">%</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={form[pctK]}
+                          onChange={(e) => update(pctK, e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">
+                          {aReservation ? "À la réservation" : "Jours avant prestation"}
+                        </Label>
+                        <Input
+                          type="number"
+                          value={aReservation ? "" : form[delaiK]}
+                          onChange={(e) => update(delaiK, e.target.value)}
+                          placeholder={aReservation ? "—" : "ex: 30"}
+                          disabled={aReservation}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              « À la réservation » = dû dès la confirmation de la cotation. « J-X » = X jours avant la prestation.
+            </p>
           </div>
 
           <div>
