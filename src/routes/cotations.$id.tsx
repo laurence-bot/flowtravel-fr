@@ -170,6 +170,7 @@ function CotationDetailPage() {
   }
 
   const fin = computeCotationFinance(cot, lignes);
+  const acompteInfo = computeAcompteClient(cot, lignes);
   const client = contacts.find((c) => c.id === cot.client_id);
   const fournisseurs = contacts.filter((c) => c.type === "fournisseur");
   const acompteClientRecu = !!cot.dossier_id && paiements.some(
