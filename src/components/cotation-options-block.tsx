@@ -370,6 +370,7 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
 
   // -------------------- Flight options --------------------
   const [flAddOpen, setFlAddOpen] = useState(false);
+  const [segmentsOpenFor, setSegmentsOpenFor] = useState<{ id: string; compagnie: string } | null>(null);
   const [flEmailTo, setFlEmailTo] = useState("");
   const [flForm, setFlForm] = useState({
     compagnie: "",
