@@ -158,7 +158,24 @@ export function FlightSegmentsDialog({
   }, [loading, open]);
 
   const updateSegment = (id: string, patch: Partial<FlightSegment>) => {
-    setSegments(segments.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+    setSegments((prev) => {
+      const next = prev.map((s) => (s.id === id ? { ...s, ...patch } : s));
+      // Auto-recalcule les durées d'escale entre segments consécutifs
+      // dès qu'on a arrivée(N) et départ(N+1) complets.
+      for (let i = 0; i < next.length - 1; i++) {
+        const cur = next[i];
+        const nxt = next[i + 1];
+        if (cur.date_arrivee && cur.heure_arrivee && nxt.date_depart && nxt.heure_depart) {
+          const arr = new Date(`${cur.date_arrivee}T${cur.heure_arrivee}`);
+          const dep = new Date(`${nxt.date_depart}T${nxt.heure_depart}`);
+          const diffMin = Math.round((dep.getTime() - arr.getTime()) / 60000);
+          if (diffMin > 0 && diffMin < 24 * 60 && cur.duree_escale_minutes !== diffMin) {
+            next[i] = { ...cur, duree_escale_minutes: diffMin };
+          }
+        }
+      }
+      return next;
+    });
   };
 
   const removeSegment = async (id: string) => {
