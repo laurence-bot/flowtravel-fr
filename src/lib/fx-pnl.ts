@@ -63,7 +63,7 @@ export function pnlForEcheance(
   const eurApplique = num(e.montant_eur);
   const eurReference = montant * ref;
   const couvert = !!reservations.find(
-    (r) => r.echeance_id === e.id && r.statut !== "annulee",
+    (r) => r.echeance_id === e.id && r.statut !== "annulee" && r.statut !== "liberee",
   );
   return {
     id: e.id,
