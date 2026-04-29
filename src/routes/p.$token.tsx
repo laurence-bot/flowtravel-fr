@@ -65,6 +65,21 @@ function PublicQuotePage() {
   );
 
   const { cotation, lignes, jours, vols, agency, contact } = data;
+  const segments = (data as { segments?: Array<{
+    id: string;
+    flight_option_id: string;
+    ordre: number;
+    compagnie: string | null;
+    numero_vol: string | null;
+    aeroport_depart: string;
+    date_depart: string | null;
+    heure_depart: string | null;
+    aeroport_arrivee: string;
+    date_arrivee: string | null;
+    heure_arrivee: string | null;
+    duree_escale_minutes: number | null;
+    notes: string | null;
+  }> }).segments ?? [];
   const fin = computeCotationFinance(cotation, lignes);
   const pricePerPax = cotation.nombre_pax > 0 ? fin.prixVente / cotation.nombre_pax : 0;
 
