@@ -130,13 +130,43 @@ function DemandesPage() {
       return;
     }
     setSubmitting(true);
+
+    // Si on demande de créer un nouveau client, on insère d'abord le contact.
+    let clientId: string | null = parsed.data.client_id || null;
+    if (form.creer_client && !clientId) {
+      const { data: createdContact, error: errContact } = await supabase
+        .from("contacts")
+        .insert({
+          user_id: user.id,
+          type: "client",
+          nom: parsed.data.nom_client,
+          email: parsed.data.email || null,
+          telephone: parsed.data.telephone || null,
+        })
+        .select()
+        .single();
+      if (errContact || !createdContact) {
+        setSubmitting(false);
+        toast.error(errContact?.message ?? "Création du client impossible.");
+        return;
+      }
+      clientId = createdContact.id;
+      await logAudit({
+        userId: user.id,
+        entity: "contact",
+        entityId: createdContact.id,
+        action: "create",
+        description: `Client créé depuis demande : ${parsed.data.nom_client}`,
+      });
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: created, error } = await (supabase as any)
       .from("demandes")
       .insert({
         user_id: user.id,
         nom_client: parsed.data.nom_client,
-        client_id: parsed.data.client_id || null,
+        client_id: clientId,
         email: parsed.data.email || null,
         telephone: parsed.data.telephone || null,
         canal: parsed.data.canal,
@@ -166,9 +196,11 @@ function DemandesPage() {
     setForm({
       nom_client: "", client_id: "", email: "", telephone: "", canal: "email",
       destination: "", date_depart_souhaitee: "", date_retour_souhaitee: "",
-      budget: "", nombre_pax: "1", message_client: "",
+      budget: "", nombre_pax: "1", message_client: "", creer_client: false,
     });
-    toast.success("Demande créée.");
+    toast.success(form.creer_client && !parsed.data.client_id
+      ? "Demande et client créés."
+      : "Demande créée.");
     refetch();
   };
 
