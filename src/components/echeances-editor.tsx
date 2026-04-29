@@ -214,7 +214,7 @@ function EcheanceRow({
   const { user } = useAuth();
   const isEUR = echeance.devise === "EUR";
   const reservation = reservations.find(
-    (r) => r.echeance_id === echeance.id && r.statut === "active",
+    (r) => r.echeance_id === echeance.id && (r.statut === "active" || r.statut === "reservee" || r.statut === "engagee"),
   );
   const coverage = reservation
     ? coverages.find((c) => c.id === reservation.coverage_id)
