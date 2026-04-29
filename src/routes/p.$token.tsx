@@ -58,8 +58,11 @@ function PublicQuotePage() {
   const [modifMsg, setModifMsg] = useState("");
   const [modifSent, setModifSent] = useState(Boolean(data.link.modification_requested_at));
   const [submitting, setSubmitting] = useState(false);
+  const [chosenFlightId, setChosenFlightId] = useState<string | null>(
+    (data.link as { chosen_flight_option_id?: string | null }).chosen_flight_option_id ?? null,
+  );
 
-  const { cotation, lignes, jours, agency, contact } = data;
+  const { cotation, lignes, jours, vols, agency, contact } = data;
   const fin = computeCotationFinance(cotation, lignes);
   const pricePerPax = cotation.nombre_pax > 0 ? fin.prixVente / cotation.nombre_pax : 0;
 
