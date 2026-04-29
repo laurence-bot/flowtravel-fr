@@ -1,5 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { RequireAuth } from "@/components/require-auth";
+import { ContactEditDialog } from "@/components/contact-edit-dialog";
+import { FournisseurConditionsBlock } from "@/components/fournisseur-conditions-block";
+import { usePageWriteAccess } from "@/hooks/use-page-write-access";
+import { Pencil, Globe, MapPin, User as UserIcon, StickyNote } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -255,55 +260,11 @@ function ContactDetail() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <Button asChild variant="ghost" size="sm" className="-ml-2 mb-2">
-          <Link to="/contacts">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Retour aux contacts
-          </Link>
-        </Button>
-        <PageHeader
-          title={contact.nom}
-          description={isClient ? "Fiche client" : "Fiche fournisseur"}
-          action={
-            <Badge variant={isClient ? "default" : "secondary"}>
-              {isClient ? "Client" : "Fournisseur"}
-            </Badge>
-          }
-        />
-      </div>
+      <ContactHeaderAndInfo contact={contact} isClient={isClient} />
 
-      {/* Infos générales */}
-      <Card className="p-5 border-border/60">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <div>
-            <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Email</div>
-            <div className="mt-1 inline-flex items-center gap-2">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              {contact.email ? (
-                <a href={`mailto:${contact.email}`} className="hover:underline">
-                  {contact.email}
-                </a>
-              ) : (
-                <span className="text-muted-foreground">—</span>
-              )}
-            </div>
-          </div>
-          <div>
-            <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Téléphone</div>
-            <div className="mt-1 inline-flex items-center gap-2">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              {contact.telephone ? (
-                <a href={`tel:${contact.telephone}`} className="hover:underline">
-                  {contact.telephone}
-                </a>
-              ) : (
-                <span className="text-muted-foreground">—</span>
-              )}
-            </div>
-          </div>
-        </div>
-      </Card>
+      {!isClient && (
+        <FournisseurConditionsBlock fournisseurId={contact.id} canWrite={true} />
+      )}
 
       {/* Alertes */}
       {alertes.length > 0 && (
@@ -754,6 +715,91 @@ function ContactDetail() {
           </div>
         </Card>
       )}
+    </div>
+  );
+}
+
+
+function ContactHeaderAndInfo({
+  contact,
+  isClient,
+}: {
+  contact: Contact;
+  isClient: boolean;
+}) {
+  const { canWrite } = usePageWriteAccess();
+  const [editOpen, setEditOpen] = useState(false);
+  return (
+    <div className="space-y-4">
+      <Button asChild variant="ghost" size="sm" className="-ml-2">
+        <Link to="/contacts">
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Retour aux contacts
+        </Link>
+      </Button>
+      <PageHeader
+        title={contact.nom}
+        description={isClient ? "Fiche client" : "Fiche fournisseur"}
+        action={
+          <div className="flex items-center gap-2">
+            <Badge variant={isClient ? "default" : "secondary"}>
+              {isClient ? "Client" : "Fournisseur"}
+            </Badge>
+            {canWrite && (
+              <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
+                <Pencil className="h-4 w-4 mr-1" /> Modifier
+              </Button>
+            )}
+          </div>
+        }
+      />
+      <Card className="p-5 border-border/60">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          {contact.email && (
+            <div className="inline-flex items-center gap-2">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <a href={`mailto:${contact.email}`} className="hover:underline">{contact.email}</a>
+            </div>
+          )}
+          {contact.telephone && (
+            <div className="inline-flex items-center gap-2">
+              <Phone className="h-4 w-4 text-muted-foreground" />
+              <a href={`tel:${contact.telephone}`} className="hover:underline">{contact.telephone}</a>
+            </div>
+          )}
+          {contact.contact_principal && (
+            <div className="inline-flex items-center gap-2">
+              <UserIcon className="h-4 w-4 text-muted-foreground" />
+              <span>{contact.contact_principal}</span>
+            </div>
+          )}
+          {contact.site_web && (
+            <div className="inline-flex items-center gap-2">
+              <Globe className="h-4 w-4 text-muted-foreground" />
+              <a href={contact.site_web} target="_blank" rel="noreferrer" className="hover:underline">
+                {contact.site_web}
+              </a>
+            </div>
+          )}
+          {(contact.adresse || contact.ville || contact.pays) && (
+            <div className="inline-flex items-start gap-2 sm:col-span-2">
+              <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+              <span>
+                {[contact.adresse, [contact.code_postal, contact.ville].filter(Boolean).join(" "), contact.pays]
+                  .filter(Boolean)
+                  .join(", ")}
+              </span>
+            </div>
+          )}
+          {contact.notes && (
+            <div className="sm:col-span-2 flex items-start gap-2 pt-2 border-t border-border/50 mt-2">
+              <StickyNote className="h-4 w-4 text-muted-foreground mt-0.5" />
+              <p className="text-muted-foreground whitespace-pre-wrap">{contact.notes}</p>
+            </div>
+          )}
+        </div>
+      </Card>
+      <ContactEditDialog contact={contact} open={editOpen} onOpenChange={setEditOpen} />
     </div>
   );
 }

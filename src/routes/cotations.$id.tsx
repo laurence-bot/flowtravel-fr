@@ -68,6 +68,7 @@ import { toast } from "sonner";
 import { CotationOptionsBlock } from "@/components/cotation-options-block";
 import { PublicQuoteLinkBlock } from "@/components/public-quote-link-block";
 import { QuoteContentEditorBlock } from "@/components/quote-content-editor-block";
+import { FxOptimizerBlock } from "@/components/fx-optimizer-block";
 
 export const Route = createFileRoute("/cotations/$id")({
   component: () => (
@@ -133,7 +134,7 @@ function CotationDetailPage() {
     nom_fournisseur: "",
     fournisseur_id: "",
     prestation: "",
-    payeur: "",
+    // payeur supprimé
     date_prestation: "",
     mode_tarifaire: "global" as CotationLigneModeTarifaire,
     quantite: "1",
@@ -255,7 +256,7 @@ function CotationDetailPage() {
         cotation_id: cot.id,
         fournisseur_id: ligneForm.fournisseur_id || null,
         nom_fournisseur: parsed.data.nom_fournisseur,
-        payeur: ligneForm.payeur || null,
+        payeur: null,
         prestation: parsed.data.prestation || null,
         date_prestation: ligneForm.date_prestation || null,
         mode_tarifaire: ligneForm.mode_tarifaire,
@@ -861,11 +862,6 @@ function CotationDetailPage() {
                 <TableRow key={l.id}>
                   <TableCell className="text-sm">
                     <div className="font-medium">{l.nom_fournisseur}</div>
-                    {l.payeur && (
-                      <div className="text-xs text-muted-foreground">
-                        Payeur : {l.payeur}
-                      </div>
-                    )}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {l.prestation ?? "—"}
@@ -904,6 +900,15 @@ function CotationDetailPage() {
         )}
       </Card>
 
+      {/* Optimisation FX */}
+      <FxOptimizerBlock
+        cotationId={cot.id}
+        lignes={lignesCot}
+        nombrePax={cot.nombre_pax}
+        canWrite={canWrite && !isLocked}
+        onApplied={refetchLignes}
+      />
+
       {/* Bloc Options & deadlines */}
       <CotationOptionsBlock
         cot={cot}
@@ -922,7 +927,7 @@ function CotationDetailPage() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="grid md:grid-cols-2 gap-3">
-              <Field label="Fournisseur (libre) *">
+              <Field label="Nom fournisseur *">
                 <Input
                   value={ligneForm.nom_fournisseur}
                   onChange={(e) =>
@@ -931,6 +936,7 @@ function CotationDetailPage() {
                       nom_fournisseur: e.target.value,
                     })
                   }
+                  placeholder="Sélectionnez via 'Lier' ou tapez ici"
                 />
               </Field>
               <Field label="Lier à un fournisseur">
@@ -966,14 +972,7 @@ function CotationDetailPage() {
                   }
                 />
               </Field>
-              <Field label="Payeur">
-                <Input
-                  value={ligneForm.payeur}
-                  onChange={(e) =>
-                    setLigneForm({ ...ligneForm, payeur: e.target.value })
-                  }
-                />
-              </Field>
+              {/* Champ "payeur" supprimé : par défaut l'agence règle le fournisseur */}
               <Field label="Mode tarifaire">
                 <Select
                   value={ligneForm.mode_tarifaire}
