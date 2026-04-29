@@ -1043,7 +1043,13 @@ function CotationDetailPage() {
                 <Select
                   value={ligneForm.devise}
                   onValueChange={(v) =>
-                    setLigneForm({ ...ligneForm, devise: v as DeviseCode })
+                    setLigneForm({
+                      ...ligneForm,
+                      devise: v as DeviseCode,
+                      couverture_id: "",
+                      source_fx: "taux_du_jour",
+                      taux_change_vers_eur: v === "EUR" ? "1" : ligneForm.taux_change_vers_eur,
+                    })
                   }
                 >
                   <SelectTrigger>
