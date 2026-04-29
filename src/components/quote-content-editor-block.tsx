@@ -25,6 +25,8 @@ type Props = {
   canWrite: boolean;
   initialHeroUrl: string | null;
   initialStorytelling: string | null;
+  initialInclus?: string | null;
+  initialNonInclus?: string | null;
 };
 
 export function QuoteContentEditorBlock({
@@ -33,9 +35,13 @@ export function QuoteContentEditorBlock({
   canWrite,
   initialHeroUrl,
   initialStorytelling,
+  initialInclus,
+  initialNonInclus,
 }: Props) {
   const [heroUrl, setHeroUrl] = useState<string | null>(initialHeroUrl);
   const [storytelling, setStorytelling] = useState(initialStorytelling ?? "");
+  const [inclus, setInclus] = useState(initialInclus ?? "");
+  const [nonInclus, setNonInclus] = useState(initialNonInclus ?? "");
   const [savingHero, setSavingHero] = useState(false);
   const [jours, setJours] = useState<CotationJour[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,6 +81,25 @@ export function QuoteContentEditorBlock({
     const { error } = await (supabase as any)
       .from("cotations")
       .update({ storytelling_intro: storytelling || null })
+      .eq("id", cotationId);
+    if (error) toast.error(error.message);
+    else toast.success("Introduction enregistrée.");
+  };
+
+  const saveInclus = async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("cotations")
+      .update({ inclus_text: inclus || null })
+      .eq("id", cotationId);
+    if (error) toast.error(error.message);
+  };
+
+  const saveNonInclus = async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("cotations")
+      .update({ non_inclus_text: nonInclus || null })
       .eq("id", cotationId);
     if (error) toast.error(error.message);
     else toast.success("Introduction enregistrée.");
@@ -215,7 +240,38 @@ export function QuoteContentEditorBlock({
           </div>
         )}
       </div>
+
+      {/* INCLUS / NON INCLUS */}
+      <div className="grid md:grid-cols-2 gap-4 pt-2 border-t">
+        <div className="space-y-2">
+          <Label htmlFor="inclus">Ce qui est inclus</Label>
+          <Textarea
+            id="inclus"
+            value={inclus}
+            onChange={(e) => setInclus(e.target.value)}
+            onBlur={saveInclus}
+            placeholder={"• Vols internationaux\n• Hébergement en chambre double\n• Transferts privés\n• Guide francophone…"}
+            rows={8}
+            disabled={!canWrite}
+            className="text-sm"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="non-inclus">Ce qui n'est pas inclus</Label>
+          <Textarea
+            id="non-inclus"
+            value={nonInclus}
+            onChange={(e) => setNonInclus(e.target.value)}
+            onBlur={saveNonInclus}
+            placeholder={"• Visa et formalités\n• Assurance voyage\n• Pourboires\n• Dépenses personnelles…"}
+            rows={8}
+            disabled={!canWrite}
+            className="text-sm"
+          />
+        </div>
+      </div>
     </Card>
+
   );
 }
 

@@ -455,6 +455,8 @@ function CotationDetailPage() {
           canWrite={canWrite}
           initialHeroUrl={cot.hero_image_url ?? null}
           initialStorytelling={cot.storytelling_intro ?? null}
+          initialInclus={cot.inclus_text ?? null}
+          initialNonInclus={cot.non_inclus_text ?? null}
         />
       )}
 
