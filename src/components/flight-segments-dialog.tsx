@@ -33,6 +33,10 @@ type Props = {
   onOpenChange: (v: boolean) => void;
   flightOptionId: string;
   defaultCompagnie?: string;
+  defaultDateDepart?: string | null;
+  defaultHeureDepart?: string | null;
+  defaultDateRetour?: string | null;
+  defaultHeureRetour?: string | null;
   canWrite: boolean;
 };
 
@@ -41,21 +45,46 @@ const empty = (
   userId: string,
   ordre: number,
   defaultCompagnie?: string,
-): Omit<FlightSegment, "id"> => ({
-  flight_option_id: flightOptionId,
-  user_id: userId,
-  ordre,
-  compagnie: defaultCompagnie ?? null,
-  numero_vol: null,
-  aeroport_depart: "",
-  date_depart: null,
-  heure_depart: null,
-  aeroport_arrivee: "",
-  date_arrivee: null,
-  heure_arrivee: null,
-  duree_escale_minutes: null,
-  notes: null,
-});
+  prev?: FlightSegment | null,
+  fallbackDateDepart?: string | null,
+  fallbackHeureDepart?: string | null,
+): Omit<FlightSegment, "id"> => {
+  // Calcule la date/heure de départ du nouveau segment :
+  // - si segment précédent : on part de l'arrivée du précédent + escale (défaut 120 min)
+  // - sinon : on prend les valeurs de l'option vol
+  let date_depart: string | null = fallbackDateDepart ?? null;
+  let heure_depart: string | null = fallbackHeureDepart ?? null;
+  let aeroport_depart = "";
+
+  if (prev) {
+    aeroport_depart = prev.aeroport_arrivee || "";
+    if (prev.date_arrivee && prev.heure_arrivee) {
+      const escaleMin = prev.duree_escale_minutes ?? 120;
+      const base = new Date(`${prev.date_arrivee}T${prev.heure_arrivee}`);
+      base.setMinutes(base.getMinutes() + escaleMin);
+      date_depart = base.toISOString().slice(0, 10);
+      heure_depart = base.toTimeString().slice(0, 5);
+    } else if (prev.date_arrivee) {
+      date_depart = prev.date_arrivee;
+    }
+  }
+
+  return {
+    flight_option_id: flightOptionId,
+    user_id: userId,
+    ordre,
+    compagnie: defaultCompagnie ?? null,
+    numero_vol: null,
+    aeroport_depart,
+    date_depart,
+    heure_depart,
+    aeroport_arrivee: "",
+    date_arrivee: null,
+    heure_arrivee: null,
+    duree_escale_minutes: null,
+    notes: null,
+  };
+};
 
 export function FlightSegmentsDialog({
   open,
