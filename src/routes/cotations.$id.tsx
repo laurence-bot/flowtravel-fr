@@ -117,6 +117,8 @@ function CotationDetailPage() {
   );
   const { data: contacts, loading: contactsLoading } = useTable<Contact>("contacts");
   const { data: paiements, loading: paiementsLoading } = useTable<Paiement>("paiements");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: fournisseurConditions } = useTable<any>("fournisseur_conditions" as any);
 
   const cot = cotations.find((c) => c.id === id);
   const lignesCot = useMemo(
