@@ -83,6 +83,9 @@ export function FxOptimizerBlock({ cotationId, lignes, nombrePax, canWrite, onAp
           coverageId: main.coverageId,
           montantDevise: alloc.montantBesoinDevise,
           tauxChange: main.taux,
+          cotationId,
+          ligneFournisseurId: ligne.id,
+          statut: "reservee",
         });
         if (!errRes) reservationCount++;
       }
