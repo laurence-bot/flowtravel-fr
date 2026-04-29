@@ -22,6 +22,10 @@ export type FournisseurCondition = {
   delai_acompte_2_jours: number | null;
   delai_acompte_3_jours: number | null;
   delai_solde_jours: number | null;
+  acompte_1_a_reservation: boolean;
+  acompte_2_a_reservation: boolean;
+  acompte_3_a_reservation: boolean;
+  solde_a_reservation: boolean;
   conditions_annulation: CancelationTier[];
   notes: string | null;
   created_at: string;
@@ -36,13 +40,31 @@ export const DEFAULT_CONDITION_VALUES = {
   pct_acompte_2: 0,
   pct_acompte_3: 0,
   pct_solde: 70,
-  delai_acompte_1_jours: 0 as number | null,
+  delai_acompte_1_jours: null as number | null,
   delai_acompte_2_jours: null as number | null,
   delai_acompte_3_jours: null as number | null,
   delai_solde_jours: 30 as number | null,
+  acompte_1_a_reservation: true,
+  acompte_2_a_reservation: false,
+  acompte_3_a_reservation: false,
+  solde_a_reservation: false,
   conditions_annulation: [] as CancelationTier[],
   notes: null as string | null,
 };
+
+/** Calcule la date d'échéance d'un acompte/solde.
+ *  - Si `aReservation` est vrai → renvoie `dateReservation`.
+ *  - Sinon → `datePrestation - delaiJours`.
+ */
+export function dateEcheance(
+  aReservation: boolean,
+  dateReservation: string | null,
+  datePrestation: string | null,
+  delaiJours: number | null,
+): string | null {
+  if (aReservation) return dateReservation;
+  return dateFromDelai(datePrestation, delaiJours);
+}
 
 /** Calcule la date d'échéance (YYYY-MM-DD) à partir de la date prestation et d'un délai en jours avant. */
 export function dateFromDelai(datePrestation: string | null, delaiJours: number | null): string | null {
