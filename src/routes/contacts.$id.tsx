@@ -260,55 +260,7 @@ function ContactDetail() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <Button asChild variant="ghost" size="sm" className="-ml-2 mb-2">
-          <Link to="/contacts">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Retour aux contacts
-          </Link>
-        </Button>
-        <PageHeader
-          title={contact.nom}
-          description={isClient ? "Fiche client" : "Fiche fournisseur"}
-          action={
-            <Badge variant={isClient ? "default" : "secondary"}>
-              {isClient ? "Client" : "Fournisseur"}
-            </Badge>
-          }
-        />
-      </div>
-
-      {/* Infos générales */}
-      <Card className="p-5 border-border/60">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <div>
-            <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Email</div>
-            <div className="mt-1 inline-flex items-center gap-2">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              {contact.email ? (
-                <a href={`mailto:${contact.email}`} className="hover:underline">
-                  {contact.email}
-                </a>
-              ) : (
-                <span className="text-muted-foreground">—</span>
-              )}
-            </div>
-          </div>
-          <div>
-            <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Téléphone</div>
-            <div className="mt-1 inline-flex items-center gap-2">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              {contact.telephone ? (
-                <a href={`tel:${contact.telephone}`} className="hover:underline">
-                  {contact.telephone}
-                </a>
-              ) : (
-                <span className="text-muted-foreground">—</span>
-              )}
-            </div>
-          </div>
-        </div>
-      </Card>
+      <ContactHeaderAndInfo contact={contact} isClient={isClient} />
 
       {/* Alertes */}
       {alertes.length > 0 && (
