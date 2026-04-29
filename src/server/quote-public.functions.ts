@@ -45,7 +45,7 @@ export const getPublicQuote = createServerFn({ method: "POST" })
 
     // Récupère les segments de tous les vols en une requête (RLS via token autorise la lecture).
     const flightIds = (volsRes.data ?? []).map((v) => v.id);
-    let segments: unknown[] = [];
+    let segments: Array<Record<string, unknown>> = [];
     if (flightIds.length > 0) {
       const { data: segs } = await supabaseAdmin
         .from("flight_segments")
