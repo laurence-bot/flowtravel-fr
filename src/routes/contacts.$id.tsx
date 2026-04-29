@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { RequireAuth } from "@/components/require-auth";
 import { ContactEditDialog } from "@/components/contact-edit-dialog";
 import { FournisseurConditionsBlock } from "@/components/fournisseur-conditions-block";
 import { usePageWriteAccess } from "@/hooks/use-page-write-access";
