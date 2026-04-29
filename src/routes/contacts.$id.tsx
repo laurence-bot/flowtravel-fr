@@ -723,9 +723,11 @@ function ContactDetail() {
 function ContactHeaderAndInfo({
   contact,
   isClient,
+  onSaved,
 }: {
   contact: Contact;
   isClient: boolean;
+  onSaved?: () => void;
 }) {
   const { canWrite } = usePageWriteAccess();
   const [editOpen, setEditOpen] = useState(false);
