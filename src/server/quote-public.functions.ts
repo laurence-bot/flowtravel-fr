@@ -69,9 +69,48 @@ export const getPublicQuote = createServerFn({ method: "POST" })
       cotation,
       lignes: lignesRes.data ?? [],
       jours: joursRes.data ?? [],
+      vols: volsRes.data ?? [],
       agency: agencyRes.data,
       contact: contactRes.data,
     };
+  });
+
+/** Le client choisit une option de vol. */
+export const chooseFlightOption = createServerFn({ method: "POST" })
+  .inputValidator((d: { token: string; flightOptionId: string }) =>
+    z.object({
+      token: z.string().min(20).max(100),
+      flightOptionId: z.string().uuid(),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    // Vérifier que le lien est valide et récupérer la cotation
+    const { data: link } = await supabaseAdmin
+      .from("quote_public_links")
+      .select("id, cotation_id")
+      .eq("token", data.token)
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
+    if (!link) return { ok: false as const, error: "Lien invalide ou expiré." };
+
+    // Vérifier que l'option de vol appartient bien à cette cotation
+    const { data: vol } = await supabaseAdmin
+      .from("flight_options")
+      .select("id")
+      .eq("id", data.flightOptionId)
+      .eq("cotation_id", link.cotation_id)
+      .maybeSingle();
+    if (!vol) return { ok: false as const, error: "Option de vol invalide." };
+
+    const { error } = await supabaseAdmin
+      .from("quote_public_links")
+      .update({
+        chosen_flight_option_id: data.flightOptionId,
+        flight_chosen_at: new Date().toISOString(),
+      })
+      .eq("id", link.id);
+    if (error) return { ok: false as const, error: error.message };
+    return { ok: true as const };
   });
 
 /** Le client accepte le devis. */
