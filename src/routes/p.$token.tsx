@@ -10,6 +10,7 @@ import {
 import { themeStyle } from "@/lib/agency-theme";
 import { formatEUR, formatDate } from "@/lib/format";
 import { computeCotationFinance, ligneEcheances } from "@/lib/cotations";
+import { formatRoutingForClient } from "@/lib/iata";
 import { Check, Phone, MessageSquare, MapPin, Calendar, Users, Sparkles, Plane, Clock } from "lucide-react";
 import { toast } from "sonner";
 
@@ -368,8 +369,8 @@ function PublicQuotePage() {
                             </div>
                           </div>
                         </div>
-                        <div className="text-sm text-stone-700 mb-3 whitespace-pre-line">
-                          {v.routing}
+                        <div className="text-sm text-stone-700 mb-3 whitespace-pre-line leading-relaxed">
+                          {formatRoutingForClient(v.routing)}
                         </div>
                         <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-stone-600">
                           {v.date_depart && (
