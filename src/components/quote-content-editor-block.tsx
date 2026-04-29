@@ -25,6 +25,8 @@ type Props = {
   canWrite: boolean;
   initialHeroUrl: string | null;
   initialStorytelling: string | null;
+  initialInclus?: string | null;
+  initialNonInclus?: string | null;
 };
 
 export function QuoteContentEditorBlock({
@@ -33,9 +35,13 @@ export function QuoteContentEditorBlock({
   canWrite,
   initialHeroUrl,
   initialStorytelling,
+  initialInclus,
+  initialNonInclus,
 }: Props) {
   const [heroUrl, setHeroUrl] = useState<string | null>(initialHeroUrl);
   const [storytelling, setStorytelling] = useState(initialStorytelling ?? "");
+  const [inclus, setInclus] = useState(initialInclus ?? "");
+  const [nonInclus, setNonInclus] = useState(initialNonInclus ?? "");
   const [savingHero, setSavingHero] = useState(false);
   const [jours, setJours] = useState<CotationJour[]>([]);
   const [loading, setLoading] = useState(true);
