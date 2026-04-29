@@ -334,14 +334,20 @@ function CotationDetailPage() {
       .from("cotations")
       .update({ statut: "validee" })
       .eq("id", cot.id);
+    // Engager définitivement les réservations FX liées (dossier confirmé)
+    const engagement = await engageReservationsForCotation({ userId: user.id, cotationId: cot.id });
     await logAudit({
       userId: user.id,
       entity: "cotation",
       entityId: cot.id,
       action: "validate",
-      description: `Cotation validée : ${cot.titre}`,
+      description: `Cotation validée : ${cot.titre}${engagement.count > 0 ? ` — ${engagement.count} réservation(s) FX engagée(s)` : ""}`,
     });
-    toast.success("Cotation validée.");
+    toast.success(
+      engagement.count > 0
+        ? `Cotation validée. ${engagement.count} réservation(s) de couverture engagée(s).`
+        : "Cotation validée.",
+    );
     refetchCot();
   };
 
