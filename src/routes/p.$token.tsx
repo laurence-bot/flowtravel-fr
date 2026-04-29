@@ -85,7 +85,7 @@ function PublicQuotePage() {
   const pricePerPax = cotation.nombre_pax > 0 ? fin.prixVente / cotation.nombre_pax : 0;
 
   // Échéancier consolidé
-  const echeancier = lignes.flatMap((l) =>
+  const echeancier = lignes.flatMap((l: any) =>
     ligneEcheances(l).map((e) => ({
       type: e.type,
       date: e.date_echeance,
@@ -94,7 +94,7 @@ function PublicQuotePage() {
   );
 
   // Hébergements = lignes prestation contenant "hôtel" / "hotel" / "lodge" / "camp" / "hébergement"
-  const hebergements = lignes.filter((l) => {
+  const hebergements = lignes.filter((l: any) => {
     const p = (l.prestation || "").toLowerCase();
     return /hôtel|hotel|lodge|camp|riad|resort|h[eé]bergement|villa|maison/.test(p);
   });
@@ -284,7 +284,7 @@ function PublicQuotePage() {
               <section className="mb-20">
                 <SectionTitle eyebrow="Jour par jour" title="Votre itinéraire" />
                 <div className="space-y-8">
-                  {jours.map((j, idx) => (
+                  {jours.map((j: any, idx: number) => (
                     <article
                       key={j.id}
                       className="grid md:grid-cols-[180px_1fr] gap-6 group"
@@ -330,7 +330,7 @@ function PublicQuotePage() {
               <section className="mb-20">
                 <SectionTitle eyebrow="Vos adresses" title="Hébergements" />
                 <div className="grid sm:grid-cols-2 gap-6">
-                  {hebergements.map((h) => (
+                  {hebergements.map((h: any) => (
                     <div key={h.id} className="brand-bg-muted p-6 rounded-sm">
                       <div className="brand-heading text-xl brand-primary mb-2">
                         {h.nom_fournisseur}
@@ -354,7 +354,7 @@ function PublicQuotePage() {
               <section className="mb-20">
                 <SectionTitle eyebrow="Aérien" title="Vos options de vol" />
                 <div className="grid gap-4">
-                  {vols.map((v) => {
+                  {vols.map((v: any) => {
                     const isChosen = chosenFlightId === v.id;
                     const volSegments = segments
                       .filter((s) => s.flight_option_id === v.id)
@@ -615,7 +615,7 @@ function PublicQuotePage() {
                     Échéancier
                   </div>
                   <div className="space-y-2 text-sm">
-                    {echeancier.map((e, i) => (
+                    {echeancier.map((e: any, i: number) => (
                       <div key={i} className="flex justify-between">
                         <span className="capitalize text-stone-600">
                           {e.type.replace("_", " ")}
