@@ -83,7 +83,7 @@ export function PublicQuoteLinkBlock({ cotationId, userId, canWrite }: Props) {
   }
 
   return (
-    <Card className="p-5 border-[color:var(--gold)]/30 bg-gradient-to-br from-accent/30 to-transparent">
+    <Card id="devis-web-client" className="scroll-mt-6 p-5 border-[color:var(--gold)]/30 bg-gradient-to-br from-accent/30 to-transparent">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
