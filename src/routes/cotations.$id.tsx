@@ -36,6 +36,7 @@ import { usePageWriteAccess } from "@/hooks/use-page-write-access";
 import { formatEUR } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { logAudit } from "@/lib/audit";
+import { engageReservationsForCotation, releaseReservationsForCotation } from "@/lib/fx-reservations";
 import {
   COTATION_STATUT_LABELS,
   COTATION_STATUT_TONES,
@@ -333,14 +334,20 @@ function CotationDetailPage() {
       .from("cotations")
       .update({ statut: "validee" })
       .eq("id", cot.id);
+    // Engager définitivement les réservations FX liées (dossier confirmé)
+    const engagement = await engageReservationsForCotation({ userId: user.id, cotationId: cot.id });
     await logAudit({
       userId: user.id,
       entity: "cotation",
       entityId: cot.id,
       action: "validate",
-      description: `Cotation validée : ${cot.titre}`,
+      description: `Cotation validée : ${cot.titre}${engagement.count > 0 ? ` — ${engagement.count} réservation(s) FX engagée(s)` : ""}`,
     });
-    toast.success("Cotation validée.");
+    toast.success(
+      engagement.count > 0
+        ? `Cotation validée. ${engagement.count} réservation(s) de couverture engagée(s).`
+        : "Cotation validée.",
+    );
     refetchCot();
   };
 
@@ -364,16 +371,22 @@ function CotationDetailPage() {
       .update({ statut: "annulee" })
       .eq("cotation_id", cot.id)
       .neq("statut", "annulee");
+    // Libérer les réservations FX (devis perdu, montants rendus disponibles)
+    const liberation = await releaseReservationsForCotation({ userId: user.id, cotationId: cot.id });
     await logAudit({
       userId: user.id,
       entity: "cotation",
       entityId: cot.id,
       action: "reject",
-      description: `Cotation perdue : ${cot.titre}${raisonPerte ? ` (${raisonPerte})` : ""} — options associées annulées`,
+      description: `Cotation perdue : ${cot.titre}${raisonPerte ? ` (${raisonPerte})` : ""} — options annulées${liberation.count > 0 ? `, ${liberation.count} réservation(s) FX libérée(s)` : ""}`,
     });
     setPerteOpen(false);
     setRaisonPerte("");
-    toast.success("Cotation perdue. Options annulées — pensez à envoyer les emails d'annulation aux fournisseurs.");
+    toast.success(
+      liberation.count > 0
+        ? `Cotation perdue. ${liberation.count} réservation(s) FX libérée(s).`
+        : "Cotation perdue. Options annulées — pensez à envoyer les emails d'annulation aux fournisseurs.",
+    );
     refetchCot();
   };
 

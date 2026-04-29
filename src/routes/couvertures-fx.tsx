@@ -106,6 +106,8 @@ function CouverturesFXPage() {
                 <TableHead className="text-right">Montant devise</TableHead>
                 <TableHead className="text-right">Taux</TableHead>
                 <TableHead className="text-right">Équivalent EUR</TableHead>
+                <TableHead className="min-w-[160px]">Utilisation</TableHead>
+                <TableHead className="text-right">Engagé</TableHead>
                 <TableHead className="text-right">Réservé</TableHead>
                 <TableHead className="text-right">Disponible</TableHead>
                 <TableHead>Échéance</TableHead>
@@ -114,7 +116,7 @@ function CouverturesFXPage() {
             </TableHeader>
             <TableBody>
               {coverages.map((c) => {
-                const { reserve, disponible } = coverageBalance(c, reservations);
+                const { reserve, engage, disponible } = coverageBalance(c, reservations);
                 const eur = Number(c.montant_devise) * Number(c.taux_change);
                 return (
                   <TableRow key={c.id}>
@@ -131,7 +133,13 @@ function CouverturesFXPage() {
                     <TableCell className="text-right tabular-nums font-medium">
                       {formatEUR(eur)}
                     </TableCell>
-                    <TableCell className="text-right tabular-nums text-muted-foreground">
+                    <TableCell>
+                      <UsageBar engage={engage} reserve={reserve} disponible={disponible} total={Number(c.montant_devise)} />
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-destructive">
+                      {formatMoney(engage, c.devise)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-amber-600 dark:text-amber-400">
                       {formatMoney(reserve, c.devise)}
                     </TableCell>
                     <TableCell className="text-right tabular-nums text-emerald-600 dark:text-emerald-400">
@@ -187,7 +195,7 @@ function CouverturesFXPage() {
                 <TableHead>Devise</TableHead>
                 <TableHead className="text-right">Taux couvert</TableHead>
                 <TableHead className="text-right">Réservé</TableHead>
-                <TableHead className="text-right">Utilisé</TableHead>
+                <TableHead className="text-right">Engagé</TableHead>
                 <TableHead className="text-right">Disponible</TableHead>
                 <TableHead className="text-right">Écart EUR</TableHead>
               </TableRow>
@@ -203,8 +211,8 @@ function CouverturesFXPage() {
                       <Badge variant="outline" className="font-mono">{c.devise}</Badge>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{Number(c.taux_change).toFixed(4)}</TableCell>
-                    <TableCell className="text-right tabular-nums text-muted-foreground">{formatMoney(u.reserveActif, c.devise)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatMoney(u.utilise, c.devise)}</TableCell>
+                    <TableCell className="text-right tabular-nums text-amber-600 dark:text-amber-400">{formatMoney(u.reserve, c.devise)}</TableCell>
+                    <TableCell className="text-right tabular-nums text-destructive">{formatMoney(u.engage, c.devise)}</TableCell>
                     <TableCell className="text-right tabular-nums text-emerald-600 dark:text-emerald-400">{formatMoney(u.disponible, c.devise)}</TableCell>
                     <TableCell className={`text-right tabular-nums font-medium ${ecartTone}`}>
                       {u.ecart === 0 ? "—" : `${u.ecart > 0 ? "+" : ""}${formatEUR(u.ecart)}`}
@@ -225,6 +233,28 @@ function StatutBadge({ statut }: { statut: FxCoverageStatut }) {
     <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-medium ${FX_STATUT_COLORS[statut]}`}>
       {FX_STATUT_LABELS[statut]}
     </span>
+  );
+}
+
+function UsageBar({ engage, reserve, disponible, total }: { engage: number; reserve: number; disponible: number; total: number }) {
+  const safeTotal = total > 0 ? total : 1;
+  const pctEngage = Math.min(100, (engage / safeTotal) * 100);
+  const pctReserve = Math.min(100 - pctEngage, (reserve / safeTotal) * 100);
+  const pctDispo = Math.max(0, 100 - pctEngage - pctReserve);
+  const tooltip = `Engagé ${pctEngage.toFixed(0)}% • Réservé ${pctReserve.toFixed(0)}% • Disponible ${pctDispo.toFixed(0)}%`;
+  return (
+    <div className="space-y-1" title={tooltip}>
+      <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted">
+        {pctEngage > 0 && <div className="bg-destructive" style={{ width: `${pctEngage}%` }} />}
+        {pctReserve > 0 && <div className="bg-amber-500" style={{ width: `${pctReserve}%` }} />}
+        {pctDispo > 0 && <div className="bg-emerald-500" style={{ width: `${pctDispo}%` }} />}
+      </div>
+      <div className="flex justify-between text-[10px] text-muted-foreground tabular-nums">
+        <span>{pctEngage.toFixed(0)}%</span>
+        <span>{pctReserve.toFixed(0)}%</span>
+        <span>{pctDispo.toFixed(0)}%</span>
+      </div>
+    </div>
   );
 }
 

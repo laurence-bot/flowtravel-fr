@@ -98,7 +98,7 @@ export function EcheancesEditor({ facture }: { facture: Facture }) {
     if (!user) return;
     if (!confirm("Supprimer cette échéance ?")) return;
     // Annuler d'abord les réservations actives liées
-    const linked = reservations.filter((r) => r.echeance_id === id && r.statut === "active");
+    const linked = reservations.filter((r) => r.echeance_id === id && (r.statut === "active" || r.statut === "reservee" || r.statut === "engagee"));
     for (const r of linked) {
       await cancelReservation({ userId: user.id, reservationId: r.id });
     }
@@ -214,7 +214,7 @@ function EcheanceRow({
   const { user } = useAuth();
   const isEUR = echeance.devise === "EUR";
   const reservation = reservations.find(
-    (r) => r.echeance_id === echeance.id && r.statut === "active",
+    (r) => r.echeance_id === echeance.id && (r.statut === "active" || r.statut === "reservee" || r.statut === "engagee"),
   );
   const coverage = reservation
     ? coverages.find((c) => c.id === reservation.coverage_id)
