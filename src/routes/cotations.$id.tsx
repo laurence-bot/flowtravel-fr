@@ -117,6 +117,8 @@ function CotationDetailPage() {
   );
   const { data: contacts, loading: contactsLoading } = useTable<Contact>("contacts");
   const { data: paiements, loading: paiementsLoading } = useTable<Paiement>("paiements");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: fournisseurConditions } = useTable<any>("fournisseur_conditions" as any);
 
   const cot = cotations.find((c) => c.id === id);
   const lignesCot = useMemo(
@@ -957,11 +959,28 @@ function CotationDetailPage() {
                   value={ligneForm.fournisseur_id}
                   onValueChange={(v) => {
                     const c = fournisseurs.find((x) => x.id === v);
+                    // Cherche la condition principale du fournisseur (sinon la première)
+                    const conds = fournisseurConditions.filter(
+                      (fc: { fournisseur_id: string }) => fc.fournisseur_id === v,
+                    );
+                    const cond =
+                      conds.find((fc: { est_principale: boolean }) => fc.est_principale) ??
+                      conds[0];
+                    const devisesAcc: string[] = cond?.devises_acceptees ?? [];
+                    const nextDevise =
+                      devisesAcc.length > 0 && devisesAcc.includes(ligneForm.devise)
+                        ? ligneForm.devise
+                        : (devisesAcc[0] as DeviseCode | undefined) ?? ligneForm.devise;
                     setLigneForm({
                       ...ligneForm,
                       fournisseur_id: v,
                       nom_fournisseur:
                         ligneForm.nom_fournisseur || c?.nom || "",
+                      devise: nextDevise as DeviseCode,
+                      pct_acompte_1: cond ? String(cond.pct_acompte_1 ?? 30) : ligneForm.pct_acompte_1,
+                      pct_acompte_2: cond ? String(cond.pct_acompte_2 ?? 0) : ligneForm.pct_acompte_2,
+                      pct_acompte_3: cond ? String(cond.pct_acompte_3 ?? 0) : ligneForm.pct_acompte_3,
+                      pct_solde: cond ? String(cond.pct_solde ?? 70) : ligneForm.pct_solde,
                     });
                   }}
                 >
