@@ -41,6 +41,8 @@ import {
   Trash2,
   Send,
   Layers,
+  Upload,
+  Sparkles,
 } from "lucide-react";
 import {
   FOURN_OPTION_STATUT_LABELS,
