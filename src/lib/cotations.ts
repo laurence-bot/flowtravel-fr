@@ -43,6 +43,10 @@ export type Cotation = {
   raison_perte: string | null;
   dossier_id: string | null;
   notes: string | null;
+  hero_image_url: string | null;
+  storytelling_intro: string | null;
+  inclus_text: string | null;
+  non_inclus_text: string | null;
   created_at: string;
   updated_at: string;
 };
