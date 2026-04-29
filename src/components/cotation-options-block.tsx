@@ -488,6 +488,111 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
     refetchFl();
   };
 
+  // ----- Import capture d'écran : crée un vol + ses segments en un clic -----
+  const flImportInputRef = useRef<HTMLInputElement | null>(null);
+  const [flImporting, setFlImporting] = useState(false);
+
+  const fileToDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error("Lecture image impossible"));
+      reader.readAsDataURL(file);
+    });
+
+  const importerVolDepuisCapture = async (file: File) => {
+    if (!user) return;
+    if (file.size > 8 * 1024 * 1024) return toast.error("Image trop lourde (max 8 Mo).");
+    setFlImporting(true);
+    try {
+      const imageDataUrl = await fileToDataUrl(file);
+      const { data, error } = await supabase.functions.invoke("extract-flights", {
+        body: { imageDataUrl },
+      });
+      if (error) throw error;
+      const extracted = (data?.segments ?? []) as Array<{
+        compagnie?: string;
+        numero_vol?: string;
+        aeroport_depart?: string;
+        aeroport_arrivee?: string;
+        date_depart?: string;
+        heure_depart?: string;
+        date_arrivee?: string;
+        heure_arrivee?: string;
+      }>;
+      if (extracted.length === 0) {
+        toast.warning("Aucun vol détecté sur cette image.");
+        return;
+      }
+      const first = extracted[0];
+      const last = extracted[extracted.length - 1];
+      const compagnie = (first.compagnie || "").toUpperCase().trim() || "—";
+      const routing = extracted
+        .map((s, i) =>
+          i === 0
+            ? `${(s.aeroport_depart || "").toUpperCase()} → ${(s.aeroport_arrivee || "").toUpperCase()}`
+            : `→ ${(s.aeroport_arrivee || "").toUpperCase()}`,
+        )
+        .join(" ");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: created, error: errFl } = await (supabase as any)
+        .from("flight_options")
+        .insert({
+          user_id: user.id,
+          cotation_id: cot.id,
+          compagnie,
+          routing,
+          numero_vol: null,
+          date_depart: first.date_depart || null,
+          heure_depart: first.heure_depart || null,
+          date_retour: last.date_arrivee || null,
+          heure_retour: last.heure_arrivee || null,
+          prix: 0,
+          devise: "EUR",
+          statut: "en_option" as const,
+        })
+        .select()
+        .single();
+      if (errFl || !created) throw errFl ?? new Error("Création vol impossible.");
+
+      const segPayload = extracted.map((seg, i) => ({
+        user_id: user.id,
+        flight_option_id: created.id,
+        ordre: i + 1,
+        compagnie: (seg.compagnie || compagnie || "").toUpperCase().trim() || null,
+        numero_vol: seg.numero_vol?.toUpperCase().trim() || null,
+        aeroport_depart: (seg.aeroport_depart || "").toUpperCase().trim(),
+        aeroport_arrivee: (seg.aeroport_arrivee || "").toUpperCase().trim(),
+        date_depart: seg.date_depart || null,
+        heure_depart: seg.heure_depart || null,
+        date_arrivee: seg.date_arrivee || null,
+        heure_arrivee: seg.heure_arrivee || null,
+        duree_escale_minutes: null,
+        notes: null,
+      }));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: errSeg } = await (supabase as any).from("flight_segments").insert(segPayload);
+      if (errSeg) throw errSeg;
+
+      await logAudit({
+        userId: user.id,
+        entity: "flight_option",
+        entityId: created.id,
+        action: "create",
+        description: `Vol créé via import capture : ${compagnie} ${routing} (${segPayload.length} segment(s))`,
+      });
+      refetchFl();
+      onChange();
+      toast.success(`Vol créé avec ${segPayload.length} segment(s).`);
+    } catch (e) {
+      console.error("[import vol depuis capture]", e);
+      toast.error(e instanceof Error ? e.message : "Erreur lors de l'analyse de l'image.");
+    } finally {
+      setFlImporting(false);
+      if (flImportInputRef.current) flImportInputRef.current.value = "";
+    }
+  };
+
   const genererEmailFlight = (
     f: FlightOption,
     kind: "demande_option_vol" | "confirmation_vol" | "annulation_option_vol",
