@@ -521,6 +521,32 @@ export function QuoteContentEditorBlock({
           />
         </div>
       </div>
+
+      {/* CONFIRMATION RÉGÉNÉRATION */}
+      <AlertDialog open={regenOpen} onOpenChange={setRegenOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4 text-[color:var(--gold)]" />
+              Régénérer l'itinéraire depuis les vols ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Des jours existent déjà avec du contenu (textes, photos, lieux). La régénération
+              va <strong>supprimer tous les jours actuels</strong> et reconstruire un nouveau
+              squelette à partir des dates de vol. Vos textes et images seront perdus.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void runRegenerate()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Régénérer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
