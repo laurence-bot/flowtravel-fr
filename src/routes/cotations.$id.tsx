@@ -70,6 +70,7 @@ import { CotationOptionsBlock } from "@/components/cotation-options-block";
 import { PublicQuoteLinkBlock } from "@/components/public-quote-link-block";
 import { QuoteContentEditorBlock } from "@/components/quote-content-editor-block";
 import { FxOptimizerBlock } from "@/components/fx-optimizer-block";
+import { InlineFxCoveragePicker } from "@/components/inline-fx-coverage-picker";
 
 export const Route = createFileRoute("/cotations/$id")({
   component: () => (
@@ -144,6 +145,8 @@ function CotationDetailPage() {
     devise: "EUR" as DeviseCode,
     montant_devise: "0",
     taux_change_vers_eur: "1",
+    couverture_id: "" as string | "",
+    source_fx: "taux_du_jour" as "taux_du_jour" | "couverture" | "manuel",
     pct_acompte_1: "30",
     pct_acompte_2: "0",
     pct_acompte_3: "0",
@@ -268,7 +271,8 @@ function CotationDetailPage() {
         montant_devise: parsed.data.montant_devise,
         taux_change_vers_eur: parsed.data.taux_change_vers_eur,
         montant_eur: montantEur,
-        source_fx: "taux_du_jour",
+        couverture_id: ligneForm.couverture_id || null,
+        source_fx: ligneForm.source_fx,
         pct_acompte_1: parsed.data.pct_acompte_1,
         pct_acompte_2: parsed.data.pct_acompte_2,
         pct_acompte_3: parsed.data.pct_acompte_3,
@@ -296,6 +300,8 @@ function CotationDetailPage() {
       nom_fournisseur: "",
       prestation: "",
       montant_devise: "0",
+      couverture_id: "",
+      source_fx: "taux_du_jour",
     });
     refetchLignes();
     toast.success("Ligne ajoutée.");
@@ -1038,7 +1044,13 @@ function CotationDetailPage() {
                 <Select
                   value={ligneForm.devise}
                   onValueChange={(v) =>
-                    setLigneForm({ ...ligneForm, devise: v as DeviseCode })
+                    setLigneForm({
+                      ...ligneForm,
+                      devise: v as DeviseCode,
+                      couverture_id: "",
+                      source_fx: "taux_du_jour",
+                      taux_change_vers_eur: v === "EUR" ? "1" : ligneForm.taux_change_vers_eur,
+                    })
                   }
                 >
                   <SelectTrigger>
@@ -1092,6 +1104,26 @@ function CotationDetailPage() {
                 />
               </Field>
             </div>
+
+            <InlineFxCoveragePicker
+              devise={ligneForm.devise}
+              montantDevise={
+                Number(ligneForm.montant_devise) *
+                Number(ligneForm.quantite || 1) *
+                (ligneForm.mode_tarifaire === "par_personne"
+                  ? Math.max(1, cot.nombre_pax)
+                  : 1)
+              }
+              selectedCoverageId={ligneForm.couverture_id || null}
+              onPick={({ coverage, taux }) =>
+                setLigneForm({
+                  ...ligneForm,
+                  couverture_id: coverage.id,
+                  source_fx: "couverture",
+                  taux_change_vers_eur: String(taux),
+                })
+              }
+            />
 
             <div className="border-t pt-3">
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">
