@@ -27,7 +27,25 @@ import {
   Sparkles,
   Wand2,
   X,
+  Plane,
+  RefreshCw,
 } from "lucide-react";
+import {
+  buildItineraryFromFlights,
+  pickReferenceFlight,
+  type FlightOptionLite,
+  type FlightSegmentLite,
+} from "@/lib/itinerary-from-flights";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -82,6 +100,9 @@ export function QuoteContentEditorBlock({
   const [savingHero, setSavingHero] = useState(false);
   const [jours, setJours] = useState<CotationJour[]>([]);
   const [loading, setLoading] = useState(true);
+  const [regenOpen, setRegenOpen] = useState(false);
+  const [regenLoading, setRegenLoading] = useState(false);
+  const [hasFlights, setHasFlights] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -90,8 +111,18 @@ export function QuoteContentEditorBlock({
 
   useEffect(() => {
     loadJours();
+    void checkFlights();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cotationId]);
+
+  const checkFlights = async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { count } = await (supabase as any)
+      .from("flight_options")
+      .select("id", { count: "exact", head: true })
+      .eq("cotation_id", cotationId);
+    setHasFlights((count ?? 0) > 0);
+  };
 
   const loadJours = async () => {
     setLoading(true);
@@ -233,6 +264,116 @@ export function QuoteContentEditorBlock({
     if (failed) toast.error("Erreur lors du réordonnancement.");
   };
 
+  /** A-t-on déjà du contenu utilisateur dans les jours ? */
+  const joursHaveContent = (): boolean => {
+    return jours.some(
+      (j) =>
+        (j.description && j.description.trim().length > 0) ||
+        (j.image_url && j.image_url.length > 0) ||
+        (j.gallery_urls && j.gallery_urls.length > 0) ||
+        (j.lieu && j.lieu.trim().length > 0),
+    );
+  };
+
+  const handleRegenClick = () => {
+    if (!hasFlights) {
+      toast.error("Aucun vol renseigné. Ajoutez d'abord les vols pour générer l'itinéraire.");
+      return;
+    }
+    if (jours.length > 0 && joursHaveContent()) {
+      setRegenOpen(true);
+    } else {
+      void runRegenerate();
+    }
+  };
+
+  const runRegenerate = async () => {
+    setRegenOpen(false);
+    setRegenLoading(true);
+    try {
+      // 1. Charger vols + segments + lien public (pour vol choisi)
+      const [volsRes, linkRes] = await Promise.all([
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from("flight_options")
+          .select("*")
+          .eq("cotation_id", cotationId)
+          .order("created_at", { ascending: true }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from("quote_public_links")
+          .select("chosen_flight_option_id")
+          .eq("cotation_id", cotationId)
+          .maybeSingle(),
+      ]);
+      const vols = (volsRes.data ?? []) as FlightOptionLite[];
+      if (vols.length === 0) {
+        toast.error("Aucun vol trouvé.");
+        return;
+      }
+      const chosenId = (linkRes.data?.chosen_flight_option_id ?? null) as string | null;
+      const refVol = pickReferenceFlight(vols, chosenId);
+      if (!refVol) {
+        toast.error("Vol de référence introuvable.");
+        return;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: segs } = await (supabase as any)
+        .from("flight_segments")
+        .select("*")
+        .eq("flight_option_id", refVol.id)
+        .order("ordre", { ascending: true });
+      const segments = (segs ?? []) as FlightSegmentLite[];
+      if (segments.length === 0) {
+        toast.error("Aucun segment de vol — saisissez les segments du vol d'abord.");
+        return;
+      }
+
+      const generated = buildItineraryFromFlights(
+        refVol,
+        segments,
+        dateDepart ?? null,
+        dateRetour ?? null,
+      );
+      if (generated.length === 0) {
+        toast.error("Impossible de calculer les dates depuis les vols.");
+        return;
+      }
+
+      // 2. Effacer les jours existants
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: delErr } = await (supabase as any)
+        .from("cotation_jours")
+        .delete()
+        .eq("cotation_id", cotationId);
+      if (delErr) throw delErr;
+
+      // 3. Insérer les nouveaux jours
+      const payload = generated.map((g) => ({
+        user_id: userId,
+        cotation_id: cotationId,
+        ordre: g.ordre,
+        titre: g.titre,
+        description: g.description,
+        lieu: g.lieu,
+        date_jour: g.date_jour,
+      }));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: insErr } = await (supabase as any)
+        .from("cotation_jours")
+        .insert(payload);
+      if (insErr) throw insErr;
+
+      toast.success(`${generated.length} jours générés depuis les vols.`);
+      await loadJours();
+    } catch (e) {
+      console.error("[regen itinerary] erreur:", e);
+      toast.error(e instanceof Error ? e.message : "Erreur lors de la régénération.");
+    } finally {
+      setRegenLoading(false);
+    }
+  };
+
   return (
     <Card className="p-5 space-y-6">
       <div className="flex items-center gap-2">
@@ -274,15 +415,45 @@ export function QuoteContentEditorBlock({
 
       {/* JOURS */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <Label>Itinéraire jour par jour ({jours.length})</Label>
           {canWrite && (
-            <Button size="sm" variant="outline" onClick={addJour}>
-              <Plus className="h-4 w-4 mr-1" />
-              Ajouter un jour
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRegenClick}
+                disabled={regenLoading || !hasFlights}
+                title={
+                  hasFlights
+                    ? "Construit l'itinéraire à partir des vols saisis"
+                    : "Ajoutez d'abord les vols pour activer cette option"
+                }
+              >
+                {regenLoading ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Plane className="h-4 w-4 mr-1" />
+                )}
+                {jours.length === 0 ? "Générer depuis les vols" : "Régénérer depuis les vols"}
+              </Button>
+              <Button size="sm" variant="outline" onClick={addJour}>
+                <Plus className="h-4 w-4 mr-1" />
+                Ajouter un jour
+              </Button>
+            </div>
           )}
         </div>
+        {!hasFlights && jours.length === 0 && (
+          <div className="text-xs text-muted-foreground bg-muted/50 border border-dashed rounded p-3 flex items-start gap-2">
+            <Plane className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[color:var(--gold)]" />
+            <div>
+              <strong>Les vols définissent la structure du voyage.</strong> Saisissez d'abord
+              vos vols (option vol + segments) puis cliquez sur <em>« Générer depuis les vols »</em>
+              pour construire automatiquement le calendrier jour par jour.
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="text-sm text-muted-foreground text-center py-6">Chargement…</div>
@@ -350,6 +521,32 @@ export function QuoteContentEditorBlock({
           />
         </div>
       </div>
+
+      {/* CONFIRMATION RÉGÉNÉRATION */}
+      <AlertDialog open={regenOpen} onOpenChange={setRegenOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4 text-[color:var(--gold)]" />
+              Régénérer l'itinéraire depuis les vols ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Des jours existent déjà avec du contenu (textes, photos, lieux). La régénération
+              va <strong>supprimer tous les jours actuels</strong> et reconstruire un nouveau
+              squelette à partir des dates de vol. Vos textes et images seront perdus.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void runRegenerate()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Régénérer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
