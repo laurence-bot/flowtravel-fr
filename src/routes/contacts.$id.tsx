@@ -89,7 +89,7 @@ function KpiCard({
 
 function ContactDetail() {
   const { id } = Route.useParams();
-  const { data: contacts, loading } = useTable<Contact>("contacts");
+  const { data: contacts, loading, refetch: refetchContacts } = useTable<Contact>("contacts");
   const { data: dossiers, loading: dossiersLoading } = useTable<Dossier>("dossiers");
   const { data: paiements, loading: paiementsLoading } = useTable<Paiement>("paiements");
   const { data: factures, loading: facturesLoading } = useTable<Facture>("factures_fournisseurs");
