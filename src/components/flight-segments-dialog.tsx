@@ -228,7 +228,14 @@ export function FlightSegmentsDialog({
       toast.success("Segments enregistrés.");
       await load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erreur d'enregistrement.");
+      console.error("[flight_segments save] erreur:", e);
+      const msg =
+        e instanceof Error
+          ? e.message
+          : typeof e === "object" && e !== null && "message" in e
+            ? String((e as { message: unknown }).message)
+            : "Erreur d'enregistrement.";
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
