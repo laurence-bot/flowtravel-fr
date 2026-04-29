@@ -70,6 +70,7 @@ import { CotationOptionsBlock } from "@/components/cotation-options-block";
 import { PublicQuoteLinkBlock } from "@/components/public-quote-link-block";
 import { QuoteContentEditorBlock } from "@/components/quote-content-editor-block";
 import { FxOptimizerBlock } from "@/components/fx-optimizer-block";
+import { InlineFxCoveragePicker } from "@/components/inline-fx-coverage-picker";
 
 export const Route = createFileRoute("/cotations/$id")({
   component: () => (
