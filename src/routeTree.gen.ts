@@ -30,6 +30,7 @@ import { Route as ComptesRouteImport } from './routes/comptes'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as FacturesIdRouteImport } from './routes/factures.$id'
 import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
 import { Route as DemandesIdRouteImport } from './routes/demandes.$id'
@@ -141,6 +142,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PTokenRoute = PTokenRouteImport.update({
+  id: '/p/$token',
+  path: '/p/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FacturesIdRoute = FacturesIdRouteImport.update({
   id: '/factures/$id',
   path: '/factures/$id',
@@ -194,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
+  '/p/$token': typeof PTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -222,6 +229,7 @@ export interface FileRoutesByTo {
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
+  '/p/$token': typeof PTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -251,6 +259,7 @@ export interface FileRoutesById {
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
+  '/p/$token': typeof PTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -281,6 +290,7 @@ export interface FileRouteTypes {
     | '/demandes/$id'
     | '/dossiers/$id'
     | '/factures/$id'
+    | '/p/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -309,6 +319,7 @@ export interface FileRouteTypes {
     | '/demandes/$id'
     | '/dossiers/$id'
     | '/factures/$id'
+    | '/p/$token'
   id:
     | '__root__'
     | '/'
@@ -337,6 +348,7 @@ export interface FileRouteTypes {
     | '/demandes/$id'
     | '/dossiers/$id'
     | '/factures/$id'
+    | '/p/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -362,6 +374,7 @@ export interface RootRouteChildren {
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
   UtilisateursRoute: typeof UtilisateursRoute
   FacturesIdRoute: typeof FacturesIdRoute
+  PTokenRoute: typeof PTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -513,6 +526,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/p/$token': {
+      id: '/p/$token'
+      path: '/p/$token'
+      fullPath: '/p/$token'
+      preLoaderRoute: typeof PTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/factures/$id': {
       id: '/factures/$id'
       path: '/factures/$id'
@@ -622,6 +642,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
   UtilisateursRoute: UtilisateursRoute,
   FacturesIdRoute: FacturesIdRoute,
+  PTokenRoute: PTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
