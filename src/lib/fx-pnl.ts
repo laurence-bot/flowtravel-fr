@@ -178,13 +178,21 @@ export function computeFxPnl(params: {
   };
 }
 
-/** Solde réservé/utilisé pour une couverture. */
+/** Solde d'une couverture décomposé en réservé (devis), engagé (dossier confirmé), disponible. */
 export type CoverageUsage = {
   totalDevise: number;
-  reserveActif: number;
-  utilise: number;
+  /** Bloqué pour un devis en cours — libérable si le devis ne se confirme pas. */
+  reserve: number;
+  /** Définitivement consommé : dossier confirmé / facture fournisseur émise. */
+  engage: number;
+  /** Libre. */
   disponible: number;
-  ecart: number; // gain/perte EUR vs taux de marché de référence
+  /** Gain/perte EUR vs taux de marché de référence sur la portion bloquée. */
+  ecart: number;
+  /** @deprecated alias historique = reserve. */
+  reserveActif: number;
+  /** @deprecated alias historique = engage. */
+  utilise: number;
 };
 
 export function computeCoverageUsage(
@@ -192,18 +200,18 @@ export function computeCoverageUsage(
   reservations: FxReservation[],
 ): CoverageUsage {
   const linked = reservations.filter((r) => r.coverage_id === coverage.id);
-  const reserveActif = linked
-    .filter((r) => r.statut === "active")
+  const reserve = linked
+    .filter((r) => r.statut === "active" || r.statut === "reservee")
     .reduce((s, r) => s + num(r.montant_devise), 0);
-  const utilise = linked
-    .filter((r) => r.statut === "utilisee")
+  const engage = linked
+    .filter((r) => r.statut === "engagee" || r.statut === "utilisee")
     .reduce((s, r) => s + num(r.montant_devise), 0);
   const totalDevise = num(coverage.montant_devise);
-  const disponible = Math.max(0, totalDevise - reserveActif - utilise);
+  const disponible = Math.max(0, totalDevise - reserve - engage);
   const ref = REFERENCE_RATES[coverage.devise] ?? 1;
-  // Écart sur la portion engagée (réservée + utilisée) = (taux_couv - taux_ref) × montant
-  const engage = reserveActif + utilise;
-  const ecart = (num(coverage.taux_change) - ref) * engage * -1;
-  // signe : si taux_couv < taux_ref → on paie moins en EUR → gain positif
-  return { totalDevise, reserveActif, utilise, disponible, ecart };
+  // Écart sur la portion bloquée (réservée + engagée) = (taux_couv - taux_ref) × montant × -1
+  const bloque = reserve + engage;
+  const ecart = (num(coverage.taux_change) - ref) * bloque * -1;
+  return { totalDevise, reserve, engage, disponible, ecart, reserveActif: reserve, utilise: engage };
 }
+
