@@ -679,6 +679,20 @@ function CotationDetailPage() {
         </Card>
       )}
 
+      {canWrite && cot.statut === "perdue" && (
+        <Card className="p-4 flex flex-wrap items-center gap-3 border-amber-500/40 bg-amber-500/5">
+          <div className="text-sm text-muted-foreground flex-1 min-w-0">
+            Cotation marquée comme perdue
+            {cot.raison_perte ? ` (${cot.raison_perte})` : ""}. Le client revient&nbsp;?
+            Tu peux la rouvrir — les réservations FX libérées seront restaurées
+            si les couvertures ont encore du solde disponible.
+          </div>
+          <Button onClick={rouvrirCotation} variant="default" className="shrink-0">
+            <RotateCcw className="h-4 w-4 mr-2" /> Rouvrir la cotation
+          </Button>
+        </Card>
+      )}
+
       {/* Infos générales */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
