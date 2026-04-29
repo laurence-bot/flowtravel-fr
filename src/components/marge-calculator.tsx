@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { formatEUR } from "@/lib/format";
 
-type Mode = "pct_cout" | "pct_ca" | "montant";
+type Mode = "pct_ca" | "montant";
 
 type Props = {
   coutTotal: number;
@@ -27,8 +27,7 @@ type Props = {
 };
 
 export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }: Props) {
-  const [mode, setMode] = useState<Mode>("pct_cout");
-  const [pctCout, setPctCout] = useState<number>(25);
+  const [mode, setMode] = useState<Mode>("pct_ca");
   const [pctCa, setPctCa] = useState<number>(20);
   const [montant, setMontant] = useState<number>(1000);
 
@@ -36,9 +35,7 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }:
     const cout = Math.max(0, coutTotal);
     let margeNetteSouhaitee = 0;
 
-    if (mode === "pct_cout") {
-      margeNetteSouhaitee = cout * (pctCout / 100);
-    } else if (mode === "montant") {
+    if (mode === "montant") {
       margeNetteSouhaitee = montant;
     } else {
       // pct_ca : marge nette = pct_ca % du prix TTC final
@@ -96,7 +93,7 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }:
       margeNettePct,
       tvaSurMarge,
     };
-  }, [mode, pctCout, pctCa, montant, coutTotal, regimeTva, tauxTvaMarge]);
+  }, [mode, pctCa, montant, coutTotal, regimeTva, tauxTvaMarge]);
 
   return (
     <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-3">
@@ -120,7 +117,6 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }:
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="pct_cout">% de marge sur coût</SelectItem>
               <SelectItem value="pct_ca">% de marge nette sur CA</SelectItem>
               <SelectItem value="montant">Montant fixe en €</SelectItem>
             </SelectContent>
@@ -128,18 +124,6 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }:
         </div>
 
         <div>
-          {mode === "pct_cout" && (
-            <>
-              <Label className="text-xs">Marge sur coût (%)</Label>
-              <Input
-                type="number"
-                step="0.5"
-                value={pctCout}
-                onChange={(e) => setPctCout(Number(e.target.value))}
-                className="h-9"
-              />
-            </>
-          )}
           {mode === "pct_ca" && (
             <>
               <Label className="text-xs">Marge nette / CA (%)</Label>
