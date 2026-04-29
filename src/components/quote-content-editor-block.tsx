@@ -239,8 +239,38 @@ export function QuoteContentEditorBlock({
             ))}
           </div>
         )}
+
+      {/* INCLUS / NON INCLUS */}
+      <div className="grid md:grid-cols-2 gap-4 pt-2 border-t">
+        <div className="space-y-2">
+          <Label htmlFor="inclus">Ce qui est inclus</Label>
+          <Textarea
+            id="inclus"
+            value={inclus}
+            onChange={(e) => setInclus(e.target.value)}
+            onBlur={saveInclus}
+            placeholder={"• Vols internationaux\n• Hébergement en chambre double\n• Transferts privés\n• Guide francophone…"}
+            rows={8}
+            disabled={!canWrite}
+            className="text-sm"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="non-inclus">Ce qui n'est pas inclus</Label>
+          <Textarea
+            id="non-inclus"
+            value={nonInclus}
+            onChange={(e) => setNonInclus(e.target.value)}
+            onBlur={saveNonInclus}
+            placeholder={"• Visa et formalités\n• Assurance voyage\n• Pourboires\n• Dépenses personnelles…"}
+            rows={8}
+            disabled={!canWrite}
+            className="text-sm"
+          />
+        </div>
       </div>
     </Card>
+
   );
 }
 
