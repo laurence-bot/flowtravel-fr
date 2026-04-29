@@ -66,6 +66,7 @@ import {
 import { toast } from "sonner";
 import { CotationOptionsBlock } from "@/components/cotation-options-block";
 import { PublicQuoteLinkBlock } from "@/components/public-quote-link-block";
+import { QuoteContentEditorBlock } from "@/components/quote-content-editor-block";
 
 export const Route = createFileRoute("/cotations/$id")({
   component: () => (
@@ -443,6 +444,17 @@ function CotationDetailPage() {
           cotationId={cot.id}
           userId={user.id}
           canWrite={canWrite}
+        />
+      )}
+
+      {/* Éditeur de contenu du devis web (hero + jours) */}
+      {user && (
+        <QuoteContentEditorBlock
+          cotationId={cot.id}
+          userId={user.id}
+          canWrite={canWrite}
+          initialHeroUrl={cot.hero_image_url ?? null}
+          initialStorytelling={cot.storytelling_intro ?? null}
         />
       )}
 
