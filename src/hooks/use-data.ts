@@ -8,6 +8,13 @@ export type Contact = {
   type: "client" | "fournisseur";
   email: string | null;
   telephone: string | null;
+  adresse: string | null;
+  code_postal: string | null;
+  ville: string | null;
+  pays: string | null;
+  site_web: string | null;
+  contact_principal: string | null;
+  notes: string | null;
   created_at: string;
 };
 
