@@ -900,6 +900,15 @@ function CotationDetailPage() {
         )}
       </Card>
 
+      {/* Optimisation FX */}
+      <FxOptimizerBlock
+        cotationId={cot.id}
+        lignes={lignesCot}
+        nombrePax={cot.nombre_pax}
+        canWrite={canWrite && !isLocked}
+        onApplied={refetchLignes}
+      />
+
       {/* Bloc Options & deadlines */}
       <CotationOptionsBlock
         cot={cot}
