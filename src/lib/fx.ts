@@ -81,25 +81,61 @@ export type FxCoverage = {
   updated_at: string;
 };
 
+/**
+ * Statuts d'une réservation sur une couverture FX :
+ * - `reservee` (alias historique : `active`) : montant bloqué pour un devis en cours, libérable si le devis ne se confirme pas
+ * - `engagee` : dossier confirmé / facture fournisseur émise — définitivement consommé
+ * - `liberee` (alias : `annulee`) : devis perdu/expiré, montant rendu disponible
+ * - `utilisee` : alias historique = engagée puis paiement effectué
+ */
+export type FxReservationStatut = "active" | "reservee" | "engagee" | "utilisee" | "liberee" | "annulee";
+
 export type FxReservation = {
   id: string;
   coverage_id: string;
+  cotation_id: string | null;
+  ligne_fournisseur_id: string | null;
   facture_fournisseur_id: string | null;
   echeance_id: string | null;
   paiement_id: string | null;
   montant_devise: number;
   taux_change: number;
-  statut: "active" | "utilisee" | "annulee";
+  statut: FxReservationStatut;
   created_at: string;
 };
 
-/** Solde disponible d'une couverture après réservations actives. */
+/** True si la réservation est encore "vivante" (consomme du solde de la couverture). */
+export function isReservationVivante(statut: FxReservationStatut): boolean {
+  return statut === "active" || statut === "reservee" || statut === "engagee" || statut === "utilisee";
+}
+
+/** True si la réservation est définitivement engagée (non libérable). */
+export function isReservationEngagee(statut: FxReservationStatut): boolean {
+  return statut === "engagee" || statut === "utilisee";
+}
+
+/** True si la réservation est juste réservée (libérable). */
+export function isReservationReservee(statut: FxReservationStatut): boolean {
+  return statut === "active" || statut === "reservee";
+}
+
+/** Décomposition du solde d'une couverture en 3 zones. */
 export function coverageBalance(coverage: FxCoverage, reservations: FxReservation[]): {
-  reserve: number;
-  disponible: number;
+  reserve: number;       // bloqué pour un devis (libérable)
+  engage: number;        // dossier confirmé (définitif)
+  disponible: number;    // libre
 } {
-  const reserve = reservations
-    .filter((r) => r.coverage_id === coverage.id && r.statut !== "annulee")
+  const lignesCouverture = reservations.filter((r) => r.coverage_id === coverage.id && isReservationVivante(r.statut));
+  const reserve = lignesCouverture
+    .filter((r) => isReservationReservee(r.statut))
     .reduce((s, r) => s + Number(r.montant_devise), 0);
-  return { reserve, disponible: Math.max(0, coverage.montant_devise - reserve) };
+  const engage = lignesCouverture
+    .filter((r) => isReservationEngagee(r.statut))
+    .reduce((s, r) => s + Number(r.montant_devise), 0);
+  const total = Number(coverage.montant_devise);
+  return {
+    reserve,
+    engage,
+    disponible: Math.max(0, total - reserve - engage),
+  };
 }
