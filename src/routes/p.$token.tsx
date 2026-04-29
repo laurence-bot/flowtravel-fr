@@ -9,7 +9,7 @@ import {
 } from "@/server/quote-public.functions";
 import { themeStyle } from "@/lib/agency-theme";
 import { formatEUR, formatDate } from "@/lib/format";
-import { computeCotationFinance, ligneEcheances } from "@/lib/cotations";
+import { computeCotationFinance, ligneEcheances, computeAcompteClient } from "@/lib/cotations";
 import { formatRoutingForClient, iataToCity } from "@/lib/iata";
 import { airlineName } from "@/lib/airlines";
 import { Check, Phone, MessageSquare, MapPin, Calendar, Users, Sparkles, Plane, Clock } from "lucide-react";
@@ -81,6 +81,7 @@ function PublicQuotePage() {
     notes: string | null;
   }> }).segments ?? [];
   const fin = computeCotationFinance(cotation, lignes);
+  const acompteInfo = computeAcompteClient(cotation, lignes);
   const pricePerPax = cotation.nombre_pax > 0 ? fin.prixVente / cotation.nombre_pax : 0;
 
   // Échéancier consolidé
@@ -589,6 +590,24 @@ function PublicQuotePage() {
               <div className="text-sm text-stone-600 mb-6">
                 {cotation.nombre_pax > 1 && `soit ${formatEUR(pricePerPax)} / personne`}
               </div>
+
+              {acompteInfo.acompte > 0 && (
+                <div className="border-t brand-border-ornament pt-4 mb-6">
+                  <div className="text-xs uppercase tracking-widest text-stone-500 mb-3">
+                    À verser à la confirmation
+                  </div>
+                  <div className="flex justify-between items-baseline mb-2">
+                    <span className="text-sm text-stone-600">Acompte</span>
+                    <span className="brand-heading text-2xl brand-signature font-medium">
+                      {formatEUR(acompteInfo.acompte)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm text-stone-600">
+                    <span>Solde au départ</span>
+                    <span>{formatEUR(acompteInfo.solde)}</span>
+                  </div>
+                </div>
+              )}
 
               {echeancier.length > 0 && (
                 <div className="border-t brand-border-ornament pt-4 mb-6">

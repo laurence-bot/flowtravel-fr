@@ -41,6 +41,7 @@ import {
   COTATION_STATUT_TONES,
   REGIME_TVA_LABELS,
   computeCotationFinance,
+  computeAcompteClient,
   duplicateCotation,
   ligneCoutEur,
   transformerCotationEnDossier,
@@ -169,6 +170,7 @@ function CotationDetailPage() {
   }
 
   const fin = computeCotationFinance(cot, lignes);
+  const acompteInfo = computeAcompteClient(cot, lignes);
   const client = contacts.find((c) => c.id === cot.client_id);
   const fournisseurs = contacts.filter((c) => c.type === "fournisseur");
   const acompteClientRecu = !!cot.dossier_id && paiements.some(
@@ -510,7 +512,40 @@ function CotationDetailPage() {
           </div>
           <div className="text-[10px] text-muted-foreground">
             {fin.margeNettePct.toFixed(1)}% du CA
+      </div>
+
+      {/* Acompte client à demander */}
+      {acompteInfo.acompte > 0 && (
+        <Card className="p-4 border-l-4 border-l-[color:var(--margin)]">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                Acompte client à demander à la confirmation
+              </div>
+              <div className="mt-1 text-2xl font-semibold tabular text-[color:var(--margin)]">
+                {formatEUR(acompteInfo.acompte)}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                = {formatEUR(acompteInfo.totalFournisseurs)} fournisseurs
+                {acompteInfo.partMarge > 0 && ` + ${formatEUR(acompteInfo.partMarge)} (50% de la marge)`}
+              </div>
+              {acompteInfo.margeNegative && (
+                <div className="text-xs text-destructive mt-1">
+                  ⚠ Marge négative : acompte limité au coût fournisseurs.
+                </div>
+              )}
+            </div>
+            <div className="text-right">
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                Solde au départ
+              </div>
+              <div className="mt-1 text-lg font-medium tabular">
+                {formatEUR(acompteInfo.solde)}
+              </div>
+            </div>
           </div>
+        </Card>
+      )}
         </Card>
       </div>
 
