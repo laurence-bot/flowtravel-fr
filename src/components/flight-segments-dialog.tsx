@@ -321,6 +321,37 @@ export function FlightSegmentsDialog({
           </DialogTitle>
         </DialogHeader>
 
+        {canWrite && (
+          <div className="flex items-center gap-2 p-3 rounded-md border bg-primary/5">
+            <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+            <div className="flex-1 text-xs">
+              <div className="font-medium">Import auto depuis capture d'écran</div>
+              <div className="text-muted-foreground">
+                Collez une capture (Amadeus, GDS, mail compagnie…) — l'IA extrait les segments.
+              </div>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void handleImportImage(f);
+              }}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importing}
+            >
+              <Upload className="h-3 w-3 mr-1" />
+              {importing ? "Analyse…" : "Importer"}
+            </Button>
+          </div>
+        )}
+
         {loading ? (
           <div className="py-8 text-center text-sm text-muted-foreground">Chargement…</div>
         ) : (
