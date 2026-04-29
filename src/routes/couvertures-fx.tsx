@@ -236,6 +236,28 @@ function StatutBadge({ statut }: { statut: FxCoverageStatut }) {
   );
 }
 
+function UsageBar({ engage, reserve, disponible, total }: { engage: number; reserve: number; disponible: number; total: number }) {
+  const safeTotal = total > 0 ? total : 1;
+  const pctEngage = Math.min(100, (engage / safeTotal) * 100);
+  const pctReserve = Math.min(100 - pctEngage, (reserve / safeTotal) * 100);
+  const pctDispo = Math.max(0, 100 - pctEngage - pctReserve);
+  const tooltip = `Engagé ${pctEngage.toFixed(0)}% • Réservé ${pctReserve.toFixed(0)}% • Disponible ${pctDispo.toFixed(0)}%`;
+  return (
+    <div className="space-y-1" title={tooltip}>
+      <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted">
+        {pctEngage > 0 && <div className="bg-destructive" style={{ width: `${pctEngage}%` }} />}
+        {pctReserve > 0 && <div className="bg-amber-500" style={{ width: `${pctReserve}%` }} />}
+        {pctDispo > 0 && <div className="bg-emerald-500" style={{ width: `${pctDispo}%` }} />}
+      </div>
+      <div className="flex justify-between text-[10px] text-muted-foreground tabular-nums">
+        <span>{pctEngage.toFixed(0)}%</span>
+        <span>{pctReserve.toFixed(0)}%</span>
+        <span>{pctDispo.toFixed(0)}%</span>
+      </div>
+    </div>
+  );
+}
+
 function KPI({
   label, value, icon: Icon, hint, tone,
 }: {
