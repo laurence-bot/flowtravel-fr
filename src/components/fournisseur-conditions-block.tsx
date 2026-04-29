@@ -1,15 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useTable } from "@/hooks/use-data";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { logAudit } from "@/lib/audit";
 import { DEVISES, type DeviseCode } from "@/lib/fx";
-import { Plus, Trash2, ShieldCheck, Save } from "lucide-react";
+import {
+  DEFAULT_CONDITION_VALUES,
+  type FournisseurCondition,
+  type CancelationTier,
+} from "@/lib/fournisseur-conditions";
+import { Plus, Trash2, ShieldCheck, ChevronDown, Save, Star } from "lucide-react";
 import { toast } from "sonner";
 
 type Props = {
@@ -17,24 +28,9 @@ type Props = {
   canWrite: boolean;
 };
 
-type CancelationTier = { jours_avant: number; pct_penalite: number };
-
-type ContactRow = {
-  id: string;
-  devises_acceptees: string[] | null;
-  pct_acompte_1: number | null;
-  pct_acompte_2: number | null;
-  pct_acompte_3: number | null;
-  pct_solde: number | null;
-  delai_acompte_1_jours: number | null;
-  delai_acompte_2_jours: number | null;
-  delai_acompte_3_jours: number | null;
-  delai_solde_jours: number | null;
-  conditions_annulation: CancelationTier[] | null;
-  conditions_notes: string | null;
-};
-
 type FormState = {
+  nom: string;
+  est_principale: boolean;
   devises_acceptees: DeviseCode[];
   pct_acompte_1: string;
   pct_acompte_2: string;
@@ -45,54 +41,121 @@ type FormState = {
   delai_acompte_3_jours: string;
   delai_solde_jours: string;
   conditions_annulation: CancelationTier[];
-  conditions_notes: string;
+  notes: string;
 };
 
-const EMPTY: FormState = {
-  devises_acceptees: ["EUR"],
-  pct_acompte_1: "30",
-  pct_acompte_2: "0",
-  pct_acompte_3: "0",
-  pct_solde: "70",
-  delai_acompte_1_jours: "",
-  delai_acompte_2_jours: "",
-  delai_acompte_3_jours: "",
-  delai_solde_jours: "30",
-  conditions_annulation: [],
-  conditions_notes: "",
-};
-
-function fromContact(c: ContactRow | undefined): FormState {
-  if (!c) return EMPTY;
+function toForm(c: FournisseurCondition): FormState {
   return {
-    devises_acceptees: ((c.devises_acceptees ?? ["EUR"]) as DeviseCode[]),
-    pct_acompte_1: String(c.pct_acompte_1 ?? 30),
-    pct_acompte_2: String(c.pct_acompte_2 ?? 0),
-    pct_acompte_3: String(c.pct_acompte_3 ?? 0),
-    pct_solde: String(c.pct_solde ?? 70),
+    nom: c.nom,
+    est_principale: c.est_principale,
+    devises_acceptees: c.devises_acceptees as DeviseCode[],
+    pct_acompte_1: String(c.pct_acompte_1),
+    pct_acompte_2: String(c.pct_acompte_2),
+    pct_acompte_3: String(c.pct_acompte_3),
+    pct_solde: String(c.pct_solde),
     delai_acompte_1_jours: c.delai_acompte_1_jours?.toString() ?? "",
     delai_acompte_2_jours: c.delai_acompte_2_jours?.toString() ?? "",
     delai_acompte_3_jours: c.delai_acompte_3_jours?.toString() ?? "",
     delai_solde_jours: c.delai_solde_jours?.toString() ?? "",
     conditions_annulation: c.conditions_annulation ?? [],
-    conditions_notes: c.conditions_notes ?? "",
+    notes: c.notes ?? "",
   };
 }
 
 export function FournisseurConditionsBlock({ fournisseurId, canWrite }: Props) {
   const { user } = useAuth();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: contacts, refetch } = useTable<ContactRow>("contacts" as any);
-  const contact = contacts.find((c) => c.id === fournisseurId);
+  const { data: all, refetch } = useTable<FournisseurCondition>("fournisseur_conditions" as any);
 
-  const [form, setForm] = useState<FormState>(EMPTY);
+  const conditions = useMemo(
+    () =>
+      all
+        .filter((c) => c.fournisseur_id === fournisseurId)
+        .sort((a, b) => Number(b.est_principale) - Number(a.est_principale)),
+    [all, fournisseurId],
+  );
+
+  const createNew = async () => {
+    if (!user) return;
+    const isFirst = conditions.length === 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("fournisseur_conditions").insert({
+      user_id: user.id,
+      fournisseur_id: fournisseurId,
+      ...DEFAULT_CONDITION_VALUES,
+      nom: isFirst ? "Standard" : "Nouvelle condition",
+      est_principale: isFirst,
+    });
+    if (error) return toast.error(error.message);
+    toast.success(isFirst ? "Condition créée." : "Nouvelle condition ajoutée.");
+    refetch();
+  };
+
+  return (
+    <Card className="border-border/60 overflow-hidden">
+      <div className="p-4 flex items-center justify-between">
+        <div>
+          <h3 className="font-display text-lg flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+            Conditions commerciales
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Devises acceptées · acomptes · délais · pénalités d'annulation
+          </p>
+        </div>
+        {canWrite && (
+          <Button size="sm" variant="outline" onClick={createNew}>
+            <Plus className="h-4 w-4 mr-1" />
+            {conditions.length === 0 ? "Définir les conditions" : "Ajouter une condition"}
+          </Button>
+        )}
+      </div>
+
+      {conditions.length === 0 ? (
+        <div className="p-6 text-center text-sm text-muted-foreground">
+          Aucune condition définie. Cliquez sur « Définir les conditions » pour démarrer.
+        </div>
+      ) : (
+        <div className="divide-y divide-border/60">
+          {conditions.map((c, idx) => (
+            <ConditionRow
+              key={c.id}
+              condition={c}
+              defaultOpen={idx === 0 && conditions.length === 1}
+              canWrite={canWrite}
+              onChanged={refetch}
+              fournisseurId={fournisseurId}
+            />
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function ConditionRow({
+  condition,
+  defaultOpen,
+  canWrite,
+  onChanged,
+  fournisseurId,
+}: {
+  condition: FournisseurCondition;
+  defaultOpen: boolean;
+  canWrite: boolean;
+  onChanged: () => void;
+  fournisseurId: string;
+}) {
+  const { user } = useAuth();
+  const [open, setOpen] = useState(defaultOpen);
+  const [form, setForm] = useState<FormState>(toForm(condition));
   const [submitting, setSubmitting] = useState(false);
   const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
-    setForm(fromContact(contact));
+    setForm(toForm(condition));
     setDirty(false);
-  }, [contact?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [condition.id, condition.updated_at]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const update = <K extends keyof FormState>(k: K, v: FormState[K]) => {
     setForm((f) => ({ ...f, [k]: v }));
@@ -129,6 +192,7 @@ export function FournisseurConditionsBlock({ fournisseurId, canWrite }: Props) {
 
   const save = async () => {
     if (!user) return;
+    if (!form.nom.trim()) return toast.error("Nom requis.");
     const total =
       Number(form.pct_acompte_1) +
       Number(form.pct_acompte_2) +
@@ -137,7 +201,19 @@ export function FournisseurConditionsBlock({ fournisseurId, canWrite }: Props) {
     if (Math.abs(total - 100) > 0.01) return toast.error("La somme des % doit faire 100 %.");
 
     setSubmitting(true);
+
+    // Si on coche "principale", retirer le flag des autres
+    if (form.est_principale && !condition.est_principale) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
+        .from("fournisseur_conditions")
+        .update({ est_principale: false })
+        .eq("fournisseur_id", fournisseurId);
+    }
+
     const payload = {
+      nom: form.nom.trim(),
+      est_principale: form.est_principale,
       devises_acceptees: form.devises_acceptees,
       pct_acompte_1: Number(form.pct_acompte_1) || 0,
       pct_acompte_2: Number(form.pct_acompte_2) || 0,
@@ -148,162 +224,203 @@ export function FournisseurConditionsBlock({ fournisseurId, canWrite }: Props) {
       delai_acompte_3_jours: form.delai_acompte_3_jours ? Number(form.delai_acompte_3_jours) : null,
       delai_solde_jours: form.delai_solde_jours ? Number(form.delai_solde_jours) : null,
       conditions_annulation: form.conditions_annulation,
-      conditions_notes: form.conditions_notes || null,
+      notes: form.notes || null,
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any)
-      .from("contacts")
+      .from("fournisseur_conditions")
       .update(payload)
-      .eq("id", fournisseurId);
+      .eq("id", condition.id);
     setSubmitting(false);
+    if (error) return toast.error(error.message);
+
+    await logAudit({
+      userId: user.id,
+      entity: "fournisseur_condition",
+      entityId: condition.id,
+      action: "update",
+      description: `Condition "${form.nom}" mise à jour`,
+    });
+    toast.success("Enregistré.");
+    setDirty(false);
+    onChanged();
+  };
+
+  const remove = async () => {
+    if (!user) return;
+    if (!confirm(`Supprimer la condition "${condition.nom}" ?`)) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("fournisseur_conditions")
+      .delete()
+      .eq("id", condition.id);
     if (error) return toast.error(error.message);
     await logAudit({
       userId: user.id,
-      entity: "contact",
-      entityId: fournisseurId,
-      action: "update",
-      description: "Conditions commerciales mises à jour",
+      entity: "fournisseur_condition",
+      entityId: condition.id,
+      action: "delete",
+      description: `Condition supprimée : ${condition.nom}`,
     });
-    toast.success("Conditions enregistrées.");
-    setDirty(false);
-    refetch();
+    onChanged();
   };
 
   return (
-    <Card className="border-border/60 p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-display text-lg flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-            Conditions commerciales
-          </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Devises · acomptes · délais · pénalités d'annulation
-          </p>
-        </div>
-        {canWrite && dirty && (
-          <Button size="sm" onClick={save} disabled={submitting}>
-            <Save className="h-4 w-4 mr-1" /> Enregistrer
-          </Button>
-        )}
-      </div>
-
-      <fieldset disabled={!canWrite} className="space-y-4">
-        <div className="space-y-2">
-          <Label>Devises acceptées (1 ou 2)</Label>
-          <div className="flex flex-wrap gap-1.5">
-            {DEVISES.map((d) => {
-              const sel = form.devises_acceptees.includes(d.code);
-              return (
-                <button
-                  key={d.code}
-                  type="button"
-                  onClick={() => toggleDevise(d.code)}
-                  className={`px-2.5 py-1 text-xs rounded border transition-colors ${
-                    sel
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-secondary border-border hover:bg-secondary/70"
-                  }`}
-                >
-                  {d.code}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-            Échéances de paiement
-          </Label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
-            {(
-              [
-                ["pct_acompte_1", "delai_acompte_1_jours", "Acompte 1"],
-                ["pct_acompte_2", "delai_acompte_2_jours", "Acompte 2"],
-                ["pct_acompte_3", "delai_acompte_3_jours", "Acompte 3"],
-                ["pct_solde", "delai_solde_jours", "Solde"],
-              ] as const
-            ).map(([pctK, delaiK, label]) => (
-              <div key={pctK}>
-                <Label className="text-xs">{label} %</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  value={form[pctK]}
-                  onChange={(e) => update(pctK, e.target.value)}
-                />
-                <Label className="text-[10px] text-muted-foreground mt-1">Jours avant</Label>
-                <Input
-                  type="number"
-                  value={form[delaiK]}
-                  onChange={(e) => update(delaiK, e.target.value)}
-                  placeholder="—"
-                />
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Les dates d'échéance sont calculées à partir de la date de prestation.
-          </p>
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-              Conditions d'annulation
-            </Label>
-            <Button type="button" variant="outline" size="sm" onClick={addTier}>
-              <Plus className="h-3 w-3 mr-1" /> Tranche
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {form.conditions_annulation.length === 0 && (
-              <p className="text-xs text-muted-foreground italic">Aucune tranche définie.</p>
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger asChild>
+        <button className="w-full p-4 flex items-center justify-between gap-3 hover:bg-secondary/30 transition-colors text-left">
+          <div className="min-w-0 flex-1 flex items-center gap-2 flex-wrap">
+            <span className="font-medium">{condition.nom}</span>
+            {condition.est_principale && (
+              <Badge variant="outline" className="text-[10px] gap-1">
+                <Star className="h-3 w-3" /> principale
+              </Badge>
             )}
-            {form.conditions_annulation.map((t, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">À J-</span>
-                <Input
-                  type="number"
-                  className="w-24"
-                  value={t.jours_avant}
-                  onChange={(e) => updateTier(i, { jours_avant: Number(e.target.value) || 0 })}
-                />
-                <span className="text-xs text-muted-foreground">jours →</span>
-                <Input
-                  type="number"
-                  className="w-24"
-                  value={t.pct_penalite}
-                  onChange={(e) => updateTier(i, { pct_penalite: Number(e.target.value) || 0 })}
-                />
-                <span className="text-xs text-muted-foreground">% retenus</span>
-                <Button variant="ghost" size="sm" onClick={() => removeTier(i)}>
-                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                </Button>
-              </div>
+            {condition.devises_acceptees.map((d) => (
+              <Badge key={d} variant="secondary" className="text-[10px]">{d}</Badge>
             ))}
+            <span className="text-xs text-muted-foreground">
+              {condition.pct_acompte_1}/{condition.pct_acompte_2}/{condition.pct_acompte_3}/{condition.pct_solde}%
+            </span>
           </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Notes</Label>
-          <Textarea
-            rows={2}
-            value={form.conditions_notes}
-            onChange={(e) => update("conditions_notes", e.target.value)}
-            placeholder="Conditions spécifiques, remarques…"
-          />
-        </div>
-
-        {canWrite && dirty && (
-          <div className="flex justify-end">
-            <Button size="sm" onClick={save} disabled={submitting}>
-              <Save className="h-4 w-4 mr-1" /> {submitting ? "Enregistrement…" : "Enregistrer"}
-            </Button>
+          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <fieldset disabled={!canWrite} className="p-4 pt-0 space-y-4 border-t border-border/60">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
+            <div className="space-y-1.5">
+              <Label>Nom</Label>
+              <Input value={form.nom} onChange={(e) => update("nom", e.target.value)} placeholder="Standard, Safari…" />
+            </div>
+            <div className="space-y-1.5 flex items-end">
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
+                <input
+                  type="checkbox"
+                  checked={form.est_principale}
+                  onChange={(e) => update("est_principale", e.target.checked)}
+                />
+                Condition principale
+              </label>
+            </div>
           </div>
-        )}
-      </fieldset>
-    </Card>
+
+          <div className="space-y-2">
+            <Label>Devises acceptées (1 ou 2)</Label>
+            <div className="flex flex-wrap gap-1.5">
+              {DEVISES.map((d) => {
+                const sel = form.devises_acceptees.includes(d.code);
+                return (
+                  <button
+                    key={d.code}
+                    type="button"
+                    onClick={() => toggleDevise(d.code)}
+                    className={`px-2.5 py-1 text-xs rounded border transition-colors ${
+                      sel
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-secondary border-border hover:bg-secondary/70"
+                    }`}
+                  >
+                    {d.code}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Échéances de paiement</Label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+              {(
+                [
+                  ["pct_acompte_1", "delai_acompte_1_jours", "Acompte 1"],
+                  ["pct_acompte_2", "delai_acompte_2_jours", "Acompte 2"],
+                  ["pct_acompte_3", "delai_acompte_3_jours", "Acompte 3"],
+                  ["pct_solde", "delai_solde_jours", "Solde"],
+                ] as const
+              ).map(([pctK, delaiK, label]) => (
+                <div key={pctK}>
+                  <Label className="text-xs">{label} %</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={form[pctK]}
+                    onChange={(e) => update(pctK, e.target.value)}
+                  />
+                  <Label className="text-[10px] text-muted-foreground mt-1">Jours avant</Label>
+                  <Input
+                    type="number"
+                    value={form[delaiK]}
+                    onChange={(e) => update(delaiK, e.target.value)}
+                    placeholder="—"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Conditions d'annulation
+              </Label>
+              <Button type="button" variant="outline" size="sm" onClick={addTier}>
+                <Plus className="h-3 w-3 mr-1" /> Tranche
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {form.conditions_annulation.length === 0 && (
+                <p className="text-xs text-muted-foreground italic">Aucune tranche définie.</p>
+              )}
+              {form.conditions_annulation.map((t, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">À J-</span>
+                  <Input
+                    type="number"
+                    className="w-24"
+                    value={t.jours_avant}
+                    onChange={(e) => updateTier(i, { jours_avant: Number(e.target.value) || 0 })}
+                  />
+                  <span className="text-xs text-muted-foreground">jours →</span>
+                  <Input
+                    type="number"
+                    className="w-24"
+                    value={t.pct_penalite}
+                    onChange={(e) => updateTier(i, { pct_penalite: Number(e.target.value) || 0 })}
+                  />
+                  <span className="text-xs text-muted-foreground">% retenus</span>
+                  <Button variant="ghost" size="sm" onClick={() => removeTier(i)}>
+                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Notes</Label>
+            <Textarea
+              rows={2}
+              value={form.notes}
+              onChange={(e) => update("notes", e.target.value)}
+              placeholder="Conditions spécifiques, remarques…"
+            />
+          </div>
+
+          {canWrite && (
+            <div className="flex justify-between items-center">
+              <Button variant="ghost" size="sm" onClick={remove} className="text-destructive">
+                <Trash2 className="h-4 w-4 mr-1" /> Supprimer cette condition
+              </Button>
+              {dirty && (
+                <Button size="sm" onClick={save} disabled={submitting}>
+                  <Save className="h-4 w-4 mr-1" /> {submitting ? "Enregistrement…" : "Enregistrer"}
+                </Button>
+              )}
+            </div>
+          )}
+        </fieldset>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
