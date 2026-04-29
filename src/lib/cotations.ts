@@ -151,6 +151,30 @@ export function computeCotationFinance(cot: Cotation, lignes: CotationLigne[]) {
   };
 }
 
+/**
+ * Acompte client à verser à la confirmation.
+ * Règle métier agence de voyage :
+ *   acompte = total_fournisseurs + (marge × 0.5)
+ * Si la marge est négative (cotation déficitaire), on demande au moins
+ * de quoi couvrir les fournisseurs (la part marge est ignorée).
+ * Plafonné au prix de vente.
+ */
+export function computeAcompteClient(cot: Cotation, lignes: CotationLigne[]) {
+  const fin = computeCotationFinance(cot, lignes);
+  const partMarge = Math.max(0, fin.margeBrute) * 0.5;
+  const acompte = Math.min(fin.prixVente, fin.coutTotal + partMarge);
+  const solde = Math.max(0, fin.prixVente - acompte);
+  return {
+    totalFournisseurs: fin.coutTotal,
+    margeBrute: fin.margeBrute,
+    partMarge,
+    acompte,
+    solde,
+    prixVente: fin.prixVente,
+    margeNegative: fin.margeBrute < 0,
+  };
+}
+
 /** Échéances calculées à partir des % d'une ligne. */
 export function ligneEcheances(ligne: CotationLigne) {
   const total = Number(ligne.montant_devise || 0);
