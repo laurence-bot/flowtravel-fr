@@ -40,6 +40,10 @@ type FormState = {
   delai_acompte_2_jours: string;
   delai_acompte_3_jours: string;
   delai_solde_jours: string;
+  acompte_1_a_reservation: boolean;
+  acompte_2_a_reservation: boolean;
+  acompte_3_a_reservation: boolean;
+  solde_a_reservation: boolean;
   conditions_annulation: CancelationTier[];
   notes: string;
 };
@@ -57,6 +61,10 @@ function toForm(c: FournisseurCondition): FormState {
     delai_acompte_2_jours: c.delai_acompte_2_jours?.toString() ?? "",
     delai_acompte_3_jours: c.delai_acompte_3_jours?.toString() ?? "",
     delai_solde_jours: c.delai_solde_jours?.toString() ?? "",
+    acompte_1_a_reservation: c.acompte_1_a_reservation ?? false,
+    acompte_2_a_reservation: c.acompte_2_a_reservation ?? false,
+    acompte_3_a_reservation: c.acompte_3_a_reservation ?? false,
+    solde_a_reservation: c.solde_a_reservation ?? false,
     conditions_annulation: c.conditions_annulation ?? [],
     notes: c.notes ?? "",
   };
