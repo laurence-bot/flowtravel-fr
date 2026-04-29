@@ -5,11 +5,12 @@ import {
   acceptPublicQuote,
   requestCallback,
   requestModification,
+  chooseFlightOption,
 } from "@/server/quote-public.functions";
 import { themeStyle } from "@/lib/agency-theme";
 import { formatEUR, formatDate } from "@/lib/format";
 import { computeCotationFinance, ligneEcheances } from "@/lib/cotations";
-import { Check, Phone, MessageSquare, MapPin, Calendar, Users, Sparkles } from "lucide-react";
+import { Check, Phone, MessageSquare, MapPin, Calendar, Users, Sparkles, Plane, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/p/$token")({
