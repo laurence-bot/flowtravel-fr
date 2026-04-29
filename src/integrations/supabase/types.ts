@@ -1023,6 +1023,9 @@ export type Database = {
       }
       fournisseur_conditions: {
         Row: {
+          acompte_1_a_reservation: boolean
+          acompte_2_a_reservation: boolean
+          acompte_3_a_reservation: boolean
           conditions_annulation: Json
           created_at: string
           delai_acompte_1_jours: number | null
@@ -1039,10 +1042,14 @@ export type Database = {
           pct_acompte_2: number
           pct_acompte_3: number
           pct_solde: number
+          solde_a_reservation: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
+          acompte_1_a_reservation?: boolean
+          acompte_2_a_reservation?: boolean
+          acompte_3_a_reservation?: boolean
           conditions_annulation?: Json
           created_at?: string
           delai_acompte_1_jours?: number | null
@@ -1059,10 +1066,14 @@ export type Database = {
           pct_acompte_2?: number
           pct_acompte_3?: number
           pct_solde?: number
+          solde_a_reservation?: boolean
           updated_at?: string
           user_id: string
         }
         Update: {
+          acompte_1_a_reservation?: boolean
+          acompte_2_a_reservation?: boolean
+          acompte_3_a_reservation?: boolean
           conditions_annulation?: Json
           created_at?: string
           delai_acompte_1_jours?: number | null
@@ -1079,6 +1090,7 @@ export type Database = {
           pct_acompte_2?: number
           pct_acompte_3?: number
           pct_solde?: number
+          solde_a_reservation?: boolean
           updated_at?: string
           user_id?: string
         }
