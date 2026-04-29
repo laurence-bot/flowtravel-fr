@@ -355,6 +355,9 @@ function PublicQuotePage() {
                 <div className="grid gap-4">
                   {vols.map((v) => {
                     const isChosen = chosenFlightId === v.id;
+                    const volSegments = segments
+                      .filter((s) => s.flight_option_id === v.id)
+                      .sort((a, b) => a.ordre - b.ordre);
                     return (
                       <div
                         key={v.id}
@@ -367,7 +370,7 @@ function PublicQuotePage() {
                             <Plane className="h-5 w-5 brand-signature shrink-0" />
                             <div>
                               <div className="brand-heading text-xl brand-primary">
-                                {v.compagnie}
+                                {airlineName(v.compagnie)}
                               </div>
                               {v.numero_vol && (
                                 <div className="text-xs text-stone-500 font-mono">
@@ -385,18 +388,61 @@ function PublicQuotePage() {
                             </div>
                           </div>
                         </div>
-                        <div className="text-sm text-stone-700 mb-3 whitespace-pre-line leading-relaxed">
-                          {formatRoutingForClient(v.routing)}
-                        </div>
+
+                        {volSegments.length > 0 ? (
+                          <div className="space-y-3 mb-3">
+                            {volSegments.map((seg, idx) => (
+                              <div key={seg.id} className="text-sm">
+                                <div className="flex items-baseline gap-2 brand-primary font-medium">
+                                  <span>{iataToCity(seg.aeroport_depart)}</span>
+                                  <span className="text-stone-400">→</span>
+                                  <span>{iataToCity(seg.aeroport_arrivee)}</span>
+                                </div>
+                                <div className="text-xs text-stone-600 mt-0.5 flex flex-wrap gap-x-4 gap-y-0.5">
+                                  {(seg.compagnie || seg.numero_vol) && (
+                                    <span>
+                                      {airlineName(seg.compagnie)}
+                                      {seg.numero_vol ? ` · ${seg.numero_vol}` : ""}
+                                    </span>
+                                  )}
+                                  {seg.date_depart && (
+                                    <span>
+                                      Départ {formatDate(seg.date_depart)}
+                                      {seg.heure_depart && ` à ${seg.heure_depart.slice(0, 5)}`}
+                                    </span>
+                                  )}
+                                  {seg.date_arrivee && (
+                                    <span>
+                                      Arrivée {formatDate(seg.date_arrivee)}
+                                      {seg.heure_arrivee && ` à ${seg.heure_arrivee.slice(0, 5)}`}
+                                    </span>
+                                  )}
+                                </div>
+                                {idx < volSegments.length - 1 && seg.duree_escale_minutes && (
+                                  <div className="text-[11px] text-stone-500 italic mt-1 ml-4">
+                                    Escale de {Math.floor(seg.duree_escale_minutes / 60)}h
+                                    {String(seg.duree_escale_minutes % 60).padStart(2, "0")} à{" "}
+                                    {iataToCity(seg.aeroport_arrivee)}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-stone-700 mb-3 whitespace-pre-line leading-relaxed">
+                            {formatRoutingForClient(v.routing)}
+                          </div>
+                        )}
+
                         <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-stone-600">
-                          {v.date_depart && (
+                          {volSegments.length === 0 && v.date_depart && (
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
                               Aller : {formatDate(v.date_depart)}
                               {v.heure_depart && ` · ${v.heure_depart.slice(0, 5)}`}
                             </span>
                           )}
-                          {v.date_retour && (
+                          {volSegments.length === 0 && v.date_retour && (
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
                               Retour : {formatDate(v.date_retour)}
