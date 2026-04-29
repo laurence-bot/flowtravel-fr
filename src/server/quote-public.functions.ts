@@ -23,8 +23,8 @@ export const getPublicQuote = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Lien invalide ou expiré." };
     }
 
-    // 2. Récupérer cotation + lignes + jours + agence + client en parallèle
-    const [cotRes, lignesRes, joursRes] = await Promise.all([
+    // 2. Récupérer cotation + lignes + jours + vols en parallèle
+    const [cotRes, lignesRes, joursRes, volsRes] = await Promise.all([
       supabaseAdmin.from("cotations").select("*").eq("id", link.cotation_id).maybeSingle(),
       supabaseAdmin
         .from("cotation_lignes_fournisseurs")
@@ -36,6 +36,11 @@ export const getPublicQuote = createServerFn({ method: "POST" })
         .select("*")
         .eq("cotation_id", link.cotation_id)
         .order("ordre", { ascending: true }),
+      supabaseAdmin
+        .from("flight_options")
+        .select("*")
+        .eq("cotation_id", link.cotation_id)
+        .order("created_at", { ascending: true }),
     ]);
 
     if (cotRes.error || !cotRes.data) {
