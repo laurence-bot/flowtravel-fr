@@ -818,14 +818,21 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
                           >
                             <Mail className="h-3 w-3" />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSegmentsOpenFor({ id: f.id, compagnie: f.compagnie })}
-                            title="Détails segments / escales"
-                          >
-                            <Layers className="h-3 w-3" />
-                          </Button>
+                          {(() => {
+                            const segCount = segAll.filter((s) => s.flight_option_id === f.id).length;
+                            return (
+                              <Button
+                                size="sm"
+                                variant={segCount > 0 ? "default" : "outline"}
+                                onClick={() => setSegmentsOpenFor({ id: f.id, compagnie: f.compagnie })}
+                                title={segCount > 0 ? `${segCount} segment(s) - éditer` : "Détailler les segments / escales"}
+                                className="h-8 gap-1 text-xs"
+                              >
+                                <Layers className="h-3 w-3" />
+                                {segCount > 0 ? `${segCount} seg.` : "Segments"}
+                              </Button>
+                            );
+                          })()}
                           {canWrite && (
                             <>
                               <Select
