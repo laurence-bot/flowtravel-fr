@@ -1605,6 +1605,8 @@ export type Database = {
         | "fournisseur_option"
         | "flight_option"
         | "agency_settings"
+        | "contact"
+        | "fournisseur_condition"
       bank_sens: "credit" | "debit"
       bank_source: "sg" | "cic" | "ebury"
       bank_statut: "nouveau" | "rapproche" | "ignore"
@@ -1842,6 +1844,8 @@ export const Constants = {
         "fournisseur_option",
         "flight_option",
         "agency_settings",
+        "contact",
+        "fournisseur_condition",
       ],
       bank_sens: ["credit", "debit"],
       bank_source: ["sg", "cic", "ebury"],
