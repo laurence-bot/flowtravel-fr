@@ -113,6 +113,16 @@ function PublicQuotePage() {
     } else toast.error(r.error || "Erreur");
   };
 
+  const handleChooseFlight = async (flightOptionId: string) => {
+    setSubmitting(true);
+    const r = await chooseFlightOption({ data: { token: params.token, flightOptionId } });
+    setSubmitting(false);
+    if (r.ok) {
+      setChosenFlightId(flightOptionId);
+      toast.success("Votre choix de vol a bien été transmis.");
+    } else toast.error(r.error || "Erreur");
+  };
+
   return (
     <div
       style={themeStyle(agency)}
