@@ -36,7 +36,11 @@ import { usePageWriteAccess } from "@/hooks/use-page-write-access";
 import { formatEUR } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { logAudit } from "@/lib/audit";
-import { engageReservationsForCotation, releaseReservationsForCotation } from "@/lib/fx-reservations";
+import {
+  engageReservationsForCotation,
+  reactivateReleasedReservationsForCotation,
+  releaseReservationsForCotation,
+} from "@/lib/fx-reservations";
 import {
   COTATION_STATUT_LABELS,
   COTATION_STATUT_TONES,
@@ -64,6 +68,7 @@ import {
   ArrowRight,
   AlertTriangle,
   Sparkles,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { CotationOptionsBlock } from "@/components/cotation-options-block";
@@ -398,6 +403,44 @@ function CotationDetailPage() {
     refetchCot();
   };
 
+  const rouvrirCotation = async () => {
+    if (!user) return;
+    if (
+      !confirm(
+        "Rouvrir cette cotation ? Le statut repassera en 'envoyée' et les réservations FX libérées seront restaurées si les couvertures ont encore du solde.",
+      )
+    )
+      return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
+      .from("cotations")
+      .update({ statut: "envoyee", raison_perte: null })
+      .eq("id", cot.id);
+    const restoration = await reactivateReleasedReservationsForCotation({
+      userId: user.id,
+      cotationId: cot.id,
+    });
+    await logAudit({
+      userId: user.id,
+      entity: "cotation",
+      entityId: cot.id,
+      action: "update",
+      description: `Cotation rouverte : ${cot.titre}${restoration.restored > 0 ? ` — ${restoration.restored} réservation(s) FX restaurée(s)` : ""}${restoration.skipped > 0 ? `, ${restoration.skipped} non restaurée(s) (solde insuffisant)` : ""}`,
+    });
+    if (restoration.skipped > 0) {
+      toast.warning(
+        `Cotation rouverte. ${restoration.restored} réservation(s) restaurée(s), ${restoration.skipped} ignorée(s) — solde de couverture insuffisant.`,
+      );
+    } else {
+      toast.success(
+        restoration.restored > 0
+          ? `Cotation rouverte. ${restoration.restored} réservation(s) FX restaurée(s).`
+          : "Cotation rouverte.",
+      );
+    }
+    refetchCot();
+  };
+
   const nouvelleVersion = async () => {
     if (!user) return;
     const res = await duplicateCotation(user.id, cot, lignes);
@@ -632,6 +675,20 @@ function CotationDetailPage() {
             className="text-destructive hover:text-destructive"
           >
             <XCircle className="h-4 w-4 mr-2" /> Marquer comme perdue
+          </Button>
+        </Card>
+      )}
+
+      {canWrite && cot.statut === "perdue" && (
+        <Card className="p-4 flex flex-wrap items-center gap-3 border-amber-500/40 bg-amber-500/5">
+          <div className="text-sm text-muted-foreground flex-1 min-w-0">
+            Cotation marquée comme perdue
+            {cot.raison_perte ? ` (${cot.raison_perte})` : ""}. Le client revient&nbsp;?
+            Tu peux la rouvrir — les réservations FX libérées seront restaurées
+            si les couvertures ont encore du solde disponible.
+          </div>
+          <Button onClick={rouvrirCotation} variant="default" className="shrink-0">
+            <RotateCcw className="h-4 w-4 mr-2" /> Rouvrir la cotation
           </Button>
         </Card>
       )}

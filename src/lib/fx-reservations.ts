@@ -134,6 +134,78 @@ export async function releaseReservationsForCotation(params: {
   return { count: data?.length ?? 0, error: null };
 }
 
+/**
+ * Réactive les réservations précédemment libérées d'une cotation (cas : on rouvre
+ * un devis marqué perdu). On les repasse en "reservee" tant qu'il reste du
+ * solde disponible sur chaque couverture. Renvoie aussi les réservations qui
+ * n'ont pas pu être recréées faute de solde.
+ */
+export async function reactivateReleasedReservationsForCotation(params: {
+  userId: string;
+  cotationId: string;
+}): Promise<{ restored: number; skipped: number; error: string | null }> {
+  // 1. Récupérer les réservations libérées de cette cotation
+  const { data: released, error: errRel } = await supabase
+    .from("fx_coverage_reservations")
+    .select("*")
+    .eq("cotation_id", params.cotationId)
+    .eq("statut", "liberee");
+  if (errRel) return { restored: 0, skipped: 0, error: errRel.message };
+  if (!released || released.length === 0) return { restored: 0, skipped: 0, error: null };
+
+  // 2. Récupérer toutes les couvertures concernées + leurs réservations vivantes
+  const coverageIds = Array.from(new Set(released.map((r) => r.coverage_id)));
+  const { data: coverages } = await supabase
+    .from("fx_coverages")
+    .select("*")
+    .in("id", coverageIds);
+  const { data: liveReservations } = await supabase
+    .from("fx_coverage_reservations")
+    .select("*")
+    .in("coverage_id", coverageIds)
+    .in("statut", ["active", "reservee", "engagee", "utilisee"]);
+
+  // 3. Calculer le solde dispo par couverture, et tenter de re-réserver
+  const remaining = new Map<string, number>();
+  for (const c of coverages ?? []) {
+    const used = (liveReservations ?? [])
+      .filter((r) => r.coverage_id === c.id)
+      .reduce((s, r) => s + Number(r.montant_devise), 0);
+    remaining.set(c.id, Math.max(0, Number(c.montant_devise) - used));
+  }
+
+  let restored = 0;
+  let skipped = 0;
+  for (const r of released) {
+    const dispo = remaining.get(r.coverage_id) ?? 0;
+    const besoin = Number(r.montant_devise);
+    if (dispo >= besoin - 0.001) {
+      const { error } = await supabase
+        .from("fx_coverage_reservations")
+        .update({ statut: "reservee" })
+        .eq("id", r.id);
+      if (!error) {
+        restored++;
+        remaining.set(r.coverage_id, dispo - besoin);
+      } else {
+        skipped++;
+      }
+    } else {
+      skipped++;
+    }
+  }
+
+  await logAudit({
+    userId: params.userId,
+    entity: "fx_reservation",
+    entityId: params.cotationId,
+    action: "update",
+    description: `Réouverture cotation : ${restored} réservation(s) FX restaurée(s)${skipped > 0 ? `, ${skipped} ignorée(s) (solde insuffisant)` : ""}`,
+  });
+
+  return { restored, skipped, error: null };
+}
+
 /** Solde disponible pour une couverture donnée (réservé + engagé bloquent). */
 export function availableOnCoverage(
   coverage: FxCoverage,
