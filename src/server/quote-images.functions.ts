@@ -1,13 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /**
  * Recherche d'images sur Unsplash.
  * Nécessite la variable d'env UNSPLASH_ACCESS_KEY.
  */
 export const searchUnsplash = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d: { query: string; page?: number }) =>
     z.object({
       query: z.string().min(1).max(200),
