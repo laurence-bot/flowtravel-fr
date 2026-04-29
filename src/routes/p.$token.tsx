@@ -10,7 +10,8 @@ import {
 import { themeStyle } from "@/lib/agency-theme";
 import { formatEUR, formatDate } from "@/lib/format";
 import { computeCotationFinance, ligneEcheances } from "@/lib/cotations";
-import { formatRoutingForClient } from "@/lib/iata";
+import { formatRoutingForClient, iataToCity } from "@/lib/iata";
+import { airlineName } from "@/lib/airlines";
 import { Check, Phone, MessageSquare, MapPin, Calendar, Users, Sparkles, Plane, Clock } from "lucide-react";
 import { toast } from "sonner";
 
