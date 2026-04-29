@@ -68,6 +68,7 @@ import {
   ArrowRight,
   AlertTriangle,
   Sparkles,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { CotationOptionsBlock } from "@/components/cotation-options-block";
