@@ -1159,6 +1159,10 @@ export function CotationOptionsBlock({ cot, lignes, client, canWrite, onChange, 
           onOpenChange={(v) => !v && setSegmentsOpenFor(null)}
           flightOptionId={segmentsOpenFor.id}
           defaultCompagnie={segmentsOpenFor.compagnie}
+          defaultDateDepart={segmentsOpenFor.date_depart ?? null}
+          defaultHeureDepart={segmentsOpenFor.heure_depart ?? null}
+          defaultDateRetour={segmentsOpenFor.date_retour ?? null}
+          defaultHeureRetour={segmentsOpenFor.heure_retour ?? null}
           canWrite={canWrite}
         />
       )}
