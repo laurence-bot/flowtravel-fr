@@ -195,7 +195,7 @@ function CouverturesFXPage() {
                 <TableHead>Devise</TableHead>
                 <TableHead className="text-right">Taux couvert</TableHead>
                 <TableHead className="text-right">Réservé</TableHead>
-                <TableHead className="text-right">Utilisé</TableHead>
+                <TableHead className="text-right">Engagé</TableHead>
                 <TableHead className="text-right">Disponible</TableHead>
                 <TableHead className="text-right">Écart EUR</TableHead>
               </TableRow>
@@ -211,8 +211,8 @@ function CouverturesFXPage() {
                       <Badge variant="outline" className="font-mono">{c.devise}</Badge>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{Number(c.taux_change).toFixed(4)}</TableCell>
-                    <TableCell className="text-right tabular-nums text-muted-foreground">{formatMoney(u.reserveActif, c.devise)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatMoney(u.utilise, c.devise)}</TableCell>
+                    <TableCell className="text-right tabular-nums text-amber-600 dark:text-amber-400">{formatMoney(u.reserve, c.devise)}</TableCell>
+                    <TableCell className="text-right tabular-nums text-destructive">{formatMoney(u.engage, c.devise)}</TableCell>
                     <TableCell className="text-right tabular-nums text-emerald-600 dark:text-emerald-400">{formatMoney(u.disponible, c.devise)}</TableCell>
                     <TableCell className={`text-right tabular-nums font-medium ${ecartTone}`}>
                       {u.ecart === 0 ? "—" : `${u.ecart > 0 ? "+" : ""}${formatEUR(u.ecart)}`}
