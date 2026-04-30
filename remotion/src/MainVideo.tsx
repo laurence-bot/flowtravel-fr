@@ -46,11 +46,11 @@ export const MainVideo: React.FC<{ format: Format }> = ({ format }) => {
       <Sequence from={s5From} durationInFrames={D.s5}><Scene5CTA format={format} /></Sequence>
 
       {/* Voiceover - aligned with scene starts */}
-      <Sequence from={s1From + PAD}><Audio src={staticFile("audio/s1.mp3")} volume={1} /></Sequence>
-      <Sequence from={s2From + PAD}><Audio src={staticFile("audio/s2.mp3")} volume={1} /></Sequence>
-      <Sequence from={s3From + PAD}><Audio src={staticFile("audio/s3.mp3")} volume={1} /></Sequence>
-      <Sequence from={s4From + PAD}><Audio src={staticFile("audio/s4.mp3")} volume={1} /></Sequence>
-      <Sequence from={s5From + PAD}><Audio src={staticFile("audio/s5.mp3")} volume={1} /></Sequence>
+      <Sequence from={s1From + PAD}><Audio src={staticFile("audio/s1.aac")} volume={1} /></Sequence>
+      <Sequence from={s2From + PAD}><Audio src={staticFile("audio/s2.aac")} volume={1} /></Sequence>
+      <Sequence from={s3From + PAD}><Audio src={staticFile("audio/s3.aac")} volume={1} /></Sequence>
+      <Sequence from={s4From + PAD}><Audio src={staticFile("audio/s4.aac")} volume={1} /></Sequence>
+      <Sequence from={s5From + PAD}><Audio src={staticFile("audio/s5.aac")} volume={1} /></Sequence>
     </AbsoluteFill>
   );
 };
