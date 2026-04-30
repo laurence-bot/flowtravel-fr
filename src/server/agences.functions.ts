@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const SiretSchema = z.object({
   siret: z.string().regex(/^\d{14}$/, "Le SIRET doit contenir 14 chiffres"),
