@@ -16,6 +16,7 @@ import { useTable, type Contact } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { usePageWriteAccess } from "@/hooks/use-page-write-access";
+import { useAgents, agentLabel } from "@/hooks/use-agents";
 import { formatEUR, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { logAudit } from "@/lib/audit";
