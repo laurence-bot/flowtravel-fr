@@ -25,7 +25,7 @@ const composition = await selectComposition({
   puppeteerInstance: browser,
 });
 
-console.log(`Rendering ${compId} -> ${out} (muted, video-only)`);
+console.log(`Rendering ${compId} -> ${out}`);
 await renderMedia({
   composition,
   serveUrl: bundled,
@@ -33,7 +33,8 @@ await renderMedia({
   outputLocation: out,
   puppeteerInstance: browser,
   concurrency: 1,
-  muted: true,
+  audioCodec: "aac",
+  enforceAudioTrack: true,
 });
 
 await browser.close({ silent: false });
