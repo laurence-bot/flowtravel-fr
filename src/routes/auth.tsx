@@ -26,8 +26,9 @@ function AuthPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && session) navigate({ to: "/app" });
-  }, [session, loading, navigate]);
+    if (!loading && session) navigate({ to: "/app", replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id, loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
