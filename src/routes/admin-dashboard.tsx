@@ -36,7 +36,7 @@ function AdminDashboardPage() {
         supabase.from("user_profiles").select("*", { count: "exact", head: true }).eq("actif", true),
         supabase.from("support_messages").select("*", { count: "exact", head: true }).eq("lu_par_admin", false).eq("is_from_admin", false),
         supabase.from("error_logs").select("*", { count: "exact", head: true }).eq("resolved", false),
-        supabase.from("error_logs").select("*", { count: "exact", head: true }).gte("created_at", since),
+        supabase.from("error_logs").select("*", { count: "exact", head: true }).gte("created_at", since).eq("resolved", false),
       ]);
       setStats({
         agencesEnAttente: pa.count || 0,
