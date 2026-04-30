@@ -334,7 +334,7 @@ function HomePage() {
       {/* FONCTIONNALITÉS */}
       <section id="fonctionnalites" className="container mx-auto px-4 py-20">
         <div className="text-center max-w-2xl mx-auto">
-          <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">
+          <div className="text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
             Fonctionnalités
           </div>
           <h2 className="font-display text-3xl md:text-5xl mt-4">
@@ -409,7 +409,7 @@ function HomePage() {
       <section id="pourquoi" className="bg-secondary/20 border-y border-border/40">
         <div className="container mx-auto px-4 py-20">
           <div className="text-center max-w-2xl mx-auto">
-            <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">
+            <div className="text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
               Pourquoi FlowTravel
             </div>
             <h2 className="font-display text-3xl md:text-5xl mt-4">
@@ -461,7 +461,7 @@ function HomePage() {
       {/* COMMENT ÇA MARCHE */}
       <section className="container mx-auto px-4 py-20">
         <div className="text-center max-w-2xl mx-auto">
-          <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">
+          <div className="text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
             En 4 étapes
           </div>
           <h2 className="font-display text-3xl md:text-5xl mt-4">
@@ -488,7 +488,7 @@ function HomePage() {
       {/* TARIFS RÉSUMÉ */}
       <section className="bg-secondary/20 border-y border-border/40">
         <div className="container mx-auto px-4 py-20 text-center">
-          <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">Tarifs</div>
+          <div className="text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">Tarifs</div>
           <h2 className="font-display text-3xl md:text-5xl mt-4">À partir de 9€ HT/mois.</h2>
           <p className="text-muted-foreground mt-4 max-w-xl mx-auto">
             Trois plans pensés pour suivre votre croissance — de l'agent indépendant à l'agence
@@ -526,7 +526,7 @@ function HomePage() {
       {/* DÉMO */}
       <section className="container mx-auto px-4 py-20">
         <div className="max-w-4xl mx-auto rounded-xl border border-[color:var(--gold)]/30 bg-gradient-to-br from-[color:var(--gold)]/5 via-transparent to-[color:var(--gold)]/5 p-10 md:p-14 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--gold)]/30 bg-background px-4 py-1.5 text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--gold)]/30 bg-background px-4 py-1.5 text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
             <Sparkles className="h-3 w-3" />
             Démo confidentielle
           </div>
@@ -554,7 +554,7 @@ function HomePage() {
       <section id="faq" className="bg-secondary/20 border-y border-border/40">
         <div className="container mx-auto px-4 py-20 max-w-3xl">
           <div className="text-center">
-            <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">FAQ</div>
+            <div className="text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">FAQ</div>
             <h2 className="font-display text-3xl md:text-5xl mt-4">Vos questions, nos réponses.</h2>
           </div>
 
