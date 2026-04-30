@@ -1,8 +1,10 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { AuthProvider } from "@/hooks/use-auth";
 import { RoleProvider } from "@/hooks/use-role";
 import { AgencySettingsProvider } from "@/hooks/use-agency-settings";
 import { Toaster } from "@/components/ui/sonner";
+import { installGlobalErrorLogger } from "@/lib/error-logger";
 
 import appCss from "../styles.css?url";
 
@@ -81,6 +83,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  useEffect(() => { installGlobalErrorLogger(); }, []);
   return (
     <AuthProvider>
       <RoleProvider>

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UtilisateursRouteImport } from './routes/utilisateurs'
 import { Route as TarifsRouteImport } from './routes/tarifs'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
 import { Route as RapprochementRouteImport } from './routes/rapprochement'
 import { Route as QaRouteImport } from './routes/qa'
@@ -33,7 +34,10 @@ import { Route as ComptesRouteImport } from './routes/comptes'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as AdminMessagesRouteImport } from './routes/admin-messages'
+import { Route as AdminErrorsRouteImport } from './routes/admin-errors'
 import { Route as AdminDemosRouteImport } from './routes/admin-demos'
+import { Route as AdminDashboardRouteImport } from './routes/admin-dashboard'
 import { Route as AdminAgencesRouteImport } from './routes/admin-agences'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PTokenRouteImport } from './routes/p.$token'
@@ -53,6 +57,11 @@ const UtilisateursRoute = UtilisateursRouteImport.update({
 const TarifsRoute = TarifsRouteImport.update({
   id: '/tarifs',
   path: '/tarifs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
@@ -165,9 +174,24 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminMessagesRoute = AdminMessagesRouteImport.update({
+  id: '/admin-messages',
+  path: '/admin-messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminErrorsRoute = AdminErrorsRouteImport.update({
+  id: '/admin-errors',
+  path: '/admin-errors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminDemosRoute = AdminDemosRouteImport.update({
   id: '/admin-demos',
   path: '/admin-demos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/admin-dashboard',
+  path: '/admin-dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAgencesRoute = AdminAgencesRouteImport.update({
@@ -224,7 +248,10 @@ const DemoRdvTokenRoute = DemoRdvTokenRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin-agences': typeof AdminAgencesRoute
+  '/admin-dashboard': typeof AdminDashboardRoute
   '/admin-demos': typeof AdminDemosRoute
+  '/admin-errors': typeof AdminErrorsRoute
+  '/admin-messages': typeof AdminMessagesRoute
   '/app': typeof AppRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
@@ -247,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
@@ -261,7 +289,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin-agences': typeof AdminAgencesRoute
+  '/admin-dashboard': typeof AdminDashboardRoute
   '/admin-demos': typeof AdminDemosRoute
+  '/admin-errors': typeof AdminErrorsRoute
+  '/admin-messages': typeof AdminMessagesRoute
   '/app': typeof AppRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
@@ -284,6 +315,7 @@ export interface FileRoutesByTo {
   '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
@@ -299,7 +331,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin-agences': typeof AdminAgencesRoute
+  '/admin-dashboard': typeof AdminDashboardRoute
   '/admin-demos': typeof AdminDemosRoute
+  '/admin-errors': typeof AdminErrorsRoute
+  '/admin-messages': typeof AdminMessagesRoute
   '/app': typeof AppRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
@@ -322,6 +357,7 @@ export interface FileRoutesById {
   '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
@@ -338,7 +374,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin-agences'
+    | '/admin-dashboard'
     | '/admin-demos'
+    | '/admin-errors'
+    | '/admin-messages'
     | '/app'
     | '/audit'
     | '/auth'
@@ -361,6 +400,7 @@ export interface FileRouteTypes {
     | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
+    | '/support'
     | '/tarifs'
     | '/utilisateurs'
     | '/contacts/$id'
@@ -375,7 +415,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin-agences'
+    | '/admin-dashboard'
     | '/admin-demos'
+    | '/admin-errors'
+    | '/admin-messages'
     | '/app'
     | '/audit'
     | '/auth'
@@ -398,6 +441,7 @@ export interface FileRouteTypes {
     | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
+    | '/support'
     | '/tarifs'
     | '/utilisateurs'
     | '/contacts/$id'
@@ -412,7 +456,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin-agences'
+    | '/admin-dashboard'
     | '/admin-demos'
+    | '/admin-errors'
+    | '/admin-messages'
     | '/app'
     | '/audit'
     | '/auth'
@@ -435,6 +482,7 @@ export interface FileRouteTypes {
     | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
+    | '/support'
     | '/tarifs'
     | '/utilisateurs'
     | '/contacts/$id'
@@ -450,7 +498,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminAgencesRoute: typeof AdminAgencesRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
   AdminDemosRoute: typeof AdminDemosRoute
+  AdminErrorsRoute: typeof AdminErrorsRoute
+  AdminMessagesRoute: typeof AdminMessagesRoute
   AppRoute: typeof AppRoute
   AuditRoute: typeof AuditRoute
   AuthRoute: typeof AuthRoute
@@ -473,6 +524,7 @@ export interface RootRouteChildren {
   QaRoute: typeof QaRoute
   RapprochementRoute: typeof RapprochementRoute
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
+  SupportRoute: typeof SupportRoute
   TarifsRoute: typeof TarifsRoute
   UtilisateursRoute: typeof UtilisateursRoute
   FacturesIdRoute: typeof FacturesIdRoute
@@ -493,6 +545,13 @@ declare module '@tanstack/react-router' {
       path: '/tarifs'
       fullPath: '/tarifs'
       preLoaderRoute: typeof TarifsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reinitialiser-mot-de-passe': {
@@ -649,11 +708,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-messages': {
+      id: '/admin-messages'
+      path: '/admin-messages'
+      fullPath: '/admin-messages'
+      preLoaderRoute: typeof AdminMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-errors': {
+      id: '/admin-errors'
+      path: '/admin-errors'
+      fullPath: '/admin-errors'
+      preLoaderRoute: typeof AdminErrorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin-demos': {
       id: '/admin-demos'
       path: '/admin-demos'
       fullPath: '/admin-demos'
       preLoaderRoute: typeof AdminDemosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-dashboard': {
+      id: '/admin-dashboard'
+      path: '/admin-dashboard'
+      fullPath: '/admin-dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin-agences': {
@@ -792,7 +872,10 @@ const DossiersRouteWithChildren = DossiersRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminAgencesRoute: AdminAgencesRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
   AdminDemosRoute: AdminDemosRoute,
+  AdminErrorsRoute: AdminErrorsRoute,
+  AdminMessagesRoute: AdminMessagesRoute,
   AppRoute: AppRoute,
   AuditRoute: AuditRoute,
   AuthRoute: AuthRoute,
@@ -815,6 +898,7 @@ const rootRouteChildren: RootRouteChildren = {
   QaRoute: QaRoute,
   RapprochementRoute: RapprochementRoute,
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
+  SupportRoute: SupportRoute,
   TarifsRoute: TarifsRoute,
   UtilisateursRoute: UtilisateursRoute,
   FacturesIdRoute: FacturesIdRoute,

@@ -1046,6 +1046,51 @@ export type Database = {
           },
         ]
       }
+      error_logs: {
+        Row: {
+          agence_id: string | null
+          context: Json | null
+          created_at: string
+          id: string
+          level: string
+          message: string
+          resolved: boolean
+          source: string
+          stack: string | null
+          url: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          agence_id?: string | null
+          context?: Json | null
+          created_at?: string
+          id?: string
+          level?: string
+          message: string
+          resolved?: boolean
+          source: string
+          stack?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          agence_id?: string | null
+          context?: Json | null
+          created_at?: string
+          id?: string
+          level?: string
+          message?: string
+          resolved?: boolean
+          source?: string
+          stack?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       facture_echeances: {
         Row: {
           coverage_id: string | null
@@ -1800,6 +1845,45 @@ export type Database = {
           statut?: Database["public"]["Enums"]["rapprochement_statut"]
           user_id?: string
           validated_at?: string | null
+        }
+        Relationships: []
+      }
+      support_messages: {
+        Row: {
+          agence_id: string | null
+          contenu: string
+          created_at: string
+          from_user_id: string
+          id: string
+          is_from_admin: boolean
+          lu_par_admin: boolean
+          lu_par_user: boolean
+          sujet: string
+          thread_id: string
+        }
+        Insert: {
+          agence_id?: string | null
+          contenu: string
+          created_at?: string
+          from_user_id: string
+          id?: string
+          is_from_admin?: boolean
+          lu_par_admin?: boolean
+          lu_par_user?: boolean
+          sujet: string
+          thread_id?: string
+        }
+        Update: {
+          agence_id?: string | null
+          contenu?: string
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          is_from_admin?: boolean
+          lu_par_admin?: boolean
+          lu_par_user?: boolean
+          sujet?: string
+          thread_id?: string
         }
         Relationships: []
       }
