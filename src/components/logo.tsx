@@ -44,24 +44,15 @@ export function Logo({
     // no provider, fall back to defaults
   }
 
-  // Sur fond sombre (sidebar), on encadre le logo dans un disque blanc
-  // pour garantir la lisibilité quel que soit le logo uploadé.
-  const logoWrapperClass =
-    variant === "light"
-      ? "h-11 w-11 rounded-full bg-white shadow-sm ring-1 ring-black/5 flex items-center justify-center p-1.5"
-      : "h-11 w-11 flex items-center justify-center";
-
   return (
     <div className={cn("flex items-center gap-3", className)}>
       {agencyLogo ? (
-        <div className={logoWrapperClass}>
-          <img
-            src={agencyLogo}
-            alt={agencyName || "FlowTravel"}
-            className="max-h-full max-w-full object-contain"
-            loading="lazy"
-          />
-        </div>
+        <img
+          src={agencyLogo}
+          alt={agencyName || "FlowTravel"}
+          className="h-12 w-12 object-contain"
+          loading="lazy"
+        />
       ) : (
         <ArrowMark className="h-10 w-10 text-[color:var(--gold)]" />
       )}
