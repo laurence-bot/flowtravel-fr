@@ -51,25 +51,54 @@ const DOC_LABELS: Record<DocSlot, string> = {
   piece_identite: "Pièce d'identité du gérant",
 };
 
+const STORAGE_KEY = "inscription_agence_state_v1";
+
+const EMPTY_FORM: FormData = {
+  nom_commercial: "",
+  raison_sociale: "",
+  immat_atout_france: "",
+  siret: "",
+  email_contact: "",
+  telephone: "",
+  adresse: "",
+  ville: "",
+  code_postal: "",
+  admin_full_name: "",
+  password: "",
+};
+
+function loadPersisted(): { step: 1 | 2 | 3; form: FormData } {
+  if (typeof window === "undefined") return { step: 1, form: EMPTY_FORM };
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return { step: 1, form: EMPTY_FORM };
+    const parsed = JSON.parse(raw) as { step?: number; form?: Partial<FormData> };
+    const s = parsed.step === 2 || parsed.step === 3 ? parsed.step : 1;
+    return { step: s as 1 | 2 | 3, form: { ...EMPTY_FORM, ...(parsed.form ?? {}) } };
+  } catch {
+    return { step: 1, form: EMPTY_FORM };
+  }
+}
+
 function InscriptionAgencePage() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const initial = typeof window !== "undefined" ? loadPersisted() : { step: 1 as const, form: EMPTY_FORM };
+  const [step, setStep] = useState<1 | 2 | 3>(initial.step);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
-  const [form, setForm] = useState<FormData>({
-    nom_commercial: "",
-    raison_sociale: "",
-    immat_atout_france: "",
-    siret: "",
-    email_contact: "",
-    telephone: "",
-    adresse: "",
-    ville: "",
-    code_postal: "",
-    admin_full_name: "",
-    password: "",
-  });
+  const [form, setForm] = useState<FormData>(initial.form);
+
+  // Persiste step + form (pas les Files, non sérialisables)
+  // pour résister à un éventuel remount du composant.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ step, form }));
+    } catch {
+      /* ignore quota */
+    }
+  }, [step, form]);
 
   const [files, setFiles] = useState<Record<DocSlot, File | null>>({
     atout_france: null,
