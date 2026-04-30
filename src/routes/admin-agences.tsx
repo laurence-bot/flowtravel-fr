@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { ShieldAlert, Building2, FileText, Check, X, Loader2, ExternalLink, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { verifySiret, type SiretVerifResult } from "@/server/agences.functions";
+import { verifySiret, approveAgence, type SiretVerifResult } from "@/server/agences.functions";
 
 export const Route = createFileRoute("/admin-agences")({
   component: AdminAgencesRoute,
@@ -182,23 +182,19 @@ function AdminAgencesPage() {
   const validate = async () => {
     if (!selected || !user) return;
     setActing(true);
-    const { error } = await supabase
-      .from("agences")
-      .update({
-        statut: "validee",
-        validee_at: new Date().toISOString(),
-        validee_par: user.id,
-        motif_refus: null,
-      })
-      .eq("id", selected.id);
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success(`Agence "${selected.nom_commercial}" validée`);
+    try {
+      const res = await approveAgence({ data: { agenceId: selected.id } });
+      toast.success(
+        `Agence "${selected.nom_commercial}" validée. Email d'invitation envoyé à ${res.email}`,
+      );
       setSelected(null);
       refresh();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Erreur lors de la validation";
+      toast.error(msg);
+    } finally {
+      setActing(false);
     }
-    setActing(false);
   };
 
   const refuse = async () => {
