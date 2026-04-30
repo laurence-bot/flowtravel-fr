@@ -223,7 +223,7 @@ function QaPage() {
           <div className="flex items-center gap-2">
             {session ? (
               <>
-                <Link to="/">
+                <Link to="/app">
                   <Button variant="outline" size="sm">
                     Ouvrir l'app <ExternalLink className="ml-2 h-3.5 w-3.5" />
                   </Button>
@@ -373,7 +373,7 @@ function QaPage() {
                 Explorez librement l'application avec les données générées.
               </p>
               <div className="flex gap-2 mt-3 flex-wrap">
-                <Button size="sm" onClick={() => navigate({ to: "/" })}>Dashboard</Button>
+                <Button size="sm" onClick={() => navigate({ to: "/app" })}>Dashboard</Button>
                 <Button size="sm" variant="outline" onClick={() => navigate({ to: "/cotations" })}>Cotations</Button>
                 <Button size="sm" variant="outline" onClick={() => navigate({ to: "/dossiers" })}>Dossiers</Button>
                 <Button size="sm" variant="outline" onClick={() => navigate({ to: "/rapprochement" })}>Rapprochement</Button>
