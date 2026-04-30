@@ -57,7 +57,7 @@ function AdminDashboardPage() {
     { title: "Utilisateurs actifs", value: stats.agentsTotal, icon: Users, link: "/utilisateurs", color: "text-blue-600" },
     { title: "Messages non lus", value: stats.messagesNonLus, icon: MessageSquare, link: "/admin-messages", color: "text-violet-600", urgent: stats.messagesNonLus > 0 },
     { title: "Erreurs non résolues", value: stats.erreursNonResolues, icon: AlertTriangle, link: "/admin-errors", color: "text-rose-600", urgent: stats.erreursNonResolues > 0 },
-    { title: "Erreurs (24h)", value: stats.erreurs24h, icon: AlertTriangle, link: "/admin-errors", color: "text-orange-600" },
+    { title: "Erreurs (24h, non résolues)", value: stats.erreurs24h, icon: AlertTriangle, link: "/admin-errors", color: "text-orange-600" },
   ];
 
   return (
