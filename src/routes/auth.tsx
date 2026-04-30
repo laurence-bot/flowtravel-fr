@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "@/components/logo";
 import { toast } from "sonner";
@@ -20,12 +19,11 @@ const schema = z.object({
 });
 
 function AuthPage() {
-  const { session, signIn, signUp, loading } = useAuth();
+  const { session, signIn, loading } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [tab, setTab] = useState("signin");
 
   useEffect(() => {
     if (!loading && session) navigate({ to: "/app" });
