@@ -13,13 +13,13 @@ export const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
 /** Routes visibles par rôle. Si non listée → accès refusé. */
 const ROUTE_ACCESS: Record<AppRole, string[]> = {
   administrateur: [
-    "/", "/pilotage", "/contacts", "/dossiers", "/factures", "/paiements",
+    "/", "/app", "/pilotage", "/contacts", "/dossiers", "/factures", "/paiements",
     "/comptes", "/couvertures-fx", "/previsions", "/import-bancaire", "/rapprochement",
     "/export", "/audit", "/utilisateurs", "/import-pdf", "/cotations", "/demandes", "/parametres-agence",
     "/admin-demos", "/admin-agences", "/admin-dashboard", "/admin-messages", "/admin-errors", "/support",
   ],
   agent: [
-    "/", "/pilotage", "/contacts", "/dossiers", "/factures", "/cotations", "/demandes", "/support",
+    "/", "/app", "/pilotage", "/contacts", "/dossiers", "/factures", "/cotations", "/demandes", "/support",
   ],
 };
 
