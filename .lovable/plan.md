@@ -1,156 +1,84 @@
 
-# Essai charte « La Voyagerie » — White-label complet + PDF de devis
+# V2 vidéo FlowTravel — démo produit réelle, 60 secondes
 
-## Objectif
+## Pourquoi la V1 ne marche pas
+Mockups stylisés ≠ FlowTravel. L'agent ne reconnaît pas le produit, ne comprend pas ce qu'il achète. On corrige en filmant **l'app réelle** avec **la vraie charte**.
 
-Faire de FlowTravel une plateforme **multi-tenant white-label** : chaque agence (ici La Voyagerie) possède sa charte graphique complète, qui s'applique à tous les livrables qu'elle envoie à ses clients voyageurs (PDF, portail public, emails). FlowTravel reste FlowTravel à l'intérieur ; **dehors**, c'est l'agence qui parle.
+## Principe V2
+- **Captures réelles** de l'app via le navigateur automatisé, sur les routes existantes
+- **Charte FlowTravel** extraite de `src/styles.css` + `src/lib/agency-theme.ts` (mêmes couleurs, mêmes polices, même radius que l'app)
+- **Parcours agent narré** : on suit un dossier de la demande à la facturation
+- **60 secondes** chrono, 1 module = 1 plan ≥ 5 secondes, mockup plein cadre
+- **Focus itinéraire** : 10 secondes dédiées au rendu du carnet/devis (le moment "wow")
 
-On fait l'essai sur le **PDF de devis complet** (le livrable phare), en deux temps : **maquette d'abord**, **code ensuite**.
+## Scénario — 60s, 9 plans
 
----
-
-## Étape 1 — Maquette du PDF de devis (avant tout code)
-
-Je génère **une maquette PDF haute fidélité** appliquant la charte La Voyagerie, sans toucher à l'app. Ça nous permet de valider la direction visuelle, la typo, le rythme des pages, l'usage de l'ocre/doré, avant d'investir dans la mécanique.
-
-**Contenu de la maquette (5–7 pages) :**
-
-```text
-1. COUVERTURE          Logo compas-V doré, titre du voyage,
-                       nom du client, dates, "Devis nº ...",
-                       filet ocre, crème en fond.
-2. PRÉAMBULE           "L'art de voyager, discrètement."
-                       Mot d'introduction signé par le conseiller.
-3. ITINÉRAIRE          Jour-par-jour résumé (généré depuis tags
-                       destination + dates). Lignes serif élégantes.
-4. CE QUI EST INCLUS   Liste structurée : vols, hébergements,
-                       prestations terrestres. Discret, pas tarifé.
-5. BUDGET              Total TTC + prix par personne. Un seul
-                       chiffre dominant. Détail en filets fins.
-                       Échéancier : acompte + solde, dates.
-6. CONDITIONS          CGV courtes, mention TVA marge / hors UE,
-                       coordonnées agence, SIRET, n° TVA.
-7. COLOPHON            Citation, signature, mentions légales.
+```
+0:00 ─ Hook (4s)              Logo FlowTravel + "12 outils. Maintenant 1." 
+0:04 ─ 1. Demande client (6s) Inbox /demandes → fiche → "Transformer en cotation"
+0:10 ─ 2. Cotation (6s)       Éditeur /cotations/$id : prix, marge live
+0:16 ─ 3. Itinéraire (10s)    ★ MOMENT FORT ★ Mise en page jour par jour, 
+                              images, vol auto, rendu public final
+0:26 ─ 4. Envoi client (5s)   Lien public devis + email auto fournisseur
+0:31 ─ 5. Fournisseurs (6s)   Facture multi-devises + échéances
+0:37 ─ 6. FX & Couvertures (7s) ★ DIFFÉRENCIATEUR ★ Optimiseur multi-monnaies
+0:44 ─ 7. Facturation (5s)    Acomptes, soldes, statuts
+0:49 ─ 8. Pilotage admin (7s) Trésorerie réelle + acomptes + perfs agents
+0:56 ─ Outro (4s)             Logo + tagline + flowtravel.fr
 ```
 
-**Données utilisées** : un faux dossier La Voyagerie (Tanzanie en famille, déjà présent dans les données QA) — pas de donnée client réelle.
+## Méthode de capture (auto)
 
-**Livrable** : `/mnt/documents/devis-lavoyagerie-v1.pdf` + `presentation-artifact` à télécharger.
+1. Connexion preview avec un compte démo existant (`/demo` ou compte de test)
+2. Navigation sur chaque route, viewport 1920×1080
+3. `browser--screenshot` pour chaque écran clé (≈ 12 captures, certains modules nécessitent 2 vues)
+4. Stockage dans `remotion/public/screens/`
+5. Si une donnée affichée est moche/vide, je fais une mini-injection de données démo cohérentes avant capture
 
-**Outil** : Python (reportlab) côté sandbox — pas dans l'app. Polices Google Fonts téléchargées (Cormorant Garamond pour les titres, Inter pour le corps, small caps via tracking serré).
+**Routes à capturer** : `/demandes`, `/demandes/$id`, `/cotations`, `/cotations/$id`, `/p/$token` (rendu public devis = wow itinéraire), `/dossiers/$id`, `/factures/$id`, `/couvertures-fx`, `/pilotage`.
 
-➡️ **Stop ici, vous validez.** Si la direction ne plaît pas, on itère sur la maquette avant tout code. Si elle plaît, on passe à l'étape 2.
+## Charte respectée
 
----
+J'extrais avant tout shot :
+- couleurs CSS (`--background`, `--primary`, `--accent`…) dans `src/styles.css`
+- police de l'app (à vérifier dans le tag `<html>` / styles)
+- radius et ombres
+- logo `src/assets/logo-arrow.svg`
 
-## Étape 2 — Implémentation dans FlowTravel (après validation)
+Habillage vidéo (titres de modules, transitions, fond) utilisera **exactement** ces tokens. Plus de couleurs inventées.
 
-### 2.1 Modèle de données — extension agence + thèmes
+## Réalisation Remotion
 
-Migration Supabase : enrichir `agency_settings` pour porter une charte complète.
+**Cadre vidéo type pour chaque plan** :
+- Fond : couleur de fond de l'app (pas de gradient flashy)
+- Mockup : screenshot dans un cadre navigateur sobre (barre URL avec `flowtravel.fr/...`)
+- Label module en haut à gauche (typo de l'app, couleur primary)
+- Highlight animé (cercle / underline SVG) sur l'élément clé : bouton "Transformer en cotation", badge statut, montant marge, ligne couverture EUR/USD…
+- Léger Ken Burns (scale 1 → 1.04 sur la durée du plan) pour donner vie
 
-```text
-agency_settings (colonnes ajoutées)
-├── brand_baseline           text   "Maison de voyages sur-mesure"
-├── brand_signature_quote    text   "L'art de voyager, discrètement."
-├── logo_dark_url            text   logo fond sombre
-├── logo_symbol_url          text   compas-V seul
-├── favicon_url              text
-├── color_primary            text   #0B0B0B
-├── color_signature          text   #A14E2C  (accent ocre)
-├── color_ornament           text   #C9A96E  (doré)
-├── color_background         text   #F5F1E8  (crème)
-├── color_muted              text   #EAE3D6  (beige)
-├── color_secondary          text   #6A6F4C  (vert olive)
-├── font_heading             text   "Cormorant Garamond"
-├── font_body                text   "Inter"
-├── pdf_footer_text          text   mentions légales pied PDF
-├── cgv_text                 text   CGV libres (markdown)
-└── public_subdomain_slug    text   ex. "lavoyagerie" (pour lien public)
-```
+**Plan itinéraire (10s, le wow)** :
+- 0-3s : vue éditeur côté agent (drag d'image dans un jour)
+- 3-7s : transition vers le rendu public `/p/$token`
+- 7-10s : scroll vertical lent à travers les jours du voyage
+→ l'agent voit ce que reçoit son client. C'est ça qui déclenche l'achat.
 
-Nouvelle table pour exposer publiquement un devis :
+**Voix off** : 9 segments ElevenLabs (même voix française que V1), pré-encodés AAC. Script réécrit pour correspondre exactement à ce qui est à l'écran ("Ici, l'agent transforme la demande en cotation en un clic. Le prix de vente, la marge, les options s'ajustent en temps réel…").
 
-```text
-quote_public_links
-├── id
-├── cotation_id
-├── token            text unique  (URL impossible à deviner)
-├── expires_at       timestamptz
-├── viewed_at        timestamptz nullable
-├── accepted_at      timestamptz nullable
-└── created_at
-```
+## Plan technique
 
-RLS : le propriétaire de la cotation gère ses liens. Vue publique : pas de RLS, accès via Edge Function qui résout `token → cotation` + applique le branding agence.
+1. Lire `src/styles.css`, `agency-theme.ts`, identifier la police utilisée
+2. Lancer le browser, login démo, naviguer route par route
+3. Préparer un dossier de démo réaliste si les données sont vides
+4. Capturer les 12 screenshots → `remotion/public/screens/`
+5. Écrire le nouveau script voix off (9 segments, ~60s)
+6. Générer les MP3 ElevenLabs → pré-encoder AAC
+7. Refondre `MainVideo.tsx` : 9 scènes, 1800 frames @30fps
+8. Créer un composant `<AppShot>` réutilisable (cadre navigateur + Ken Burns + label + highlight)
+9. Créer 9 composants Scene*.tsx
+10. Mettre à jour `Root.tsx` pour la nouvelle durée
+11. Render des 2 formats → `flowtravel-16x9-v2.mp4` et `flowtravel-1x1-v2.mp4` dans `/mnt/documents/`
 
-### 2.2 Génération PDF côté serveur
-
-Lib choisie : **pdf-lib** (compatible Cloudflare Workers, pas reportlab).
-Polices embarquées dans le bundle : Cormorant Garamond + Inter (fichiers .ttf dans `public/fonts/`).
-
-Server function `generateQuotePdf({ cotationId })` :
-1. Charge cotation + lignes + agence + client
-2. Compose PDF en respectant le template validé à l'étape 1
-3. Retourne un blob téléchargeable
-
-Bouton « Télécharger le devis » sur la page cotation.
-
-### 2.3 Page « Identité & Marque » dans Paramètres agence
-
-Refonte de `parametres-agence.tsx` avec un nouvel onglet **Identité visuelle** :
-- Upload des 4 logos (clair, sombre, symbole, favicon)
-- Sélecteur des 6 couleurs (avec aperçu live respectant la règle "ocre = accent")
-- Choix de typo dans une liste curatée (3 paires serif/sans-serif)
-- Édition du baseline, citation, CGV, footer PDF
-- Aperçu en direct d'une page de devis miniature
-
-### 2.4 Portail client public (lien partageable)
-
-Route `src/routes/p.$token.tsx` (publique, hors RequireAuth) :
-- Layout entièrement à la marque agence (palette, typo, logo)
-- Affichage du devis : couverture, itinéraire, inclusions, budget
-- Bouton "Télécharger le PDF"
-- Bouton "J'accepte ce devis" → marque `accepted_at`
-- Pas de mention FlowTravel (sauf petit "Powered by" optionnel en pied)
-
-### 2.5 Application du thème agence à l'app interne
-
-`AgencyThemeProvider` lit la charte de l'utilisateur connecté et injecte les variables CSS dans le `:root`. L'app interne FlowTravel garde sa structure mais reflète discrètement la marque (header, accents). On ne refait pas l'UI complète — on substitue les tokens couleur/typo via CSS variables sur `src/styles.css`.
-
----
-
-## Détails techniques
-
-- **Polices** : Cormorant Garamond + Inter via `@import` Google Fonts dans `src/styles.css`, et fichiers .ttf dans `public/fonts/` pour pdf-lib (bundlé au build).
-- **Bucket logos** : déjà existant (`agency-logos`, public). On l'utilise tel quel.
-- **PDF côté Worker** : pdf-lib fonctionne en Cloudflare Worker (pas de native). Pas reportlab (Python, hors runtime).
-- **RLS** : tout reste sur `auth.uid() = user_id` sauf la lecture publique d'un devis via token (Edge Function avec service role limitée à `SELECT cotation WHERE id = quote_public_links.cotation_id`).
-- **Sécurité du lien public** : token 32 octets random + `expires_at` obligatoire (90 j par défaut) + audit log à chaque vue.
-- **Pas d'enable Cloud** déjà fait : on a tout ce qu'il faut.
-
----
-
-## Hors périmètre de cet essai
-
-Pour rester focus, ces sujets sont reportés :
-- Itinéraire jour-par-jour structuré (table dédiée) → pour l'essai on génère depuis champs existants
-- Voyageurs (PAX) avec passeports → existait déjà dans la réflexion stratégique, pas ici
-- Multilingue FR/EN → on reste FR
-- AI copilot pour rédiger l'introduction du devis → plus tard
-- Messagerie client sur le devis → plus tard
-- Sous-domaine personnalisé (`devis.lavoyagerie.fr`) → URL `/p/<token>` du domaine FlowTravel suffit pour valider
-
----
-
-## Ce que vous voyez à la fin de chaque étape
-
-| Étape | Livrable | Validation |
-|---|---|---|
-| 1 | PDF maquette à télécharger | Vous dites "go" ou "on itère" |
-| 2.1–2.2 | Bouton "Télécharger le devis" dans la cotation, donne le PDF | Vous testez sur le scénario QA |
-| 2.3 | Onglet Identité visuelle dans Paramètres → vous saisissez la charte La Voyagerie | Vous voyez le PDF se mettre à jour |
-| 2.4 | Lien public partageable, page web à la marque | Vous l'ouvrez en navigation privée |
-| 2.5 | App interne aux accents La Voyagerie | Vous naviguez dans l'app |
-
-Je commence par l'étape 1 dès que vous approuvez ce plan : juste la maquette PDF, rien d'autre. Vous jugez sur pièce avant qu'on touche au code.
+## Livrables
+- `flowtravel-16x9-v2.mp4` — landing/YouTube
+- `flowtravel-1x1-v2.mp4` — LinkedIn/mobile
+- V1 conservées pour comparaison
