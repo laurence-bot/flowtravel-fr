@@ -15,7 +15,7 @@ export async function logError(params: {
       const { data } = await supabase.from("user_profiles").select("agence_id").eq("user_id", user.id).maybeSingle();
       agence_id = data?.agence_id || null;
     }
-    await supabase.from("error_logs").insert({
+    await (supabase.from("error_logs") as any).insert({
       user_id: user?.id || null,
       agence_id,
       level: params.level || "error",
