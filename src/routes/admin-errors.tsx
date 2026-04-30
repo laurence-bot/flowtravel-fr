@@ -227,9 +227,14 @@ function AdminErrorsPage() {
                           </div>
                         )}
                       </div>
-                      <Button size="sm" variant={e.resolved ? "ghost" : "outline"} onClick={() => toggleResolved(e.id, e.resolved)}>
-                        {e.resolved ? "Résolue" : "Marquer résolue"}
-                      </Button>
+                      <div className="flex flex-col gap-1 items-end">
+                        <Button size="sm" variant={e.resolved ? "ghost" : "outline"} onClick={() => toggleResolved(e.id, e.resolved)}>
+                          {e.resolved ? "Résolue" : "Marquer résolue"}
+                        </Button>
+                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => deleteOne(e.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 );
