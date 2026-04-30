@@ -50,19 +50,19 @@ export function Logo({
         <img
           src={agencyLogo}
           alt={agencyName || "FlowTravel"}
-          width={36}
-          height={36}
-          className="h-9 w-9 object-contain"
+          width={44}
+          height={44}
+          className="h-11 w-11 object-contain"
           loading="lazy"
         />
       ) : (
-        <ArrowMark className="h-7 w-7 text-[color:var(--gold)]" />
+        <ArrowMark className="h-10 w-10 text-[color:var(--gold)]" />
       )}
       {showText && (
         <div className="leading-tight">
           <div
             className={cn(
-              "font-display text-[19px] tracking-[0.01em]",
+              "font-display text-[24px] tracking-[0.01em] leading-none",
               textColor,
             )}
           >
@@ -70,7 +70,7 @@ export function Logo({
           </div>
           <div
             className={cn(
-              "text-[9px] uppercase tracking-[0.32em] mt-0.5",
+              "text-[10px] uppercase tracking-[0.32em] mt-1.5",
               taglineColor,
             )}
           >
