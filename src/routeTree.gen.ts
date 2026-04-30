@@ -48,6 +48,7 @@ import { Route as CotationsIdRouteImport } from './routes/cotations.$id'
 import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
 import { Route as DemoVTokenRouteImport } from './routes/demo.v.$token'
 import { Route as DemoRdvTokenRouteImport } from './routes/demo.rdv.$token'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 
 const UtilisateursRoute = UtilisateursRouteImport.update({
   id: '/utilisateurs',
@@ -244,6 +245,12 @@ const DemoRdvTokenRoute = DemoRdvTokenRouteImport.update({
   path: '/rdv/$token',
   getParentRoute: () => DemoRoute,
 } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -285,6 +292,7 @@ export interface FileRoutesByFullPath {
   '/p/$token': typeof PTokenRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -326,6 +334,7 @@ export interface FileRoutesByTo {
   '/p/$token': typeof PTokenRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -368,6 +377,7 @@ export interface FileRoutesById {
   '/p/$token': typeof PTokenRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -411,6 +421,7 @@ export interface FileRouteTypes {
     | '/p/$token'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
+    | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -452,6 +463,7 @@ export interface FileRouteTypes {
     | '/p/$token'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
+    | '/lovable/email/queue/process'
   id:
     | '__root__'
     | '/'
@@ -493,6 +505,7 @@ export interface FileRouteTypes {
     | '/p/$token'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
+    | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -529,6 +542,7 @@ export interface RootRouteChildren {
   UtilisateursRoute: typeof UtilisateursRoute
   FacturesIdRoute: typeof FacturesIdRoute
   PTokenRoute: typeof PTokenRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -806,6 +820,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoRdvTokenRouteImport
       parentRoute: typeof DemoRoute
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -903,6 +924,7 @@ const rootRouteChildren: RootRouteChildren = {
   UtilisateursRoute: UtilisateursRoute,
   FacturesIdRoute: FacturesIdRoute,
   PTokenRoute: PTokenRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
