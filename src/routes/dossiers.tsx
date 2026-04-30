@@ -47,12 +47,15 @@ const dossierSchema = z.object({
 function DossiersPage() {
   const { data: dossiers, loading, refetch } = useTable<Dossier>("dossiers");
   const { data: contacts } = useTable<Contact>("contacts");
+  const { agents } = useAgents();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [filterAgent, setFilterAgent] = useState<string>("all");
   const [form, setForm] = useState({
     titre: "",
     client_id: "",
+    agent_id: "",
     statut: "brouillon" as Dossier["statut"],
     prix_vente: "",
     cout_total: "",
