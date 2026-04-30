@@ -182,23 +182,19 @@ function AdminAgencesPage() {
   const validate = async () => {
     if (!selected || !user) return;
     setActing(true);
-    const { error } = await supabase
-      .from("agences")
-      .update({
-        statut: "validee",
-        validee_at: new Date().toISOString(),
-        validee_par: user.id,
-        motif_refus: null,
-      })
-      .eq("id", selected.id);
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success(`Agence "${selected.nom_commercial}" validée`);
+    try {
+      const res = await approveAgence({ data: { agenceId: selected.id } });
+      toast.success(
+        `Agence "${selected.nom_commercial}" validée. Email d'invitation envoyé à ${res.email}`,
+      );
       setSelected(null);
       refresh();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Erreur lors de la validation";
+      toast.error(msg);
+    } finally {
+      setActing(false);
     }
-    setActing(false);
   };
 
   const refuse = async () => {
