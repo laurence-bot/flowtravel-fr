@@ -80,6 +80,7 @@ function DossiersPage() {
     setSubmitting(true);
     const { data: inserted, error } = await supabase.from("dossiers").insert({
       user_id: user.id,
+      agent_id: form.agent_id || user.id,
       titre: parsed.data.titre,
       client_id: parsed.data.client_id || null,
       statut: parsed.data.statut,
@@ -99,7 +100,7 @@ function DossiersPage() {
     });
     toast.success("Dossier créé");
     setOpen(false);
-    setForm({ titre: "", client_id: "", statut: "brouillon", prix_vente: "", cout_total: "", taux_tva_marge: "20" });
+    setForm({ titre: "", client_id: "", agent_id: "", statut: "brouillon", prix_vente: "", cout_total: "", taux_tva_marge: "20" });
     refetch();
   };
 
