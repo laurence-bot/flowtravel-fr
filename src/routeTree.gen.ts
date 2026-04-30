@@ -33,7 +33,9 @@ import { Route as ComptesRouteImport } from './routes/comptes'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as AdminMessagesRouteImport } from './routes/admin-messages'
 import { Route as AdminDemosRouteImport } from './routes/admin-demos'
+import { Route as AdminDashboardRouteImport } from './routes/admin-dashboard'
 import { Route as AdminAgencesRouteImport } from './routes/admin-agences'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PTokenRouteImport } from './routes/p.$token'
@@ -165,9 +167,19 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminMessagesRoute = AdminMessagesRouteImport.update({
+  id: '/admin-messages',
+  path: '/admin-messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminDemosRoute = AdminDemosRouteImport.update({
   id: '/admin-demos',
   path: '/admin-demos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/admin-dashboard',
+  path: '/admin-dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAgencesRoute = AdminAgencesRouteImport.update({
@@ -224,7 +236,9 @@ const DemoRdvTokenRoute = DemoRdvTokenRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin-agences': typeof AdminAgencesRoute
+  '/admin-dashboard': typeof AdminDashboardRoute
   '/admin-demos': typeof AdminDemosRoute
+  '/admin-messages': typeof AdminMessagesRoute
   '/app': typeof AppRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
@@ -261,7 +275,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin-agences': typeof AdminAgencesRoute
+  '/admin-dashboard': typeof AdminDashboardRoute
   '/admin-demos': typeof AdminDemosRoute
+  '/admin-messages': typeof AdminMessagesRoute
   '/app': typeof AppRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
@@ -299,7 +315,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin-agences': typeof AdminAgencesRoute
+  '/admin-dashboard': typeof AdminDashboardRoute
   '/admin-demos': typeof AdminDemosRoute
+  '/admin-messages': typeof AdminMessagesRoute
   '/app': typeof AppRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
@@ -338,7 +356,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin-agences'
+    | '/admin-dashboard'
     | '/admin-demos'
+    | '/admin-messages'
     | '/app'
     | '/audit'
     | '/auth'
@@ -375,7 +395,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin-agences'
+    | '/admin-dashboard'
     | '/admin-demos'
+    | '/admin-messages'
     | '/app'
     | '/audit'
     | '/auth'
@@ -412,7 +434,9 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin-agences'
+    | '/admin-dashboard'
     | '/admin-demos'
+    | '/admin-messages'
     | '/app'
     | '/audit'
     | '/auth'
@@ -450,7 +474,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminAgencesRoute: typeof AdminAgencesRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
   AdminDemosRoute: typeof AdminDemosRoute
+  AdminMessagesRoute: typeof AdminMessagesRoute
   AppRoute: typeof AppRoute
   AuditRoute: typeof AuditRoute
   AuthRoute: typeof AuthRoute
@@ -649,11 +675,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-messages': {
+      id: '/admin-messages'
+      path: '/admin-messages'
+      fullPath: '/admin-messages'
+      preLoaderRoute: typeof AdminMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin-demos': {
       id: '/admin-demos'
       path: '/admin-demos'
       fullPath: '/admin-demos'
       preLoaderRoute: typeof AdminDemosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-dashboard': {
+      id: '/admin-dashboard'
+      path: '/admin-dashboard'
+      fullPath: '/admin-dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin-agences': {
@@ -792,7 +832,9 @@ const DossiersRouteWithChildren = DossiersRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminAgencesRoute: AdminAgencesRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
   AdminDemosRoute: AdminDemosRoute,
+  AdminMessagesRoute: AdminMessagesRoute,
   AppRoute: AppRoute,
   AuditRoute: AuditRoute,
   AuthRoute: AuthRoute,
