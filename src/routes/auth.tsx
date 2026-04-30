@@ -39,20 +39,14 @@ function AuthPage() {
       return;
     }
     setSubmitting(true);
-    const fn = tab === "signin" ? signIn : signUp;
-    const { error } = await fn(parsed.data.email, parsed.data.password);
+    const { error } = await signIn(parsed.data.email, parsed.data.password);
     setSubmitting(false);
     if (error) {
       toast.error(error.message);
       return;
     }
-    if (tab === "signup") {
-      toast.success("Compte créé. Vous pouvez vous connecter.");
-      setTab("signin");
-    } else {
-      toast.success("Bienvenue sur FlowTravel");
-      navigate({ to: "/app" });
-    }
+    toast.success("Bienvenue sur FlowTravel");
+    navigate({ to: "/app" });
   };
 
   return (
@@ -67,55 +61,46 @@ function AuthPage() {
           </p>
         </div>
         <Card className="p-7 shadow-sm border-border/70">
-          <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="signin">Connexion</TabsTrigger>
-              <TabsTrigger value="signup">Créer un compte</TabsTrigger>
-            </TabsList>
-            <TabsContent value="signin" className="mt-6">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Adresse email</Label>
-                  <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Mot de passe</Label>
-                  <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-                </div>
-                <Button type="submit" className="w-full" disabled={submitting}>
-                  {submitting ? "Connexion…" : "Se connecter"}
-                </Button>
-                <div className="text-center">
-                  <Link
-                    to="/mot-de-passe-oublie"
-                    className="text-xs text-muted-foreground hover:text-[color:var(--gold)] transition-colors"
-                  >
-                    Mot de passe oublié ?
-                  </Link>
-                </div>
-              </form>
-            </TabsContent>
-            <TabsContent value="signup" className="mt-6">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email2">Adresse email</Label>
-                  <Input id="email2" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password2">Mot de passe</Label>
-                  <Input id="password2" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
-                  <p className="text-xs text-muted-foreground">6 caractères minimum.</p>
-                </div>
-                <Button type="submit" className="w-full" disabled={submitting}>
-                  {submitting ? "Création…" : "Créer le compte"}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+          <h2 className="text-lg font-medium mb-1">Connexion</h2>
+          <p className="text-xs text-muted-foreground mb-6">
+            Espace réservé aux agences immatriculées ATOUT FRANCE.
+          </p>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Adresse email</Label>
+              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Mot de passe</Label>
+              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+            </div>
+            <Button type="submit" className="w-full" disabled={submitting}>
+              {submitting ? "Connexion…" : "Se connecter"}
+            </Button>
+            <div className="text-center">
+              <Link
+                to="/mot-de-passe-oublie"
+                className="text-xs text-muted-foreground hover:text-[color:var(--gold)] transition-colors"
+              >
+                Mot de passe oublié ?
+              </Link>
+            </div>
+          </form>
         </Card>
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          Outil interne — chaque utilisateur ne voit que ses propres données.
-        </p>
+        <div className="text-center mt-6 space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Vous gérez une agence de voyages ?
+          </p>
+          <Link
+            to="/inscription-agence"
+            className="inline-block text-sm font-medium text-[color:var(--gold)] hover:underline"
+          >
+            Créer un compte agence →
+          </Link>
+          <p className="text-[11px] text-muted-foreground/80 pt-2">
+            Pour rejoindre une agence existante, demandez à votre administrateur de vous inviter.
+          </p>
+        </div>
       </div>
     </div>
   );
