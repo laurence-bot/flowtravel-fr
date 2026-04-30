@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Logo } from "@/components/logo";
-import { Check, Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
 
 export const Route = createFileRoute("/tarifs")({
   component: TarifsPage,
