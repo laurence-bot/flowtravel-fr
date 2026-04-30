@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const compId = process.argv[2] || "main-landscape";
-const out = process.argv[3] || `/mnt/documents/flowtravel-${compId}.mp4`;
+const out = process.argv[3] || `/tmp/${compId}-video.mp4`;
 
 console.log(`Bundling for ${compId}...`);
 const bundled = await bundle({
@@ -25,7 +25,7 @@ const composition = await selectComposition({
   puppeteerInstance: browser,
 });
 
-console.log(`Rendering ${compId} -> ${out}`);
+console.log(`Rendering ${compId} -> ${out} (muted, video-only)`);
 await renderMedia({
   composition,
   serveUrl: bundled,
@@ -33,8 +33,7 @@ await renderMedia({
   outputLocation: out,
   puppeteerInstance: browser,
   concurrency: 1,
-  audioCodec: "aac",
-  enforceAudioTrack: true,
+  muted: true,
 });
 
 await browser.close({ silent: false });
