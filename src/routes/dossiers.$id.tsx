@@ -45,6 +45,28 @@ function DossierDetail() {
   const { data: contacts } = useTable<Contact>("contacts");
   const { data: paiements } = useTable<Paiement>("paiements");
   const { data: factures, refetch: refetchFactures } = useTable<Facture>("factures_fournisseurs");
+  const { agents } = useAgents();
+
+  const reassignAgent = async (newAgentId: string) => {
+    if (!dossier) return;
+    const oldAgentId = dossier.agent_id;
+    if (oldAgentId === newAgentId) return;
+    const { error } = await supabase.from("dossiers").update({ agent_id: newAgentId }).eq("id", dossier.id);
+    if (error) return toast.error(error.message);
+    const oldName = agentLabel(agents.find((a) => a.user_id === oldAgentId));
+    const newName = agentLabel(agents.find((a) => a.user_id === newAgentId));
+    setDossier({ ...dossier, agent_id: newAgentId });
+    await logAudit({
+      userId: user?.id,
+      entity: "dossier",
+      action: "update",
+      entityId: dossier.id,
+      description: `Agent responsable : ${oldName} → ${newName}`,
+      oldValue: { agent_id: oldAgentId },
+      newValue: { agent_id: newAgentId },
+    });
+    toast.success(`Dossier réassigné à ${newName}`);
+  };
 
   useEffect(() => {
     supabase.from("dossiers").select("*").eq("id", id).maybeSingle().then(({ data }) => {
