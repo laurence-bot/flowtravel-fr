@@ -174,8 +174,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen w-full bg-background">
       {/* Sidebar desktop */}
       <aside className="hidden md:flex w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-        <div className="px-6 py-7 border-b border-sidebar-border">
-          <Logo variant="light" />
+        <div className={cn(
+          "px-6 py-7 border-b border-sidebar-border",
+          hasAgencyLogo && "bg-[oklch(0.97_0.012_80)] text-foreground"
+        )}>
+          <Logo variant={hasAgencyLogo ? "dark" : "light"} />
         </div>
         <NavList />
         <div className="px-4 py-5 border-t border-sidebar-border space-y-2">
