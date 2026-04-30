@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useTable, type Contact, type Dossier, type Paiement, type Facture } from "@/hooks/use-data";
+import { useAgents, agentLabel } from "@/hooks/use-agents";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { formatEUR, formatPercent, formatDate } from "@/lib/format";
@@ -22,7 +23,7 @@ import { formatMoney } from "@/lib/fx";
 import { computeDossierFinance, paiementEUR, factureEUR } from "@/lib/finance";
 import { FxFieldGroup, fxValueToDb, emptyFxValue, type FxFieldValue } from "@/components/fx-field-group";
 import { StatutBadge } from "@/components/statut-badge";
-import { ArrowLeft, Trash2, User, Receipt, ArrowDownLeft, ArrowUpRight, Plus } from "lucide-react";
+import { ArrowLeft, Trash2, User, Receipt, ArrowDownLeft, ArrowUpRight, Plus, Users as UsersIcon } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 import { DossierTasksBlock } from "@/components/dossier-tasks-block";
@@ -44,6 +45,28 @@ function DossierDetail() {
   const { data: contacts } = useTable<Contact>("contacts");
   const { data: paiements } = useTable<Paiement>("paiements");
   const { data: factures, refetch: refetchFactures } = useTable<Facture>("factures_fournisseurs");
+  const { agents } = useAgents();
+
+  const reassignAgent = async (newAgentId: string) => {
+    if (!dossier) return;
+    const oldAgentId = dossier.agent_id;
+    if (oldAgentId === newAgentId) return;
+    const { error } = await supabase.from("dossiers").update({ agent_id: newAgentId }).eq("id", dossier.id);
+    if (error) return toast.error(error.message);
+    const oldName = agentLabel(agents.find((a) => a.user_id === oldAgentId));
+    const newName = agentLabel(agents.find((a) => a.user_id === newAgentId));
+    setDossier({ ...dossier, agent_id: newAgentId });
+    await logAudit({
+      userId: user?.id,
+      entity: "dossier",
+      action: "update",
+      entityId: dossier.id,
+      description: `Agent responsable : ${oldName} → ${newName}`,
+      oldValue: { agent_id: oldAgentId },
+      newValue: { agent_id: newAgentId },
+    });
+    toast.success(`Dossier réassigné à ${newName}`);
+  };
 
   useEffect(() => {
     supabase.from("dossiers").select("*").eq("id", id).maybeSingle().then(({ data }) => {
@@ -106,6 +129,20 @@ function DossierDetail() {
             <User className="h-3.5 w-3.5" />
             {client?.nom ?? "Aucun client associé"}
           </p>
+          <div className="mt-3 inline-flex items-center gap-2">
+            <UsersIcon className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Agent :</span>
+            <Select value={dossier.agent_id ?? ""} onValueChange={reassignAgent}>
+              <SelectTrigger className="h-7 w-[200px] text-xs"><SelectValue placeholder="Non assigné" /></SelectTrigger>
+              <SelectContent>
+                {agents.map((a) => (
+                  <SelectItem key={a.user_id} value={a.user_id}>
+                    {agentLabel(a)}{a.user_id === user?.id ? " (moi)" : ""}{!a.actif ? " · inactif" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <Button variant="outline" size="sm" onClick={supprimer}>
           <Trash2 className="h-4 w-4 mr-2" />

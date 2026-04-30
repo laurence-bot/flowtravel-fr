@@ -468,6 +468,7 @@ export type Database = {
       }
       cotations: {
         Row: {
+          agent_id: string | null
           client_id: string | null
           created_at: string
           date_depart: string | null
@@ -500,6 +501,7 @@ export type Database = {
           version_number: number
         }
         Insert: {
+          agent_id?: string | null
           client_id?: string | null
           created_at?: string
           date_depart?: string | null
@@ -532,6 +534,7 @@ export type Database = {
           version_number?: number
         }
         Update: {
+          agent_id?: string | null
           client_id?: string | null
           created_at?: string
           date_depart?: string | null
@@ -567,6 +570,7 @@ export type Database = {
       }
       demandes: {
         Row: {
+          agent_id: string | null
           budget: number | null
           canal: Database["public"]["Enums"]["demande_canal"]
           client_id: string | null
@@ -589,6 +593,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agent_id?: string | null
           budget?: number | null
           canal?: Database["public"]["Enums"]["demande_canal"]
           client_id?: string | null
@@ -611,6 +616,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agent_id?: string | null
           budget?: number | null
           canal?: Database["public"]["Enums"]["demande_canal"]
           client_id?: string | null
@@ -896,6 +902,7 @@ export type Database = {
       }
       dossiers: {
         Row: {
+          agent_id: string | null
           client_id: string | null
           cout_total: number
           created_at: string
@@ -909,6 +916,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agent_id?: string | null
           client_id?: string | null
           cout_total?: number
           created_at?: string
@@ -922,6 +930,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agent_id?: string | null
           client_id?: string | null
           cout_total?: number
           created_at?: string

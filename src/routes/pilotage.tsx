@@ -13,6 +13,7 @@ import {
   type BankTransaction,
   type Contact,
 } from "@/hooks/use-data";
+import { useAgents, agentLabel } from "@/hooks/use-agents";
 import type { FxReservation } from "@/lib/fx";
 import { formatEUR, formatPercent, formatDate } from "@/lib/format";
 import {
@@ -39,6 +40,7 @@ import {
   Receipt,
   LineChart,
   Shield,
+  Users,
 } from "lucide-react";
 
 export const Route = createFileRoute("/pilotage")({
@@ -93,6 +95,7 @@ function Pilotage() {
   const { data: contacts } = useTable<Contact>("contacts");
   const { data: echeances } = useTable<FactureEcheance>("facture_echeances");
   const { data: reservations } = useTable<FxReservation>("fx_coverage_reservations");
+  const { agents } = useAgents();
 
   const f = computeGlobalFinance(dossiers, paiements, factures);
   const fxPnl = computeFxPnl({ echeances, paiements, reservations });
@@ -346,6 +349,81 @@ function Pilotage() {
           </Card>
         </div>
       </section>
+
+      {/* CA PAR AGENT */}
+      {(() => {
+        const byAgent = new Map<string, { ca: number; marge: number; count: number }>();
+        for (const d of dossiers) {
+          if (d.statut === "brouillon") continue;
+          const key = d.agent_id ?? "—";
+          const cur = byAgent.get(key) ?? { ca: 0, marge: 0, count: 0 };
+          cur.ca += Number(d.prix_vente) || 0;
+          cur.marge += (Number(d.prix_vente) || 0) - (Number(d.cout_total) || 0);
+          cur.count += 1;
+          byAgent.set(key, cur);
+        }
+        const rows = Array.from(byAgent.entries())
+          .map(([agentId, v]) => {
+            const a = agents.find((x) => x.user_id === agentId);
+            return { agentId, name: a ? agentLabel(a) : "Non assigné", ...v };
+          })
+          .sort((a, b) => b.ca - a.ca);
+        const totalCA = rows.reduce((s, r) => s + r.ca, 0);
+        if (rows.length === 0) return null;
+        return (
+          <section>
+            <h2 className="font-display text-xl mb-4 flex items-center gap-2">
+              <Users className="h-5 w-5 text-muted-foreground" />
+              Chiffre d'affaires par agent
+              <Badge variant="outline" className="text-[10px] ml-2">{rows.length}</Badge>
+            </h2>
+            <Card className="border-border/60 overflow-hidden">
+              <div className="divide-y divide-border/60">
+                {rows.map((r) => {
+                  const pct = totalCA > 0 ? (r.ca / totalCA) * 100 : 0;
+                  const margePct = r.ca > 0 ? (r.marge / r.ca) * 100 : 0;
+                  return (
+                    <div key={r.agentId} className="px-5 py-4">
+                      <div className="flex items-center justify-between gap-4 mb-2">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="font-medium text-sm truncate">{r.name}</div>
+                          <Badge variant="outline" className="text-[10px]">{r.count} dossier{r.count > 1 ? "s" : ""}</Badge>
+                        </div>
+                        <div className="flex items-center gap-6 shrink-0 tabular text-sm">
+                          <div className="text-right">
+                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">CA</div>
+                            <div className="font-semibold">{formatEUR(r.ca)}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Marge brute</div>
+                            <div className={`font-semibold ${r.marge < 0 ? "text-destructive" : "text-[color:var(--margin)]"}`}>
+                              {formatEUR(r.marge)}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">{formatPercent(margePct)}</div>
+                          </div>
+                          <div className="text-right w-14">
+                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Part</div>
+                            <div className="font-semibold">{pct.toFixed(0)}%</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+                        <div
+                          className="h-full bg-[color:var(--gold)]"
+                          style={{ width: `${Math.min(100, pct)}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+            <p className="text-[11px] text-muted-foreground mt-2">
+              CA des dossiers confirmés et clôturés, regroupés par agent responsable.
+            </p>
+          </section>
+        );
+      })()}
 
       {/* TRÉSORERIE */}
       <section>
