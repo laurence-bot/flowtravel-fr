@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UtilisateursRouteImport } from './routes/utilisateurs'
+import { Route as TarifsRouteImport } from './routes/tarifs'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
 import { Route as RapprochementRouteImport } from './routes/rapprochement'
 import { Route as QaRouteImport } from './routes/qa'
@@ -22,6 +23,7 @@ import { Route as ImportPdfRouteImport } from './routes/import-pdf'
 import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
 import { Route as ExportRouteImport } from './routes/export'
 import { Route as DossiersRouteImport } from './routes/dossiers'
+import { Route as DemoRouteImport } from './routes/demo'
 import { Route as DemandesRouteImport } from './routes/demandes'
 import { Route as CouverturesFxRouteImport } from './routes/couvertures-fx'
 import { Route as CotationsRouteImport } from './routes/cotations'
@@ -40,6 +42,11 @@ import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
 const UtilisateursRoute = UtilisateursRouteImport.update({
   id: '/utilisateurs',
   path: '/utilisateurs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TarifsRoute = TarifsRouteImport.update({
+  id: '/tarifs',
+  path: '/tarifs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
@@ -100,6 +107,11 @@ const ExportRoute = ExportRouteImport.update({
 const DossiersRoute = DossiersRouteImport.update({
   id: '/dossiers',
   path: '/dossiers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemandesRoute = DemandesRouteImport.update({
@@ -182,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/cotations': typeof CotationsRouteWithChildren
   '/couvertures-fx': typeof CouverturesFxRoute
   '/demandes': typeof DemandesRouteWithChildren
+  '/demo': typeof DemoRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -194,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
@@ -211,6 +225,7 @@ export interface FileRoutesByTo {
   '/cotations': typeof CotationsRouteWithChildren
   '/couvertures-fx': typeof CouverturesFxRoute
   '/demandes': typeof DemandesRouteWithChildren
+  '/demo': typeof DemoRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -223,6 +238,7 @@ export interface FileRoutesByTo {
   '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
@@ -241,6 +257,7 @@ export interface FileRoutesById {
   '/cotations': typeof CotationsRouteWithChildren
   '/couvertures-fx': typeof CouverturesFxRoute
   '/demandes': typeof DemandesRouteWithChildren
+  '/demo': typeof DemoRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -253,6 +270,7 @@ export interface FileRoutesById {
   '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
@@ -272,6 +290,7 @@ export interface FileRouteTypes {
     | '/cotations'
     | '/couvertures-fx'
     | '/demandes'
+    | '/demo'
     | '/dossiers'
     | '/export'
     | '/import-bancaire'
@@ -284,6 +303,7 @@ export interface FileRouteTypes {
     | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
+    | '/tarifs'
     | '/utilisateurs'
     | '/contacts/$id'
     | '/cotations/$id'
@@ -301,6 +321,7 @@ export interface FileRouteTypes {
     | '/cotations'
     | '/couvertures-fx'
     | '/demandes'
+    | '/demo'
     | '/dossiers'
     | '/export'
     | '/import-bancaire'
@@ -313,6 +334,7 @@ export interface FileRouteTypes {
     | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
+    | '/tarifs'
     | '/utilisateurs'
     | '/contacts/$id'
     | '/cotations/$id'
@@ -330,6 +352,7 @@ export interface FileRouteTypes {
     | '/cotations'
     | '/couvertures-fx'
     | '/demandes'
+    | '/demo'
     | '/dossiers'
     | '/export'
     | '/import-bancaire'
@@ -342,6 +365,7 @@ export interface FileRouteTypes {
     | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
+    | '/tarifs'
     | '/utilisateurs'
     | '/contacts/$id'
     | '/cotations/$id'
@@ -360,6 +384,7 @@ export interface RootRouteChildren {
   CotationsRoute: typeof CotationsRouteWithChildren
   CouverturesFxRoute: typeof CouverturesFxRoute
   DemandesRoute: typeof DemandesRouteWithChildren
+  DemoRoute: typeof DemoRoute
   DossiersRoute: typeof DossiersRouteWithChildren
   ExportRoute: typeof ExportRoute
   ImportBancaireRoute: typeof ImportBancaireRoute
@@ -372,6 +397,7 @@ export interface RootRouteChildren {
   QaRoute: typeof QaRoute
   RapprochementRoute: typeof RapprochementRoute
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
+  TarifsRoute: typeof TarifsRoute
   UtilisateursRoute: typeof UtilisateursRoute
   FacturesIdRoute: typeof FacturesIdRoute
   PTokenRoute: typeof PTokenRoute
@@ -384,6 +410,13 @@ declare module '@tanstack/react-router' {
       path: '/utilisateurs'
       fullPath: '/utilisateurs'
       preLoaderRoute: typeof UtilisateursRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tarifs': {
+      id: '/tarifs'
+      path: '/tarifs'
+      fullPath: '/tarifs'
+      preLoaderRoute: typeof TarifsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reinitialiser-mot-de-passe': {
@@ -468,6 +501,13 @@ declare module '@tanstack/react-router' {
       path: '/dossiers'
       fullPath: '/dossiers'
       preLoaderRoute: typeof DossiersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demandes': {
@@ -628,6 +668,7 @@ const rootRouteChildren: RootRouteChildren = {
   CotationsRoute: CotationsRouteWithChildren,
   CouverturesFxRoute: CouverturesFxRoute,
   DemandesRoute: DemandesRouteWithChildren,
+  DemoRoute: DemoRoute,
   DossiersRoute: DossiersRouteWithChildren,
   ExportRoute: ExportRoute,
   ImportBancaireRoute: ImportBancaireRoute,
@@ -640,6 +681,7 @@ const rootRouteChildren: RootRouteChildren = {
   QaRoute: QaRoute,
   RapprochementRoute: RapprochementRoute,
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
+  TarifsRoute: TarifsRoute,
   UtilisateursRoute: UtilisateursRoute,
   FacturesIdRoute: FacturesIdRoute,
   PTokenRoute: PTokenRoute,
