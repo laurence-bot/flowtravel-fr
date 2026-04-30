@@ -28,7 +28,7 @@ function AuthPage() {
   const [tab, setTab] = useState("signin");
 
   useEffect(() => {
-    if (!loading && session) navigate({ to: "/" });
+    if (!loading && session) navigate({ to: "/app" });
   }, [session, loading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,7 +51,7 @@ function AuthPage() {
       setTab("signin");
     } else {
       toast.success("Bienvenue sur FlowTravel");
-      navigate({ to: "/" });
+      navigate({ to: "/app" });
     }
   };
 
