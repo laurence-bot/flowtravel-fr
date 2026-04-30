@@ -47,7 +47,7 @@ const KEYWORDS = [
   "couverture de change agence",
   "FX agence de voyages",
   "FlowTravel",
-  "Maison logicielle du voyage",
+  "Travel Operating System",
   "logiciel devis voyage",
   "ERP agence de voyages",
   "back office tour-opérateur",
@@ -75,7 +75,7 @@ export const Route = createFileRoute("/")({
       { property: "og:image", content: OG_IMAGE },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
-      { property: "og:image:alt", content: "FlowTravel — Maison logicielle du voyage" },
+      { property: "og:image:alt", content: "FlowTravel — Travel Operating System" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: PAGE_TITLE },
       { name: "twitter:description", content: PAGE_DESC },
@@ -266,7 +266,7 @@ function HomePage() {
           <div className="mx-auto max-w-3xl text-center">
             <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
               <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
-              Maison logicielle du voyage
+              Travel Operating System
               <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
             </div>
             <h1 className="font-display text-4xl md:text-6xl lg:text-7xl mt-7 leading-[1.05] text-foreground">
@@ -679,7 +679,7 @@ function HomePage() {
           </div>
         </div>
         <div className="border-t border-border/50 py-6 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} FlowTravel · Maison logicielle du voyage · Tous droits réservés
+          © {new Date().getFullYear()} FlowTravel · Travel Operating System · Tous droits réservés
         </div>
       </footer>
     </div>
