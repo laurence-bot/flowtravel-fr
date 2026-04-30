@@ -244,11 +244,9 @@ function ParametresAgencePage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Sur sidebar sombre</p>
-                <div className="w-32 h-32 rounded-lg border border-border bg-sidebar flex items-center justify-center overflow-hidden">
-                  <div className="h-16 w-16 rounded-full bg-white shadow-sm ring-1 ring-black/5 flex items-center justify-center p-1.5">
-                    <img src={logoUrl} alt="Aperçu fond sombre" className="max-w-full max-h-full object-contain" />
-                  </div>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">En-tête sidebar</p>
+                <div className="w-32 h-32 rounded-lg border border-border bg-[oklch(0.97_0.012_80)] flex items-center justify-center overflow-hidden">
+                  <img src={logoUrl} alt="Aperçu sidebar" className="max-w-[75%] max-h-[75%] object-contain" />
                 </div>
               </div>
             </>
