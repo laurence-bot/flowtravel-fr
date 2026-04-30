@@ -13,6 +13,7 @@ import {
   type BankTransaction,
   type Contact,
 } from "@/hooks/use-data";
+import { useAgents, agentLabel } from "@/hooks/use-agents";
 import type { FxReservation } from "@/lib/fx";
 import { formatEUR, formatPercent, formatDate } from "@/lib/format";
 import {
