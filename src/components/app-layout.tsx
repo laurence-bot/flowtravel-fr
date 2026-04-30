@@ -9,12 +9,24 @@ import { canAccessRoute, ROLE_LABELS } from "@/lib/permissions";
 import { ReadOnlyShield } from "@/components/read-only-shield";
 import { supabase } from "@/integrations/supabase/client";
 
-const nav = [
-  { to: "/admin-dashboard", label: "Espace Super-Admin", icon: Sparkles, superAdminOnly: true as const },
-  { to: "/admin-agences", label: "Validation agences", icon: ShieldCheck, superAdminOnly: true as const },
-  { to: "/admin-messages", label: "Messagerie support", icon: MessageSquare, superAdminOnly: true as const },
-  { to: "/admin-errors", label: "Journal d'erreurs", icon: AlertTriangle, superAdminOnly: true as const },
-  { to: "/admin-demos", label: "Démos prospects", icon: Video },
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  superAdminOnly?: boolean;
+};
+
+// Section 1 : Pilotage de la plateforme FlowTravel (super admin uniquement)
+const navFlowTravel: NavItem[] = [
+  { to: "/admin-dashboard", label: "Tableau de bord", icon: Sparkles, superAdminOnly: true },
+  { to: "/admin-agences", label: "Validation agences", icon: ShieldCheck, superAdminOnly: true },
+  { to: "/admin-messages", label: "Messagerie support", icon: MessageSquare, superAdminOnly: true },
+  { to: "/admin-errors", label: "Journal d'erreurs", icon: AlertTriangle, superAdminOnly: true },
+  { to: "/admin-demos", label: "Démos prospects", icon: Video, superAdminOnly: true },
+];
+
+// Section 2 : Gestion de l'agence (LA VOYAGERIE pour Laurence, l'agence de chacun pour les autres)
+const navAgence: NavItem[] = [
   { to: "/app", label: "Tableau de bord", icon: LayoutDashboard },
   { to: "/pilotage", label: "Pilotage", icon: Compass },
   { to: "/contacts", label: "Clients & Fournisseurs", icon: Users },
@@ -33,7 +45,7 @@ const nav = [
   { to: "/utilisateurs", label: "Utilisateurs", icon: UserCog },
   { to: "/parametres-agence", label: "Paramètres agence", icon: Building2 },
   { to: "/support", label: "Support FlowTravel", icon: MessageSquare },
-] as const;
+];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
