@@ -187,6 +187,31 @@ function DemandeDetail() {
     navigate({ to: "/cotations/$id", params: { id: cot.id } });
   };
 
+  const reassignAgent = async (newAgentId: string) => {
+    if (!user || !demande) return;
+    const oldAgentId = demande.agent_id ?? null;
+    if (newAgentId === oldAgentId) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("demandes")
+      .update({ agent_id: newAgentId })
+      .eq("id", demande.id);
+    if (error) return toast.error(error.message);
+    const oldName = agentLabel(agents.find((a) => a.user_id === oldAgentId));
+    const newName = agentLabel(agents.find((a) => a.user_id === newAgentId));
+    await logAudit({
+      userId: user.id,
+      entity: "demande" as any,
+      entityId: demande.id,
+      action: "update",
+      description: `Agent réassigné : ${oldName} → ${newName}`,
+      oldValue: { agent_id: oldAgentId },
+      newValue: { agent_id: newAgentId },
+    });
+    toast.success(`Agent : ${newName}`);
+    refetch();
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -201,6 +226,21 @@ function DemandeDetail() {
           </div>
         }
       />
+
+      <div className="inline-flex items-center gap-2">
+        <UsersIcon className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="text-xs text-muted-foreground">Agent responsable :</span>
+        <Select value={demande.agent_id ?? ""} onValueChange={reassignAgent} disabled={!canWrite}>
+          <SelectTrigger className="h-7 w-[220px] text-xs"><SelectValue placeholder="Non assigné" /></SelectTrigger>
+          <SelectContent>
+            {agents.map((a) => (
+              <SelectItem key={a.user_id} value={a.user_id}>
+                {agentLabel(a)}{a.user_id === user?.id ? " (moi)" : ""}{!a.actif ? " · inactif" : ""}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="grid md:grid-cols-3 gap-6">
         {/* Infos client */}
