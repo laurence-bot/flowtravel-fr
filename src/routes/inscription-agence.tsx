@@ -207,6 +207,7 @@ function InscriptionAgencePage() {
       //    sera lié à l'agence + activé seulement à la validation. Simplifié dans le Lot 2.)
 
       setDone(true);
+      try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
       toast.success("Demande envoyée. Nous revenons vers vous sous 24-48h.");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Erreur inconnue";
