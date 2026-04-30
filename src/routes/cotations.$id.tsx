@@ -115,6 +115,7 @@ function CotationDetailPage() {
   const { id } = Route.useParams();
   const { user } = useAuth();
   const { canWrite } = usePageWriteAccess();
+  const { agents } = useAgents();
   const navigate = useNavigate();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
