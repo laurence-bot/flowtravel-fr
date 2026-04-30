@@ -534,5 +534,3 @@ function DocLink({
   );
 }
 
-// Garde le bouton de soumission dans l'espace dispo (évite tree-shaking de Input)
-void Input;
