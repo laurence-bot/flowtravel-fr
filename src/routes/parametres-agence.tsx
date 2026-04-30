@@ -64,7 +64,7 @@ function ParametresAgencePage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const canEdit = role === "administrateur" || role === "gestion";
+  const canEdit = role === "administrateur";
 
   useEffect(() => {
     if (settings) {
