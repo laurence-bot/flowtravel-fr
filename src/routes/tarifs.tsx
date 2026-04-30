@@ -34,9 +34,9 @@ type Plan = {
 
 const PLANS: Plan[] = [
   {
-    id: "starter",
-    nom: "Starter",
-    baseline: "L'agent indépendant",
+    id: "carnet",
+    nom: "Le Carnet",
+    baseline: "Pour l'agent qui démarre seul",
     prix_mensuel: 9,
     prix_annuel_mensuel: 7,
     cible: "1 utilisateur",
@@ -51,16 +51,16 @@ const PLANS: Plan[] = [
     ],
   },
   {
-    id: "studio",
-    nom: "Studio",
-    baseline: "La petite agence ambitieuse",
+    id: "atelier",
+    nom: "L'Atelier",
+    baseline: "Pour l'agence qui structure son métier",
     prix_mensuel: 49,
     prix_annuel_mensuel: 39,
     cible: "Jusqu'à 3 utilisateurs · +15€/user supplémentaire",
     cta: "Voir la démo",
     highlight: true,
     features: [
-      "Tout du plan Starter, plus :",
+      "Tout du Carnet, plus :",
       "Gestion FX & couvertures de change",
       "TVA sur marge (UE) / Hors UE automatique",
       "Import PDF intelligent (factures, vols)",
@@ -70,15 +70,15 @@ const PLANS: Plan[] = [
     ],
   },
   {
-    id: "synergy",
-    nom: "Synergy",
-    baseline: "L'agence établie",
+    id: "maison",
+    nom: "La Maison",
+    baseline: "Pour l'agence qui veut tout piloter",
     prix_mensuel: 79,
     prix_annuel_mensuel: 63,
     cible: "Utilisateurs illimités",
     cta: "Voir la démo",
     features: [
-      "Tout du plan Studio, plus :",
+      "Tout de l'Atelier, plus :",
       "Rapprochement bancaire automatique",
       "Prévisions de trésorerie",
       "Export comptable",
@@ -152,6 +152,42 @@ function TarifsPage() {
           <span className="rounded-full bg-[color:var(--gold)]/15 px-2.5 py-0.5 text-xs font-semibold text-[color:var(--gold)]">
             -20%
           </span>
+        </div>
+      </section>
+
+      {/* Manifeste — pourquoi FlowTravel existe */}
+      <section className="container mx-auto px-4 pb-16">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="inline-flex items-center gap-3 text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
+            <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
+            Notre histoire
+            <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
+          </div>
+          <h2 className="font-display text-3xl md:text-4xl mt-6 text-foreground">
+            Pensé par un agent de voyages sur mesure,
+            <br />
+            <span className="text-[color:var(--gold)]">pas par un éditeur de logiciel.</span>
+          </h2>
+          <div className="mt-8 space-y-5 text-left text-foreground/80 leading-relaxed">
+            <p>
+              FlowTravel est né dans une vraie agence. Après <strong>plus de 20 ans</strong> à
+              concevoir des voyages sur mesure, son fondateur en avait assez de jongler entre un
+              CRM, un tableur de marges, un autre pour les changes, un dossier partagé pour les
+              factures fournisseurs, un module bancaire qui ne parle à personne, et trois outils
+              qui se contredisent en fin de mois.
+            </p>
+            <p>
+              Aucun logiciel du marché ne pensait <em>vraiment</em> métier&nbsp;: la TVA sur marge,
+              les couvertures de change, les acomptes fournisseurs en USD, les paiements partiels,
+              le rapprochement bancaire, la cotation multi-jours qui devient un dossier qui devient
+              une facture… tout était toujours à rebricoler à la main.
+            </p>
+            <p>
+              C'est pour ça que FlowTravel existe&nbsp;: <strong>une seule plateforme</strong>,
+              pensée du devis au rapprochement bancaire, par quelqu'un qui a vécu chaque problème
+              de l'intérieur. Pas un outil de plus. L'outil qui les remplace tous.
+            </p>
+          </div>
         </div>
       </section>
 
