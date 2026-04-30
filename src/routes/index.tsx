@@ -525,10 +525,11 @@ function HomePage() {
 
       {/* DÉMO */}
       <section className="container mx-auto px-4 py-20">
-        <div className="max-w-4xl mx-auto rounded-xl border border-[color:var(--gold)]/30 bg-gradient-to-br from-[color:var(--gold)]/5 via-transparent to-[color:var(--gold)]/5 p-10 md:p-14 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--gold)]/30 bg-background px-4 py-1.5 text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
-            <Sparkles className="h-3 w-3" />
+        <div className="max-w-4xl mx-auto rounded-sm border border-border bg-card p-10 md:p-14 text-center">
+          <div className="inline-flex items-center gap-3 text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
+            <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
             Démo confidentielle
+            <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
           </div>
           <h2 className="font-display text-3xl md:text-5xl mt-6">
             Voyez FlowTravel en action.
