@@ -34,6 +34,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AdminMessagesRouteImport } from './routes/admin-messages'
+import { Route as AdminErrorsRouteImport } from './routes/admin-errors'
 import { Route as AdminDemosRouteImport } from './routes/admin-demos'
 import { Route as AdminDashboardRouteImport } from './routes/admin-dashboard'
 import { Route as AdminAgencesRouteImport } from './routes/admin-agences'
@@ -172,6 +173,11 @@ const AdminMessagesRoute = AdminMessagesRouteImport.update({
   path: '/admin-messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminErrorsRoute = AdminErrorsRouteImport.update({
+  id: '/admin-errors',
+  path: '/admin-errors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminDemosRoute = AdminDemosRouteImport.update({
   id: '/admin-demos',
   path: '/admin-demos',
@@ -238,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/admin-agences': typeof AdminAgencesRoute
   '/admin-dashboard': typeof AdminDashboardRoute
   '/admin-demos': typeof AdminDemosRoute
+  '/admin-errors': typeof AdminErrorsRoute
   '/admin-messages': typeof AdminMessagesRoute
   '/app': typeof AppRoute
   '/audit': typeof AuditRoute
@@ -277,6 +284,7 @@ export interface FileRoutesByTo {
   '/admin-agences': typeof AdminAgencesRoute
   '/admin-dashboard': typeof AdminDashboardRoute
   '/admin-demos': typeof AdminDemosRoute
+  '/admin-errors': typeof AdminErrorsRoute
   '/admin-messages': typeof AdminMessagesRoute
   '/app': typeof AppRoute
   '/audit': typeof AuditRoute
@@ -317,6 +325,7 @@ export interface FileRoutesById {
   '/admin-agences': typeof AdminAgencesRoute
   '/admin-dashboard': typeof AdminDashboardRoute
   '/admin-demos': typeof AdminDemosRoute
+  '/admin-errors': typeof AdminErrorsRoute
   '/admin-messages': typeof AdminMessagesRoute
   '/app': typeof AppRoute
   '/audit': typeof AuditRoute
@@ -358,6 +367,7 @@ export interface FileRouteTypes {
     | '/admin-agences'
     | '/admin-dashboard'
     | '/admin-demos'
+    | '/admin-errors'
     | '/admin-messages'
     | '/app'
     | '/audit'
@@ -397,6 +407,7 @@ export interface FileRouteTypes {
     | '/admin-agences'
     | '/admin-dashboard'
     | '/admin-demos'
+    | '/admin-errors'
     | '/admin-messages'
     | '/app'
     | '/audit'
@@ -436,6 +447,7 @@ export interface FileRouteTypes {
     | '/admin-agences'
     | '/admin-dashboard'
     | '/admin-demos'
+    | '/admin-errors'
     | '/admin-messages'
     | '/app'
     | '/audit'
@@ -476,6 +488,7 @@ export interface RootRouteChildren {
   AdminAgencesRoute: typeof AdminAgencesRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminDemosRoute: typeof AdminDemosRoute
+  AdminErrorsRoute: typeof AdminErrorsRoute
   AdminMessagesRoute: typeof AdminMessagesRoute
   AppRoute: typeof AppRoute
   AuditRoute: typeof AuditRoute
@@ -682,6 +695,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-errors': {
+      id: '/admin-errors'
+      path: '/admin-errors'
+      fullPath: '/admin-errors'
+      preLoaderRoute: typeof AdminErrorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin-demos': {
       id: '/admin-demos'
       path: '/admin-demos'
@@ -834,6 +854,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAgencesRoute: AdminAgencesRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminDemosRoute: AdminDemosRoute,
+  AdminErrorsRoute: AdminErrorsRoute,
   AdminMessagesRoute: AdminMessagesRoute,
   AppRoute: AppRoute,
   AuditRoute: AuditRoute,
