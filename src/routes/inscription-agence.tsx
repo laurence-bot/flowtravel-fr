@@ -294,7 +294,7 @@ function InscriptionAgencePage() {
                   <Input
                     value={form.nom_commercial}
                     onChange={(e) => update("nom_commercial", e.target.value)}
-                    placeholder="Ex: La Voyagerie"
+                    placeholder="Nom de votre agence"
                   />
                 </div>
                 <div className="space-y-1.5">
