@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Logo } from "@/components/logo";
-import { Check, Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
 
 export const Route = createFileRoute("/tarifs")({
   component: TarifsPage,
@@ -117,9 +117,10 @@ function TarifsPage() {
 
       {/* Hero */}
       <section className="container mx-auto px-4 py-16 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--gold)]/30 bg-[color:var(--gold)]/5 px-4 py-1.5 text-xs uppercase tracking-[0.2em] text-[color:var(--gold)]">
-          <Sparkles className="h-3 w-3" />
-          Travel Operating System
+        <div className="inline-flex items-center gap-3 text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
+          <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
+          Maison logicielle du voyage
+          <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
         </div>
         <h1 className="font-display text-5xl md:text-6xl mt-6 text-foreground">
           Des tarifs pensés pour les agences,
@@ -263,7 +264,7 @@ function TarifsPage() {
 
       <footer className="border-t border-border/50 py-8">
         <div className="container mx-auto px-4 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} FlowTravel · Travel Operating System
+          © {new Date().getFullYear()} FlowTravel · Maison logicielle du voyage
         </div>
       </footer>
     </div>

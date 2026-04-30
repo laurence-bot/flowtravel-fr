@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card";
 import { Logo } from "@/components/logo";
 import { useAuth } from "@/hooks/use-auth";
 import {
-  Sparkles,
   Check,
   Wallet,
   PiggyBank,
@@ -48,7 +47,7 @@ const KEYWORDS = [
   "couverture de change agence",
   "FX agence de voyages",
   "FlowTravel",
-  "Travel Operating System",
+  "Maison logicielle du voyage",
   "logiciel devis voyage",
   "ERP agence de voyages",
   "back office tour-opérateur",
@@ -76,7 +75,7 @@ export const Route = createFileRoute("/")({
       { property: "og:image", content: OG_IMAGE },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
-      { property: "og:image:alt", content: "FlowTravel — Travel Operating System" },
+      { property: "og:image:alt", content: "FlowTravel — Maison logicielle du voyage" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: PAGE_TITLE },
       { name: "twitter:description", content: PAGE_DESC },
@@ -265,24 +264,27 @@ function HomePage() {
         />
         <div className="container mx-auto px-4 pt-16 pb-12 md:pt-24 md:pb-16">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--gold)]/30 bg-[color:var(--gold)]/5 px-4 py-1.5 text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">
-              <Sparkles className="h-3 w-3" />
-              Travel Operating System
+            <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
+              <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
+              Maison logicielle du voyage
+              <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
             </div>
-            <h1 className="font-display text-4xl md:text-6xl lg:text-7xl mt-6 leading-[1.05] text-foreground">
-              Le logiciel tout-en-un
+            <h1 className="font-display text-4xl md:text-6xl lg:text-7xl mt-7 leading-[1.05] text-foreground">
+              Le logiciel des
               <br />
-              des <span className="text-[color:var(--gold)]">agences de voyages</span>
+              <em className="not-italic text-[color:var(--ocre)]">agences de voyages</em>
+              <br />
+              <span className="text-foreground/80">qui aiment leur métier.</span>
             </h1>
-            <p className="text-base md:text-lg text-muted-foreground mt-6 max-w-2xl mx-auto leading-relaxed">
-              Cotations multi-jours, calcul de marges, TVA sur marge, gestion FX, rapprochement
-              bancaire et trésorerie. Tout ce dont une agence de voyages moderne a besoin pour
-              piloter son activité — sans dispersion d'outils.
+            <p className="text-base md:text-lg text-muted-foreground mt-7 max-w-2xl mx-auto leading-relaxed">
+              Cotations sur-mesure, marges, TVA sur marge, gestion des devises, rapprochement
+              bancaire et trésorerie. Une seule plateforme, pensée pour le métier — sans
+              dispersion d'outils.
             </p>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
               <Button asChild size="lg" className="px-7">
                 <Link to="/demo">
-                  Demander la démo gratuite <ArrowRight className="ml-2 h-4 w-4" />
+                  Demander la démo <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
@@ -295,12 +297,12 @@ function HomePage() {
             </p>
           </div>
 
-          {/* Hero image */}
-          <div className="mt-14 mx-auto max-w-6xl">
-            <div className="relative rounded-xl overflow-hidden border border-border/60 shadow-2xl shadow-black/40">
+          {/* Hero image — carte signature ivoire */}
+          <div className="mt-16 mx-auto max-w-5xl">
+            <div className="relative rounded-sm overflow-hidden border border-border bg-card">
               <img
                 src={heroImg}
-                alt="Tableau de bord FlowTravel : pilotage financier d'une agence de voyages avec cotations, marges et trésorerie"
+                alt="FlowTravel — logiciel de gestion pour agences de voyages"
                 width={1600}
                 height={1024}
                 className="w-full h-auto"
@@ -331,7 +333,7 @@ function HomePage() {
       {/* FONCTIONNALITÉS */}
       <section id="fonctionnalites" className="container mx-auto px-4 py-20">
         <div className="text-center max-w-2xl mx-auto">
-          <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">
+          <div className="text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
             Fonctionnalités
           </div>
           <h2 className="font-display text-3xl md:text-5xl mt-4">
@@ -406,7 +408,7 @@ function HomePage() {
       <section id="pourquoi" className="bg-secondary/20 border-y border-border/40">
         <div className="container mx-auto px-4 py-20">
           <div className="text-center max-w-2xl mx-auto">
-            <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">
+            <div className="text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
               Pourquoi FlowTravel
             </div>
             <h2 className="font-display text-3xl md:text-5xl mt-4">
@@ -458,7 +460,7 @@ function HomePage() {
       {/* COMMENT ÇA MARCHE */}
       <section className="container mx-auto px-4 py-20">
         <div className="text-center max-w-2xl mx-auto">
-          <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">
+          <div className="text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
             En 4 étapes
           </div>
           <h2 className="font-display text-3xl md:text-5xl mt-4">
@@ -485,7 +487,7 @@ function HomePage() {
       {/* TARIFS RÉSUMÉ */}
       <section className="bg-secondary/20 border-y border-border/40">
         <div className="container mx-auto px-4 py-20 text-center">
-          <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">Tarifs</div>
+          <div className="text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">Tarifs</div>
           <h2 className="font-display text-3xl md:text-5xl mt-4">À partir de 9€ HT/mois.</h2>
           <p className="text-muted-foreground mt-4 max-w-xl mx-auto">
             Trois plans pensés pour suivre votre croissance — de l'agent indépendant à l'agence
@@ -522,10 +524,11 @@ function HomePage() {
 
       {/* DÉMO */}
       <section className="container mx-auto px-4 py-20">
-        <div className="max-w-4xl mx-auto rounded-xl border border-[color:var(--gold)]/30 bg-gradient-to-br from-[color:var(--gold)]/5 via-transparent to-[color:var(--gold)]/5 p-10 md:p-14 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--gold)]/30 bg-background px-4 py-1.5 text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">
-            <Sparkles className="h-3 w-3" />
+        <div className="max-w-4xl mx-auto rounded-sm border border-border bg-card p-10 md:p-14 text-center">
+          <div className="inline-flex items-center gap-3 text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
+            <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
             Démo confidentielle
+            <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
           </div>
           <h2 className="font-display text-3xl md:text-5xl mt-6">
             Voyez FlowTravel en action.
@@ -551,7 +554,7 @@ function HomePage() {
       <section id="faq" className="bg-secondary/20 border-y border-border/40">
         <div className="container mx-auto px-4 py-20 max-w-3xl">
           <div className="text-center">
-            <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">FAQ</div>
+            <div className="text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">FAQ</div>
             <h2 className="font-display text-3xl md:text-5xl mt-4">Vos questions, nos réponses.</h2>
           </div>
 
@@ -676,7 +679,7 @@ function HomePage() {
           </div>
         </div>
         <div className="border-t border-border/50 py-6 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} FlowTravel · Travel Operating System · Tous droits réservés
+          © {new Date().getFullYear()} FlowTravel · Maison logicielle du voyage · Tous droits réservés
         </div>
       </footer>
     </div>
