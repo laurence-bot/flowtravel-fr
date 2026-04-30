@@ -34,6 +34,7 @@ await renderMedia({
   puppeteerInstance: browser,
   concurrency: 1,
   audioCodec: "aac",
+  enforceAudioTrack: true,
 });
 
 await browser.close({ silent: false });
