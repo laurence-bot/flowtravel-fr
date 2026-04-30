@@ -38,6 +38,8 @@ import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
 import { Route as DemandesIdRouteImport } from './routes/demandes.$id'
 import { Route as CotationsIdRouteImport } from './routes/cotations.$id'
 import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
+import { Route as DemoVTokenRouteImport } from './routes/demo.v.$token'
+import { Route as DemoRdvTokenRouteImport } from './routes/demo.rdv.$token'
 
 const UtilisateursRoute = UtilisateursRouteImport.update({
   id: '/utilisateurs',
@@ -184,6 +186,16 @@ const ContactsIdRoute = ContactsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ContactsRoute,
 } as any)
+const DemoVTokenRoute = DemoVTokenRouteImport.update({
+  id: '/v/$token',
+  path: '/v/$token',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DemoRdvTokenRoute = DemoRdvTokenRouteImport.update({
+  id: '/rdv/$token',
+  path: '/rdv/$token',
+  getParentRoute: () => DemoRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -194,7 +206,7 @@ export interface FileRoutesByFullPath {
   '/cotations': typeof CotationsRouteWithChildren
   '/couvertures-fx': typeof CouverturesFxRoute
   '/demandes': typeof DemandesRouteWithChildren
-  '/demo': typeof DemoRoute
+  '/demo': typeof DemoRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -215,6 +227,8 @@ export interface FileRoutesByFullPath {
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
   '/p/$token': typeof PTokenRoute
+  '/demo/rdv/$token': typeof DemoRdvTokenRoute
+  '/demo/v/$token': typeof DemoVTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -225,7 +239,7 @@ export interface FileRoutesByTo {
   '/cotations': typeof CotationsRouteWithChildren
   '/couvertures-fx': typeof CouverturesFxRoute
   '/demandes': typeof DemandesRouteWithChildren
-  '/demo': typeof DemoRoute
+  '/demo': typeof DemoRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -246,6 +260,8 @@ export interface FileRoutesByTo {
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
   '/p/$token': typeof PTokenRoute
+  '/demo/rdv/$token': typeof DemoRdvTokenRoute
+  '/demo/v/$token': typeof DemoVTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -257,7 +273,7 @@ export interface FileRoutesById {
   '/cotations': typeof CotationsRouteWithChildren
   '/couvertures-fx': typeof CouverturesFxRoute
   '/demandes': typeof DemandesRouteWithChildren
-  '/demo': typeof DemoRoute
+  '/demo': typeof DemoRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -278,6 +294,8 @@ export interface FileRoutesById {
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
   '/p/$token': typeof PTokenRoute
+  '/demo/rdv/$token': typeof DemoRdvTokenRoute
+  '/demo/v/$token': typeof DemoVTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -311,6 +329,8 @@ export interface FileRouteTypes {
     | '/dossiers/$id'
     | '/factures/$id'
     | '/p/$token'
+    | '/demo/rdv/$token'
+    | '/demo/v/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -342,6 +362,8 @@ export interface FileRouteTypes {
     | '/dossiers/$id'
     | '/factures/$id'
     | '/p/$token'
+    | '/demo/rdv/$token'
+    | '/demo/v/$token'
   id:
     | '__root__'
     | '/'
@@ -373,6 +395,8 @@ export interface FileRouteTypes {
     | '/dossiers/$id'
     | '/factures/$id'
     | '/p/$token'
+    | '/demo/rdv/$token'
+    | '/demo/v/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -384,7 +408,7 @@ export interface RootRouteChildren {
   CotationsRoute: typeof CotationsRouteWithChildren
   CouverturesFxRoute: typeof CouverturesFxRoute
   DemandesRoute: typeof DemandesRouteWithChildren
-  DemoRoute: typeof DemoRoute
+  DemoRoute: typeof DemoRouteWithChildren
   DossiersRoute: typeof DossiersRouteWithChildren
   ExportRoute: typeof ExportRoute
   ImportBancaireRoute: typeof ImportBancaireRoute
@@ -608,6 +632,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactsIdRouteImport
       parentRoute: typeof ContactsRoute
     }
+    '/demo/v/$token': {
+      id: '/demo/v/$token'
+      path: '/v/$token'
+      fullPath: '/demo/v/$token'
+      preLoaderRoute: typeof DemoVTokenRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/demo/rdv/$token': {
+      id: '/demo/rdv/$token'
+      path: '/rdv/$token'
+      fullPath: '/demo/rdv/$token'
+      preLoaderRoute: typeof DemoRdvTokenRouteImport
+      parentRoute: typeof DemoRoute
+    }
   }
 }
 
@@ -647,6 +685,18 @@ const DemandesRouteWithChildren = DemandesRoute._addFileChildren(
   DemandesRouteChildren,
 )
 
+interface DemoRouteChildren {
+  DemoRdvTokenRoute: typeof DemoRdvTokenRoute
+  DemoVTokenRoute: typeof DemoVTokenRoute
+}
+
+const DemoRouteChildren: DemoRouteChildren = {
+  DemoRdvTokenRoute: DemoRdvTokenRoute,
+  DemoVTokenRoute: DemoVTokenRoute,
+}
+
+const DemoRouteWithChildren = DemoRoute._addFileChildren(DemoRouteChildren)
+
 interface DossiersRouteChildren {
   DossiersIdRoute: typeof DossiersIdRoute
 }
@@ -668,7 +718,7 @@ const rootRouteChildren: RootRouteChildren = {
   CotationsRoute: CotationsRouteWithChildren,
   CouverturesFxRoute: CouverturesFxRoute,
   DemandesRoute: DemandesRouteWithChildren,
-  DemoRoute: DemoRoute,
+  DemoRoute: DemoRouteWithChildren,
   DossiersRoute: DossiersRouteWithChildren,
   ExportRoute: ExportRoute,
   ImportBancaireRoute: ImportBancaireRoute,
