@@ -5,9 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AlertTriangle, CheckCircle2, ExternalLink } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, Trash2, CheckCheck } from "lucide-react";
 
 export const Route = createFileRoute("/admin-errors")({
   beforeLoad: async () => {
@@ -58,6 +63,39 @@ function AdminErrorsPage() {
     else { toast.success(current ? "Marquée non résolue" : "Marquée résolue"); load(); }
   };
 
+  const markAllResolved = async () => {
+    const { error } = await supabase
+      .from("error_logs")
+      .update({ resolved: true })
+      .eq("resolved", false);
+    if (error) toast.error(error.message);
+    else { toast.success("Toutes les erreurs ont été marquées résolues"); load(); }
+  };
+
+  const deleteAllResolved = async () => {
+    const { error } = await supabase
+      .from("error_logs")
+      .delete()
+      .eq("resolved", true);
+    if (error) toast.error(error.message);
+    else { toast.success("Erreurs résolues supprimées"); load(); }
+  };
+
+  const deleteAll = async () => {
+    const { error } = await supabase
+      .from("error_logs")
+      .delete()
+      .not("id", "is", null);
+    if (error) toast.error(error.message);
+    else { toast.success("Toutes les erreurs ont été supprimées"); load(); }
+  };
+
+  const deleteOne = async (id: string) => {
+    const { error } = await supabase.from("error_logs").delete().eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success("Erreur supprimée"); load(); }
+  };
+
   const levelBadge = (level: string) => {
     if (level === "error") return <Badge variant="destructive">Error</Badge>;
     if (level === "warning") return <Badge className="bg-amber-500 hover:bg-amber-500/90">Warning</Badge>;
@@ -67,7 +105,7 @@ function AdminErrorsPage() {
   return (
     <AppLayout>
       <div className="max-w-6xl mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-3xl font-light tracking-tight flex items-center gap-2">
               <AlertTriangle className="h-7 w-7" /> Journal d'erreurs
@@ -81,6 +119,70 @@ function AdminErrorsPage() {
               <TabsTrigger value="all">Toutes</TabsTrigger>
             </TabsList>
           </Tabs>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" variant="outline" disabled={loading || errors.length === 0}>
+                <CheckCheck className="h-4 w-4 mr-1" /> Tout marquer résolu
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Marquer toutes les erreurs comme résolues ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Toutes les erreurs non résolues seront marquées comme résolues.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction onClick={markAllResolved}>Confirmer</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" variant="outline" disabled={loading}>
+                <Trash2 className="h-4 w-4 mr-1" /> Supprimer les résolues
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Supprimer toutes les erreurs résolues ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Cette action est irréversible.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction onClick={deleteAllResolved}>Supprimer</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" variant="destructive" disabled={loading}>
+                <Trash2 className="h-4 w-4 mr-1" /> Tout supprimer
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Supprimer TOUTES les erreurs ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Toutes les entrées du journal seront définitivement supprimées (résolues et non résolues). Cette action est irréversible.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction onClick={deleteAll} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Tout supprimer
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         <Card>
@@ -125,9 +227,14 @@ function AdminErrorsPage() {
                           </div>
                         )}
                       </div>
-                      <Button size="sm" variant={e.resolved ? "ghost" : "outline"} onClick={() => toggleResolved(e.id, e.resolved)}>
-                        {e.resolved ? "Résolue" : "Marquer résolue"}
-                      </Button>
+                      <div className="flex flex-col gap-1 items-end">
+                        <Button size="sm" variant={e.resolved ? "ghost" : "outline"} onClick={() => toggleResolved(e.id, e.resolved)}>
+                          {e.resolved ? "Résolue" : "Marquer résolue"}
+                        </Button>
+                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => deleteOne(e.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 );
