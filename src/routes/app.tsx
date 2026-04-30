@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { RequireAuth } from "@/components/require-auth";
 import { Card } from "@/components/ui/card";
@@ -23,6 +23,15 @@ import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landm
 import { deadlineUrgence, type FournisseurOption, type FlightOption } from "@/lib/options";
 
 export const Route = createFileRoute("/app")({
+  beforeLoad: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      const { data } = await supabase.from("user_profiles").select("is_super_admin").eq("user_id", session.user.id).maybeSingle();
+      if (data?.is_super_admin) {
+        throw redirect({ to: "/admin-dashboard" });
+      }
+    }
+  },
   component: () => (
     <RequireAuth>
       <Dashboard />
