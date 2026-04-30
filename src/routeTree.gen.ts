@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UtilisateursRouteImport } from './routes/utilisateurs'
+import { Route as TarifsRouteImport } from './routes/tarifs'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
 import { Route as RapprochementRouteImport } from './routes/rapprochement'
 import { Route as QaRouteImport } from './routes/qa'
@@ -22,6 +23,7 @@ import { Route as ImportPdfRouteImport } from './routes/import-pdf'
 import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
 import { Route as ExportRouteImport } from './routes/export'
 import { Route as DossiersRouteImport } from './routes/dossiers'
+import { Route as DemoRouteImport } from './routes/demo'
 import { Route as DemandesRouteImport } from './routes/demandes'
 import { Route as CouverturesFxRouteImport } from './routes/couvertures-fx'
 import { Route as CotationsRouteImport } from './routes/cotations'
@@ -29,6 +31,7 @@ import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as ComptesRouteImport } from './routes/comptes'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuditRouteImport } from './routes/audit'
+import { Route as AdminDemosRouteImport } from './routes/admin-demos'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as FacturesIdRouteImport } from './routes/factures.$id'
@@ -36,10 +39,17 @@ import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
 import { Route as DemandesIdRouteImport } from './routes/demandes.$id'
 import { Route as CotationsIdRouteImport } from './routes/cotations.$id'
 import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
+import { Route as DemoVTokenRouteImport } from './routes/demo.v.$token'
+import { Route as DemoRdvTokenRouteImport } from './routes/demo.rdv.$token'
 
 const UtilisateursRoute = UtilisateursRouteImport.update({
   id: '/utilisateurs',
   path: '/utilisateurs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TarifsRoute = TarifsRouteImport.update({
+  id: '/tarifs',
+  path: '/tarifs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
@@ -102,6 +112,11 @@ const DossiersRoute = DossiersRouteImport.update({
   path: '/dossiers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DemandesRoute = DemandesRouteImport.update({
   id: '/demandes',
   path: '/demandes',
@@ -135,6 +150,11 @@ const AuthRoute = AuthRouteImport.update({
 const AuditRoute = AuditRouteImport.update({
   id: '/audit',
   path: '/audit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDemosRoute = AdminDemosRouteImport.update({
+  id: '/admin-demos',
+  path: '/admin-demos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -172,9 +192,20 @@ const ContactsIdRoute = ContactsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ContactsRoute,
 } as any)
+const DemoVTokenRoute = DemoVTokenRouteImport.update({
+  id: '/v/$token',
+  path: '/v/$token',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DemoRdvTokenRoute = DemoRdvTokenRouteImport.update({
+  id: '/rdv/$token',
+  path: '/rdv/$token',
+  getParentRoute: () => DemoRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin-demos': typeof AdminDemosRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
@@ -182,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/cotations': typeof CotationsRouteWithChildren
   '/couvertures-fx': typeof CouverturesFxRoute
   '/demandes': typeof DemandesRouteWithChildren
+  '/demo': typeof DemoRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -194,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
@@ -201,9 +234,12 @@ export interface FileRoutesByFullPath {
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
   '/p/$token': typeof PTokenRoute
+  '/demo/rdv/$token': typeof DemoRdvTokenRoute
+  '/demo/v/$token': typeof DemoVTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin-demos': typeof AdminDemosRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
@@ -211,6 +247,7 @@ export interface FileRoutesByTo {
   '/cotations': typeof CotationsRouteWithChildren
   '/couvertures-fx': typeof CouverturesFxRoute
   '/demandes': typeof DemandesRouteWithChildren
+  '/demo': typeof DemoRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -223,6 +260,7 @@ export interface FileRoutesByTo {
   '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
@@ -230,10 +268,13 @@ export interface FileRoutesByTo {
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
   '/p/$token': typeof PTokenRoute
+  '/demo/rdv/$token': typeof DemoRdvTokenRoute
+  '/demo/v/$token': typeof DemoVTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin-demos': typeof AdminDemosRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
@@ -241,6 +282,7 @@ export interface FileRoutesById {
   '/cotations': typeof CotationsRouteWithChildren
   '/couvertures-fx': typeof CouverturesFxRoute
   '/demandes': typeof DemandesRouteWithChildren
+  '/demo': typeof DemoRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
@@ -253,6 +295,7 @@ export interface FileRoutesById {
   '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
@@ -260,11 +303,14 @@ export interface FileRoutesById {
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
   '/p/$token': typeof PTokenRoute
+  '/demo/rdv/$token': typeof DemoRdvTokenRoute
+  '/demo/v/$token': typeof DemoVTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin-demos'
     | '/audit'
     | '/auth'
     | '/comptes'
@@ -272,6 +318,7 @@ export interface FileRouteTypes {
     | '/cotations'
     | '/couvertures-fx'
     | '/demandes'
+    | '/demo'
     | '/dossiers'
     | '/export'
     | '/import-bancaire'
@@ -284,6 +331,7 @@ export interface FileRouteTypes {
     | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
+    | '/tarifs'
     | '/utilisateurs'
     | '/contacts/$id'
     | '/cotations/$id'
@@ -291,9 +339,12 @@ export interface FileRouteTypes {
     | '/dossiers/$id'
     | '/factures/$id'
     | '/p/$token'
+    | '/demo/rdv/$token'
+    | '/demo/v/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin-demos'
     | '/audit'
     | '/auth'
     | '/comptes'
@@ -301,6 +352,7 @@ export interface FileRouteTypes {
     | '/cotations'
     | '/couvertures-fx'
     | '/demandes'
+    | '/demo'
     | '/dossiers'
     | '/export'
     | '/import-bancaire'
@@ -313,6 +365,7 @@ export interface FileRouteTypes {
     | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
+    | '/tarifs'
     | '/utilisateurs'
     | '/contacts/$id'
     | '/cotations/$id'
@@ -320,9 +373,12 @@ export interface FileRouteTypes {
     | '/dossiers/$id'
     | '/factures/$id'
     | '/p/$token'
+    | '/demo/rdv/$token'
+    | '/demo/v/$token'
   id:
     | '__root__'
     | '/'
+    | '/admin-demos'
     | '/audit'
     | '/auth'
     | '/comptes'
@@ -330,6 +386,7 @@ export interface FileRouteTypes {
     | '/cotations'
     | '/couvertures-fx'
     | '/demandes'
+    | '/demo'
     | '/dossiers'
     | '/export'
     | '/import-bancaire'
@@ -342,6 +399,7 @@ export interface FileRouteTypes {
     | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
+    | '/tarifs'
     | '/utilisateurs'
     | '/contacts/$id'
     | '/cotations/$id'
@@ -349,10 +407,13 @@ export interface FileRouteTypes {
     | '/dossiers/$id'
     | '/factures/$id'
     | '/p/$token'
+    | '/demo/rdv/$token'
+    | '/demo/v/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminDemosRoute: typeof AdminDemosRoute
   AuditRoute: typeof AuditRoute
   AuthRoute: typeof AuthRoute
   ComptesRoute: typeof ComptesRoute
@@ -360,6 +421,7 @@ export interface RootRouteChildren {
   CotationsRoute: typeof CotationsRouteWithChildren
   CouverturesFxRoute: typeof CouverturesFxRoute
   DemandesRoute: typeof DemandesRouteWithChildren
+  DemoRoute: typeof DemoRouteWithChildren
   DossiersRoute: typeof DossiersRouteWithChildren
   ExportRoute: typeof ExportRoute
   ImportBancaireRoute: typeof ImportBancaireRoute
@@ -372,6 +434,7 @@ export interface RootRouteChildren {
   QaRoute: typeof QaRoute
   RapprochementRoute: typeof RapprochementRoute
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
+  TarifsRoute: typeof TarifsRoute
   UtilisateursRoute: typeof UtilisateursRoute
   FacturesIdRoute: typeof FacturesIdRoute
   PTokenRoute: typeof PTokenRoute
@@ -384,6 +447,13 @@ declare module '@tanstack/react-router' {
       path: '/utilisateurs'
       fullPath: '/utilisateurs'
       preLoaderRoute: typeof UtilisateursRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tarifs': {
+      id: '/tarifs'
+      path: '/tarifs'
+      fullPath: '/tarifs'
+      preLoaderRoute: typeof TarifsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reinitialiser-mot-de-passe': {
@@ -470,6 +540,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DossiersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/demandes': {
       id: '/demandes'
       path: '/demandes'
@@ -517,6 +594,13 @@ declare module '@tanstack/react-router' {
       path: '/audit'
       fullPath: '/audit'
       preLoaderRoute: typeof AuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-demos': {
+      id: '/admin-demos'
+      path: '/admin-demos'
+      fullPath: '/admin-demos'
+      preLoaderRoute: typeof AdminDemosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -568,6 +652,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactsIdRouteImport
       parentRoute: typeof ContactsRoute
     }
+    '/demo/v/$token': {
+      id: '/demo/v/$token'
+      path: '/v/$token'
+      fullPath: '/demo/v/$token'
+      preLoaderRoute: typeof DemoVTokenRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/demo/rdv/$token': {
+      id: '/demo/rdv/$token'
+      path: '/rdv/$token'
+      fullPath: '/demo/rdv/$token'
+      preLoaderRoute: typeof DemoRdvTokenRouteImport
+      parentRoute: typeof DemoRoute
+    }
   }
 }
 
@@ -607,6 +705,18 @@ const DemandesRouteWithChildren = DemandesRoute._addFileChildren(
   DemandesRouteChildren,
 )
 
+interface DemoRouteChildren {
+  DemoRdvTokenRoute: typeof DemoRdvTokenRoute
+  DemoVTokenRoute: typeof DemoVTokenRoute
+}
+
+const DemoRouteChildren: DemoRouteChildren = {
+  DemoRdvTokenRoute: DemoRdvTokenRoute,
+  DemoVTokenRoute: DemoVTokenRoute,
+}
+
+const DemoRouteWithChildren = DemoRoute._addFileChildren(DemoRouteChildren)
+
 interface DossiersRouteChildren {
   DossiersIdRoute: typeof DossiersIdRoute
 }
@@ -621,6 +731,7 @@ const DossiersRouteWithChildren = DossiersRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminDemosRoute: AdminDemosRoute,
   AuditRoute: AuditRoute,
   AuthRoute: AuthRoute,
   ComptesRoute: ComptesRoute,
@@ -628,6 +739,7 @@ const rootRouteChildren: RootRouteChildren = {
   CotationsRoute: CotationsRouteWithChildren,
   CouverturesFxRoute: CouverturesFxRoute,
   DemandesRoute: DemandesRouteWithChildren,
+  DemoRoute: DemoRouteWithChildren,
   DossiersRoute: DossiersRouteWithChildren,
   ExportRoute: ExportRoute,
   ImportBancaireRoute: ImportBancaireRoute,
@@ -640,6 +752,7 @@ const rootRouteChildren: RootRouteChildren = {
   QaRoute: QaRoute,
   RapprochementRoute: RapprochementRoute,
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
+  TarifsRoute: TarifsRoute,
   UtilisateursRoute: UtilisateursRoute,
   FacturesIdRoute: FacturesIdRoute,
   PTokenRoute: PTokenRoute,

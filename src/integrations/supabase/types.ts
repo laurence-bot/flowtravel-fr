@@ -634,6 +634,215 @@ export type Database = {
         }
         Relationships: []
       }
+      demo_rdv_bookings: {
+        Row: {
+          created_at: string
+          demo_request_id: string
+          id: string
+          notes_admin: string | null
+          notes_prospect: string | null
+          slot_id: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          demo_request_id: string
+          id?: string
+          notes_admin?: string | null
+          notes_prospect?: string | null
+          slot_id: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          demo_request_id?: string
+          id?: string
+          notes_admin?: string | null
+          notes_prospect?: string | null
+          slot_id?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_rdv_bookings_demo_request_id_fkey"
+            columns: ["demo_request_id"]
+            isOneToOne: false
+            referencedRelation: "demo_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_rdv_bookings_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "demo_rdv_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demo_rdv_slots: {
+        Row: {
+          actif: boolean
+          capacite: number
+          created_at: string
+          date_debut: string
+          duree_minutes: number
+          id: string
+          updated_at: string
+          visio_link: string | null
+        }
+        Insert: {
+          actif?: boolean
+          capacite?: number
+          created_at?: string
+          date_debut: string
+          duree_minutes?: number
+          id?: string
+          updated_at?: string
+          visio_link?: string | null
+        }
+        Update: {
+          actif?: boolean
+          capacite?: number
+          created_at?: string
+          date_debut?: string
+          duree_minutes?: number
+          id?: string
+          updated_at?: string
+          visio_link?: string | null
+        }
+        Relationships: []
+      }
+      demo_requests: {
+        Row: {
+          admin_notes: string | null
+          agence_nom: string
+          agence_siret: string | null
+          agence_site_web: string | null
+          agence_taille: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          email: string
+          email_domain: string
+          id: string
+          ip_address: string | null
+          locked_ip: string | null
+          message: string | null
+          nom: string
+          prenom: string
+          refused_reason: string | null
+          statut: string
+          telephone: string
+          updated_at: string
+          user_agent: string | null
+          video_first_viewed_at: string | null
+          video_max_views: number
+          video_token: string
+          video_token_expires_at: string
+          video_view_count: number
+        }
+        Insert: {
+          admin_notes?: string | null
+          agence_nom: string
+          agence_siret?: string | null
+          agence_site_web?: string | null
+          agence_taille?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          email: string
+          email_domain: string
+          id?: string
+          ip_address?: string | null
+          locked_ip?: string | null
+          message?: string | null
+          nom: string
+          prenom: string
+          refused_reason?: string | null
+          statut?: string
+          telephone: string
+          updated_at?: string
+          user_agent?: string | null
+          video_first_viewed_at?: string | null
+          video_max_views?: number
+          video_token?: string
+          video_token_expires_at?: string
+          video_view_count?: number
+        }
+        Update: {
+          admin_notes?: string | null
+          agence_nom?: string
+          agence_siret?: string | null
+          agence_site_web?: string | null
+          agence_taille?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          email?: string
+          email_domain?: string
+          id?: string
+          ip_address?: string | null
+          locked_ip?: string | null
+          message?: string | null
+          nom?: string
+          prenom?: string
+          refused_reason?: string | null
+          statut?: string
+          telephone?: string
+          updated_at?: string
+          user_agent?: string | null
+          video_first_viewed_at?: string | null
+          video_max_views?: number
+          video_token?: string
+          video_token_expires_at?: string
+          video_view_count?: number
+        }
+        Relationships: []
+      }
+      demo_video_views: {
+        Row: {
+          blocked_reason: string | null
+          completed: boolean
+          created_at: string
+          demo_request_id: string
+          duration_watched_seconds: number | null
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          blocked_reason?: string | null
+          completed?: boolean
+          created_at?: string
+          demo_request_id: string
+          duration_watched_seconds?: number | null
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          blocked_reason?: string | null
+          completed?: boolean
+          created_at?: string
+          demo_request_id?: string
+          duration_watched_seconds?: number | null
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_video_views_demo_request_id_fkey"
+            columns: ["demo_request_id"]
+            isOneToOne: false
+            referencedRelation: "demo_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dossier_tasks: {
         Row: {
           completed_at: string | null
