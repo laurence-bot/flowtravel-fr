@@ -28,6 +28,12 @@ export const Route = createFileRoute("/app")({
       <Dashboard />
     </RequireAuth>
   ),
+  head: () => ({
+    meta: [
+      { title: "Tableau de bord — FlowTravel" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
 });
 
 function KPI({
