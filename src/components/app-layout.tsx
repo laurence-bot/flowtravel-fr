@@ -214,8 +214,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             onClick={() => setMobileOpen(false)}
           />
           <aside className="relative w-72 bg-sidebar text-sidebar-foreground flex flex-col">
-            <div className="px-6 py-6 border-b border-sidebar-border flex items-center justify-between">
-              <Logo variant="light" />
+            <div className={cn(
+              "px-6 py-6 border-b border-sidebar-border flex items-center justify-between",
+              hasAgencyLogo && "bg-[oklch(0.97_0.012_80)] text-foreground"
+            )}>
+              <Logo variant={hasAgencyLogo ? "dark" : "light"} />
               <button onClick={() => setMobileOpen(false)} className="text-sidebar-foreground/70">
                 <X className="h-5 w-5" />
               </button>
