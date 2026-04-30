@@ -34,9 +34,9 @@ type Plan = {
 
 const PLANS: Plan[] = [
   {
-    id: "starter",
-    nom: "Starter",
-    baseline: "L'agent indépendant",
+    id: "carnet",
+    nom: "Le Carnet",
+    baseline: "Pour l'agent qui démarre seul",
     prix_mensuel: 9,
     prix_annuel_mensuel: 7,
     cible: "1 utilisateur",
@@ -51,16 +51,16 @@ const PLANS: Plan[] = [
     ],
   },
   {
-    id: "studio",
-    nom: "Studio",
-    baseline: "La petite agence ambitieuse",
+    id: "atelier",
+    nom: "L'Atelier",
+    baseline: "Pour l'agence qui structure son métier",
     prix_mensuel: 49,
     prix_annuel_mensuel: 39,
     cible: "Jusqu'à 3 utilisateurs · +15€/user supplémentaire",
     cta: "Voir la démo",
     highlight: true,
     features: [
-      "Tout du plan Starter, plus :",
+      "Tout du Carnet, plus :",
       "Gestion FX & couvertures de change",
       "TVA sur marge (UE) / Hors UE automatique",
       "Import PDF intelligent (factures, vols)",
@@ -70,15 +70,15 @@ const PLANS: Plan[] = [
     ],
   },
   {
-    id: "synergy",
-    nom: "Synergy",
-    baseline: "L'agence établie",
+    id: "maison",
+    nom: "La Maison",
+    baseline: "Pour l'agence qui veut tout piloter",
     prix_mensuel: 79,
     prix_annuel_mensuel: 63,
     cible: "Utilisateurs illimités",
     cta: "Voir la démo",
     features: [
-      "Tout du plan Studio, plus :",
+      "Tout de l'Atelier, plus :",
       "Rapprochement bancaire automatique",
       "Prévisions de trésorerie",
       "Export comptable",
