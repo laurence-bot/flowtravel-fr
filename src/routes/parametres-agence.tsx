@@ -244,11 +244,9 @@ function ParametresAgencePage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Sur sidebar sombre</p>
-                <div className="w-32 h-32 rounded-lg border border-border bg-sidebar flex items-center justify-center overflow-hidden">
-                  <div className="h-16 w-16 rounded-full bg-white shadow-sm ring-1 ring-black/5 flex items-center justify-center p-1.5">
-                    <img src={logoUrl} alt="Aperçu fond sombre" className="max-w-full max-h-full object-contain" />
-                  </div>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">En-tête sidebar</p>
+                <div className="w-32 h-32 rounded-lg border border-border bg-[oklch(0.97_0.012_80)] flex items-center justify-center overflow-hidden">
+                  <img src={logoUrl} alt="Aperçu sidebar" className="max-w-[75%] max-h-[75%] object-contain" />
                 </div>
               </div>
             </>
@@ -257,8 +255,8 @@ function ParametresAgencePage() {
           <div className="flex-1 min-w-[240px] space-y-3">
             <p className="text-sm text-muted-foreground">
               Format conseillé : PNG/SVG sur fond transparent, ratio carré, poids max 2 Mo.
-              Sur les surfaces sombres, votre logo s'affiche automatiquement dans un disque blanc
-              pour garantir une lisibilité parfaite.
+              Le bloc d'en-tête de la sidebar s'adapte automatiquement à votre identité visuelle —
+              votre logo n'est jamais altéré.
             </p>
             <div className="flex flex-wrap gap-2">
               <label className="inline-flex">
