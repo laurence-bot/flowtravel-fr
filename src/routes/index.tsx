@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card";
 import { Logo } from "@/components/logo";
 import { useAuth } from "@/hooks/use-auth";
 import {
-  Sparkles,
   Check,
   Wallet,
   PiggyBank,
