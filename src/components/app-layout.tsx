@@ -56,6 +56,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [agencyName, setAgencyName] = useState<string | null>(null);
+  const { settings: agencySettings } = useAgencySettings();
+  const hasAgencyLogo = !!agencySettings?.logo_url;
 
   useEffect(() => {
     if (!user) {
