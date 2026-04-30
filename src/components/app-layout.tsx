@@ -9,12 +9,24 @@ import { canAccessRoute, ROLE_LABELS } from "@/lib/permissions";
 import { ReadOnlyShield } from "@/components/read-only-shield";
 import { supabase } from "@/integrations/supabase/client";
 
-const nav = [
-  { to: "/admin-dashboard", label: "Espace Super-Admin", icon: Sparkles, superAdminOnly: true as const },
-  { to: "/admin-agences", label: "Validation agences", icon: ShieldCheck, superAdminOnly: true as const },
-  { to: "/admin-messages", label: "Messagerie support", icon: MessageSquare, superAdminOnly: true as const },
-  { to: "/admin-errors", label: "Journal d'erreurs", icon: AlertTriangle, superAdminOnly: true as const },
-  { to: "/admin-demos", label: "Démos prospects", icon: Video },
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  superAdminOnly?: boolean;
+};
+
+// Section 1 : Pilotage de la plateforme FlowTravel (super admin uniquement)
+const navFlowTravel: NavItem[] = [
+  { to: "/admin-dashboard", label: "Tableau de bord", icon: Sparkles, superAdminOnly: true },
+  { to: "/admin-agences", label: "Validation agences", icon: ShieldCheck, superAdminOnly: true },
+  { to: "/admin-messages", label: "Messagerie support", icon: MessageSquare, superAdminOnly: true },
+  { to: "/admin-errors", label: "Journal d'erreurs", icon: AlertTriangle, superAdminOnly: true },
+  { to: "/admin-demos", label: "Démos prospects", icon: Video, superAdminOnly: true },
+];
+
+// Section 2 : Gestion de l'agence (LA VOYAGERIE pour Laurence, l'agence de chacun pour les autres)
+const navAgence: NavItem[] = [
   { to: "/app", label: "Tableau de bord", icon: LayoutDashboard },
   { to: "/pilotage", label: "Pilotage", icon: Compass },
   { to: "/contacts", label: "Clients & Fournisseurs", icon: Users },
@@ -33,7 +45,7 @@ const nav = [
   { to: "/utilisateurs", label: "Utilisateurs", icon: UserCog },
   { to: "/parametres-agence", label: "Paramètres agence", icon: Building2 },
   { to: "/support", label: "Support FlowTravel", icon: MessageSquare },
-] as const;
+];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
@@ -42,21 +54,45 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [agencyName, setAgencyName] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) { setIsSuperAdmin(false); return; }
+    if (!user) {
+      setIsSuperAdmin(false);
+      setAgencyName(null);
+      return;
+    }
     supabase
       .from("user_profiles")
-      .select("is_super_admin")
+      .select("is_super_admin, agence_id")
       .eq("user_id", user.id)
       .maybeSingle()
-      .then(({ data }) => setIsSuperAdmin(!!data?.is_super_admin));
+      .then(async ({ data }) => {
+        setIsSuperAdmin(!!data?.is_super_admin);
+        if (data?.agence_id) {
+          const { data: ag } = await supabase
+            .from("agences")
+            .select("nom_commercial")
+            .eq("id", data.agence_id)
+            .maybeSingle();
+          setAgencyName(ag?.nom_commercial ?? null);
+        } else {
+          const { data: settings } = await supabase
+            .from("agency_settings")
+            .select("agency_name")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          setAgencyName(settings?.agency_name ?? null);
+        }
+      });
   }, [user]);
 
-  const visibleNav = nav.filter((item) => {
-    if ("superAdminOnly" in item && item.superAdminOnly && !isSuperAdmin) return false;
+  const visibleFlowTravelNav = navFlowTravel.filter((item) => {
+    if (item.superAdminOnly && !isSuperAdmin) return false;
     return canAccessRoute(role, item.to);
   });
+
+  const visibleAgenceNav = navAgence.filter((item) => canAccessRoute(role, item.to));
 
   const handleSignOut = async () => {
     await signOut();
@@ -66,31 +102,68 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isActive = (to: string) =>
     to === "/app" ? location.pathname === "/app" : location.pathname.startsWith(to);
 
+  const NavLinkItem = ({ item, onClick }: { item: NavItem; onClick?: () => void }) => {
+    const Icon = item.icon;
+    const active = isActive(item.to);
+    return (
+      <Link
+        to={item.to}
+        onClick={onClick}
+        className={cn(
+          "group flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] transition-all relative",
+          active
+            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+        )}
+      >
+        {active && (
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2px] bg-[color:var(--gold)] rounded-r" />
+        )}
+        <Icon className={cn("h-4 w-4", active && "text-[color:var(--gold)]")} />
+        <span className="font-medium tracking-wide">{item.label}</span>
+      </Link>
+    );
+  };
+
+  const SectionHeader = ({ label, sublabel }: { label: string; sublabel?: string }) => (
+    <div className="px-3 pt-2 pb-2">
+      <div className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--gold)] font-semibold">
+        {label}
+      </div>
+      {sublabel && (
+        <div className="text-[11px] text-sidebar-foreground/50 mt-0.5 truncate" title={sublabel}>
+          {sublabel}
+        </div>
+      )}
+    </div>
+  );
+
   const NavList = ({ onClick }: { onClick?: () => void }) => (
-    <nav className="flex-1 px-4 py-6 space-y-1">
-      {visibleNav.map((item) => {
-        const Icon = item.icon;
-        const active = isActive(item.to);
-        return (
-          <Link
-            key={item.to}
-            to={item.to}
-            onClick={onClick}
-            className={cn(
-              "group flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] transition-all relative",
-              active
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
-            )}
-          >
-            {active && (
-              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2px] bg-[color:var(--gold)] rounded-r" />
-            )}
-            <Icon className={cn("h-4 w-4", active && "text-[color:var(--gold)]")} />
-            <span className="font-medium tracking-wide">{item.label}</span>
-          </Link>
-        );
-      })}
+    <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+      {visibleFlowTravelNav.length > 0 && (
+        <>
+          <SectionHeader label="FlowTravel" sublabel="Pilotage de la plateforme" />
+          <div className="space-y-1">
+            {visibleFlowTravelNav.map((item) => (
+              <NavLinkItem key={item.to} item={item} onClick={onClick} />
+            ))}
+          </div>
+          <div className="my-4 border-t border-sidebar-border/60" />
+        </>
+      )}
+      {visibleAgenceNav.length > 0 && (
+        <>
+          <SectionHeader
+            label="Mon agence"
+            sublabel={agencyName ?? "Espace de travail"}
+          />
+          <div className="space-y-1">
+            {visibleAgenceNav.map((item) => (
+              <NavLinkItem key={item.to} item={item} onClick={onClick} />
+            ))}
+          </div>
+        </>
+      )}
     </nav>
   );
 
