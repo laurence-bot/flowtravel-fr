@@ -86,3 +86,118 @@ export const verifySiret = createServerFn({ method: "POST" })
       source: "recherche-entreprises.api.gouv.fr",
     };
   });
+
+/**
+ * Valide une agence : crée le compte auth (invitation), lie l'agence à l'utilisateur
+ * et configure le profil + rôle. Réservé aux super admins.
+ */
+export const approveAgence = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ agenceId: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    // 1. Vérifier que l'appelant est super admin
+    const { data: callerProfile, error: profileErr } = await supabase
+      .from("user_profiles")
+      .select("is_super_admin")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (profileErr) throw new Error(profileErr.message);
+    if (!callerProfile?.is_super_admin) {
+      throw new Error("Action réservée à un super administrateur");
+    }
+
+    // 2. Récupérer l'agence
+    const { data: agence, error: agErr } = await supabaseAdmin
+      .from("agences")
+      .select("*")
+      .eq("id", data.agenceId)
+      .single();
+    if (agErr) throw new Error(agErr.message);
+    if (!agence) throw new Error("Agence introuvable");
+    if (agence.statut === "validee") {
+      throw new Error("Cette agence est déjà validée");
+    }
+
+    const email = agence.email_contact.toLowerCase().trim();
+    let adminUserId: string | null = agence.admin_user_id;
+
+    // 3. Si pas encore de compte lié : inviter ou réutiliser
+    if (!adminUserId) {
+      // Vérifier si un user existe déjà avec cet email
+      const { data: existingList } = await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 200,
+      });
+      const existing = existingList?.users.find(
+        (u) => u.email?.toLowerCase() === email,
+      );
+
+      if (existing) {
+        adminUserId = existing.id;
+      } else {
+        const redirectTo =
+          (process.env.PUBLIC_SITE_URL ?? "https://flowtravel.fr") + "/auth";
+        const { data: invited, error: invErr } =
+          await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+            data: { full_name: agence.admin_full_name },
+            redirectTo,
+          });
+        if (invErr) throw new Error(`Invitation échouée : ${invErr.message}`);
+        adminUserId = invited.user?.id ?? null;
+        if (!adminUserId) throw new Error("Création de compte échouée");
+      }
+    }
+
+    // 4. Mettre à jour le profil utilisateur avec l'agence_id
+    const { error: upProfErr } = await supabaseAdmin
+      .from("user_profiles")
+      .update({
+        agence_id: agence.id,
+        full_name: agence.admin_full_name,
+      })
+      .eq("user_id", adminUserId);
+    if (upProfErr) {
+      // Le trigger handle_new_user crée le profil automatiquement, mais en cas d'invitation
+      // le profil peut ne pas exister immédiatement — on l'insère.
+      const { error: insErr } = await supabaseAdmin
+        .from("user_profiles")
+        .insert({
+          user_id: adminUserId,
+          email,
+          full_name: agence.admin_full_name,
+          agence_id: agence.id,
+          actif: true,
+          is_super_admin: false,
+        });
+      if (insErr && !insErr.message.includes("duplicate")) {
+        throw new Error(`Profil : ${insErr.message}`);
+      }
+    }
+
+    // 5. S'assurer du rôle "agent"
+    await supabaseAdmin
+      .from("user_roles")
+      .upsert(
+        { user_id: adminUserId, role: "agent" },
+        { onConflict: "user_id,role", ignoreDuplicates: true },
+      );
+
+    // 6. Marquer l'agence validée
+    const { error: updErr } = await supabaseAdmin
+      .from("agences")
+      .update({
+        statut: "validee",
+        validee_at: new Date().toISOString(),
+        validee_par: userId,
+        admin_user_id: adminUserId,
+        motif_refus: null,
+      })
+      .eq("id", agence.id);
+    if (updErr) throw new Error(updErr.message);
+
+    return { success: true, adminUserId, email };
+  });
