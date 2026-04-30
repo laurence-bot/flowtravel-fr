@@ -42,6 +42,7 @@ export type Cotation = {
   statut: CotationStatut;
   raison_perte: string | null;
   dossier_id: string | null;
+  agent_id: string | null;
   notes: string | null;
   hero_image_url: string | null;
   storytelling_intro: string | null;

@@ -33,6 +33,7 @@ import { useTable, type Contact, type Paiement } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { usePageWriteAccess } from "@/hooks/use-page-write-access";
+import { useAgents, agentLabel } from "@/hooks/use-agents";
 import { formatEUR } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { logAudit } from "@/lib/audit";
@@ -69,6 +70,7 @@ import {
   AlertTriangle,
   Sparkles,
   RotateCcw,
+  Users as UsersIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { CotationOptionsBlock } from "@/components/cotation-options-block";
@@ -113,6 +115,7 @@ function CotationDetailPage() {
   const { id } = Route.useParams();
   const { user } = useAuth();
   const { canWrite } = usePageWriteAccess();
+  const { agents } = useAgents();
   const navigate = useNavigate();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -232,6 +235,31 @@ function CotationDetailPage() {
     });
     setEditing(false);
     toast.success("Cotation enregistrée.");
+    refetchCot();
+  };
+
+  const reassignAgent = async (newAgentId: string) => {
+    if (!user || !cot) return;
+    const oldAgentId = cot.agent_id ?? null;
+    if (newAgentId === oldAgentId) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("cotations")
+      .update({ agent_id: newAgentId })
+      .eq("id", cot.id);
+    if (error) return toast.error(error.message);
+    const oldName = agentLabel(agents.find((a) => a.user_id === oldAgentId));
+    const newName = agentLabel(agents.find((a) => a.user_id === newAgentId));
+    await logAudit({
+      userId: user.id,
+      entity: "cotation",
+      entityId: cot.id,
+      action: "update",
+      description: `Agent réassigné : ${oldName} → ${newName}`,
+      oldValue: { agent_id: oldAgentId },
+      newValue: { agent_id: newAgentId },
+    });
+    toast.success(`Agent : ${newName}`);
     refetchCot();
   };
 
@@ -504,6 +532,20 @@ function CotationDetailPage() {
             </div>
           }
         />
+        <div className="mt-3 inline-flex items-center gap-2">
+          <UsersIcon className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">Agent responsable :</span>
+          <Select value={cot.agent_id ?? ""} onValueChange={reassignAgent} disabled={!canWrite}>
+            <SelectTrigger className="h-7 w-[220px] text-xs"><SelectValue placeholder="Non assigné" /></SelectTrigger>
+            <SelectContent>
+              {agents.map((a) => (
+                <SelectItem key={a.user_id} value={a.user_id}>
+                  {agentLabel(a)}{a.user_id === user?.id ? " (moi)" : ""}{!a.actif ? " · inactif" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Devis web client (lien partageable) */}

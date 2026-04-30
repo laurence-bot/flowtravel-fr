@@ -19,6 +19,7 @@ export type Demande = {
   statut: DemandeStatut;
   raison_perte: string | null;
   notes: string | null;
+  agent_id: string | null;
   dernier_contact_at: string | null;
   created_at: string;
   updated_at: string;
