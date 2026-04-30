@@ -61,7 +61,7 @@ function AuthPage() {
         <div className="flex flex-col items-center text-center mb-8">
           <Logo variant="dark" showText={false} />
           <h1 className="font-display text-3xl mt-4 text-foreground">FlowTravel</h1>
-          <p className="text-sm text-muted-foreground mt-1">Travel Operating System</p>
+          <p className="text-sm text-muted-foreground mt-1">Maison logicielle du voyage</p>
           <p className="text-xs uppercase tracking-[0.25em] text-[color:var(--gold)] mt-2">
             Maison de gestion financière
           </p>

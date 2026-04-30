@@ -48,7 +48,7 @@ const KEYWORDS = [
   "couverture de change agence",
   "FX agence de voyages",
   "FlowTravel",
-  "Travel Operating System",
+  "Maison logicielle du voyage",
   "logiciel devis voyage",
   "ERP agence de voyages",
   "back office tour-opérateur",
@@ -76,7 +76,7 @@ export const Route = createFileRoute("/")({
       { property: "og:image", content: OG_IMAGE },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
-      { property: "og:image:alt", content: "FlowTravel — Travel Operating System" },
+      { property: "og:image:alt", content: "FlowTravel — Maison logicielle du voyage" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: PAGE_TITLE },
       { name: "twitter:description", content: PAGE_DESC },
@@ -679,7 +679,7 @@ function HomePage() {
           </div>
         </div>
         <div className="border-t border-border/50 py-6 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} FlowTravel · Travel Operating System · Tous droits réservés
+          © {new Date().getFullYear()} FlowTravel · Maison logicielle du voyage · Tous droits réservés
         </div>
       </footer>
     </div>
