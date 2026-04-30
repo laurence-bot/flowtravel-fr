@@ -70,6 +70,7 @@ import {
   AlertTriangle,
   Sparkles,
   RotateCcw,
+  Users as UsersIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { CotationOptionsBlock } from "@/components/cotation-options-block";
