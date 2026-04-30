@@ -41,6 +41,7 @@ function DemandeDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { canWrite } = usePageWriteAccess();
+  const { agents } = useAgents();
   const { data: contacts, loading: contactsLoading, refetch: refetchContacts } = useTable<Contact>("contacts");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: demandes, loading: demandesLoading, refetch } = useTable<Demande>("demandes" as any);
