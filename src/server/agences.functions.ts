@@ -18,7 +18,7 @@ export type SiretVerifResult = {
   dirigeants?: Array<{ nom?: string; prenoms?: string; qualite?: string }>;
   dateCreation?: string;
   source: "recherche-entreprises.api.gouv.fr";
-  raw?: unknown;
+  raw?: Record<string, unknown>;
 };
 
 /**
