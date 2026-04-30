@@ -255,8 +255,8 @@ function ParametresAgencePage() {
           <div className="flex-1 min-w-[240px] space-y-3">
             <p className="text-sm text-muted-foreground">
               Format conseillé : PNG/SVG sur fond transparent, ratio carré, poids max 2 Mo.
-              Sur les surfaces sombres, votre logo s'affiche automatiquement dans un disque blanc
-              pour garantir une lisibilité parfaite.
+              Le bloc d'en-tête de la sidebar s'adapte automatiquement à votre identité visuelle —
+              votre logo n'est jamais altéré.
             </p>
             <div className="flex flex-wrap gap-2">
               <label className="inline-flex">
