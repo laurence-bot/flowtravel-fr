@@ -25,7 +25,7 @@ import {
   type Demande, type DemandeStatut,
 } from "@/lib/demandes";
 import { StatutPill } from "@/routes/demandes";
-import { ArrowLeft, Mail, Phone, Save, Sparkles, XCircle, RefreshCw, PlayCircle, UserPlus } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Save, Sparkles, XCircle, RefreshCw, PlayCircle, UserPlus, Users as UsersIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/demandes/$id")({
