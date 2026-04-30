@@ -83,6 +83,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  useEffect(() => { installGlobalErrorLogger(); }, []);
   return (
     <AuthProvider>
       <RoleProvider>
