@@ -155,6 +155,42 @@ function TarifsPage() {
         </div>
       </section>
 
+      {/* Manifeste — pourquoi FlowTravel existe */}
+      <section className="container mx-auto px-4 pb-16">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="inline-flex items-center gap-3 text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
+            <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
+            Notre histoire
+            <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
+          </div>
+          <h2 className="font-display text-3xl md:text-4xl mt-6 text-foreground">
+            Pensé par un agent de voyages sur mesure,
+            <br />
+            <span className="text-[color:var(--gold)]">pas par un éditeur de logiciel.</span>
+          </h2>
+          <div className="mt-8 space-y-5 text-left text-foreground/80 leading-relaxed">
+            <p>
+              FlowTravel est né dans une vraie agence. Après <strong>plus de 20 ans</strong> à
+              concevoir des voyages sur mesure, son fondateur en avait assez de jongler entre un
+              CRM, un tableur de marges, un autre pour les changes, un dossier partagé pour les
+              factures fournisseurs, un module bancaire qui ne parle à personne, et trois outils
+              qui se contredisent en fin de mois.
+            </p>
+            <p>
+              Aucun logiciel du marché ne pensait <em>vraiment</em> métier&nbsp;: la TVA sur marge,
+              les couvertures de change, les acomptes fournisseurs en USD, les paiements partiels,
+              le rapprochement bancaire, la cotation multi-jours qui devient un dossier qui devient
+              une facture… tout était toujours à rebricoler à la main.
+            </p>
+            <p>
+              C'est pour ça que FlowTravel existe&nbsp;: <strong>une seule plateforme</strong>,
+              pensée du devis au rapprochement bancaire, par quelqu'un qui a vécu chaque problème
+              de l'intérieur. Pas un outil de plus. L'outil qui les remplace tous.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Cards tarifs */}
       <section className="container mx-auto px-4 pb-20">
         <div className="grid gap-6 md:grid-cols-3 max-w-6xl mx-auto">
