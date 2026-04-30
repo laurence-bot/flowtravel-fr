@@ -43,9 +43,7 @@ type RoleRow = { user_id: string; role: AppRole };
 
 const ROLE_TONE: Record<AppRole, string> = {
   administrateur: "bg-[color:var(--gold)]/15 text-[color:var(--gold)] border-[color:var(--gold)]/30",
-  gestion: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
-  lecture_seule: "bg-muted text-muted-foreground border-border",
-  comptable: "bg-blue-500/10 text-blue-700 border-blue-500/30",
+  agent: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
 };
 
 function UtilisateursPage() {
