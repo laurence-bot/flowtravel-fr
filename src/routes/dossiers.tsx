@@ -220,6 +220,13 @@ function DossiersPage() {
     </Dialog>
   );
 
+  const agentName = (id: string | null) => {
+    if (!id) return "—";
+    const a = agents.find((x) => x.user_id === id);
+    return agentLabel(a);
+  };
+  const filteredDossiers = filterAgent === "all" ? dossiers : dossiers.filter((d) => d.agent_id === filterAgent);
+
   return (
     <div className="space-y-8">
       <PageHeader
@@ -228,15 +235,33 @@ function DossiersPage() {
         action={NewDossierButton}
       />
 
+      {agents.length > 1 && (
+        <div className="flex items-center gap-2">
+          <Label className="text-xs text-muted-foreground">Filtrer par agent :</Label>
+          <Select value={filterAgent} onValueChange={setFilterAgent}>
+            <SelectTrigger className="w-[220px] h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les agents</SelectItem>
+              {agents.map((a) => (
+                <SelectItem key={a.user_id} value={a.user_id}>{agentLabel(a)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="text-xs text-muted-foreground tabular">
+            {filteredDossiers.length} dossier{filteredDossiers.length > 1 ? "s" : ""}
+          </span>
+        </div>
+      )}
+
       <Card className="border-border/60 overflow-hidden">
         {loading ? (
           <div className="py-12 text-center text-sm text-muted-foreground">Chargement…</div>
-        ) : dossiers.length === 0 ? (
+        ) : filteredDossiers.length === 0 ? (
           <EmptyState
             icon={FolderOpen}
-            title="Aucun dossier"
-            description="Créez votre premier dossier de voyage pour suivre sa rentabilité."
-            action={NewDossierButton}
+            title={dossiers.length === 0 ? "Aucun dossier" : "Aucun dossier pour cet agent"}
+            description={dossiers.length === 0 ? "Créez votre premier dossier de voyage pour suivre sa rentabilité." : "Changez le filtre pour voir d'autres dossiers."}
+            action={dossiers.length === 0 ? NewDossierButton : undefined}
           />
         ) : (
           <Table>
@@ -244,6 +269,7 @@ function DossiersPage() {
               <TableRow className="bg-secondary/40 hover:bg-secondary/40">
                 <TableHead>Dossier</TableHead>
                 <TableHead>Client</TableHead>
+                <TableHead>Agent</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead className="text-right">Prix de vente</TableHead>
                 <TableHead className="text-right">Coût</TableHead>
@@ -252,7 +278,7 @@ function DossiersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {dossiers.map((d) => {
+              {filteredDossiers.map((d) => {
                 const prix = Number(d.prix_vente);
                 const cout = Number(d.cout_total);
                 const marge = prix - cout;
@@ -265,6 +291,7 @@ function DossiersPage() {
                       </Link>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{clientName(d.client_id)}</TableCell>
+                    <TableCell className="text-sm">{agentName(d.agent_id)}</TableCell>
                     <TableCell><StatutBadge statut={d.statut} /></TableCell>
                     <TableCell className="text-right tabular">{formatEUR(prix)}</TableCell>
                     <TableCell className="text-right tabular text-muted-foreground">{formatEUR(cout)}</TableCell>
