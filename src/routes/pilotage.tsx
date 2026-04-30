@@ -95,6 +95,7 @@ function Pilotage() {
   const { data: contacts } = useTable<Contact>("contacts");
   const { data: echeances } = useTable<FactureEcheance>("facture_echeances");
   const { data: reservations } = useTable<FxReservation>("fx_coverage_reservations");
+  const { agents } = useAgents();
 
   const f = computeGlobalFinance(dossiers, paiements, factures);
   const fxPnl = computeFxPnl({ echeances, paiements, reservations });
