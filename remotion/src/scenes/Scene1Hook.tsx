@@ -1,75 +1,102 @@
 import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig } from "remotion";
-import { COLORS } from "../theme";
-import { Subtitle } from "../components/Subtitle";
+import { COLORS, FONT_DISPLAY, FONT_BODY } from "../theme";
+import { FlowTravelLogo } from "../components/FlowTravelLogo";
 import type { Format } from "../MainVideo";
 
 export const Scene1Hook: React.FC<{ format: Format }> = ({ format }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const titleSpring = spring({ frame: frame - 4, fps, config: { damping: 18, stiffness: 140 } });
-  const titleY = interpolate(titleSpring, [0, 1], [40, 0]);
-  const titleOpacity = interpolate(frame, [4, 18], [0, 1], { extrapolateRight: "clamp" });
+  const logoSpring = spring({ frame, fps, config: { damping: 18, stiffness: 120 } });
+  const logoOpacity = interpolate(logoSpring, [0, 1], [0, 1]);
+  const logoY = interpolate(logoSpring, [0, 1], [20, 0]);
 
-  const lineWidth = interpolate(frame, [22, 50], [0, 100], { extrapolateRight: "clamp" });
-  const subOpacity = interpolate(frame, [28, 42], [0, 1], { extrapolateRight: "clamp" });
+  const lineWidth = interpolate(frame, [22, 60], [0, 100], { extrapolateRight: "clamp" });
 
-  // Exit
-  const exitOpacity = interpolate(frame, [82, 96], [1, 0], { extrapolateRight: "clamp" });
-  const exitScale = interpolate(frame, [82, 96], [1, 1.04], { extrapolateRight: "clamp" });
+  const t1Op = interpolate(frame, [40, 58], [0, 1], { extrapolateRight: "clamp" });
+  const t2Op = interpolate(frame, [70, 90], [0, 1], { extrapolateRight: "clamp" });
 
-  const baseSize = format === "landscape" ? 140 : 96;
+  const exit = interpolate(frame, [115, 135], [1, 0], { extrapolateRight: "clamp" });
+  const exitScale = interpolate(frame, [115, 135], [1, 1.03], { extrapolateRight: "clamp" });
+
+  const titleSize = format === "landscape" ? 92 : 60;
+  const subSize = format === "landscape" ? 22 : 16;
 
   return (
-    <AbsoluteFill style={{ opacity: exitOpacity, transform: `scale(${exitScale})` }}>
-      <AbsoluteFill style={{ display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-        <div
-          style={{
-            fontFamily: "DM Sans, sans-serif",
-            fontWeight: 900,
-            fontSize: baseSize,
-            color: COLORS.text,
-            letterSpacing: "-0.04em",
-            lineHeight: 0.95,
-            textAlign: "center",
-            opacity: titleOpacity,
-            transform: `translateY(${titleY}px)`,
-            padding: "0 60px",
-          }}
-        >
-          Vous perdez<br />
-          <span style={{ color: COLORS.primary, fontStyle: "italic" }}>du temps</span>
-          <span style={{ color: COLORS.text }}>?</span>
+    <AbsoluteFill style={{ opacity: exit, transform: `scale(${exitScale})` }}>
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+        }}
+      >
+        <div style={{ opacity: logoOpacity, transform: `translateY(${logoY}px)` }}>
+          <FlowTravelLogo size={64} variant="dark" />
         </div>
 
         <div
           style={{
-            marginTop: 36,
-            height: 3,
-            width: `${lineWidth * 2.2}px`,
-            background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})`,
-            borderRadius: 2,
-            maxWidth: "70%",
+            marginTop: 48,
+            height: 1,
+            width: `${lineWidth * 1.5}px`,
+            background: `linear-gradient(90deg, transparent, ${COLORS.gold}, transparent)`,
+            maxWidth: "60%",
           }}
         />
 
         <div
           style={{
-            marginTop: 28,
-            fontFamily: "Inter, sans-serif",
-            fontSize: format === "landscape" ? 26 : 20,
+            marginTop: 48,
+            fontFamily: FONT_DISPLAY,
+            fontSize: titleSize,
+            fontWeight: 500,
+            color: COLORS.text,
+            textAlign: "center",
+            letterSpacing: "-0.015em",
+            lineHeight: 1.05,
+            padding: "0 80px",
+            opacity: t1Op,
+          }}
+        >
+          Une agence de voyages,
+          <br />
+          c'est <em style={{ color: COLORS.ocre, fontStyle: "italic" }}>douze outils</em>.
+        </div>
+
+        <div
+          style={{
+            marginTop: 18,
+            fontFamily: FONT_DISPLAY,
+            fontSize: titleSize,
+            fontWeight: 500,
+            color: COLORS.text,
+            textAlign: "center",
+            letterSpacing: "-0.015em",
+            lineHeight: 1.05,
+            padding: "0 80px",
+            opacity: t2Op,
+          }}
+        >
+          FlowTravel, c'est <em style={{ color: COLORS.gold, fontStyle: "italic" }}>un seul</em>.
+        </div>
+
+        <div
+          style={{
+            marginTop: 56,
+            fontFamily: FONT_BODY,
+            fontSize: subSize,
             color: COLORS.textMuted,
             textTransform: "uppercase",
-            letterSpacing: "0.2em",
-            opacity: subOpacity,
+            letterSpacing: "0.32em",
+            opacity: t2Op,
             fontWeight: 500,
           }}
         >
-          Pour gérer votre agence de voyage
+          Travel Operating System
         </div>
       </AbsoluteFill>
-
-      <Subtitle text="Vous perdez encore du temps à gérer vos dossiers ?" />
     </AbsoluteFill>
   );
 };
