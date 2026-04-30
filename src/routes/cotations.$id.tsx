@@ -238,6 +238,31 @@ function CotationDetailPage() {
     refetchCot();
   };
 
+  const reassignAgent = async (newAgentId: string) => {
+    if (!user || !cot) return;
+    const oldAgentId = cot.agent_id ?? null;
+    if (newAgentId === oldAgentId) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("cotations")
+      .update({ agent_id: newAgentId })
+      .eq("id", cot.id);
+    if (error) return toast.error(error.message);
+    const oldName = agentLabel(agents.find((a) => a.user_id === oldAgentId));
+    const newName = agentLabel(agents.find((a) => a.user_id === newAgentId));
+    await logAudit({
+      userId: user.id,
+      entity: "cotation",
+      entityId: cot.id,
+      action: "update",
+      description: `Agent réassigné : ${oldName} → ${newName}`,
+      oldValue: { agent_id: oldAgentId },
+      newValue: { agent_id: newAgentId },
+    });
+    toast.success(`Agent : ${newName}`);
+    refetchCot();
+  };
+
   const ajouterLigne = async () => {
     if (!user) return;
     const parsed = ligneSchema.safeParse({
