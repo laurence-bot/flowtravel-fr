@@ -63,7 +63,8 @@ const STATUT_COLORS: Record<string, string> = {
 };
 
 function AdminDemosPage() {
-  const { isAdmin, loading: roleLoading } = useRole();
+  const { role, loading: roleLoading } = useRole();
+  const isAdmin = role === "administrateur";
   const [requests, setRequests] = useState<DemoRequest[]>([]);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
