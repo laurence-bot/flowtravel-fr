@@ -22,7 +22,7 @@ import {
 import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landmark, Percent, Link2, LineChart, AlertTriangle, CheckSquare, Flame, Clock, Mail, Plane } from "lucide-react";
 import { deadlineUrgence, type FournisseurOption, type FlightOption } from "@/lib/options";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/app")({
   component: () => (
     <RequireAuth>
       <Dashboard />

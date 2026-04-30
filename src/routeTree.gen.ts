@@ -31,6 +31,7 @@ import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as ComptesRouteImport } from './routes/comptes'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuditRouteImport } from './routes/audit'
+import { Route as AppRouteImport } from './routes/app'
 import { Route as AdminDemosRouteImport } from './routes/admin-demos'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PTokenRouteImport } from './routes/p.$token'
@@ -152,6 +153,11 @@ const AuditRoute = AuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminDemosRoute = AdminDemosRouteImport.update({
   id: '/admin-demos',
   path: '/admin-demos',
@@ -206,6 +212,7 @@ const DemoRdvTokenRoute = DemoRdvTokenRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin-demos': typeof AdminDemosRoute
+  '/app': typeof AppRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
@@ -240,6 +247,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin-demos': typeof AdminDemosRoute
+  '/app': typeof AppRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
@@ -275,6 +283,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin-demos': typeof AdminDemosRoute
+  '/app': typeof AppRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
   '/comptes': typeof ComptesRoute
@@ -311,6 +320,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin-demos'
+    | '/app'
     | '/audit'
     | '/auth'
     | '/comptes'
@@ -345,6 +355,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin-demos'
+    | '/app'
     | '/audit'
     | '/auth'
     | '/comptes'
@@ -379,6 +390,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin-demos'
+    | '/app'
     | '/audit'
     | '/auth'
     | '/comptes'
@@ -414,6 +426,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminDemosRoute: typeof AdminDemosRoute
+  AppRoute: typeof AppRoute
   AuditRoute: typeof AuditRoute
   AuthRoute: typeof AuthRoute
   ComptesRoute: typeof ComptesRoute
@@ -596,6 +609,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuditRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin-demos': {
       id: '/admin-demos'
       path: '/admin-demos'
@@ -732,6 +752,7 @@ const DossiersRouteWithChildren = DossiersRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminDemosRoute: AdminDemosRoute,
+  AppRoute: AppRoute,
   AuditRoute: AuditRoute,
   AuthRoute: AuthRoute,
   ComptesRoute: ComptesRoute,
