@@ -147,16 +147,31 @@ function DossiersPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Statut</Label>
-              <Select value={form.statut} onValueChange={(v: Dossier["statut"]) => setForm({ ...form, statut: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Label>Agent responsable</Label>
+              <Select value={form.agent_id || (user?.id ?? "")} onValueChange={(v) => setForm({ ...form, agent_id: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Moi" />
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="brouillon">Brouillon</SelectItem>
-                  <SelectItem value="confirme">Confirmé</SelectItem>
-                  <SelectItem value="cloture">Clôturé</SelectItem>
+                  {agents.map((a) => (
+                    <SelectItem key={a.user_id} value={a.user_id}>
+                      {agentLabel(a)}{a.user_id === user?.id ? " (moi)" : ""}{!a.actif ? " · inactif" : ""}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Statut</Label>
+            <Select value={form.statut} onValueChange={(v: Dossier["statut"]) => setForm({ ...form, statut: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="brouillon">Brouillon</SelectItem>
+                <SelectItem value="confirme">Confirmé</SelectItem>
+                <SelectItem value="cloture">Clôturé</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
