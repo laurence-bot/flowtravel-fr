@@ -19,6 +19,7 @@ import { Route as PilotageRouteImport } from './routes/pilotage'
 import { Route as ParametresAgenceRouteImport } from './routes/parametres-agence'
 import { Route as PaiementsRouteImport } from './routes/paiements'
 import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
+import { Route as InscriptionAgenceRouteImport } from './routes/inscription-agence'
 import { Route as ImportPdfRouteImport } from './routes/import-pdf'
 import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
 import { Route as ExportRouteImport } from './routes/export'
@@ -91,6 +92,11 @@ const PaiementsRoute = PaiementsRouteImport.update({
 const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
   id: '/mot-de-passe-oublie',
   path: '/mot-de-passe-oublie',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InscriptionAgenceRoute = InscriptionAgenceRouteImport.update({
+  id: '/inscription-agence',
+  path: '/inscription-agence',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ImportPdfRoute = ImportPdfRouteImport.update({
@@ -225,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
+  '/inscription-agence': typeof InscriptionAgenceRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
@@ -260,6 +267,7 @@ export interface FileRoutesByTo {
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
+  '/inscription-agence': typeof InscriptionAgenceRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
@@ -296,6 +304,7 @@ export interface FileRoutesById {
   '/export': typeof ExportRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
+  '/inscription-agence': typeof InscriptionAgenceRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
@@ -333,6 +342,7 @@ export interface FileRouteTypes {
     | '/export'
     | '/import-bancaire'
     | '/import-pdf'
+    | '/inscription-agence'
     | '/mot-de-passe-oublie'
     | '/paiements'
     | '/parametres-agence'
@@ -368,6 +378,7 @@ export interface FileRouteTypes {
     | '/export'
     | '/import-bancaire'
     | '/import-pdf'
+    | '/inscription-agence'
     | '/mot-de-passe-oublie'
     | '/paiements'
     | '/parametres-agence'
@@ -403,6 +414,7 @@ export interface FileRouteTypes {
     | '/export'
     | '/import-bancaire'
     | '/import-pdf'
+    | '/inscription-agence'
     | '/mot-de-passe-oublie'
     | '/paiements'
     | '/parametres-agence'
@@ -439,6 +451,7 @@ export interface RootRouteChildren {
   ExportRoute: typeof ExportRoute
   ImportBancaireRoute: typeof ImportBancaireRoute
   ImportPdfRoute: typeof ImportPdfRoute
+  InscriptionAgenceRoute: typeof InscriptionAgenceRoute
   MotDePasseOublieRoute: typeof MotDePasseOublieRoute
   PaiementsRoute: typeof PaiementsRoute
   ParametresAgenceRoute: typeof ParametresAgenceRoute
@@ -523,6 +536,13 @@ declare module '@tanstack/react-router' {
       path: '/mot-de-passe-oublie'
       fullPath: '/mot-de-passe-oublie'
       preLoaderRoute: typeof MotDePasseOublieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inscription-agence': {
+      id: '/inscription-agence'
+      path: '/inscription-agence'
+      fullPath: '/inscription-agence'
+      preLoaderRoute: typeof InscriptionAgenceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/import-pdf': {
@@ -765,6 +785,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExportRoute: ExportRoute,
   ImportBancaireRoute: ImportBancaireRoute,
   ImportPdfRoute: ImportPdfRoute,
+  InscriptionAgenceRoute: InscriptionAgenceRoute,
   MotDePasseOublieRoute: MotDePasseOublieRoute,
   PaiementsRoute: PaiementsRoute,
   ParametresAgenceRoute: ParametresAgenceRoute,

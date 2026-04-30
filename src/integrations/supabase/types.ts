@@ -14,6 +14,99 @@ export type Database = {
   }
   public: {
     Tables: {
+      agences: {
+        Row: {
+          admin_full_name: string
+          admin_user_id: string | null
+          adresse: string | null
+          code_postal: string | null
+          created_at: string
+          doc_atout_france_url: string | null
+          doc_kbis_url: string | null
+          doc_piece_identite_url: string | null
+          email_contact: string
+          forfait: Database["public"]["Enums"]["agence_forfait"]
+          id: string
+          immat_atout_france: string
+          max_agents: number
+          motif_refus: string | null
+          nom_commercial: string
+          pappers_nom: string | null
+          pappers_raw: Json | null
+          pappers_statut_actif: boolean | null
+          pappers_verified_at: string | null
+          pays: string | null
+          raison_sociale: string | null
+          siret: string
+          statut: Database["public"]["Enums"]["agence_statut"]
+          telephone: string | null
+          updated_at: string
+          validee_at: string | null
+          validee_par: string | null
+          ville: string | null
+        }
+        Insert: {
+          admin_full_name: string
+          admin_user_id?: string | null
+          adresse?: string | null
+          code_postal?: string | null
+          created_at?: string
+          doc_atout_france_url?: string | null
+          doc_kbis_url?: string | null
+          doc_piece_identite_url?: string | null
+          email_contact: string
+          forfait?: Database["public"]["Enums"]["agence_forfait"]
+          id?: string
+          immat_atout_france: string
+          max_agents?: number
+          motif_refus?: string | null
+          nom_commercial: string
+          pappers_nom?: string | null
+          pappers_raw?: Json | null
+          pappers_statut_actif?: boolean | null
+          pappers_verified_at?: string | null
+          pays?: string | null
+          raison_sociale?: string | null
+          siret: string
+          statut?: Database["public"]["Enums"]["agence_statut"]
+          telephone?: string | null
+          updated_at?: string
+          validee_at?: string | null
+          validee_par?: string | null
+          ville?: string | null
+        }
+        Update: {
+          admin_full_name?: string
+          admin_user_id?: string | null
+          adresse?: string | null
+          code_postal?: string | null
+          created_at?: string
+          doc_atout_france_url?: string | null
+          doc_kbis_url?: string | null
+          doc_piece_identite_url?: string | null
+          email_contact?: string
+          forfait?: Database["public"]["Enums"]["agence_forfait"]
+          id?: string
+          immat_atout_france?: string
+          max_agents?: number
+          motif_refus?: string | null
+          nom_commercial?: string
+          pappers_nom?: string | null
+          pappers_raw?: Json | null
+          pappers_statut_actif?: boolean | null
+          pappers_verified_at?: string | null
+          pays?: string | null
+          raison_sociale?: string | null
+          siret?: string
+          statut?: Database["public"]["Enums"]["agence_statut"]
+          telephone?: string | null
+          updated_at?: string
+          validee_at?: string | null
+          validee_par?: string | null
+          ville?: string | null
+        }
+        Relationships: []
+      }
       agency_settings: {
         Row: {
           address: string | null
@@ -1746,32 +1839,46 @@ export type Database = {
       user_profiles: {
         Row: {
           actif: boolean
+          agence_id: string | null
           created_at: string
           email: string
           full_name: string | null
           id: string
+          is_super_admin: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
           actif?: boolean
+          agence_id?: string | null
           created_at?: string
           email: string
           full_name?: string | null
           id?: string
+          is_super_admin?: boolean
           updated_at?: string
           user_id: string
         }
         Update: {
           actif?: boolean
+          agence_id?: string | null
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
+          is_super_admin?: boolean
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_agence_id_fkey"
+            columns: ["agence_id"]
+            isOneToOne: false
+            referencedRelation: "agences"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -1799,6 +1906,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_my_agence_id: { Args: never; Returns: string }
       get_my_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
@@ -1810,8 +1918,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
+      agence_forfait: "solo" | "equipe" | "agence"
+      agence_statut: "en_attente" | "validee" | "refusee" | "suspendue"
       app_role:
         | "administrateur"
         | "gestion"
@@ -2061,6 +2172,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      agence_forfait: ["solo", "equipe", "agence"],
+      agence_statut: ["en_attente", "validee", "refusee", "suspendue"],
       app_role: [
         "administrateur",
         "gestion",
