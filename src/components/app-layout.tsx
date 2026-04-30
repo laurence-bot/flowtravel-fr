@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
+import { useAgencySettings } from "@/hooks/use-agency-settings";
 import { canAccessRoute, ROLE_LABELS } from "@/lib/permissions";
 import { ReadOnlyShield } from "@/components/read-only-shield";
 import { supabase } from "@/integrations/supabase/client";
