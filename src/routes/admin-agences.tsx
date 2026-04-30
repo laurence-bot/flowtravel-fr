@@ -428,6 +428,63 @@ function AdminAgencesPage() {
                   )}
                 </section>
 
+                {/* Vérif Atout France (manuelle) */}
+                <section className="border-t pt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Vérification Atout France (manuelle)
+                    </h4>
+                  </div>
+                  <div className="rounded-md border bg-muted/30 p-3 space-y-2 text-sm">
+                    <div className="text-xs text-muted-foreground">
+                      N° Atout France déclaré :{" "}
+                      <span className="font-mono font-medium text-foreground">
+                        {selected.immat_atout_france || "—"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Atout France ne fournit pas d'API publique. Vérifiez manuellement dans le registre officiel ROVS
+                      (recherche par SIRET ou raison sociale).
+                    </p>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <Button asChild size="sm" variant="outline">
+                        <a
+                          href="https://registre-operateurs-de-voyages.atout-france.fr/web/rovs/recherche"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                          Ouvrir le registre ROVS
+                        </a>
+                      </Button>
+                      {selected.siret && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            navigator.clipboard.writeText(selected.siret);
+                            toast.success("SIRET copié — collez-le dans le champ recherche");
+                          }}
+                        >
+                          Copier le SIRET
+                        </Button>
+                      )}
+                      {selected.immat_atout_france && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            navigator.clipboard.writeText(selected.immat_atout_france);
+                            toast.success("N° IM copié");
+                          }}
+                        >
+                          Copier le N° IM
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </section>
+
                 {/* Documents */}
                 <section className="border-t pt-4">
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
