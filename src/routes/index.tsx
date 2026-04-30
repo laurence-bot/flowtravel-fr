@@ -32,7 +32,7 @@ const OG_IMAGE = `${SITE_URL}/og-flowtravel.jpg`;
 const PAGE_TITLE =
   "FlowTravel — Logiciel de gestion pour agences de voyages | Cotations, marges, FX, trésorerie";
 const PAGE_DESC =
-  "FlowTravel est le logiciel tout-en-un des agences de voyages : cotations multi-jours, calcul de marges, TVA sur marge, gestion FX, rapprochement bancaire et trésorerie. À partir de 9€/mois.";
+  "FlowTravel — Travel Operating System : le logiciel dédié aux agences de voyages sur mesure. Cotations multi-jours, marges, TVA sur marge, gestion FX, rapprochement bancaire et trésorerie. À partir de 9€/mois.";
 
 const KEYWORDS = [
   "logiciel agence de voyages",
@@ -270,14 +270,12 @@ function HomePage() {
               <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
             </div>
             <h1 className="font-display text-4xl md:text-6xl lg:text-7xl mt-7 leading-[1.05] text-foreground">
-              Le logiciel des
+              Le logiciel dédié aux
               <br />
-              <em className="not-italic text-[color:var(--ocre)]">agences de voyages</em>
-              <br />
-              <span className="text-foreground/80">qui aiment leur métier.</span>
+              <em className="not-italic text-[color:var(--ocre)]">agences de voyages sur mesure</em>
             </h1>
             <p className="text-base md:text-lg text-muted-foreground mt-7 max-w-2xl mx-auto leading-relaxed">
-              Cotations sur-mesure, marges, TVA sur marge, gestion des devises, rapprochement
+              Cotations multi-jours, marges, TVA sur marge, gestion des devises, rapprochement
               bancaire et trésorerie. Une seule plateforme, pensée pour le métier — sans
               dispersion d'outils.
             </p>
