@@ -36,7 +36,7 @@ function AdminDashboardPage() {
         supabase.from("user_profiles").select("*", { count: "exact", head: true }).eq("actif", true),
         supabase.from("support_messages").select("*", { count: "exact", head: true }).eq("lu_par_admin", false).eq("is_from_admin", false),
         supabase.from("error_logs").select("*", { count: "exact", head: true }).eq("resolved", false),
-        supabase.from("error_logs").select("*", { count: "exact", head: true }).gte("created_at", since),
+        supabase.from("error_logs").select("*", { count: "exact", head: true }).gte("created_at", since).eq("resolved", false),
       ]);
       setStats({
         agencesEnAttente: pa.count || 0,
@@ -57,7 +57,7 @@ function AdminDashboardPage() {
     { title: "Utilisateurs actifs", value: stats.agentsTotal, icon: Users, link: "/utilisateurs", color: "text-blue-600" },
     { title: "Messages non lus", value: stats.messagesNonLus, icon: MessageSquare, link: "/admin-messages", color: "text-violet-600", urgent: stats.messagesNonLus > 0 },
     { title: "Erreurs non résolues", value: stats.erreursNonResolues, icon: AlertTriangle, link: "/admin-errors", color: "text-rose-600", urgent: stats.erreursNonResolues > 0 },
-    { title: "Erreurs (24h)", value: stats.erreurs24h, icon: AlertTriangle, link: "/admin-errors", color: "text-orange-600" },
+    { title: "Erreurs (24h, non résolues)", value: stats.erreurs24h, icon: AlertTriangle, link: "/admin-errors", color: "text-orange-600" },
   ];
 
   return (
