@@ -117,9 +117,10 @@ function TarifsPage() {
 
       {/* Hero */}
       <section className="container mx-auto px-4 py-16 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--gold)]/30 bg-[color:var(--gold)]/5 px-4 py-1.5 text-xs uppercase tracking-[0.2em] text-[color:var(--gold)]">
-          <Sparkles className="h-3 w-3" />
+        <div className="inline-flex items-center gap-3 text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
+          <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
           Maison logicielle du voyage
+          <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
         </div>
         <h1 className="font-display text-5xl md:text-6xl mt-6 text-foreground">
           Des tarifs pensés pour les agences,
