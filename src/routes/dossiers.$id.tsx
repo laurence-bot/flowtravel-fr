@@ -129,6 +129,20 @@ function DossierDetail() {
             <User className="h-3.5 w-3.5" />
             {client?.nom ?? "Aucun client associé"}
           </p>
+          <div className="mt-3 inline-flex items-center gap-2">
+            <UsersIcon className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Agent :</span>
+            <Select value={dossier.agent_id ?? ""} onValueChange={reassignAgent}>
+              <SelectTrigger className="h-7 w-[200px] text-xs"><SelectValue placeholder="Non assigné" /></SelectTrigger>
+              <SelectContent>
+                {agents.map((a) => (
+                  <SelectItem key={a.user_id} value={a.user_id}>
+                    {agentLabel(a)}{a.user_id === user?.id ? " (moi)" : ""}{!a.actif ? " · inactif" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <Button variant="outline" size="sm" onClick={supprimer}>
           <Trash2 className="h-4 w-4 mr-2" />
