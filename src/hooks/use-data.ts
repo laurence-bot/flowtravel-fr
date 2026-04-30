@@ -21,6 +21,7 @@ export type Contact = {
 export type Dossier = {
   id: string;
   client_id: string | null;
+  agent_id: string | null;
   titre: string;
   statut: "brouillon" | "confirme" | "cloture";
   prix_vente: number;
