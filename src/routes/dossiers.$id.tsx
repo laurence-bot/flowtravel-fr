@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useTable, type Contact, type Dossier, type Paiement, type Facture } from "@/hooks/use-data";
+import { useAgents, agentLabel } from "@/hooks/use-agents";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { formatEUR, formatPercent, formatDate } from "@/lib/format";
