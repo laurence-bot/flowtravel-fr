@@ -199,7 +199,7 @@ function ParametresAgencePage() {
           <p className="text-sm text-muted-foreground">
             Cette page est réservée aux rôles Administrateur et Gestion.
           </p>
-          <Button variant="outline" className="mt-4" onClick={() => navigate({ to: "/" })}>
+          <Button variant="outline" className="mt-4" onClick={() => navigate({ to: "/app" })}>
             Retour au tableau de bord
           </Button>
         </Card>

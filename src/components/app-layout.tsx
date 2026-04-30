@@ -9,7 +9,7 @@ import { canAccessRoute, ROLE_LABELS } from "@/lib/permissions";
 import { ReadOnlyShield } from "@/components/read-only-shield";
 
 const nav = [
-  { to: "/", label: "Tableau de bord", icon: LayoutDashboard },
+  { to: "/app", label: "Tableau de bord", icon: LayoutDashboard },
   { to: "/pilotage", label: "Pilotage", icon: Compass },
   { to: "/contacts", label: "Clients & Fournisseurs", icon: Users },
   { to: "/demandes", label: "Demandes", icon: Inbox },
@@ -43,7 +43,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   const isActive = (to: string) =>
-    to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
+    to === "/app" ? location.pathname === "/app" : location.pathname.startsWith(to);
 
   const NavList = ({ onClick }: { onClick?: () => void }) => (
     <nav className="flex-1 px-4 py-6 space-y-1">

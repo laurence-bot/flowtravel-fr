@@ -1,0 +1,33 @@
+User-agent: *
+Allow: /
+Allow: /tarifs
+Allow: /demo
+
+Disallow: /app
+Disallow: /auth
+Disallow: /admin-demos
+Disallow: /audit
+Disallow: /comptes
+Disallow: /contacts
+Disallow: /cotations
+Disallow: /couvertures-fx
+Disallow: /demandes
+Disallow: /dossiers
+Disallow: /export
+Disallow: /factures
+Disallow: /import-bancaire
+Disallow: /import-pdf
+Disallow: /paiements
+Disallow: /parametres-agence
+Disallow: /pilotage
+Disallow: /previsions
+Disallow: /qa
+Disallow: /rapprochement
+Disallow: /utilisateurs
+Disallow: /p/
+Disallow: /demo/v/
+Disallow: /demo/rdv/
+Disallow: /reinitialiser-mot-de-passe
+Disallow: /mot-de-passe-oublie
+
+Sitemap: https://flowtravel.fr/sitemap.xml

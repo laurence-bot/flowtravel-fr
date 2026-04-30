@@ -1,619 +1,684 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { RequireAuth } from "@/components/require-auth";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { useTable, type Dossier, type Paiement, type Facture, type Compte, type Transfert, type BankTransaction, type Contact, BANQUE_LABELS } from "@/hooks/use-data";
-import { formatEUR, formatPercent, formatDate } from "@/lib/format";
-import { computeGlobalFinance, computeComptesSoldes } from "@/lib/finance";
-import { computeCashForecast } from "@/lib/cash-forecast";
-import { PageHeader } from "@/components/page-header";
-import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Logo } from "@/components/logo";
 import { useAuth } from "@/hooks/use-auth";
 import {
-  PRIORITE_TONE,
-  STATUT_TONE,
-  isAujourdhui,
-  isEnRetard,
-  sortByUrgence,
-  type DossierTask,
-} from "@/lib/dossier-tasks";
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowRight, Receipt, Landmark, Percent, Link2, LineChart, AlertTriangle, CheckSquare, Flame, Clock, Mail, Plane } from "lucide-react";
-import { deadlineUrgence, type FournisseurOption, type FlightOption } from "@/lib/options";
+  Sparkles,
+  Check,
+  Wallet,
+  PiggyBank,
+  Globe,
+  Shield,
+  LineChart,
+  FileText,
+  Plane,
+  Receipt,
+  Landmark,
+  Users,
+  ArrowRight,
+  Star,
+  Zap,
+  Lock,
+  Mail,
+  Phone,
+  MapPin,
+} from "lucide-react";
+import heroImg from "@/assets/hero-dashboard.jpg";
+
+const SITE_URL = "https://flowtravel.fr";
+const OG_IMAGE = `${SITE_URL}/og-flowtravel.jpg`;
+
+const PAGE_TITLE =
+  "FlowTravel — Logiciel de gestion pour agences de voyages | Cotations, marges, FX, trésorerie";
+const PAGE_DESC =
+  "FlowTravel est le logiciel tout-en-un des agences de voyages : cotations multi-jours, calcul de marges, TVA sur marge, gestion FX, rapprochement bancaire et trésorerie. À partir de 9€/mois.";
+
+const KEYWORDS = [
+  "logiciel agence de voyages",
+  "logiciel tour-opérateur",
+  "logiciel TO",
+  "CRM agence de voyages",
+  "gestion agence de voyages",
+  "cotation voyage sur mesure",
+  "TVA sur marge agence de voyages",
+  "marge agence de voyages",
+  "rapprochement bancaire voyages",
+  "couverture de change agence",
+  "FX agence de voyages",
+  "FlowTravel",
+  "Travel Operating System",
+  "logiciel devis voyage",
+  "ERP agence de voyages",
+  "back office tour-opérateur",
+];
 
 export const Route = createFileRoute("/")({
-  component: () => (
-    <RequireAuth>
-      <Dashboard />
-    </RequireAuth>
-  ),
+  component: HomePage,
+  head: () => ({
+    meta: [
+      { title: PAGE_TITLE },
+      { name: "description", content: PAGE_DESC },
+      { name: "keywords", content: KEYWORDS.join(", ") },
+      { name: "author", content: "FlowTravel" },
+      { name: "robots", content: "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" },
+      { name: "googlebot", content: "index, follow" },
+      { name: "language", content: "French" },
+      { name: "geo.region", content: "FR" },
+      { name: "geo.placename", content: "France" },
+      { property: "og:locale", content: "fr_FR" },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: SITE_URL },
+      { property: "og:site_name", content: "FlowTravel" },
+      { property: "og:title", content: PAGE_TITLE },
+      { property: "og:description", content: PAGE_DESC },
+      { property: "og:image", content: OG_IMAGE },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "FlowTravel — Travel Operating System" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: PAGE_TITLE },
+      { name: "twitter:description", content: PAGE_DESC },
+      { name: "twitter:image", content: OG_IMAGE },
+    ],
+    links: [{ rel: "canonical", href: SITE_URL }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": `${SITE_URL}/#organization`,
+              name: "FlowTravel",
+              url: SITE_URL,
+              logo: `${SITE_URL}/favicon.svg`,
+              description: PAGE_DESC,
+              areaServed: "FR",
+              sameAs: [],
+            },
+            {
+              "@type": "WebSite",
+              "@id": `${SITE_URL}/#website`,
+              url: SITE_URL,
+              name: "FlowTravel",
+              inLanguage: "fr-FR",
+              publisher: { "@id": `${SITE_URL}/#organization` },
+            },
+            {
+              "@type": "SoftwareApplication",
+              name: "FlowTravel",
+              applicationCategory: "BusinessApplication",
+              applicationSubCategory: "Travel Agency Software",
+              operatingSystem: "Web",
+              description: PAGE_DESC,
+              url: SITE_URL,
+              offers: [
+                {
+                  "@type": "Offer",
+                  name: "Starter",
+                  price: "9",
+                  priceCurrency: "EUR",
+                  priceSpecification: {
+                    "@type": "UnitPriceSpecification",
+                    price: "9",
+                    priceCurrency: "EUR",
+                    unitText: "MONTH",
+                  },
+                },
+                {
+                  "@type": "Offer",
+                  name: "Studio",
+                  price: "49",
+                  priceCurrency: "EUR",
+                },
+                {
+                  "@type": "Offer",
+                  name: "Synergy",
+                  price: "79",
+                  priceCurrency: "EUR",
+                },
+              ],
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: "4.9",
+                reviewCount: "27",
+              },
+            },
+            {
+              "@type": "FAQPage",
+              mainEntity: [
+                {
+                  "@type": "Question",
+                  name: "Qu'est-ce que FlowTravel ?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "FlowTravel est un logiciel SaaS de gestion tout-en-un pour les agences de voyages et tour-opérateurs : cotations sur mesure, calcul de marges, TVA sur marge, gestion FX, trésorerie et rapprochement bancaire.",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "Combien coûte FlowTravel ?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "FlowTravel démarre à 9€ HT/mois pour le plan Starter (1 utilisateur). Le plan Studio est à 49€/mois (jusqu'à 3 utilisateurs) et Synergy à 79€/mois (utilisateurs illimités).",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "FlowTravel gère-t-il la TVA sur marge ?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Oui. FlowTravel calcule automatiquement la TVA sur marge selon le régime des agences de voyages (UE / Hors UE), avec ventilation par destination.",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "Puis-je gérer mes achats en devises (USD, GBP, ZAR) ?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Oui, FlowTravel propose un module FX complet : couvertures de change, réservations, calcul de P&L FX et optimisation par dossier.",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "Y a-t-il un engagement ?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Non. Tous les abonnements FlowTravel sont sans engagement, résiliables à tout moment.",
+                  },
+                },
+              ],
+            },
+          ],
+        }),
+      },
+    ],
+  }),
 });
 
-function KPI({
-  label,
-  value,
-  icon: Icon,
-  tone,
-  hint,
-}: {
-  label: string;
-  value: string;
-  icon: React.ComponentType<{ className?: string }>;
-  tone: "revenue" | "cost" | "margin" | "cash";
-  hint?: string;
-}) {
-  const colorVar = `var(--${tone})`;
-  return (
-    <Card className="p-6 relative overflow-hidden border-border/60 hover:border-border transition-colors">
-      <div
-        className="absolute top-0 left-0 right-0 h-[2px]"
-        style={{ backgroundColor: colorVar }}
-      />
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            {label}
-          </div>
-          <div className="mt-3 text-2xl md:text-[28px] font-semibold tabular text-foreground">
-            {value}
-          </div>
-          {hint && (
-            <div className="text-xs text-muted-foreground mt-1.5">{hint}</div>
-          )}
-        </div>
-        <div
-          className="h-10 w-10 rounded-md flex items-center justify-center shrink-0"
-          style={{ backgroundColor: `color-mix(in oklab, ${colorVar} 12%, transparent)`, color: colorVar }}
-        >
-          <Icon className="h-5 w-5" />
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function Dashboard() {
-  const { data: dossiers } = useTable<Dossier>("dossiers");
-  const { data: paiements } = useTable<Paiement>("paiements");
-  const { data: factures } = useTable<Facture>("factures_fournisseurs");
-  const { data: comptes } = useTable<Compte>("comptes");
-  const { data: transferts } = useTable<Transfert>("transferts");
-  const { data: bankTx } = useTable<BankTransaction>("bank_transactions");
-  const { data: contacts } = useTable<Contact>("contacts");
-  const { user } = useAuth();
-  const [tasks, setTasks] = useState<DossierTask[]>([]);
-  const [foOpts, setFoOpts] = useState<FournisseurOption[]>([]);
-  const [flOpts, setFlOpts] = useState<FlightOption[]>([]);
+function HomePage() {
+  const { session, loading } = useAuth();
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any)
-      .from("dossier_tasks")
-      .select("*")
-      .neq("statut", "termine")
-      .then(({ data }: { data: DossierTask[] | null }) => setTasks(data ?? []));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any)
-      .from("fournisseur_options")
-      .select("*")
-      .not("statut", "in", "(annulee,option_refusee,confirmee)")
-      .then(({ data }: { data: FournisseurOption[] | null }) => setFoOpts(data ?? []));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any)
-      .from("flight_options")
-      .select("*")
-      .eq("statut", "en_option")
-      .then(({ data }: { data: FlightOption[] | null }) => setFlOpts(data ?? []));
-  }, [user, dossiers.length]);
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
-  const f = computeGlobalFinance(dossiers, paiements, factures);
-  const soldes = computeComptesSoldes(comptes, paiements, transferts);
-  const tresorerieReelle = soldes.reduce((s, c) => s + c.solde, 0);
-  const txARapprocher = bankTx.filter((t) => t.statut === "nouveau").length;
-  const forecast = computeCashForecast(30, { comptes, paiements, transferts, dossiers, factures, contacts });
-  const recentDossiers = dossiers.slice(0, 5);
-  const recentPaiements = paiements.slice(0, 5);
-
-  const tasksRetard = tasks.filter(isEnRetard);
-  const tasksToday = tasks.filter(isAujourdhui);
-  const tasksCritiques = tasks.filter((t) => t.priorite === "critique");
-  const tasksUrgentes = [...tasksRetard, ...tasksToday, ...tasksCritiques]
-    .filter((t, i, arr) => arr.findIndex((x) => x.id === t.id) === i)
-    .sort(sortByUrgence)
-    .slice(0, 6);
-
-  // --- Options fournisseurs / vols : alertes deadlines ---
-  const allOptDeadlines = [
-    ...foOpts.map((o) => ({
-      id: o.id,
-      kind: "fournisseur" as const,
-      label: o.nom_fournisseur,
-      cotation_id: o.cotation_id,
-      urg: deadlineUrgence(o.deadline_option_date, o.deadline_option_time),
-    })),
-    ...flOpts.map((f) => ({
-      id: f.id,
-      kind: "vol" as const,
-      label: `${f.compagnie} ${f.routing}`,
-      cotation_id: f.cotation_id,
-      urg: deadlineUrgence(f.deadline_option_date, f.deadline_option_time),
-    })),
-  ];
-  const optExpired = allOptDeadlines.filter((d) => d.urg === "expired");
-  const optCritical = allOptDeadlines.filter((d) => d.urg === "critical");
-  const optSansReponse = foOpts.filter((o) => o.statut === "demandee" && deadlineUrgence(o.deadline_option_date, o.deadline_option_time) === "ok");
+  // Si déjà connecté, on l'envoie sur son dashboard
+  if (!loading && session) return <Navigate to="/app" />;
 
   return (
-    <div className="space-y-10">
-      <PageHeader
-        title="Tableau de bord"
-        description="Vision financière consolidée de l'agence"
-      />
-
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPI
-          label="Chiffre d'affaires"
-          value={formatEUR(f.ca)}
-          icon={TrendingUp}
-          tone="revenue"
-          hint={`${dossiers.length} dossier${dossiers.length > 1 ? "s" : ""}`}
-        />
-        <KPI
-          label="Coûts fournisseurs"
-          value={formatEUR(f.couts)}
-          icon={TrendingDown}
-          tone="cost"
-        />
-        <KPI
-          label="Marge brute"
-          value={formatEUR(f.marge)}
-          icon={PiggyBank}
-          tone="margin"
-          hint={f.ca > 0 ? `${formatPercent(f.margePct)} du CA` : "—"}
-        />
-        <KPI
-          label="Trésorerie réelle"
-          value={formatEUR(comptes.length > 0 ? tresorerieReelle : f.tresorerie)}
-          icon={Wallet}
-          tone="cash"
-          hint={comptes.length > 0 ? `${comptes.length} compte${comptes.length > 1 ? "s" : ""}` : "Configurez vos comptes"}
-        />
-      </section>
-
-      {txARapprocher > 0 && (
-        <Link
-          to="/rapprochement"
-          className="block group"
-        >
-          <Card className="p-4 border-[color:var(--gold)]/30 bg-[color:var(--gold)]/8 hover:bg-[color:var(--gold)]/12 transition-colors flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="h-10 w-10 rounded-md flex items-center justify-center bg-[color:var(--gold)]/20 text-[color:var(--gold)] shrink-0">
-                <Link2 className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <div className="font-medium text-sm">
-                  {txARapprocher} transaction{txARapprocher > 1 ? "s" : ""} bancaire{txARapprocher > 1 ? "s" : ""} à rapprocher
-                </div>
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  Validez les suggestions automatiques pour fiabiliser votre trésorerie.
-                </div>
-              </div>
-            </div>
-            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />
-          </Card>
-        </Link>
-      )}
-
-      {/* Tâches opérationnelles */}
-      {tasks.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-xl flex items-center gap-2">
-              <CheckSquare className="h-5 w-5 text-muted-foreground" />
-              Tâches opérationnelles
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-            <Card className="p-5 border-border/60">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                <AlertTriangle className="h-3.5 w-3.5" /> En retard
-              </div>
-              <div className={`mt-2 text-2xl font-semibold tabular ${tasksRetard.length > 0 ? "text-destructive" : ""}`}>
-                {tasksRetard.length}
-              </div>
-            </Card>
-            <Card className="p-5 border-border/60">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                <Clock className="h-3.5 w-3.5" /> Aujourd'hui
-              </div>
-              <div className="mt-2 text-2xl font-semibold tabular text-blue-600 dark:text-blue-400">
-                {tasksToday.length}
-              </div>
-            </Card>
-            <Card className="p-5 border-border/60">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                <Flame className="h-3.5 w-3.5" /> Critiques
-              </div>
-              <div className={`mt-2 text-2xl font-semibold tabular ${tasksCritiques.length > 0 ? "text-destructive" : ""}`}>
-                {tasksCritiques.length}
-              </div>
-            </Card>
-          </div>
-          {tasksUrgentes.length > 0 && (
-            <Card className="border-border/60 overflow-hidden">
-              <ul className="divide-y divide-border/60">
-                {tasksUrgentes.map((t) => {
-                  const dossier = dossiers.find((d) => d.id === t.dossier_id);
-                  const late = isEnRetard(t);
-                  return (
-                    <li key={t.id}>
-                      <Link
-                        to="/dossiers/$id"
-                        params={{ id: t.dossier_id }}
-                        className="px-5 py-3 flex items-center justify-between gap-3 hover:bg-secondary/40 transition-colors"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium truncate">{t.titre}</div>
-                          <div className="text-xs text-muted-foreground mt-0.5 truncate">
-                            {dossier?.titre ?? "Dossier"}
-                            {t.date_echeance && ` · ${t.date_echeance}`}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {late && (
-                            <Badge variant="outline" className="text-[10px] bg-destructive/15 text-destructive border-destructive/30">
-                              En retard
-                            </Badge>
-                          )}
-                          {t.priorite !== "normale" && (
-                            <Badge variant="outline" className={`text-[10px] ${PRIORITE_TONE[t.priorite]}`}>
-                              {t.priorite === "critique" ? "Critique" : "Importante"}
-                            </Badge>
-                          )}
-                          <Badge variant="outline" className={`text-[10px] ${STATUT_TONE[t.statut]}`}>
-                            {t.statut === "en_cours" ? "En cours" : "À faire"}
-                          </Badge>
-                        </div>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </Card>
-          )}
-        </section>
-      )}
-
-      {/* Alertes options fournisseurs / vols */}
-      {(optExpired.length > 0 || optCritical.length > 0 || optSansReponse.length > 0) && (
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-xl flex items-center gap-2">
-              <Mail className="h-5 w-5 text-muted-foreground" />
-              Options &amp; deadlines fournisseurs
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-            <Card className="p-5 border-border/60">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                <AlertTriangle className="h-3.5 w-3.5" /> Expirées
-              </div>
-              <div className={`mt-2 text-2xl font-semibold tabular ${optExpired.length > 0 ? "text-destructive" : ""}`}>
-                {optExpired.length}
-              </div>
-            </Card>
-            <Card className="p-5 border-border/60">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                <Clock className="h-3.5 w-3.5" /> &lt; 24h
-              </div>
-              <div className={`mt-2 text-2xl font-semibold tabular ${optCritical.length > 0 ? "text-amber-600 dark:text-amber-400" : ""}`}>
-                {optCritical.length}
-              </div>
-            </Card>
-            <Card className="p-5 border-border/60">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                <Plane className="h-3.5 w-3.5" /> Sans réponse fournisseur
-              </div>
-              <div className="mt-2 text-2xl font-semibold tabular">
-                {optSansReponse.length}
-              </div>
-            </Card>
-          </div>
-          {(optExpired.length > 0 || optCritical.length > 0) && (
-            <Card className="border-border/60 overflow-hidden">
-              <ul className="divide-y divide-border/60">
-                {[...optExpired, ...optCritical].slice(0, 8).map((d) => (
-                  <li key={`${d.kind}-${d.id}`}>
-                    <Link
-                      to="/cotations/$id"
-                      params={{ id: d.cotation_id }}
-                      className="px-5 py-3 flex items-center justify-between gap-3 hover:bg-secondary/40 transition-colors"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium truncate">{d.label}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          {d.kind === "fournisseur" ? "Option fournisseur" : "Option vol"}
-                        </div>
-                      </div>
-                      <Badge variant="outline" className={`text-[10px] ${d.urg === "expired" ? "bg-destructive/15 text-destructive border-destructive/30" : "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"}`}>
-                        {d.urg === "expired" ? "Expirée" : "< 24h"}
-                      </Badge>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          )}
-        </section>
-      )}
-
-      {/* TVA sur marge — vision agence de voyages */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="p-5 border-border/60">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            <PiggyBank className="h-3.5 w-3.5" />
-            Marge brute
-          </div>
-          <div className={`mt-2 text-xl font-semibold tabular ${f.marge >= 0 ? "" : "text-destructive"}`}>
-            {formatEUR(f.marge)}
-          </div>
-        </Card>
-        <Card className="p-5 border-border/60">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            <Percent className="h-3.5 w-3.5" />
-            TVA sur marge
-          </div>
-          <div className="mt-2 text-xl font-semibold tabular text-[color:var(--cost)]">
-            −{formatEUR(f.tvaSurMarge)}
-          </div>
-          <div className="text-[11px] text-muted-foreground mt-1">Régime agences de voyages</div>
-        </Card>
-        <Card className="p-5 border-border/60 bg-secondary/30">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            <PiggyBank className="h-3.5 w-3.5" />
-            Marge nette
-          </div>
-          <div className={`mt-2 text-xl font-semibold tabular ${f.margeNette >= 0 ? "text-[color:var(--margin)]" : "text-destructive"}`}>
-            {formatEUR(f.margeNette)}
-          </div>
-          {f.ca > 0 && (
-            <div className="text-[11px] text-muted-foreground mt-1">{formatPercent(f.margeNettePct)} du CA</div>
-          )}
-        </Card>
-      </section>
-
-      {/* Trésorerie par compte */}
-      {comptes.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-xl flex items-center gap-2">
-              <Landmark className="h-5 w-5 text-muted-foreground" />
-              Trésorerie par compte
-            </h2>
-            <Link to="/comptes" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-              Détails <ArrowRight className="h-3 w-3" />
+    <div className="min-h-screen bg-background text-foreground">
+      {/* HEADER */}
+      <header
+        className={`sticky top-0 z-50 border-b transition-all ${
+          scrolled
+            ? "border-border/60 bg-background/85 backdrop-blur-md"
+            : "border-transparent bg-background/0"
+        }`}
+      >
+        <div className="container mx-auto flex items-center justify-between px-4 py-4">
+          <Link to="/" aria-label="Accueil FlowTravel">
+            <Logo variant="dark" />
+          </Link>
+          <nav aria-label="Navigation principale" className="hidden md:flex items-center gap-7 text-sm">
+            <a href="#fonctionnalites" className="text-muted-foreground hover:text-foreground transition-colors">
+              Fonctionnalités
+            </a>
+            <a href="#pourquoi" className="text-muted-foreground hover:text-foreground transition-colors">
+              Pourquoi FlowTravel
+            </a>
+            <Link to="/tarifs" className="text-muted-foreground hover:text-foreground transition-colors">
+              Tarifs
             </Link>
+            <a href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">
+              FAQ
+            </a>
+          </nav>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/auth"
+              className="hidden sm:inline-flex text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Connexion
+            </Link>
+            <Button asChild size="sm">
+              <Link to="/demo">Voir la démo</Link>
+            </Button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {soldes.map((s) => (
-              <Card key={s.compte.id} className="p-4 border-border/60">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">{s.compte.nom}</div>
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mt-0.5">
-                      {BANQUE_LABELS[s.compte.banque]}
-                    </div>
-                  </div>
-                  <div className={`tabular text-lg font-semibold ${s.solde >= 0 ? "" : "text-destructive"}`}>
-                    {formatEUR(s.solde)}
-                  </div>
+        </div>
+      </header>
+
+      {/* HERO */}
+      <section className="relative overflow-hidden">
+        <div
+          className="absolute inset-0 -z-10 opacity-40"
+          style={{
+            background:
+              "radial-gradient(60% 60% at 50% 0%, color-mix(in oklab, var(--gold) 18%, transparent), transparent 70%)",
+          }}
+        />
+        <div className="container mx-auto px-4 pt-16 pb-12 md:pt-24 md:pb-16">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--gold)]/30 bg-[color:var(--gold)]/5 px-4 py-1.5 text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">
+              <Sparkles className="h-3 w-3" />
+              Travel Operating System
+            </div>
+            <h1 className="font-display text-4xl md:text-6xl lg:text-7xl mt-6 leading-[1.05] text-foreground">
+              Le logiciel tout-en-un
+              <br />
+              des <span className="text-[color:var(--gold)]">agences de voyages</span>
+            </h1>
+            <p className="text-base md:text-lg text-muted-foreground mt-6 max-w-2xl mx-auto leading-relaxed">
+              Cotations multi-jours, calcul de marges, TVA sur marge, gestion FX, rapprochement
+              bancaire et trésorerie. Tout ce dont une agence de voyages moderne a besoin pour
+              piloter son activité — sans dispersion d'outils.
+            </p>
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+              <Button asChild size="lg" className="px-7">
+                <Link to="/demo">
+                  Demander la démo gratuite <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <Link to="/tarifs">Voir les tarifs</Link>
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-5">
+              À partir de <strong className="text-foreground">9€ HT/mois</strong> · Sans engagement
+              · Sans CB demandée
+            </p>
+          </div>
+
+          {/* Hero image */}
+          <div className="mt-14 mx-auto max-w-6xl">
+            <div className="relative rounded-xl overflow-hidden border border-border/60 shadow-2xl shadow-black/40">
+              <img
+                src={heroImg}
+                alt="Tableau de bord FlowTravel : pilotage financier d'une agence de voyages avec cotations, marges et trésorerie"
+                width={1600}
+                height={1024}
+                className="w-full h-auto"
+                fetchPriority="high"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SOCIAL PROOF / TRUST BAR */}
+      <section aria-label="Preuves sociales" className="border-y border-border/40 bg-secondary/20">
+        <div className="container mx-auto px-4 py-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          {[
+            { v: "9€", l: "à partir de / mois" },
+            { v: "100%", l: "TVA sur marge auto" },
+            { v: "0€", l: "frais d'installation" },
+            { v: "4.9/5", l: "satisfaction client" },
+          ].map((s) => (
+            <div key={s.l}>
+              <div className="font-display text-2xl md:text-3xl text-[color:var(--gold)]">{s.v}</div>
+              <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">{s.l}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FONCTIONNALITÉS */}
+      <section id="fonctionnalites" className="container mx-auto px-4 py-20">
+        <div className="text-center max-w-2xl mx-auto">
+          <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">
+            Fonctionnalités
+          </div>
+          <h2 className="font-display text-3xl md:text-5xl mt-4">
+            Une plateforme. Toute votre agence.
+          </h2>
+          <p className="text-muted-foreground mt-4">
+            FlowTravel couvre l'ensemble du cycle commercial et financier d'une agence de voyages,
+            de la première demande client jusqu'à la clôture comptable.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mt-12">
+          {[
+            {
+              i: FileText,
+              t: "Cotations multi-jours sur mesure",
+              d: "Construisez des devis riches : itinéraire jour par jour, photos, hébergements, fournisseurs, options. Lien public client pour validation en un clic.",
+            },
+            {
+              i: PiggyBank,
+              t: "Calcul de marge automatique",
+              d: "Marge brute, marge nette, % de marge en temps réel. Plus jamais de mauvaise surprise sur un dossier.",
+            },
+            {
+              i: Receipt,
+              t: "TVA sur marge UE / Hors UE",
+              d: "Calcul automatique selon le régime des agences de voyages, avec ventilation par destination.",
+            },
+            {
+              i: Globe,
+              t: "Gestion FX & couvertures",
+              d: "Pilotez vos achats en USD, GBP, ZAR et autres devises. Couvertures, réservations, P&L FX par dossier.",
+            },
+            {
+              i: Wallet,
+              t: "Trésorerie consolidée",
+              d: "Vision multi-comptes en temps réel, prévisions à 30 jours, alertes de point bas et engagements à venir.",
+            },
+            {
+              i: Landmark,
+              t: "Rapprochement bancaire",
+              d: "Importez vos relevés CSV, FlowTravel suggère les rapprochements. Vous validez en quelques minutes.",
+            },
+            {
+              i: Plane,
+              t: "Import PDF intelligent",
+              d: "Extraction automatique des factures fournisseurs, des confirmations vols et des segments aériens.",
+            },
+            {
+              i: Users,
+              t: "CRM clients & fournisseurs",
+              d: "Centralisez vos contacts, conditions fournisseurs, historiques et communications. Une mémoire d'agence.",
+            },
+            {
+              i: LineChart,
+              t: "Pilotage & reporting",
+              d: "Tableau de bord exécutif, exports comptables, journal d'audit. Décidez sur la donnée, pas l'intuition.",
+            },
+          ].map((f) => (
+            <Card key={f.t} className="p-6 border-border/60 hover:border-[color:var(--gold)]/40 transition-colors">
+              <div className="h-10 w-10 rounded-md flex items-center justify-center bg-[color:var(--gold)]/10 text-[color:var(--gold)] mb-4">
+                <f.i className="h-5 w-5" />
+              </div>
+              <h3 className="font-semibold text-lg">{f.t}</h3>
+              <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{f.d}</p>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* POURQUOI FLOWTRAVEL */}
+      <section id="pourquoi" className="bg-secondary/20 border-y border-border/40">
+        <div className="container mx-auto px-4 py-20">
+          <div className="text-center max-w-2xl mx-auto">
+            <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">
+              Pourquoi FlowTravel
+            </div>
+            <h2 className="font-display text-3xl md:text-5xl mt-4">
+              Conçu par et pour des professionnels du voyage.
+            </h2>
+            <p className="text-muted-foreground mt-4">
+              Là où les ERP généralistes vous font plier votre métier, FlowTravel parle votre
+              langue : devis sur mesure, marge fournisseur, change, déadlines d'options.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 mt-12 max-w-5xl mx-auto">
+            {[
+              {
+                i: Zap,
+                t: "5× plus rapide qu'un tableur",
+                d: "Vos cotations passent de l'heure au quart d'heure. Réutilisation des blocs, automatisations partout.",
+              },
+              {
+                i: Shield,
+                t: "Vos données sont à vous",
+                d: "Hébergement européen, RGPD, sauvegardes quotidiennes. Export à tout moment.",
+              },
+              {
+                i: Star,
+                t: "Pensé agences indépendantes",
+                d: "Pas un mastodonte fait pour les groupes. Un outil rapide, élégant, qui respecte votre marge.",
+              },
+              {
+                i: Lock,
+                t: "Sécurité bancaire",
+                d: "Authentification forte, rôles & permissions granulaires, journal d'audit complet.",
+              },
+            ].map((f) => (
+              <div key={f.t} className="flex gap-4">
+                <div className="h-11 w-11 rounded-md flex items-center justify-center bg-[color:var(--gold)]/10 text-[color:var(--gold)] shrink-0">
+                  <f.i className="h-5 w-5" />
                 </div>
+                <div>
+                  <h3 className="font-semibold text-lg">{f.t}</h3>
+                  <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{f.d}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* COMMENT ÇA MARCHE */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="text-center max-w-2xl mx-auto">
+          <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">
+            En 4 étapes
+          </div>
+          <h2 className="font-display text-3xl md:text-5xl mt-4">
+            De la demande client à la facture finale.
+          </h2>
+        </div>
+
+        <div className="grid md:grid-cols-4 gap-6 mt-12">
+          {[
+            { n: "01", t: "Recevez la demande", d: "Centralisez vos demandes clients dans une boîte de réception unique." },
+            { n: "02", t: "Construisez le devis", d: "Cotation jour par jour, fournisseurs, options de change, marge en temps réel." },
+            { n: "03", t: "Le client valide", d: "Lien web sécurisé, validation en un clic, suivi des ouvertures." },
+            { n: "04", t: "Pilotez le dossier", d: "Tâches, paiements, rapprochement, clôture comptable. Tout au même endroit." },
+          ].map((s) => (
+            <div key={s.n} className="relative">
+              <div className="font-display text-5xl text-[color:var(--gold)]/40">{s.n}</div>
+              <h3 className="font-semibold text-lg mt-2">{s.t}</h3>
+              <p className="text-sm text-muted-foreground mt-2">{s.d}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* TARIFS RÉSUMÉ */}
+      <section className="bg-secondary/20 border-y border-border/40">
+        <div className="container mx-auto px-4 py-20 text-center">
+          <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">Tarifs</div>
+          <h2 className="font-display text-3xl md:text-5xl mt-4">À partir de 9€ HT/mois.</h2>
+          <p className="text-muted-foreground mt-4 max-w-xl mx-auto">
+            Trois plans pensés pour suivre votre croissance — de l'agent indépendant à l'agence
+            établie. Sans engagement.
+          </p>
+
+          <div className="grid sm:grid-cols-3 gap-4 mt-12 max-w-3xl mx-auto">
+            {[
+              { n: "Starter", p: "9€", d: "L'agent indépendant" },
+              { n: "Studio", p: "49€", d: "La petite agence ambitieuse", h: true },
+              { n: "Synergy", p: "79€", d: "L'agence établie" },
+            ].map((p) => (
+              <Card
+                key={p.n}
+                className={`p-6 ${p.h ? "border-[color:var(--gold)]" : "border-border/60"}`}
+              >
+                <div className="font-display text-xl">{p.n}</div>
+                <div className="font-display text-4xl text-[color:var(--gold)] mt-2">{p.p}</div>
+                <div className="text-xs text-muted-foreground mt-1">HT / mois</div>
+                <div className="text-sm text-muted-foreground mt-3">{p.d}</div>
               </Card>
             ))}
           </div>
-        </section>
-      )}
 
-      {/* Prévision de trésorerie 30 jours */}
-      {(comptes.length > 0 || dossiers.length > 0 || factures.length > 0) && (
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-xl flex items-center gap-2">
-              <LineChart className="h-5 w-5 text-muted-foreground" />
-              Prévision de trésorerie · 30 jours
-            </h2>
-            <Link to="/previsions" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-              Voir le détail <ArrowRight className="h-3 w-3" />
-            </Link>
+          <div className="mt-10">
+            <Button asChild size="lg">
+              <Link to="/tarifs">
+                Comparer les plans <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
           </div>
-          <Card className="p-5 border-border/60">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-              <div>
-                <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Aujourd'hui</div>
-                <div className="mt-1.5 text-xl font-semibold tabular">{formatEUR(forecast.soldeInitial)}</div>
-              </div>
-              <div>
-                <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Solde projeté à 30 j</div>
-                <div className={`mt-1.5 text-xl font-semibold tabular ${forecast.soldeFinal < 0 ? "text-destructive" : forecast.soldeFinal < forecast.soldeInitial * 0.3 ? "text-[color:var(--gold)]" : "text-[color:var(--margin)]"}`}>
-                  {formatEUR(forecast.soldeFinal)}
-                </div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">
-                  +{formatEUR(forecast.totalEntrees)} / −{formatEUR(forecast.totalSorties)}
-                </div>
-              </div>
-              <div>
-                <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Point bas</div>
-                <div className={`mt-1.5 text-xl font-semibold tabular ${forecast.pointBas && forecast.pointBas.solde < 0 ? "text-destructive" : ""}`}>
-                  {forecast.pointBas ? formatEUR(forecast.pointBas.solde) : "—"}
-                </div>
-                {forecast.pointBas && (
-                  <div className="text-[11px] text-muted-foreground mt-0.5">{formatDate(forecast.pointBas.date)}</div>
-                )}
-              </div>
-            </div>
-            {forecast.alertes.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-border/60 flex items-start gap-2 text-xs">
-                <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                <div className="text-muted-foreground">
-                  <span className="text-destructive font-medium">{forecast.alertes.length} alerte{forecast.alertes.length > 1 ? "s" : ""}</span> de trésorerie sur les 30 prochains jours.
-                </div>
-              </div>
-            )}
-          </Card>
-        </section>
-      )}
-
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6 border-border/60">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-xl">Flux financiers</h2>
-            <Link to="/paiements" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-              Tout voir <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-          <dl className="mt-5 space-y-3 text-sm">
-            <div className="flex justify-between items-center border-b border-border/60 pb-3">
-              <dt className="text-muted-foreground">Total encaissé clients</dt>
-              <dd className="tabular text-[color:var(--revenue)] font-medium">
-                +{formatEUR(f.encaisse)}
-              </dd>
-            </div>
-            <div className="flex justify-between items-center border-b border-border/60 pb-3">
-              <dt className="text-muted-foreground">Total payé fournisseurs</dt>
-              <dd className="tabular text-[color:var(--cost)] font-medium">
-                −{formatEUR(f.decaisse)}
-              </dd>
-            </div>
-            <div className="flex justify-between items-center pt-1">
-              <dt className="font-medium text-foreground">Trésorerie nette</dt>
-              <dd className="tabular text-lg font-semibold text-foreground">
-                {formatEUR(f.tresorerie)}
-              </dd>
-            </div>
-          </dl>
-        </Card>
-
-        <Card className="p-6 border-border/60">
-          <h2 className="font-display text-xl">Engagements à venir</h2>
-          <dl className="mt-5 space-y-3 text-sm">
-            <div className="flex justify-between items-center border-b border-border/60 pb-3">
-              <dt className="text-muted-foreground inline-flex items-center gap-2">
-                <Receipt className="h-4 w-4" />
-                Factures fournisseurs non payées
-              </dt>
-              <dd className="tabular font-medium">{f.facturesNonPayees}</dd>
-            </div>
-            <div className="flex justify-between items-center pt-1">
-              <dt className="font-medium text-foreground">Reste à payer</dt>
-              <dd className="tabular text-lg font-semibold text-[color:var(--cost)]">
-                {formatEUR(f.resteAPayerFournisseurs)}
-              </dd>
-            </div>
-          </dl>
-        </Card>
+        </div>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-border/60 overflow-hidden">
-          <div className="px-6 py-4 border-b border-border/60 flex items-center justify-between">
-            <h2 className="font-display text-lg">Derniers dossiers</h2>
-            <Link to="/dossiers" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-              Tout voir <ArrowRight className="h-3 w-3" />
-            </Link>
+      {/* DÉMO */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="max-w-4xl mx-auto rounded-xl border border-[color:var(--gold)]/30 bg-gradient-to-br from-[color:var(--gold)]/5 via-transparent to-[color:var(--gold)]/5 p-10 md:p-14 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--gold)]/30 bg-background px-4 py-1.5 text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">
+            <Sparkles className="h-3 w-3" />
+            Démo confidentielle
           </div>
-          {recentDossiers.length === 0 ? (
-            <div className="px-6 py-10 text-center text-sm text-muted-foreground">
-              Aucun dossier pour le moment.
-            </div>
-          ) : (
-            <ul className="divide-y divide-border/60">
-              {recentDossiers.map((d) => {
-                const marge = Number(d.prix_vente) - Number(d.cout_total);
-                return (
-                  <li key={d.id}>
-                    <Link
-                      to="/dossiers/$id"
-                      params={{ id: d.id }}
-                      className="px-6 py-3.5 flex items-center justify-between gap-3 hover:bg-secondary/40 transition-colors"
-                    >
-                      <div className="min-w-0">
-                        <div className="font-medium truncate">{d.titre}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          {formatEUR(d.prix_vente)} · marge{" "}
-                          <span className={marge >= 0 ? "text-[color:var(--margin)]" : "text-destructive"}>
-                            {formatEUR(marge)}
-                          </span>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="capitalize text-[10px]">
-                        {d.statut === "confirme" ? "Confirmé" : d.statut === "cloture" ? "Clôturé" : "Brouillon"}
-                      </Badge>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Card>
-
-        <Card className="border-border/60 overflow-hidden">
-          <div className="px-6 py-4 border-b border-border/60 flex items-center justify-between">
-            <h2 className="font-display text-lg">Derniers paiements</h2>
-            <Link to="/paiements" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-              Tout voir <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-          {recentPaiements.length === 0 ? (
-            <div className="px-6 py-10 text-center text-sm text-muted-foreground">
-              Aucun paiement enregistré.
-            </div>
-          ) : (
-            <ul className="divide-y divide-border/60">
-              {recentPaiements.map((p) => (
-                <li key={p.id} className="px-6 py-3.5 flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-medium">
-                      {p.type === "paiement_client" ? "Encaissement client" : "Paiement fournisseur"}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-0.5 capitalize">
-                      {formatDate(p.date)} · {p.methode}
-                    </div>
-                  </div>
-                  <div
-                    className={`tabular font-medium ${
-                      p.type === "paiement_client"
-                        ? "text-[color:var(--revenue)]"
-                        : "text-[color:var(--cost)]"
-                    }`}
-                  >
-                    {p.type === "paiement_client" ? "+" : "−"}
-                    {formatEUR(p.montant)}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </section>
-
-      {dossiers.length === 0 && (
-        <Card className="p-8 border-dashed border-border bg-secondary/30 text-center">
-          <h3 className="font-display text-xl">Bienvenue sur FlowTravel</h3>
-          <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
-            Commencez par créer un client, puis enregistrez votre premier dossier de voyage.
+          <h2 className="font-display text-3xl md:text-5xl mt-6">
+            Voyez FlowTravel en action.
+          </h2>
+          <p className="text-muted-foreground mt-4 max-w-xl mx-auto">
+            Une démo vidéo de 8 minutes, réservée aux professionnels du voyage. Aucun appel
+            commercial imposé.
           </p>
-          <div className="mt-5 flex justify-center gap-3">
-            <Button asChild variant="outline">
-              <Link to="/contacts">Ajouter un contact</Link>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Button asChild size="lg" className="px-7">
+              <Link to="/demo">
+                Accéder à la démo <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
-            <Button asChild>
-              <Link to="/dossiers">Créer un dossier</Link>
+            <Button asChild size="lg" variant="outline">
+              <Link to="/auth">Déjà client ? Se connecter</Link>
             </Button>
           </div>
-        </Card>
-      )}
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="bg-secondary/20 border-y border-border/40">
+        <div className="container mx-auto px-4 py-20 max-w-3xl">
+          <div className="text-center">
+            <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">FAQ</div>
+            <h2 className="font-display text-3xl md:text-5xl mt-4">Vos questions, nos réponses.</h2>
+          </div>
+
+          <div className="mt-12 space-y-4">
+            {[
+              {
+                q: "Qu'est-ce que FlowTravel exactement ?",
+                a: "FlowTravel est un logiciel SaaS de gestion tout-en-un pour les agences de voyages et tour-opérateurs. Il couvre les cotations sur mesure, les marges, la TVA sur marge, la gestion des devises (FX), la trésorerie et le rapprochement bancaire.",
+              },
+              {
+                q: "Combien coûte FlowTravel ?",
+                a: "À partir de 9€ HT/mois pour le plan Starter (1 utilisateur). Plan Studio à 49€/mois (jusqu'à 3 utilisateurs) et Synergy à 79€/mois (utilisateurs illimités). 20% de réduction en facturation annuelle.",
+              },
+              {
+                q: "Y a-t-il un engagement ?",
+                a: "Non. Tous nos abonnements sont sans engagement, résiliables à tout moment depuis votre espace.",
+              },
+              {
+                q: "FlowTravel gère-t-il la TVA sur marge ?",
+                a: "Oui, automatiquement. Le régime des agences de voyages est intégré nativement, avec ventilation UE / Hors UE.",
+              },
+              {
+                q: "Mes données sont-elles en sécurité ?",
+                a: "Oui. Hébergement européen, RGPD, chiffrement, sauvegardes quotidiennes, journal d'audit. Vous restez propriétaire de vos données et pouvez les exporter à tout moment.",
+              },
+              {
+                q: "Pouvez-vous m'aider à migrer depuis mon ancien outil ?",
+                a: "Oui, le plan Synergy inclut un onboarding personnalisé. Nous vous accompagnons dans la migration de vos clients, fournisseurs et dossiers en cours.",
+              },
+            ].map((f) => (
+              <details
+                key={f.q}
+                className="group rounded-lg border border-border/60 bg-card p-5 [&[open]]:border-[color:var(--gold)]/40"
+              >
+                <summary className="cursor-pointer list-none flex items-center justify-between gap-3 font-medium">
+                  <span>{f.q}</span>
+                  <span className="text-[color:var(--gold)] transition-transform group-open:rotate-45 text-xl leading-none">
+                    +
+                  </span>
+                </summary>
+                <p className="text-sm text-muted-foreground mt-4 leading-relaxed">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA FINAL */}
+      <section className="container mx-auto px-4 py-24 text-center">
+        <h2 className="font-display text-4xl md:text-6xl">
+          Prêt à <span className="text-[color:var(--gold)]">piloter</span> votre agence ?
+        </h2>
+        <p className="text-muted-foreground mt-5 max-w-xl mx-auto">
+          Rejoignez les agences de voyages qui ont fait le choix de l'élégance et de la rigueur.
+        </p>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <Button asChild size="lg" className="px-8">
+            <Link to="/demo">Demander la démo gratuite</Link>
+          </Button>
+          <Button asChild size="lg" variant="outline">
+            <Link to="/tarifs">Voir les tarifs</Link>
+          </Button>
+        </div>
+        <ul className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
+          {["Sans engagement", "Sans CB demandée", "Données européennes", "Support en français"].map(
+            (i) => (
+              <li key={i} className="inline-flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-[color:var(--gold)]" /> {i}
+              </li>
+            ),
+          )}
+        </ul>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="border-t border-border/50 bg-secondary/30">
+        <div className="container mx-auto px-4 py-12 grid md:grid-cols-4 gap-8 text-sm">
+          <div>
+            <Logo variant="dark" />
+            <p className="text-muted-foreground mt-4 text-xs leading-relaxed">
+              Le système d'exploitation des agences de voyages. Cotations, marges, FX, trésorerie.
+            </p>
+          </div>
+          <div>
+            <div className="font-semibold text-foreground mb-3">Produit</div>
+            <ul className="space-y-2 text-muted-foreground">
+              <li>
+                <a href="#fonctionnalites" className="hover:text-foreground">Fonctionnalités</a>
+              </li>
+              <li>
+                <Link to="/tarifs" className="hover:text-foreground">Tarifs</Link>
+              </li>
+              <li>
+                <Link to="/demo" className="hover:text-foreground">Démo</Link>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <div className="font-semibold text-foreground mb-3">Compte</div>
+            <ul className="space-y-2 text-muted-foreground">
+              <li>
+                <Link to="/auth" className="hover:text-foreground">Connexion</Link>
+              </li>
+              <li>
+                <Link to="/auth" className="hover:text-foreground">Créer un compte</Link>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <div className="font-semibold text-foreground mb-3">Contact</div>
+            <ul className="space-y-2 text-muted-foreground text-xs">
+              <li className="inline-flex items-center gap-2">
+                <Mail className="h-3.5 w-3.5" /> contact@flowtravel.fr
+              </li>
+              <li className="inline-flex items-center gap-2">
+                <Phone className="h-3.5 w-3.5" /> Sur demande
+              </li>
+              <li className="inline-flex items-center gap-2">
+                <MapPin className="h-3.5 w-3.5" /> France
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div className="border-t border-border/50 py-6 text-center text-xs text-muted-foreground">
+          © {new Date().getFullYear()} FlowTravel · Travel Operating System · Tous droits réservés
+        </div>
+      </footer>
     </div>
   );
 }

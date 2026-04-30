@@ -33,18 +33,20 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "FlowTravel – Travel Operating System" },
-      { name: "description", content: "Le système d'exploitation de votre agence de voyages : pilotage, finance et trésorerie." },
+      { name: "theme-color", content: "#0b0d12" },
+      { name: "format-detection", content: "telephone=no" },
+      { title: "FlowTravel — Logiciel de gestion pour agences de voyages" },
+      {
+        name: "description",
+        content:
+          "Le logiciel tout-en-un des agences de voyages : cotations, marges, TVA sur marge, FX, trésorerie. À partir de 9€/mois, sans engagement.",
+      },
       { name: "author", content: "FlowTravel" },
-      { property: "og:title", content: "FlowTravel – Travel Operating System" },
-      { property: "og:description", content: "Le système d'exploitation de votre agence de voyages : pilotage, finance et trésorerie." },
+      { name: "publisher", content: "FlowTravel" },
+      { property: "og:site_name", content: "FlowTravel" },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "FlowTravel – Travel Operating System" },
-      { name: "twitter:description", content: "Le système d'exploitation de votre agence de voyages : pilotage, finance et trésorerie." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0d5a8a53-e3b1-4e47-b7a5-e67feae1b2d0/id-preview-d57a6369--af9a414d-dfc5-4720-8a22-45828934bfaa.lovable.app-1777274864530.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0d5a8a53-e3b1-4e47-b7a5-e67feae1b2d0/id-preview-d57a6369--af9a414d-dfc5-4720-8a22-45828934bfaa.lovable.app-1777274864530.png" },
+      { property: "og:locale", content: "fr_FR" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -66,7 +68,7 @@ export const Route = createRootRoute({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="fr">
       <head>
         <HeadContent />
       </head>
