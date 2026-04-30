@@ -74,7 +74,7 @@ export function Logo({
               taglineColor,
             )}
           >
-            {agencyName ? "Powered by FlowTravel" : "Maison logicielle du voyage"}
+            {agencyName ? "Powered by FlowTravel" : "Travel Operating System"}
           </div>
         </div>
       )}

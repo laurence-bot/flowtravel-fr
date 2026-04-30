@@ -119,7 +119,7 @@ function TarifsPage() {
       <section className="container mx-auto px-4 py-16 text-center">
         <div className="inline-flex items-center gap-3 text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
           <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
-          Maison logicielle du voyage
+          Travel Operating System
           <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
         </div>
         <h1 className="font-display text-5xl md:text-6xl mt-6 text-foreground">
@@ -264,7 +264,7 @@ function TarifsPage() {
 
       <footer className="border-t border-border/50 py-8">
         <div className="container mx-auto px-4 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} FlowTravel · Maison logicielle du voyage
+          © {new Date().getFullYear()} FlowTravel · Travel Operating System
         </div>
       </footer>
     </div>
