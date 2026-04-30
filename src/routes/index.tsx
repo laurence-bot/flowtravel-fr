@@ -265,24 +265,27 @@ function HomePage() {
         />
         <div className="container mx-auto px-4 pt-16 pb-12 md:pt-24 md:pb-16">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--gold)]/30 bg-[color:var(--gold)]/5 px-4 py-1.5 text-xs uppercase tracking-[0.22em] text-[color:var(--gold)]">
-              <Sparkles className="h-3 w-3" />
-              Travel Operating System
+            <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.32em] text-[color:var(--ocre)]">
+              <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
+              Maison logicielle du voyage
+              <span className="inline-block h-px w-6 bg-[color:var(--ocre)]/60" />
             </div>
-            <h1 className="font-display text-4xl md:text-6xl lg:text-7xl mt-6 leading-[1.05] text-foreground">
-              Le logiciel tout-en-un
+            <h1 className="font-display text-4xl md:text-6xl lg:text-7xl mt-7 leading-[1.05] text-foreground">
+              Le logiciel des
               <br />
-              des <span className="text-[color:var(--gold)]">agences de voyages</span>
+              <em className="not-italic text-[color:var(--ocre)]">agences de voyages</em>
+              <br />
+              <span className="text-foreground/80">qui aiment leur métier.</span>
             </h1>
-            <p className="text-base md:text-lg text-muted-foreground mt-6 max-w-2xl mx-auto leading-relaxed">
-              Cotations multi-jours, calcul de marges, TVA sur marge, gestion FX, rapprochement
-              bancaire et trésorerie. Tout ce dont une agence de voyages moderne a besoin pour
-              piloter son activité — sans dispersion d'outils.
+            <p className="text-base md:text-lg text-muted-foreground mt-7 max-w-2xl mx-auto leading-relaxed">
+              Cotations sur-mesure, marges, TVA sur marge, gestion des devises, rapprochement
+              bancaire et trésorerie. Une seule plateforme, pensée pour le métier — sans
+              dispersion d'outils.
             </p>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
               <Button asChild size="lg" className="px-7">
                 <Link to="/demo">
-                  Demander la démo gratuite <ArrowRight className="ml-2 h-4 w-4" />
+                  Demander la démo <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
@@ -295,12 +298,12 @@ function HomePage() {
             </p>
           </div>
 
-          {/* Hero image */}
-          <div className="mt-14 mx-auto max-w-6xl">
-            <div className="relative rounded-xl overflow-hidden border border-border/60 shadow-2xl shadow-black/40">
+          {/* Hero image — carte signature ivoire */}
+          <div className="mt-16 mx-auto max-w-5xl">
+            <div className="relative rounded-sm overflow-hidden border border-border bg-card">
               <img
                 src={heroImg}
-                alt="Tableau de bord FlowTravel : pilotage financier d'une agence de voyages avec cotations, marges et trésorerie"
+                alt="FlowTravel — logiciel de gestion pour agences de voyages"
                 width={1600}
                 height={1024}
                 className="w-full h-auto"
