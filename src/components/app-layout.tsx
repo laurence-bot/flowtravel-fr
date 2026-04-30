@@ -1,12 +1,13 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog, Shield, FileScan, FileText, Inbox, Building2, Video } from "lucide-react";
-import { useState } from "react";
+import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog, Shield, FileScan, FileText, Inbox, Building2, Video, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 import { canAccessRoute, ROLE_LABELS } from "@/lib/permissions";
 import { ReadOnlyShield } from "@/components/read-only-shield";
+import { supabase } from "@/integrations/supabase/client";
 
 const nav = [
   { to: "/app", label: "Tableau de bord", icon: LayoutDashboard },
@@ -27,6 +28,7 @@ const nav = [
   { to: "/utilisateurs", label: "Utilisateurs", icon: UserCog },
   { to: "/parametres-agence", label: "Paramètres agence", icon: Building2 },
   { to: "/admin-demos", label: "Démos prospects", icon: Video },
+  { to: "/admin-agences", label: "Validation agences", icon: ShieldCheck, superAdminOnly: true as const },
 ] as const;
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -35,7 +37,22 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const visibleNav = nav.filter((item) => canAccessRoute(role, item.to));
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!user) { setIsSuperAdmin(false); return; }
+    supabase
+      .from("user_profiles")
+      .select("is_super_admin")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setIsSuperAdmin(!!data?.is_super_admin));
+  }, [user]);
+
+  const visibleNav = nav.filter((item) => {
+    if ("superAdminOnly" in item && item.superAdminOnly && !isSuperAdmin) return false;
+    return canAccessRoute(role, item.to);
+  });
 
   const handleSignOut = async () => {
     await signOut();
