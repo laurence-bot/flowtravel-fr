@@ -33,6 +33,7 @@ import { Route as CouverturesFxRouteImport } from './routes/couvertures-fx'
 import { Route as CotationsRouteImport } from './routes/cotations'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as ComptesRouteImport } from './routes/comptes'
+import { Route as CarnetsRouteImport } from './routes/carnets'
 import { Route as BulletinsRouteImport } from './routes/bulletins'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuditRouteImport } from './routes/audit'
@@ -50,6 +51,7 @@ import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
 import { Route as DemandesIdRouteImport } from './routes/demandes.$id'
 import { Route as CotationsIdRouteImport } from './routes/cotations.$id'
 import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
+import { Route as CarnetTokenRouteImport } from './routes/carnet.$token'
 import { Route as BulletinTokenRouteImport } from './routes/bulletin.$token'
 import { Route as DemoVTokenRouteImport } from './routes/demo.v.$token'
 import { Route as DemoRdvTokenRouteImport } from './routes/demo.rdv.$token'
@@ -177,6 +179,11 @@ const ComptesRoute = ComptesRouteImport.update({
   path: '/comptes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CarnetsRoute = CarnetsRouteImport.update({
+  id: '/carnets',
+  path: '/carnets',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BulletinsRoute = BulletinsRouteImport.update({
   id: '/bulletins',
   path: '/bulletins',
@@ -262,6 +269,11 @@ const ContactsIdRoute = ContactsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ContactsRoute,
 } as any)
+const CarnetTokenRoute = CarnetTokenRouteImport.update({
+  id: '/carnet/$token',
+  path: '/carnet/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BulletinTokenRoute = BulletinTokenRouteImport.update({
   id: '/bulletin/$token',
   path: '/bulletin/$token',
@@ -305,6 +317,7 @@ export interface FileRoutesByFullPath {
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
   '/bulletins': typeof BulletinsRoute
+  '/carnets': typeof CarnetsRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
   '/cotations': typeof CotationsRouteWithChildren
@@ -330,6 +343,7 @@ export interface FileRoutesByFullPath {
   '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/bulletin/$token': typeof BulletinTokenRoute
+  '/carnet/$token': typeof CarnetTokenRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
   '/demandes/$id': typeof DemandesIdRoute
@@ -354,6 +368,7 @@ export interface FileRoutesByTo {
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
   '/bulletins': typeof BulletinsRoute
+  '/carnets': typeof CarnetsRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
   '/cotations': typeof CotationsRouteWithChildren
@@ -379,6 +394,7 @@ export interface FileRoutesByTo {
   '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/bulletin/$token': typeof BulletinTokenRoute
+  '/carnet/$token': typeof CarnetTokenRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
   '/demandes/$id': typeof DemandesIdRoute
@@ -404,6 +420,7 @@ export interface FileRoutesById {
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
   '/bulletins': typeof BulletinsRoute
+  '/carnets': typeof CarnetsRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
   '/cotations': typeof CotationsRouteWithChildren
@@ -429,6 +446,7 @@ export interface FileRoutesById {
   '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/bulletin/$token': typeof BulletinTokenRoute
+  '/carnet/$token': typeof CarnetTokenRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
   '/demandes/$id': typeof DemandesIdRoute
@@ -455,6 +473,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/auth'
     | '/bulletins'
+    | '/carnets'
     | '/comptes'
     | '/contacts'
     | '/cotations'
@@ -480,6 +499,7 @@ export interface FileRouteTypes {
     | '/tarifs'
     | '/utilisateurs'
     | '/bulletin/$token'
+    | '/carnet/$token'
     | '/contacts/$id'
     | '/cotations/$id'
     | '/demandes/$id'
@@ -504,6 +524,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/auth'
     | '/bulletins'
+    | '/carnets'
     | '/comptes'
     | '/contacts'
     | '/cotations'
@@ -529,6 +550,7 @@ export interface FileRouteTypes {
     | '/tarifs'
     | '/utilisateurs'
     | '/bulletin/$token'
+    | '/carnet/$token'
     | '/contacts/$id'
     | '/cotations/$id'
     | '/demandes/$id'
@@ -553,6 +575,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/auth'
     | '/bulletins'
+    | '/carnets'
     | '/comptes'
     | '/contacts'
     | '/cotations'
@@ -578,6 +601,7 @@ export interface FileRouteTypes {
     | '/tarifs'
     | '/utilisateurs'
     | '/bulletin/$token'
+    | '/carnet/$token'
     | '/contacts/$id'
     | '/cotations/$id'
     | '/demandes/$id'
@@ -603,6 +627,7 @@ export interface RootRouteChildren {
   AuditRoute: typeof AuditRoute
   AuthRoute: typeof AuthRoute
   BulletinsRoute: typeof BulletinsRoute
+  CarnetsRoute: typeof CarnetsRoute
   ComptesRoute: typeof ComptesRoute
   ContactsRoute: typeof ContactsRouteWithChildren
   CotationsRoute: typeof CotationsRouteWithChildren
@@ -628,6 +653,7 @@ export interface RootRouteChildren {
   TarifsRoute: typeof TarifsRoute
   UtilisateursRoute: typeof UtilisateursRoute
   BulletinTokenRoute: typeof BulletinTokenRoute
+  CarnetTokenRoute: typeof CarnetTokenRoute
   FacturesIdRoute: typeof FacturesIdRoute
   MariageTokenRoute: typeof MariageTokenRoute
   PTokenRoute: typeof PTokenRoute
@@ -806,6 +832,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComptesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/carnets': {
+      id: '/carnets'
+      path: '/carnets'
+      fullPath: '/carnets'
+      preLoaderRoute: typeof CarnetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bulletins': {
       id: '/bulletins'
       path: '/bulletins'
@@ -925,6 +958,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactsIdRouteImport
       parentRoute: typeof ContactsRoute
     }
+    '/carnet/$token': {
+      id: '/carnet/$token'
+      path: '/carnet/$token'
+      fullPath: '/carnet/$token'
+      preLoaderRoute: typeof CarnetTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bulletin/$token': {
       id: '/bulletin/$token'
       path: '/bulletin/$token'
@@ -1041,6 +1081,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuditRoute: AuditRoute,
   AuthRoute: AuthRoute,
   BulletinsRoute: BulletinsRoute,
+  CarnetsRoute: CarnetsRoute,
   ComptesRoute: ComptesRoute,
   ContactsRoute: ContactsRouteWithChildren,
   CotationsRoute: CotationsRouteWithChildren,
@@ -1066,6 +1107,7 @@ const rootRouteChildren: RootRouteChildren = {
   TarifsRoute: TarifsRoute,
   UtilisateursRoute: UtilisateursRoute,
   BulletinTokenRoute: BulletinTokenRoute,
+  CarnetTokenRoute: CarnetTokenRoute,
   FacturesIdRoute: FacturesIdRoute,
   MariageTokenRoute: MariageTokenRoute,
   PTokenRoute: PTokenRoute,
