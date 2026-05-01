@@ -85,7 +85,7 @@ export const MainVideo: React.FC<{ format: Format }> = ({ format }) => {
         return (
           <Sequence key={s.key} from={from} durationInFrames={s.dur}>
             <C format={format} />
-            {s.key !== "s1" && (
+            {s.key !== "s1" && s.key !== "sFinal" && (
               <Caption text={CAPTIONS[s.key]} />
             )}
           </Sequence>
