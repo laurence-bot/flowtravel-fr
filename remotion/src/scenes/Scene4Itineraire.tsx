@@ -1,217 +1,88 @@
-import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig, Sequence } from "remotion";
-import { AppShot, FTCard, FTBadge } from "../components/AppShot";
+import { AbsoluteFill, useCurrentFrame, interpolate, Img, staticFile } from "remotion";
 import { COLORS, FONT_BODY, FONT_DISPLAY } from "../theme";
 import type { Format } from "../MainVideo";
 
-// Plan en 2 temps :
-// Phase A (0-130) : éditeur d'itinéraire dans l'app FlowTravel
-// Phase B (130-322) : rendu public client (carnet de voyage), scroll vertical
-export const Scene4Itineraire: React.FC<{ format: Format }> = (props) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  // Transition : phase B prend le dessus à frame 130
-  const transition = spring({ frame: frame - 125, fps, config: { damping: 22, stiffness: 100 } });
-  const phaseAOpacity = interpolate(transition, [0, 0.6, 1], [1, 0.4, 0]);
-  const phaseAScale = interpolate(transition, [0, 1], [1, 0.95]);
-  const phaseBOpacity = interpolate(transition, [0, 1], [0, 1]);
-  const phaseBScale = interpolate(transition, [0, 1], [1.04, 1]);
-
-  return (
-    <AbsoluteFill>
-      <div style={{ position: "absolute", inset: 0, opacity: phaseAOpacity, transform: `scale(${phaseAScale})` }}>
-        <PhaseEditor />
-      </div>
-      <div style={{ position: "absolute", inset: 0, opacity: phaseBOpacity, transform: `scale(${phaseBScale})` }}>
-        <PhasePublic />
-      </div>
-    </AbsoluteFill>
-  );
-};
-
-// =====================================================
-// PHASE A : Éditeur d'itinéraire dans FlowTravel
-// =====================================================
-const PhaseEditor: React.FC = () => {
+// Scene 4 : Devis envoyé au client — effet waouh
+// Aperçu navigateur du /p/$token avec hero Mont Fuji + scroll
+export const Scene4Itineraire: React.FC<{ format: Format }> = () => {
   const frame = useCurrentFrame();
 
-  return (
-    <AppShot route="/dossiers/japon-marchand/itineraire" active="Dossiers" moduleLabel="03 · ITINÉRAIRE">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-        <div>
-          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 24, color: COLORS.text, fontWeight: 500 }}>
-            Carnet de voyage — Japon
-          </div>
-          <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 2 }}>
-            Mise en page jour par jour · auto-générée depuis la cotation
-          </div>
-        </div>
-        <FTBadge variant="success">14 jours · 12 étapes</FTBadge>
-      </div>
+  // Apparition du device
+  const enter = interpolate(frame, [0, 20], [0, 1], { extrapolateRight: "clamp" });
+  const tY = interpolate(enter, [0, 1], [40, 0]);
 
-      {/* Mini timeline */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
-        {Array.from({ length: 14 }).map((_, i) => (
-          <div
-            key={i}
-            style={{
-              flex: 1,
-              height: 24,
-              borderRadius: 3,
-              backgroundColor: i < 7 ? COLORS.gold : i < 10 ? COLORS.ocre : COLORS.olive,
-              opacity: 0.7,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 9,
-              color: "#FFF",
-              fontWeight: 600,
-            }}
-          >
-            J{i + 1}
-          </div>
-        ))}
-      </div>
-
-      {/* Liste des jours */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        {[
-          { j: "Jour 1-3", ville: "Tokyo", desc: "Asakusa, Shibuya, Tsukiji", img: "🏯", color: COLORS.gold },
-          { j: "Jour 4-5", ville: "Hakone", desc: "Ryokan & onsen, mont Fuji", img: "♨️", color: COLORS.ocre },
-          { j: "Jour 6-9", ville: "Kyoto", desc: "Temples, Gion, Arashiyama", img: "⛩️", color: COLORS.gold },
-          { j: "Jour 10-11", ville: "Osaka", desc: "Dotonbori, château", img: "🏮", color: COLORS.ocre },
-          { j: "Jour 12-14", ville: "Hiroshima & Miyajima", desc: "Mémorial, sanctuaire flottant", img: "⛩️", color: COLORS.olive },
-          { j: "Jour 15", ville: "Retour Paris", desc: "Vol Air France direct", img: "✈️", color: COLORS.textMuted },
-        ].map((step, i) => {
-          const appear = interpolate(frame, [10 + i * 8, 30 + i * 8], [0, 1], {
-            extrapolateLeft: "clamp",
-            extrapolateRight: "clamp",
-          });
-          const tY = interpolate(appear, [0, 1], [12, 0]);
-          return (
-            <div
-              key={step.j}
-              style={{
-                opacity: appear,
-                transform: `translateY(${tY}px)`,
-                backgroundColor: COLORS.card,
-                border: `1px solid ${COLORS.border}`,
-                borderLeft: `3px solid ${step.color}`,
-                borderRadius: 8,
-                padding: "12px 14px",
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-              }}
-            >
-              <div style={{ fontSize: 28 }}>{step.img}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 10, color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 600 }}>
-                  {step.j}
-                </div>
-                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 17, color: COLORS.text, fontWeight: 500, marginTop: 2 }}>
-                  {step.ville}
-                </div>
-                <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 1 }}>
-                  {step.desc}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Banner "rendu pour le client" qui apparaît à la fin */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 18,
-          left: "50%",
-          transform: `translate(-50%, ${interpolate(frame, [80, 120], [40, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })}px)`,
-          opacity: interpolate(frame, [80, 120], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }),
-          backgroundColor: COLORS.text,
-          color: COLORS.bg,
-          padding: "10px 20px",
-          borderRadius: 8,
-          fontSize: 12,
-          fontWeight: 500,
-          fontFamily: FONT_BODY,
-          letterSpacing: "0.02em",
-          boxShadow: "0 12px 32px rgba(26,24,21,0.25)",
-        }}
-      >
-        👁  Aperçu côté client →
-      </div>
-    </AppShot>
-  );
-};
-
-// =====================================================
-// PHASE B : Rendu public — carnet de voyage que reçoit le client
-// =====================================================
-const PhasePublic: React.FC = () => {
-  const frame = useCurrentFrame();
-  // Le scroll commence après la transition (frame 130 dans la scène totale)
-  // Ici frame est local à la scène. On scroll de frame 140 à 322
-  const scrollY = interpolate(frame, [145, 322], [0, -1100], {
+  // Scroll vertical de la page (commence après l'entrée)
+  const scrollY = interpolate(frame, [40, 200], [0, -1400], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
   return (
-    <AbsoluteFill style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-      {/* Cadre navigateur "lien public" */}
-      <div
-        style={{
-          width: "70%",
-          height: "90%",
-          backgroundColor: "#FFFFFF",
-          borderRadius: 14,
-          overflow: "hidden",
-          boxShadow: "0 30px 80px rgba(26,24,21,0.22), 0 0 0 1px rgba(0,0,0,0.04)",
+    <AbsoluteFill style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 40 }}>
+      {/* Label flottant */}
+      <div style={{
+        position: "absolute",
+        top: 40,
+        left: "50%",
+        transform: "translateX(-50%)",
+        fontSize: 11,
+        textTransform: "uppercase",
+        letterSpacing: "0.32em",
+        color: COLORS.gold,
+        fontWeight: 600,
+        opacity: enter,
+      }}>
+        04 · Devis envoyé au client
+      </div>
+
+      {/* Browser frame */}
+      <div style={{
+        opacity: enter,
+        transform: `translateY(${tY}px)`,
+        width: "75%",
+        height: "85%",
+        backgroundColor: "#FFF",
+        borderRadius: 14,
+        overflow: "hidden",
+        boxShadow: "0 40px 100px rgba(26,24,21,0.28), 0 0 0 1px rgba(0,0,0,0.04)",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: FONT_BODY,
+      }}>
+        {/* Browser bar */}
+        <div style={{
           display: "flex",
-          flexDirection: "column",
-          fontFamily: FONT_BODY,
-          position: "relative",
-        }}
-      >
-        {/* Mini browser bar */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "10px 16px",
-            backgroundColor: "#EDE7D8",
-            borderBottom: `1px solid ${COLORS.border}`,
-          }}
-        >
+          alignItems: "center",
+          gap: 10,
+          padding: "10px 16px",
+          backgroundColor: "#EDE7D8",
+          borderBottom: `1px solid ${COLORS.border}`,
+        }}>
           <div style={{ width: 11, height: 11, borderRadius: "50%", backgroundColor: "#E8665E" }} />
           <div style={{ width: 11, height: 11, borderRadius: "50%", backgroundColor: "#E8B547" }} />
           <div style={{ width: 11, height: 11, borderRadius: "50%", backgroundColor: "#7AAB57" }} />
-          <div
-            style={{
-              flex: 1,
-              backgroundColor: COLORS.card,
-              border: `1px solid ${COLORS.border}`,
-              borderRadius: 6,
-              padding: "5px 12px",
-              fontSize: 12,
-              color: COLORS.textSubtle,
-              fontFamily: '"JetBrains Mono", monospace',
-              maxWidth: 500,
-              margin: "0 auto",
-            }}
-          >
-            🔒 lavoyagerie.fr/voyage/japon-marchand
+          <div style={{
+            flex: 1,
+            backgroundColor: "#FBF8F0",
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: 6,
+            padding: "5px 12px",
+            fontSize: 12,
+            color: COLORS.textSubtle,
+            fontFamily: '"JetBrains Mono", monospace',
+            maxWidth: 540,
+            margin: "0 auto",
+            textAlign: "center",
+          }}>
+            🔒 lavoyagerie.fr/voyage/japon-marchand-2026
           </div>
           <div style={{ width: 60 }} />
         </div>
 
-        {/* Page content scrollable */}
+        {/* Page content */}
         <div style={{ flex: 1, overflow: "hidden", position: "relative", backgroundColor: "#FAF6EC" }}>
-          <div style={{ transform: `translateY(${scrollY}px)`, padding: "30px 50px" }}>
-            <PublicCarnet />
+          <div style={{ transform: `translateY(${scrollY}px)`, willChange: "transform" }}>
+            <PublicQuote />
           </div>
         </div>
       </div>
@@ -219,107 +90,170 @@ const PhasePublic: React.FC = () => {
   );
 };
 
-const PublicCarnet: React.FC = () => {
+const PublicQuote: React.FC = () => {
+  const frame = useCurrentFrame();
+  // Légère parallax sur le hero
+  const heroParallax = interpolate(frame, [40, 200], [0, 200], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const heroScale = interpolate(frame, [0, 60], [1.08, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+
   return (
-    <div style={{ color: COLORS.text }}>
-      {/* Hero */}
-      <div style={{ textAlign: "center", padding: "20px 0 32px" }}>
-        <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.32em", color: COLORS.gold, fontWeight: 600 }}>
-          La Voyagerie · Carnet de voyage
+    <div>
+      {/* HERO */}
+      <div style={{ position: "relative", height: 580, overflow: "hidden" }}>
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          transform: `translateY(${heroParallax * 0.4}px) scale(${heroScale})`,
+        }}>
+          <Img
+            src={staticFile("images/fuji.jpg")}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
         </div>
-        <div style={{ fontFamily: FONT_DISPLAY, fontSize: 56, color: COLORS.text, marginTop: 12, lineHeight: 1.05, fontWeight: 500, letterSpacing: "-0.015em" }}>
-          Japon
+        {/* Overlay dégradé */}
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          background: "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.65) 100%)",
+        }} />
+        {/* Texte hero */}
+        <div style={{
+          position: "absolute",
+          bottom: 50,
+          left: 60,
+          right: 60,
+          color: "#FFF",
+        }}>
+          <div style={{
+            fontSize: 11,
+            textTransform: "uppercase",
+            letterSpacing: "0.32em",
+            color: "#E0C896",
+            fontWeight: 600,
+            marginBottom: 14,
+          }}>
+            La Voyagerie · Voyage sur-mesure
+          </div>
+          <div style={{
+            fontFamily: FONT_DISPLAY,
+            fontSize: 88,
+            fontWeight: 500,
+            lineHeight: 1.0,
+            letterSpacing: "-0.02em",
+          }}>
+            Japon
+          </div>
+          <div style={{
+            fontFamily: FONT_DISPLAY,
+            fontSize: 28,
+            fontStyle: "italic",
+            color: "#E0C896",
+            marginTop: 8,
+          }}>
+            Tokyo · Hakone · Kyoto · Hiroshima
+          </div>
+          <div style={{ marginTop: 18, fontSize: 14, opacity: 0.9 }}>
+            Pour Sophie & Antoine Marchand · 12 → 26 mai 2026 · 14 jours
+          </div>
         </div>
-        <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, color: COLORS.ocre, fontStyle: "italic", marginTop: 4 }}>
-          Tokyo · Hakone · Kyoto · Hiroshima
-        </div>
-        <div style={{ marginTop: 18, fontSize: 13, color: COLORS.textMuted }}>
-          Voyage sur mesure pour Sophie & Antoine Marchand
-        </div>
-        <div style={{ fontSize: 13, color: COLORS.textMuted }}>
-          12 mai → 26 mai 2026 · 14 jours · 2 voyageurs
-        </div>
-        <div style={{ marginTop: 18, height: 1, width: 60, backgroundColor: COLORS.gold, margin: "18px auto 0" }} />
       </div>
 
-      {/* Vol */}
-      <div style={{ backgroundColor: "#FFF", border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 18, marginBottom: 22 }}>
-        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.18em", color: COLORS.gold, fontWeight: 600, marginBottom: 10 }}>
-          Vols · Air France
+      {/* CONTENU */}
+      <div style={{ padding: "50px 70px" }}>
+        {/* Bloc voyage */}
+        <div style={{
+          backgroundColor: "#FFF",
+          borderRadius: 12,
+          padding: 30,
+          border: `1px solid ${COLORS.border}`,
+          marginBottom: 40,
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr 1fr",
+          gap: 20,
+        }}>
+          {[
+            { label: "Durée", value: "14 jours", sub: "12 → 26 mai" },
+            { label: "Voyageurs", value: "2 adultes", sub: "Sophie & Antoine" },
+            { label: "Investissement", value: "8 680 €", sub: "tout compris" },
+          ].map((b) => (
+            <div key={b.label} style={{ borderLeft: `2px solid ${COLORS.gold}`, paddingLeft: 14 }}>
+              <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.22em", color: COLORS.textMuted, fontWeight: 600 }}>
+                {b.label}
+              </div>
+              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, color: COLORS.text, marginTop: 4, fontWeight: 500 }}>
+                {b.value}
+              </div>
+              <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 2 }}>{b.sub}</div>
+            </div>
+          ))}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 14, alignItems: "center" }}>
-          <div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 500 }}>CDG</div>
-            <div style={{ fontSize: 12, color: COLORS.textMuted }}>12 mai · 11h30</div>
-            <div style={{ fontSize: 11, color: COLORS.textSubtle, marginTop: 2 }}>Paris Charles de Gaulle</div>
-          </div>
-          <div style={{ textAlign: "center", color: COLORS.textMuted }}>
-            <div style={{ fontSize: 11 }}>AF272 · 11h45 vol</div>
-            <div style={{ fontSize: 18, marginTop: 2 }}>✈</div>
-            <div style={{ fontSize: 11, marginTop: 2 }}>direct</div>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 500 }}>HND</div>
-            <div style={{ fontSize: 12, color: COLORS.textMuted }}>13 mai · 07h15</div>
-            <div style={{ fontSize: 11, color: COLORS.textSubtle, marginTop: 2 }}>Tokyo Haneda</div>
-          </div>
-        </div>
-      </div>
 
-      {/* Jours */}
-      {[
-        { j: "Jour 1-3", ville: "Tokyo", text: "Arrivée à Haneda, transfert privé vers votre hôtel à Shibuya. Découverte d'Asakusa, du temple Senso-ji, et soirée dans les ruelles de Shimokitazawa. Marché aux poissons de Toyosu, vue depuis le Shibuya Sky.", img: "linear-gradient(135deg, #C9A96E 0%, #A14E2C 100%)" },
-        { j: "Jour 4-5", ville: "Hakone", text: "Train Romance Car puis ryokan traditionnel face au mont Fuji. Bains chauds, dîner kaiseki en chambre, croisière sur le lac Ashi.", img: "linear-gradient(135deg, #6A6F4C 0%, #C9A96E 100%)" },
-        { j: "Jour 6-9", ville: "Kyoto", text: "Shinkansen jusqu'à Kyoto. Quartier de Gion au crépuscule, marché Nishiki, temple Kinkaku-ji, forêt de bambous d'Arashiyama, cours de cuisine kaiseki avec votre chef.", img: "linear-gradient(135deg, #A14E2C 0%, #6A6F4C 100%)" },
-        { j: "Jour 10-11", ville: "Osaka", text: "Dotonbori et son célèbre Glico, château d'Osaka, soirée izakaya avec votre guide francophone.", img: "linear-gradient(135deg, #C9A96E 0%, #6A6F4C 100%)" },
-      ].map((day) => (
-        <div key={day.j} style={{ marginBottom: 28 }}>
-          <div
-            style={{
-              height: 180,
+        {/* Section votre voyage */}
+        <div style={{ textAlign: "center", marginBottom: 30 }}>
+          <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.32em", color: COLORS.gold, fontWeight: 600 }}>
+            Votre itinéraire
+          </div>
+          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 44, color: COLORS.text, marginTop: 10, fontWeight: 500 }}>
+            Quatorze jours d'émerveillement
+          </div>
+        </div>
+
+        {/* Cartes jours */}
+        {[
+          { j: "Jour 1 → 3", ville: "Tokyo", text: "Arrivée à Haneda, transfert privé vers le Park Hyatt. Découverte d'Asakusa, Shibuya Sky au crépuscule, marché de Toyosu à l'aube.", img: "tokyo.jpg" },
+          { j: "Jour 4 → 5", ville: "Hakone", text: "Train Romance Car puis ryokan Gora Kadan face au Mont Fuji. Bains chauds privés, dîner kaiseki, croisière sur le lac Ashi.", img: "hakone.jpg" },
+          { j: "Jour 6 → 9", ville: "Kyoto", text: "Shinkansen première classe. Gion au crépuscule avec votre guide francophone, Arashiyama, cours de cuisine kaiseki avec un chef étoilé.", img: "kyoto.jpg" },
+        ].map((d, i) => (
+          <div key={d.j} style={{
+            display: "grid",
+            gridTemplateColumns: i % 2 === 0 ? "1.2fr 1fr" : "1fr 1.2fr",
+            gap: 30,
+            marginBottom: 40,
+            alignItems: "center",
+          }}>
+            <div style={{
+              order: i % 2 === 0 ? 1 : 2,
+              height: 320,
               borderRadius: 10,
-              background: day.img,
-              marginBottom: 14,
-              position: "relative",
               overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                bottom: 14,
-                left: 18,
-                color: "#FFF",
-                fontFamily: FONT_DISPLAY,
-                fontSize: 32,
-                fontWeight: 500,
-                letterSpacing: "-0.01em",
-                textShadow: "0 2px 12px rgba(0,0,0,0.4)",
-              }}
-            >
-              {day.ville}
+            }}>
+              <Img src={staticFile(`images/${d.img}`)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
-            <div
-              style={{
-                position: "absolute",
-                top: 14,
-                left: 18,
-                color: "#FFF",
-                fontSize: 10,
-                textTransform: "uppercase",
-                letterSpacing: "0.28em",
-                fontWeight: 600,
-                opacity: 0.9,
-              }}
-            >
-              {day.j}
+            <div style={{ order: i % 2 === 0 ? 2 : 1 }}>
+              <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.22em", color: COLORS.gold, fontWeight: 600 }}>
+                {d.j}
+              </div>
+              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 48, color: COLORS.text, marginTop: 6, fontWeight: 500, lineHeight: 1.05 }}>
+                {d.ville}
+              </div>
+              <div style={{ height: 1, width: 50, backgroundColor: COLORS.gold, margin: "16px 0" }} />
+              <div style={{ fontSize: 15, color: COLORS.text, lineHeight: 1.7 }}>
+                {d.text}
+              </div>
             </div>
           </div>
-          <div style={{ fontSize: 14, color: COLORS.text, lineHeight: 1.6, padding: "0 4px" }}>
-            {day.text}
+        ))}
+
+        {/* CTA */}
+        <div style={{ textAlign: "center", padding: "40px 0 60px" }}>
+          <div style={{
+            display: "inline-block",
+            backgroundColor: COLORS.ocre,
+            color: "#FFF",
+            padding: "16px 38px",
+            borderRadius: 6,
+            fontSize: 14,
+            fontWeight: 500,
+            letterSpacing: "0.05em",
+            boxShadow: `0 12px 32px ${COLORS.ocre}40`,
+          }}>
+            ✓  J'accepte ce voyage
+          </div>
+          <div style={{ marginTop: 14, fontSize: 12, color: COLORS.textMuted }}>
+            Signature en ligne · acompte sécurisé · réponse 24h
           </div>
         </div>
-      ))}
+      </div>
     </div>
   );
 };
