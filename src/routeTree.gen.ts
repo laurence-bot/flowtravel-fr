@@ -46,6 +46,7 @@ import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
 import { Route as DemandesIdRouteImport } from './routes/demandes.$id'
 import { Route as CotationsIdRouteImport } from './routes/cotations.$id'
 import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
+import { Route as BulletinTokenRouteImport } from './routes/bulletin.$token'
 import { Route as DemoVTokenRouteImport } from './routes/demo.v.$token'
 import { Route as DemoRdvTokenRouteImport } from './routes/demo.rdv.$token'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -237,6 +238,11 @@ const ContactsIdRoute = ContactsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ContactsRoute,
 } as any)
+const BulletinTokenRoute = BulletinTokenRouteImport.update({
+  id: '/bulletin/$token',
+  path: '/bulletin/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DemoVTokenRoute = DemoVTokenRouteImport.update({
   id: '/v/$token',
   path: '/v/$token',
@@ -296,6 +302,7 @@ export interface FileRoutesByFullPath {
   '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
+  '/bulletin/$token': typeof BulletinTokenRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
   '/demandes/$id': typeof DemandesIdRoute
@@ -340,6 +347,7 @@ export interface FileRoutesByTo {
   '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
+  '/bulletin/$token': typeof BulletinTokenRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
   '/demandes/$id': typeof DemandesIdRoute
@@ -385,6 +393,7 @@ export interface FileRoutesById {
   '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
+  '/bulletin/$token': typeof BulletinTokenRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
   '/demandes/$id': typeof DemandesIdRoute
@@ -431,6 +440,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/tarifs'
     | '/utilisateurs'
+    | '/bulletin/$token'
     | '/contacts/$id'
     | '/cotations/$id'
     | '/demandes/$id'
@@ -475,6 +485,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/tarifs'
     | '/utilisateurs'
+    | '/bulletin/$token'
     | '/contacts/$id'
     | '/cotations/$id'
     | '/demandes/$id'
@@ -519,6 +530,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/tarifs'
     | '/utilisateurs'
+    | '/bulletin/$token'
     | '/contacts/$id'
     | '/cotations/$id'
     | '/demandes/$id'
@@ -564,6 +576,7 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   TarifsRoute: typeof TarifsRoute
   UtilisateursRoute: typeof UtilisateursRoute
+  BulletinTokenRoute: typeof BulletinTokenRoute
   FacturesIdRoute: typeof FacturesIdRoute
   PTokenRoute: typeof PTokenRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -832,6 +845,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactsIdRouteImport
       parentRoute: typeof ContactsRoute
     }
+    '/bulletin/$token': {
+      id: '/bulletin/$token'
+      path: '/bulletin/$token'
+      fullPath: '/bulletin/$token'
+      preLoaderRoute: typeof BulletinTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/demo/v/$token': {
       id: '/demo/v/$token'
       path: '/v/$token'
@@ -962,6 +982,7 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   TarifsRoute: TarifsRoute,
   UtilisateursRoute: UtilisateursRoute,
+  BulletinTokenRoute: BulletinTokenRoute,
   FacturesIdRoute: FacturesIdRoute,
   PTokenRoute: PTokenRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
