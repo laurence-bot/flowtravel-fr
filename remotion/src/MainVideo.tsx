@@ -15,7 +15,7 @@ import { Scene7FX } from "./scenes/Scene7FX";
 import { Scene9Pilotage } from "./scenes/Scene9Pilotage";
 import { Scene9AdminCoach } from "./scenes/Scene9AdminCoach";
 import { Scene9Carnet } from "./scenes/Scene9Carnet";
-import { Scene10Outro } from "./scenes/Scene10Outro";
+import { SceneFinalCTA } from "./scenes/SceneFinalCTA";
 
 loadInter("normal", { weights: ["400", "500", "600", "700"], subsets: ["latin"] });
 loadCormorant("normal", { weights: ["400", "500", "600"], subsets: ["latin"] });
@@ -23,24 +23,26 @@ loadMono("normal", { weights: ["400", "500"], subsets: ["latin"] });
 
 export type Format = "landscape" | "square";
 
-// Durées v4 calées sur la voix off française mesurée :
-// s1=6.3 s2=7.86 s3=11.97 s4=9.24 s5=10.46 s6=6.75 s7=12.53 s8=13.4 s9=13.02 s10=14.09
-// + 6f de respiration entre scènes
+// Durées calées au plus près de la voix off française (mesures ffprobe v4) :
+// s1=6.30  s2=7.86  s3=11.97  s4=9.24  s5=10.46  s6=6.75  s7=12.53  s8=13.40  s9=13.02  s10=14.09
+// Ratio 30 fps + ~12 frames (0.4s) de respiration MAX entre scènes (au lieu de l'écran blanc précédent).
+// Les scènes denses (FX, Trésorerie, Workflow) ont leur durée ≥ besoin lecture.
 const D = {
-  s1: 195,   // hook
-  s2: 242,   // demande
-  s3: 365,   // cotation + alerte marge
-  s4: 283,   // itinéraire wow
-  s5: 320,   // envoi → bulletin → facture
-  s6: 209,   // fournisseurs
-  s7: 382,   // FX intelligent
-  s8: 408,   // trésorerie réelle
-  s9: 397,   // admin & coaching agent
-  s10: 429,  // carnet 2 versions + outro
+  s1: 201,   // 6.30s voix + 0.4s respiration → cut net vers s2
+  s2: 248,   // 7.86s voix + 0.4s
+  s3: 372,   // 11.97s voix + 0.4s — workflow alerte marge (≥7s ok)
+  s4: 290,   // 9.24s voix + 0.4s
+  s5: 326,   // 10.46s voix + 0.4s — workflow Devis→Bulletin→Facture (≥7s ok)
+  s6: 215,   // 6.75s voix + 0.4s
+  s7: 388,   // 12.53s voix + 0.4s — FX IA (≥8s ok largement)
+  s8: 414,   // 13.40s voix + 0.4s — Trésorerie (≥8s ok largement)
+  s9: 403,   // 13.02s voix + 0.4s
+  s10: 435,  // 14.09s voix + 0.4s — Carnet (papier + app)
+  sFinal: 180, // Slide finale 6s — logo + tarifs + CTA + URL (silencieuse)
 };
 
 export const TOTAL =
-  D.s1 + D.s2 + D.s3 + D.s4 + D.s5 + D.s6 + D.s7 + D.s8 + D.s9 + D.s10;
+  D.s1 + D.s2 + D.s3 + D.s4 + D.s5 + D.s6 + D.s7 + D.s8 + D.s9 + D.s10 + D.sFinal;
 
 const CAPTIONS: Record<string, string> = {
   s1: "Une agence, c'est 12 outils. FlowTravel, c'est un seul.",
@@ -68,6 +70,7 @@ export const MainVideo: React.FC<{ format: Format }> = ({ format }) => {
     { key: "s8", dur: D.s8, Comp: Scene9Pilotage },
     { key: "s9", dur: D.s9, Comp: Scene9AdminCoach },
     { key: "s10", dur: D.s10, Comp: Scene9Carnet },
+    { key: "sFinal", dur: D.sFinal, Comp: SceneFinalCTA },
   ] as const;
 
   return (
@@ -81,7 +84,7 @@ export const MainVideo: React.FC<{ format: Format }> = ({ format }) => {
         return (
           <Sequence key={s.key} from={from} durationInFrames={s.dur}>
             <C format={format} />
-            {s.key !== "s1" && (
+            {s.key !== "s1" && s.key !== "sFinal" && (
               <Caption text={CAPTIONS[s.key]} />
             )}
           </Sequence>
@@ -112,8 +115,9 @@ const VoiceTrack: React.FC = () => {
       {tracks.map((t) => {
         const from = cursor;
         cursor += t.dur;
+        // Voix d\u00e9marre exactement \u00e0 l'apparition du visuel (synchro stricte image/parole)
         return (
-          <Sequence key={t.key} from={from + 4}>
+          <Sequence key={t.key} from={from}>
             <Audio src={staticFile(`audio-v4/${t.key}.aac`)} volume={1} />
           </Sequence>
         );
