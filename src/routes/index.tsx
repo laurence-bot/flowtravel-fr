@@ -73,25 +73,6 @@ function ComingSoonPage() {
             agence arrive très prochainement.
           </p>
 
-          {/* Vidéo de présentation */}
-          <div className="mt-12 w-full max-w-4xl">
-            <div className="relative overflow-hidden rounded-2xl border border-[color:var(--gold)]/20 bg-black shadow-2xl">
-              <div className="aspect-video">
-                <video
-                  className="h-full w-full"
-                  src="https://hgvcvbfdbkbakqxluiys.supabase.co/storage/v1/object/public/demo-videos/flowtravel-16x9-v4.mp4"
-                  controls
-                  playsInline
-                  preload="metadata"
-                  aria-label="Présentation FlowTravel"
-                />
-              </div>
-            </div>
-            <p className="mt-3 text-xs uppercase tracking-[0.24em] text-muted-foreground">
-              Découvrez FlowTravel en 90 secondes
-            </p>
-          </div>
-
           {/* Filet décoratif */}
           <div className="mt-10 flex items-center gap-4">
             <span className="block h-px w-16 bg-[color:var(--gold)]/50" />
