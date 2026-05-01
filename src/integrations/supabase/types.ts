@@ -449,6 +449,95 @@ export type Database = {
         }
         Relationships: []
       }
+      coaching_progression: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          ressource_id: string
+          statut: Database["public"]["Enums"]["coaching_progression_statut"]
+          termine_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          ressource_id: string
+          statut?: Database["public"]["Enums"]["coaching_progression_statut"]
+          termine_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          ressource_id?: string
+          statut?: Database["public"]["Enums"]["coaching_progression_statut"]
+          termine_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_progression_ressource_id_fkey"
+            columns: ["ressource_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_ressources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_ressources: {
+        Row: {
+          categorie: Database["public"]["Enums"]["coaching_categorie"]
+          contenu_md: string | null
+          created_at: string
+          description: string | null
+          duree_minutes: number | null
+          id: string
+          obligatoire: boolean
+          ordre: number
+          publie: boolean
+          titre: string
+          type: Database["public"]["Enums"]["coaching_ressource_type"]
+          updated_at: string
+          url_externe: string | null
+        }
+        Insert: {
+          categorie?: Database["public"]["Enums"]["coaching_categorie"]
+          contenu_md?: string | null
+          created_at?: string
+          description?: string | null
+          duree_minutes?: number | null
+          id?: string
+          obligatoire?: boolean
+          ordre?: number
+          publie?: boolean
+          titre: string
+          type?: Database["public"]["Enums"]["coaching_ressource_type"]
+          updated_at?: string
+          url_externe?: string | null
+        }
+        Update: {
+          categorie?: Database["public"]["Enums"]["coaching_categorie"]
+          contenu_md?: string | null
+          created_at?: string
+          description?: string | null
+          duree_minutes?: number | null
+          id?: string
+          obligatoire?: boolean
+          ordre?: number
+          publie?: boolean
+          titre?: string
+          type?: Database["public"]["Enums"]["coaching_ressource_type"]
+          updated_at?: string
+          url_externe?: string | null
+        }
+        Relationships: []
+      }
       comptes: {
         Row: {
           actif: boolean
@@ -2471,6 +2560,20 @@ export type Database = {
       bank_statut: "nouveau" | "rapproche" | "ignore"
       bulletin_statut: "a_signer" | "signe" | "annule"
       carnet_statut: "brouillon" | "publie"
+      coaching_categorie:
+        | "demarrage"
+        | "ventes"
+        | "finance"
+        | "legal"
+        | "outils"
+        | "astuces"
+      coaching_progression_statut: "non_commence" | "en_cours" | "termine"
+      coaching_ressource_type:
+        | "article"
+        | "video"
+        | "checklist"
+        | "template"
+        | "lien"
       compte_banque: "sg" | "cic" | "ebury" | "autre"
       compte_categorie:
         | "gestion"
@@ -2729,6 +2832,22 @@ export const Constants = {
       bank_statut: ["nouveau", "rapproche", "ignore"],
       bulletin_statut: ["a_signer", "signe", "annule"],
       carnet_statut: ["brouillon", "publie"],
+      coaching_categorie: [
+        "demarrage",
+        "ventes",
+        "finance",
+        "legal",
+        "outils",
+        "astuces",
+      ],
+      coaching_progression_statut: ["non_commence", "en_cours", "termine"],
+      coaching_ressource_type: [
+        "article",
+        "video",
+        "checklist",
+        "template",
+        "lien",
+      ],
       compte_banque: ["sg", "cic", "ebury", "autre"],
       compte_categorie: [
         "gestion",
