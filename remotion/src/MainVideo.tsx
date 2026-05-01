@@ -43,7 +43,7 @@ const D = {
 };
 
 export const TOTAL =
-  D.s1 + D.s2 + D.s3 + D.s4 + D.s5 + D.s6 + D.s7 + D.s8 + D.s9 + D.s10;
+  D.s1 + D.s2 + D.s3 + D.s4 + D.s5 + D.s6 + D.s7 + D.s8 + D.s9 + D.s10 + D.sFinal;
 
 const CAPTIONS: Record<string, string> = {
   s1: "Une agence, c'est 12 outils. FlowTravel, c'est un seul.",
