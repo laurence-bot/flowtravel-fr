@@ -16,8 +16,9 @@ export const Scene1Hook: React.FC<{ format: Format }> = ({ format }) => {
   const t1Op = interpolate(frame, [40, 58], [0, 1], { extrapolateRight: "clamp" });
   const t2Op = interpolate(frame, [70, 90], [0, 1], { extrapolateRight: "clamp" });
 
-  const exit = interpolate(frame, [115, 135], [1, 0], { extrapolateRight: "clamp" });
-  const exitScale = interpolate(frame, [115, 135], [1, 1.03], { extrapolateRight: "clamp" });
+  // Pas de fade-out interne : la transition vers la sc\u00e8ne suivante est g\u00e9r\u00e9e par MainVideo (cut net cal\u00e9 voix).
+  const exit = 1;
+  const exitScale = 1;
 
   const titleSize = format === "landscape" ? 92 : 60;
   const subSize = format === "landscape" ? 22 : 16;
