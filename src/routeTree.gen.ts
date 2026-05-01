@@ -20,6 +20,7 @@ import { Route as PilotageRouteImport } from './routes/pilotage'
 import { Route as ParametresAgenceRouteImport } from './routes/parametres-agence'
 import { Route as PaiementsRouteImport } from './routes/paiements'
 import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
+import { Route as MariagesRouteImport } from './routes/mariages'
 import { Route as InscriptionAgenceRouteImport } from './routes/inscription-agence'
 import { Route as ImportPdfRouteImport } from './routes/import-pdf'
 import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
@@ -43,6 +44,7 @@ import { Route as AdminDashboardRouteImport } from './routes/admin-dashboard'
 import { Route as AdminAgencesRouteImport } from './routes/admin-agences'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PTokenRouteImport } from './routes/p.$token'
+import { Route as MariageTokenRouteImport } from './routes/mariage.$token'
 import { Route as FacturesIdRouteImport } from './routes/factures.$id'
 import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
 import { Route as DemandesIdRouteImport } from './routes/demandes.$id'
@@ -108,6 +110,11 @@ const PaiementsRoute = PaiementsRouteImport.update({
 const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
   id: '/mot-de-passe-oublie',
   path: '/mot-de-passe-oublie',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MariagesRoute = MariagesRouteImport.update({
+  id: '/mariages',
+  path: '/mariages',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InscriptionAgenceRoute = InscriptionAgenceRouteImport.update({
@@ -225,6 +232,11 @@ const PTokenRoute = PTokenRouteImport.update({
   path: '/p/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MariageTokenRoute = MariageTokenRouteImport.update({
+  id: '/mariage/$token',
+  path: '/mariage/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FacturesIdRoute = FacturesIdRouteImport.update({
   id: '/factures/$id',
   path: '/factures/$id',
@@ -305,6 +317,7 @@ export interface FileRoutesByFullPath {
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
   '/inscription-agence': typeof InscriptionAgenceRoute
+  '/mariages': typeof MariagesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
@@ -322,6 +335,7 @@ export interface FileRoutesByFullPath {
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
+  '/mariage/$token': typeof MariageTokenRoute
   '/p/$token': typeof PTokenRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
@@ -352,6 +366,7 @@ export interface FileRoutesByTo {
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
   '/inscription-agence': typeof InscriptionAgenceRoute
+  '/mariages': typeof MariagesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
@@ -369,6 +384,7 @@ export interface FileRoutesByTo {
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
+  '/mariage/$token': typeof MariageTokenRoute
   '/p/$token': typeof PTokenRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
@@ -400,6 +416,7 @@ export interface FileRoutesById {
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
   '/inscription-agence': typeof InscriptionAgenceRoute
+  '/mariages': typeof MariagesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
@@ -417,6 +434,7 @@ export interface FileRoutesById {
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
+  '/mariage/$token': typeof MariageTokenRoute
   '/p/$token': typeof PTokenRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
@@ -449,6 +467,7 @@ export interface FileRouteTypes {
     | '/import-bancaire'
     | '/import-pdf'
     | '/inscription-agence'
+    | '/mariages'
     | '/mot-de-passe-oublie'
     | '/paiements'
     | '/parametres-agence'
@@ -466,6 +485,7 @@ export interface FileRouteTypes {
     | '/demandes/$id'
     | '/dossiers/$id'
     | '/factures/$id'
+    | '/mariage/$token'
     | '/p/$token'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
@@ -496,6 +516,7 @@ export interface FileRouteTypes {
     | '/import-bancaire'
     | '/import-pdf'
     | '/inscription-agence'
+    | '/mariages'
     | '/mot-de-passe-oublie'
     | '/paiements'
     | '/parametres-agence'
@@ -513,6 +534,7 @@ export interface FileRouteTypes {
     | '/demandes/$id'
     | '/dossiers/$id'
     | '/factures/$id'
+    | '/mariage/$token'
     | '/p/$token'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
@@ -543,6 +565,7 @@ export interface FileRouteTypes {
     | '/import-bancaire'
     | '/import-pdf'
     | '/inscription-agence'
+    | '/mariages'
     | '/mot-de-passe-oublie'
     | '/paiements'
     | '/parametres-agence'
@@ -560,6 +583,7 @@ export interface FileRouteTypes {
     | '/demandes/$id'
     | '/dossiers/$id'
     | '/factures/$id'
+    | '/mariage/$token'
     | '/p/$token'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
@@ -591,6 +615,7 @@ export interface RootRouteChildren {
   ImportBancaireRoute: typeof ImportBancaireRoute
   ImportPdfRoute: typeof ImportPdfRoute
   InscriptionAgenceRoute: typeof InscriptionAgenceRoute
+  MariagesRoute: typeof MariagesRoute
   MotDePasseOublieRoute: typeof MotDePasseOublieRoute
   PaiementsRoute: typeof PaiementsRoute
   ParametresAgenceRoute: typeof ParametresAgenceRoute
@@ -604,6 +629,7 @@ export interface RootRouteChildren {
   UtilisateursRoute: typeof UtilisateursRoute
   BulletinTokenRoute: typeof BulletinTokenRoute
   FacturesIdRoute: typeof FacturesIdRoute
+  MariageTokenRoute: typeof MariageTokenRoute
   PTokenRoute: typeof PTokenRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -687,6 +713,13 @@ declare module '@tanstack/react-router' {
       path: '/mot-de-passe-oublie'
       fullPath: '/mot-de-passe-oublie'
       preLoaderRoute: typeof MotDePasseOublieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mariages': {
+      id: '/mariages'
+      path: '/mariages'
+      fullPath: '/mariages'
+      preLoaderRoute: typeof MariagesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inscription-agence': {
@@ -848,6 +881,13 @@ declare module '@tanstack/react-router' {
       path: '/p/$token'
       fullPath: '/p/$token'
       preLoaderRoute: typeof PTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mariage/$token': {
+      id: '/mariage/$token'
+      path: '/mariage/$token'
+      fullPath: '/mariage/$token'
+      preLoaderRoute: typeof MariageTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/factures/$id': {
@@ -1013,6 +1053,7 @@ const rootRouteChildren: RootRouteChildren = {
   ImportBancaireRoute: ImportBancaireRoute,
   ImportPdfRoute: ImportPdfRoute,
   InscriptionAgenceRoute: InscriptionAgenceRoute,
+  MariagesRoute: MariagesRoute,
   MotDePasseOublieRoute: MotDePasseOublieRoute,
   PaiementsRoute: PaiementsRoute,
   ParametresAgenceRoute: ParametresAgenceRoute,
@@ -1026,6 +1067,7 @@ const rootRouteChildren: RootRouteChildren = {
   UtilisateursRoute: UtilisateursRoute,
   BulletinTokenRoute: BulletinTokenRoute,
   FacturesIdRoute: FacturesIdRoute,
+  MariageTokenRoute: MariageTokenRoute,
   PTokenRoute: PTokenRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
