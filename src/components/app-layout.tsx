@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog, Shield, FileScan, FileText, Inbox, Building2, Video, ShieldCheck, MessageSquare, AlertTriangle, Sparkles } from "lucide-react";
+import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog, Shield, FileScan, FileText, Inbox, Building2, Video, ShieldCheck, MessageSquare, AlertTriangle, Sparkles, FileSignature, Receipt, Heart, BookOpen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
@@ -34,6 +34,10 @@ const navAgence: NavItem[] = [
   { to: "/demandes", label: "Demandes", icon: Inbox },
   { to: "/cotations", label: "Cotations", icon: FileText },
   { to: "/dossiers", label: "Dossiers", icon: FolderOpen },
+  { to: "/bulletins", label: "Bulletins signature", icon: FileSignature },
+  { to: "/factures-clients", label: "Factures clients", icon: Receipt },
+  { to: "/mariages", label: "Voyages de noces", icon: Heart },
+  { to: "/carnets", label: "Carnets de voyage", icon: BookOpen },
   { to: "/paiements", label: "Paiements", icon: Wallet },
   { to: "/comptes", label: "Comptes & Trésorerie", icon: Landmark },
   { to: "/couvertures-fx", label: "Couvertures FX", icon: Shield },

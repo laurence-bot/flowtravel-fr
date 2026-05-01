@@ -20,9 +20,11 @@ import { Route as PilotageRouteImport } from './routes/pilotage'
 import { Route as ParametresAgenceRouteImport } from './routes/parametres-agence'
 import { Route as PaiementsRouteImport } from './routes/paiements'
 import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
+import { Route as MariagesRouteImport } from './routes/mariages'
 import { Route as InscriptionAgenceRouteImport } from './routes/inscription-agence'
 import { Route as ImportPdfRouteImport } from './routes/import-pdf'
 import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
+import { Route as FacturesClientsRouteImport } from './routes/factures-clients'
 import { Route as ExportRouteImport } from './routes/export'
 import { Route as DossiersRouteImport } from './routes/dossiers'
 import { Route as DemoRouteImport } from './routes/demo'
@@ -31,6 +33,8 @@ import { Route as CouverturesFxRouteImport } from './routes/couvertures-fx'
 import { Route as CotationsRouteImport } from './routes/cotations'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as ComptesRouteImport } from './routes/comptes'
+import { Route as CarnetsRouteImport } from './routes/carnets'
+import { Route as BulletinsRouteImport } from './routes/bulletins'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as AppRouteImport } from './routes/app'
@@ -41,11 +45,13 @@ import { Route as AdminDashboardRouteImport } from './routes/admin-dashboard'
 import { Route as AdminAgencesRouteImport } from './routes/admin-agences'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PTokenRouteImport } from './routes/p.$token'
+import { Route as MariageTokenRouteImport } from './routes/mariage.$token'
 import { Route as FacturesIdRouteImport } from './routes/factures.$id'
 import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
 import { Route as DemandesIdRouteImport } from './routes/demandes.$id'
 import { Route as CotationsIdRouteImport } from './routes/cotations.$id'
 import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
+import { Route as CarnetTokenRouteImport } from './routes/carnet.$token'
 import { Route as BulletinTokenRouteImport } from './routes/bulletin.$token'
 import { Route as DemoVTokenRouteImport } from './routes/demo.v.$token'
 import { Route as DemoRdvTokenRouteImport } from './routes/demo.rdv.$token'
@@ -108,6 +114,11 @@ const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
   path: '/mot-de-passe-oublie',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MariagesRoute = MariagesRouteImport.update({
+  id: '/mariages',
+  path: '/mariages',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InscriptionAgenceRoute = InscriptionAgenceRouteImport.update({
   id: '/inscription-agence',
   path: '/inscription-agence',
@@ -121,6 +132,11 @@ const ImportPdfRoute = ImportPdfRouteImport.update({
 const ImportBancaireRoute = ImportBancaireRouteImport.update({
   id: '/import-bancaire',
   path: '/import-bancaire',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FacturesClientsRoute = FacturesClientsRouteImport.update({
+  id: '/factures-clients',
+  path: '/factures-clients',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExportRoute = ExportRouteImport.update({
@@ -161,6 +177,16 @@ const ContactsRoute = ContactsRouteImport.update({
 const ComptesRoute = ComptesRouteImport.update({
   id: '/comptes',
   path: '/comptes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CarnetsRoute = CarnetsRouteImport.update({
+  id: '/carnets',
+  path: '/carnets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BulletinsRoute = BulletinsRouteImport.update({
+  id: '/bulletins',
+  path: '/bulletins',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -213,6 +239,11 @@ const PTokenRoute = PTokenRouteImport.update({
   path: '/p/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MariageTokenRoute = MariageTokenRouteImport.update({
+  id: '/mariage/$token',
+  path: '/mariage/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FacturesIdRoute = FacturesIdRouteImport.update({
   id: '/factures/$id',
   path: '/factures/$id',
@@ -237,6 +268,11 @@ const ContactsIdRoute = ContactsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ContactsRoute,
+} as any)
+const CarnetTokenRoute = CarnetTokenRouteImport.update({
+  id: '/carnet/$token',
+  path: '/carnet/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const BulletinTokenRoute = BulletinTokenRouteImport.update({
   id: '/bulletin/$token',
@@ -280,6 +316,8 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
+  '/bulletins': typeof BulletinsRoute
+  '/carnets': typeof CarnetsRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
   '/cotations': typeof CotationsRouteWithChildren
@@ -288,9 +326,11 @@ export interface FileRoutesByFullPath {
   '/demo': typeof DemoRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
+  '/factures-clients': typeof FacturesClientsRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
   '/inscription-agence': typeof InscriptionAgenceRoute
+  '/mariages': typeof MariagesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
@@ -303,11 +343,13 @@ export interface FileRoutesByFullPath {
   '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/bulletin/$token': typeof BulletinTokenRoute
+  '/carnet/$token': typeof CarnetTokenRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
+  '/mariage/$token': typeof MariageTokenRoute
   '/p/$token': typeof PTokenRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
@@ -325,6 +367,8 @@ export interface FileRoutesByTo {
   '/app': typeof AppRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
+  '/bulletins': typeof BulletinsRoute
+  '/carnets': typeof CarnetsRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
   '/cotations': typeof CotationsRouteWithChildren
@@ -333,9 +377,11 @@ export interface FileRoutesByTo {
   '/demo': typeof DemoRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
+  '/factures-clients': typeof FacturesClientsRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
   '/inscription-agence': typeof InscriptionAgenceRoute
+  '/mariages': typeof MariagesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
@@ -348,11 +394,13 @@ export interface FileRoutesByTo {
   '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/bulletin/$token': typeof BulletinTokenRoute
+  '/carnet/$token': typeof CarnetTokenRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
+  '/mariage/$token': typeof MariageTokenRoute
   '/p/$token': typeof PTokenRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
@@ -371,6 +419,8 @@ export interface FileRoutesById {
   '/app': typeof AppRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
+  '/bulletins': typeof BulletinsRoute
+  '/carnets': typeof CarnetsRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
   '/cotations': typeof CotationsRouteWithChildren
@@ -379,9 +429,11 @@ export interface FileRoutesById {
   '/demo': typeof DemoRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
+  '/factures-clients': typeof FacturesClientsRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
   '/inscription-agence': typeof InscriptionAgenceRoute
+  '/mariages': typeof MariagesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
@@ -394,11 +446,13 @@ export interface FileRoutesById {
   '/tarifs': typeof TarifsRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/bulletin/$token': typeof BulletinTokenRoute
+  '/carnet/$token': typeof CarnetTokenRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/cotations/$id': typeof CotationsIdRoute
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
+  '/mariage/$token': typeof MariageTokenRoute
   '/p/$token': typeof PTokenRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
@@ -418,6 +472,8 @@ export interface FileRouteTypes {
     | '/app'
     | '/audit'
     | '/auth'
+    | '/bulletins'
+    | '/carnets'
     | '/comptes'
     | '/contacts'
     | '/cotations'
@@ -426,9 +482,11 @@ export interface FileRouteTypes {
     | '/demo'
     | '/dossiers'
     | '/export'
+    | '/factures-clients'
     | '/import-bancaire'
     | '/import-pdf'
     | '/inscription-agence'
+    | '/mariages'
     | '/mot-de-passe-oublie'
     | '/paiements'
     | '/parametres-agence'
@@ -441,11 +499,13 @@ export interface FileRouteTypes {
     | '/tarifs'
     | '/utilisateurs'
     | '/bulletin/$token'
+    | '/carnet/$token'
     | '/contacts/$id'
     | '/cotations/$id'
     | '/demandes/$id'
     | '/dossiers/$id'
     | '/factures/$id'
+    | '/mariage/$token'
     | '/p/$token'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
@@ -463,6 +523,8 @@ export interface FileRouteTypes {
     | '/app'
     | '/audit'
     | '/auth'
+    | '/bulletins'
+    | '/carnets'
     | '/comptes'
     | '/contacts'
     | '/cotations'
@@ -471,9 +533,11 @@ export interface FileRouteTypes {
     | '/demo'
     | '/dossiers'
     | '/export'
+    | '/factures-clients'
     | '/import-bancaire'
     | '/import-pdf'
     | '/inscription-agence'
+    | '/mariages'
     | '/mot-de-passe-oublie'
     | '/paiements'
     | '/parametres-agence'
@@ -486,11 +550,13 @@ export interface FileRouteTypes {
     | '/tarifs'
     | '/utilisateurs'
     | '/bulletin/$token'
+    | '/carnet/$token'
     | '/contacts/$id'
     | '/cotations/$id'
     | '/demandes/$id'
     | '/dossiers/$id'
     | '/factures/$id'
+    | '/mariage/$token'
     | '/p/$token'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
@@ -508,6 +574,8 @@ export interface FileRouteTypes {
     | '/app'
     | '/audit'
     | '/auth'
+    | '/bulletins'
+    | '/carnets'
     | '/comptes'
     | '/contacts'
     | '/cotations'
@@ -516,9 +584,11 @@ export interface FileRouteTypes {
     | '/demo'
     | '/dossiers'
     | '/export'
+    | '/factures-clients'
     | '/import-bancaire'
     | '/import-pdf'
     | '/inscription-agence'
+    | '/mariages'
     | '/mot-de-passe-oublie'
     | '/paiements'
     | '/parametres-agence'
@@ -531,11 +601,13 @@ export interface FileRouteTypes {
     | '/tarifs'
     | '/utilisateurs'
     | '/bulletin/$token'
+    | '/carnet/$token'
     | '/contacts/$id'
     | '/cotations/$id'
     | '/demandes/$id'
     | '/dossiers/$id'
     | '/factures/$id'
+    | '/mariage/$token'
     | '/p/$token'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
@@ -554,6 +626,8 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRoute
   AuditRoute: typeof AuditRoute
   AuthRoute: typeof AuthRoute
+  BulletinsRoute: typeof BulletinsRoute
+  CarnetsRoute: typeof CarnetsRoute
   ComptesRoute: typeof ComptesRoute
   ContactsRoute: typeof ContactsRouteWithChildren
   CotationsRoute: typeof CotationsRouteWithChildren
@@ -562,9 +636,11 @@ export interface RootRouteChildren {
   DemoRoute: typeof DemoRouteWithChildren
   DossiersRoute: typeof DossiersRouteWithChildren
   ExportRoute: typeof ExportRoute
+  FacturesClientsRoute: typeof FacturesClientsRoute
   ImportBancaireRoute: typeof ImportBancaireRoute
   ImportPdfRoute: typeof ImportPdfRoute
   InscriptionAgenceRoute: typeof InscriptionAgenceRoute
+  MariagesRoute: typeof MariagesRoute
   MotDePasseOublieRoute: typeof MotDePasseOublieRoute
   PaiementsRoute: typeof PaiementsRoute
   ParametresAgenceRoute: typeof ParametresAgenceRoute
@@ -577,7 +653,9 @@ export interface RootRouteChildren {
   TarifsRoute: typeof TarifsRoute
   UtilisateursRoute: typeof UtilisateursRoute
   BulletinTokenRoute: typeof BulletinTokenRoute
+  CarnetTokenRoute: typeof CarnetTokenRoute
   FacturesIdRoute: typeof FacturesIdRoute
+  MariageTokenRoute: typeof MariageTokenRoute
   PTokenRoute: typeof PTokenRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -663,6 +741,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MotDePasseOublieRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mariages': {
+      id: '/mariages'
+      path: '/mariages'
+      fullPath: '/mariages'
+      preLoaderRoute: typeof MariagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/inscription-agence': {
       id: '/inscription-agence'
       path: '/inscription-agence'
@@ -682,6 +767,13 @@ declare module '@tanstack/react-router' {
       path: '/import-bancaire'
       fullPath: '/import-bancaire'
       preLoaderRoute: typeof ImportBancaireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/factures-clients': {
+      id: '/factures-clients'
+      path: '/factures-clients'
+      fullPath: '/factures-clients'
+      preLoaderRoute: typeof FacturesClientsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/export': {
@@ -738,6 +830,20 @@ declare module '@tanstack/react-router' {
       path: '/comptes'
       fullPath: '/comptes'
       preLoaderRoute: typeof ComptesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/carnets': {
+      id: '/carnets'
+      path: '/carnets'
+      fullPath: '/carnets'
+      preLoaderRoute: typeof CarnetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bulletins': {
+      id: '/bulletins'
+      path: '/bulletins'
+      fullPath: '/bulletins'
+      preLoaderRoute: typeof BulletinsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -810,6 +916,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mariage/$token': {
+      id: '/mariage/$token'
+      path: '/mariage/$token'
+      fullPath: '/mariage/$token'
+      preLoaderRoute: typeof MariageTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/factures/$id': {
       id: '/factures/$id'
       path: '/factures/$id'
@@ -844,6 +957,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/contacts/$id'
       preLoaderRoute: typeof ContactsIdRouteImport
       parentRoute: typeof ContactsRoute
+    }
+    '/carnet/$token': {
+      id: '/carnet/$token'
+      path: '/carnet/$token'
+      fullPath: '/carnet/$token'
+      preLoaderRoute: typeof CarnetTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/bulletin/$token': {
       id: '/bulletin/$token'
@@ -960,6 +1080,8 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRoute,
   AuditRoute: AuditRoute,
   AuthRoute: AuthRoute,
+  BulletinsRoute: BulletinsRoute,
+  CarnetsRoute: CarnetsRoute,
   ComptesRoute: ComptesRoute,
   ContactsRoute: ContactsRouteWithChildren,
   CotationsRoute: CotationsRouteWithChildren,
@@ -968,9 +1090,11 @@ const rootRouteChildren: RootRouteChildren = {
   DemoRoute: DemoRouteWithChildren,
   DossiersRoute: DossiersRouteWithChildren,
   ExportRoute: ExportRoute,
+  FacturesClientsRoute: FacturesClientsRoute,
   ImportBancaireRoute: ImportBancaireRoute,
   ImportPdfRoute: ImportPdfRoute,
   InscriptionAgenceRoute: InscriptionAgenceRoute,
+  MariagesRoute: MariagesRoute,
   MotDePasseOublieRoute: MotDePasseOublieRoute,
   PaiementsRoute: PaiementsRoute,
   ParametresAgenceRoute: ParametresAgenceRoute,
@@ -983,7 +1107,9 @@ const rootRouteChildren: RootRouteChildren = {
   TarifsRoute: TarifsRoute,
   UtilisateursRoute: UtilisateursRoute,
   BulletinTokenRoute: BulletinTokenRoute,
+  CarnetTokenRoute: CarnetTokenRoute,
   FacturesIdRoute: FacturesIdRoute,
+  MariageTokenRoute: MariageTokenRoute,
   PTokenRoute: PTokenRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
