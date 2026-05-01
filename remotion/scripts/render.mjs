@@ -71,10 +71,26 @@ execSync(`ffmpeg -y -f concat -safe 0 -i "${concatList}" -c copy "${audioTrack}"
   stdio: "inherit",
 });
 
-console.log(`[3/3] Mux vidéo + audio → ${out}`);
-// -shortest pour éviter un mismatch si l'audio dépasse la vidéo de quelques ms.
+console.log(`[3/4] Ajout silence final (${FINAL_SILENCE_FRAMES / FPS}s slide tarifs/CTA)`);
+const audioWithTail = path.join(tmpDir, "audio-final.aac");
+const tailSec = FINAL_SILENCE_FRAMES / FPS;
+// Silence AAC ~ même profil que la voix : mono 24kHz suffit pour un mux propre
+const silenceFile = path.join(tmpDir, "silence.aac");
 execSync(
-  `ffmpeg -y -i "${silentVideo}" -i "${audioTrack}" -c:v copy -c:a copy -shortest "${out}"`,
+  `ffmpeg -y -f lavfi -i anullsrc=r=24000:cl=mono -t ${tailSec} -c:a aac -b:a 96k "${silenceFile}"`,
+  { stdio: "inherit" },
+);
+const concatTail = path.join(tmpDir, "concat-tail.txt");
+fs.writeFileSync(concatTail, `file '${audioTrack}'\nfile '${silenceFile}'\n`);
+execSync(
+  `ffmpeg -y -f concat -safe 0 -i "${concatTail}" -c:a aac -b:a 128k "${audioWithTail}"`,
+  { stdio: "inherit" },
+);
+
+console.log(`[4/4] Mux vidéo + audio → ${out}`);
+// Pas de -shortest : on veut garder la slide finale visible.
+execSync(
+  `ffmpeg -y -i "${silentVideo}" -i "${audioWithTail}" -c:v copy -c:a copy "${out}"`,
   { stdio: "inherit" },
 );
 
