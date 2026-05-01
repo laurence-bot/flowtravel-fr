@@ -71,6 +71,7 @@ export const MainVideo: React.FC<{ format: Format }> = ({ format }) => {
     { key: "s8", dur: D.s8, Comp: Scene9Pilotage },
     { key: "s9", dur: D.s9, Comp: Scene9AdminCoach },
     { key: "s10", dur: D.s10, Comp: Scene9Carnet },
+    { key: "sFinal", dur: D.sFinal, Comp: SceneFinalCTA },
   ] as const;
 
   return (
