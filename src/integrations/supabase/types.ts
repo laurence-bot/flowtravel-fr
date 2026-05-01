@@ -311,6 +311,144 @@ export type Database = {
         }
         Relationships: []
       }
+      bulletins: {
+        Row: {
+          agent_id: string | null
+          client_id: string | null
+          conditions_acceptees: boolean
+          conditions_text: string | null
+          cotation_id: string | null
+          created_at: string
+          dossier_id: string | null
+          expires_at: string
+          id: string
+          signataire_email: string | null
+          signataire_nom: string | null
+          signature_data: string | null
+          signed_at: string | null
+          signed_ip: string | null
+          statut: Database["public"]["Enums"]["bulletin_statut"]
+          token: string
+          updated_at: string
+          user_id: string
+          voyageurs: Json
+        }
+        Insert: {
+          agent_id?: string | null
+          client_id?: string | null
+          conditions_acceptees?: boolean
+          conditions_text?: string | null
+          cotation_id?: string | null
+          created_at?: string
+          dossier_id?: string | null
+          expires_at?: string
+          id?: string
+          signataire_email?: string | null
+          signataire_nom?: string | null
+          signature_data?: string | null
+          signed_at?: string | null
+          signed_ip?: string | null
+          statut?: Database["public"]["Enums"]["bulletin_statut"]
+          token?: string
+          updated_at?: string
+          user_id: string
+          voyageurs?: Json
+        }
+        Update: {
+          agent_id?: string | null
+          client_id?: string | null
+          conditions_acceptees?: boolean
+          conditions_text?: string | null
+          cotation_id?: string | null
+          created_at?: string
+          dossier_id?: string | null
+          expires_at?: string
+          id?: string
+          signataire_email?: string | null
+          signataire_nom?: string | null
+          signature_data?: string | null
+          signed_at?: string | null
+          signed_ip?: string | null
+          statut?: Database["public"]["Enums"]["bulletin_statut"]
+          token?: string
+          updated_at?: string
+          user_id?: string
+          voyageurs?: Json
+        }
+        Relationships: []
+      }
+      carnets: {
+        Row: {
+          agent_id: string | null
+          client_id: string | null
+          contacts_urgence: Json
+          cotation_id: string | null
+          created_at: string
+          date_debut: string | null
+          date_fin: string | null
+          destination: string | null
+          dossier_id: string | null
+          expires_at: string
+          hero_image_url: string | null
+          id: string
+          infos_pratiques: Json
+          intro_text: string | null
+          jours: Json
+          statut: Database["public"]["Enums"]["carnet_statut"]
+          theme: string | null
+          titre: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          client_id?: string | null
+          contacts_urgence?: Json
+          cotation_id?: string | null
+          created_at?: string
+          date_debut?: string | null
+          date_fin?: string | null
+          destination?: string | null
+          dossier_id?: string | null
+          expires_at?: string
+          hero_image_url?: string | null
+          id?: string
+          infos_pratiques?: Json
+          intro_text?: string | null
+          jours?: Json
+          statut?: Database["public"]["Enums"]["carnet_statut"]
+          theme?: string | null
+          titre: string
+          token?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          client_id?: string | null
+          contacts_urgence?: Json
+          cotation_id?: string | null
+          created_at?: string
+          date_debut?: string | null
+          date_fin?: string | null
+          destination?: string | null
+          dossier_id?: string | null
+          expires_at?: string
+          hero_image_url?: string | null
+          id?: string
+          infos_pratiques?: Json
+          intro_text?: string | null
+          jours?: Json
+          statut?: Database["public"]["Enums"]["carnet_statut"]
+          theme?: string | null
+          titre?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       comptes: {
         Row: {
           actif: boolean
@@ -569,11 +707,15 @@ export type Database = {
           demande_id: string | null
           destination: string | null
           dossier_id: string | null
+          est_liste_mariage: boolean
           group_id: string
           hero_image_url: string | null
           id: string
           inclus_text: string | null
           langue: string | null
+          mariage_message: string | null
+          mariage_objectif: number | null
+          mariage_titre: string | null
           nombre_chambres: number
           nombre_pax: number
           non_inclus_text: string | null
@@ -602,11 +744,15 @@ export type Database = {
           demande_id?: string | null
           destination?: string | null
           dossier_id?: string | null
+          est_liste_mariage?: boolean
           group_id?: string
           hero_image_url?: string | null
           id?: string
           inclus_text?: string | null
           langue?: string | null
+          mariage_message?: string | null
+          mariage_objectif?: number | null
+          mariage_titre?: string | null
           nombre_chambres?: number
           nombre_pax?: number
           non_inclus_text?: string | null
@@ -635,11 +781,15 @@ export type Database = {
           demande_id?: string | null
           destination?: string | null
           dossier_id?: string | null
+          est_liste_mariage?: boolean
           group_id?: string
           hero_image_url?: string | null
           id?: string
           inclus_text?: string | null
           langue?: string | null
+          mariage_message?: string | null
+          mariage_objectif?: number | null
+          mariage_titre?: string | null
           nombre_chambres?: number
           nombre_pax?: number
           non_inclus_text?: string | null
@@ -1260,6 +1410,83 @@ export type Database = {
           },
         ]
       }
+      factures_clients: {
+        Row: {
+          agent_id: string | null
+          bulletin_id: string | null
+          client_id: string | null
+          cotation_id: string | null
+          created_at: string
+          date_echeance: string | null
+          date_emission: string
+          dossier_id: string | null
+          id: string
+          montant_ht: number
+          montant_ttc: number
+          montant_tva: number
+          notes: string | null
+          numero: string
+          pdf_url: string | null
+          regime_tva: string | null
+          statut: Database["public"]["Enums"]["facture_client_statut"]
+          taux_tva: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          bulletin_id?: string | null
+          client_id?: string | null
+          cotation_id?: string | null
+          created_at?: string
+          date_echeance?: string | null
+          date_emission?: string
+          dossier_id?: string | null
+          id?: string
+          montant_ht?: number
+          montant_ttc?: number
+          montant_tva?: number
+          notes?: string | null
+          numero: string
+          pdf_url?: string | null
+          regime_tva?: string | null
+          statut?: Database["public"]["Enums"]["facture_client_statut"]
+          taux_tva?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          bulletin_id?: string | null
+          client_id?: string | null
+          cotation_id?: string | null
+          created_at?: string
+          date_echeance?: string | null
+          date_emission?: string
+          dossier_id?: string | null
+          id?: string
+          montant_ht?: number
+          montant_ttc?: number
+          montant_tva?: number
+          notes?: string | null
+          numero?: string
+          pdf_url?: string | null
+          regime_tva?: string | null
+          statut?: Database["public"]["Enums"]["facture_client_statut"]
+          taux_tva?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factures_clients_bulletin_id_fkey"
+            columns: ["bulletin_id"]
+            isOneToOne: false
+            referencedRelation: "bulletins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       factures_fournisseurs: {
         Row: {
           coverage_id: string | null
@@ -1704,6 +1931,66 @@ export type Database = {
           reference?: string | null
           statut?: Database["public"]["Enums"]["fx_coverage_statut"]
           taux_change?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mariage_contributions: {
+        Row: {
+          cotation_id: string
+          created_at: string
+          date_paiement: string | null
+          devise: string
+          email_couple_envoye_at: string | null
+          email_invite_envoye_at: string | null
+          id: string
+          invite_email: string | null
+          invite_nom: string
+          invite_prenom: string
+          invite_telephone: string | null
+          message: string | null
+          montant: number
+          payment_reference: string | null
+          statut: Database["public"]["Enums"]["mariage_contribution_statut"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cotation_id: string
+          created_at?: string
+          date_paiement?: string | null
+          devise?: string
+          email_couple_envoye_at?: string | null
+          email_invite_envoye_at?: string | null
+          id?: string
+          invite_email?: string | null
+          invite_nom: string
+          invite_prenom: string
+          invite_telephone?: string | null
+          message?: string | null
+          montant: number
+          payment_reference?: string | null
+          statut?: Database["public"]["Enums"]["mariage_contribution_statut"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cotation_id?: string
+          created_at?: string
+          date_paiement?: string | null
+          devise?: string
+          email_couple_envoye_at?: string | null
+          email_invite_envoye_at?: string | null
+          id?: string
+          invite_email?: string | null
+          invite_nom?: string
+          invite_prenom?: string
+          invite_telephone?: string | null
+          message?: string | null
+          montant?: number
+          payment_reference?: string | null
+          statut?: Database["public"]["Enums"]["mariage_contribution_statut"]
           updated_at?: string
           user_id?: string
         }
@@ -2182,6 +2469,8 @@ export type Database = {
       bank_sens: "credit" | "debit"
       bank_source: "sg" | "cic" | "ebury"
       bank_statut: "nouveau" | "rapproche" | "ignore"
+      bulletin_statut: "a_signer" | "signe" | "annule"
+      carnet_statut: "brouillon" | "publie"
       compte_banque: "sg" | "cic" | "ebury" | "autre"
       compte_categorie:
         | "gestion"
@@ -2234,6 +2523,7 @@ export type Database = {
       dossier_task_statut: "a_faire" | "en_cours" | "termine"
       echeance_statut: "a_payer" | "paye" | "en_retard" | "annule"
       echeance_type: "acompte_1" | "acompte_2" | "acompte_3" | "solde" | "autre"
+      facture_client_statut: "brouillon" | "emise" | "payee" | "annulee"
       flight_option_statut: "en_option" | "confirmee" | "expiree" | "annulee"
       fournisseur_option_statut:
         | "a_demander"
@@ -2257,6 +2547,7 @@ export type Database = {
         | "engagee"
         | "liberee"
       fx_source: "taux_du_jour" | "couverture" | "manuel"
+      mariage_contribution_statut: "en_attente" | "paye" | "annule"
       paiement_methode: "virement" | "carte" | "especes"
       paiement_source: "banque" | "manuel"
       paiement_statut_rapprochement: "non_rapproche" | "rapproche"
@@ -2436,6 +2727,8 @@ export const Constants = {
       bank_sens: ["credit", "debit"],
       bank_source: ["sg", "cic", "ebury"],
       bank_statut: ["nouveau", "rapproche", "ignore"],
+      bulletin_statut: ["a_signer", "signe", "annule"],
+      carnet_statut: ["brouillon", "publie"],
       compte_banque: ["sg", "cic", "ebury", "autre"],
       compte_categorie: [
         "gestion",
@@ -2493,6 +2786,7 @@ export const Constants = {
       dossier_task_statut: ["a_faire", "en_cours", "termine"],
       echeance_statut: ["a_payer", "paye", "en_retard", "annule"],
       echeance_type: ["acompte_1", "acompte_2", "acompte_3", "solde", "autre"],
+      facture_client_statut: ["brouillon", "emise", "payee", "annulee"],
       flight_option_statut: ["en_option", "confirmee", "expiree", "annulee"],
       fournisseur_option_statut: [
         "a_demander",
@@ -2519,6 +2813,7 @@ export const Constants = {
         "liberee",
       ],
       fx_source: ["taux_du_jour", "couverture", "manuel"],
+      mariage_contribution_statut: ["en_attente", "paye", "annule"],
       paiement_methode: ["virement", "carte", "especes"],
       paiement_source: ["banque", "manuel"],
       paiement_statut_rapprochement: ["non_rapproche", "rapproche"],
