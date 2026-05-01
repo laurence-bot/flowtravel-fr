@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog, Shield, FileScan, FileText, Inbox, Building2, Video, ShieldCheck, MessageSquare, AlertTriangle, Sparkles, FileSignature, Receipt, Heart, BookOpen, GraduationCap } from "lucide-react";
+import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog, Shield, FileScan, FileText, Inbox, Building2, Video, ShieldCheck, MessageSquare, AlertTriangle, Sparkles, FileSignature, Receipt, Heart, BookOpen, GraduationCap, Wrench } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
@@ -17,8 +17,9 @@ type NavItem = {
   superAdminOnly?: boolean;
 };
 
-// Section 1 : Pilotage de la plateforme FlowTravel (super admin uniquement)
+// Section 1 : FlowTravel OPS — pilotage de la plateforme (super admin uniquement)
 const navFlowTravel: NavItem[] = [
+  { to: "/ops", label: "Espace OPS", icon: Wrench, superAdminOnly: true },
   { to: "/admin-dashboard", label: "Tableau de bord", icon: Sparkles, superAdminOnly: true },
   { to: "/admin-agences", label: "Validation agences", icon: ShieldCheck, superAdminOnly: true },
   { to: "/admin-messages", label: "Messagerie support", icon: MessageSquare, superAdminOnly: true },
@@ -150,13 +151,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
       {visibleFlowTravelNav.length > 0 && (
         <>
-          <SectionHeader label="FlowTravel" sublabel="Pilotage de la plateforme" />
-          <div className="space-y-1">
-            {visibleFlowTravelNav.map((item) => (
-              <NavLinkItem key={item.to} item={item} onClick={onClick} />
-            ))}
+          <div className="rounded-md border border-[color:var(--gold)]/20 bg-[color:var(--gold)]/5 p-2 mb-4">
+            <SectionHeader label="FlowTravel OPS" sublabel="Vous seul · pilotage plateforme" />
+            <div className="space-y-1">
+              {visibleFlowTravelNav.map((item) => (
+                <NavLinkItem key={item.to} item={item} onClick={onClick} />
+              ))}
+            </div>
           </div>
-          <div className="my-4 border-t border-sidebar-border/60" />
         </>
       )}
       {visibleAgenceNav.length > 0 && (
