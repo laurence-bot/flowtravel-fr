@@ -15,7 +15,6 @@ import { Scene7FX } from "./scenes/Scene7FX";
 import { Scene9Pilotage } from "./scenes/Scene9Pilotage";
 import { Scene9AdminCoach } from "./scenes/Scene9AdminCoach";
 import { Scene9Carnet } from "./scenes/Scene9Carnet";
-import { Scene10Outro } from "./scenes/Scene10Outro";
 import { SceneFinalCTA } from "./scenes/SceneFinalCTA";
 
 loadInter("normal", { weights: ["400", "500", "600", "700"], subsets: ["latin"] });
