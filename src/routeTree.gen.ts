@@ -19,6 +19,7 @@ import { Route as PrevisionsRouteImport } from './routes/previsions'
 import { Route as PilotageRouteImport } from './routes/pilotage'
 import { Route as ParametresAgenceRouteImport } from './routes/parametres-agence'
 import { Route as PaiementsRouteImport } from './routes/paiements'
+import { Route as OpsRouteImport } from './routes/ops'
 import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
 import { Route as MariagesRouteImport } from './routes/mariages'
 import { Route as InscriptionAgenceRouteImport } from './routes/inscription-agence'
@@ -45,7 +46,13 @@ import { Route as AdminDemosRouteImport } from './routes/admin-demos'
 import { Route as AdminDashboardRouteImport } from './routes/admin-dashboard'
 import { Route as AdminAgencesRouteImport } from './routes/admin-agences'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OpsIndexRouteImport } from './routes/ops.index'
 import { Route as PTokenRouteImport } from './routes/p.$token'
+import { Route as OpsMessagesRouteImport } from './routes/ops.messages'
+import { Route as OpsErrorsRouteImport } from './routes/ops.errors'
+import { Route as OpsDemosRouteImport } from './routes/ops.demos'
+import { Route as OpsDashboardRouteImport } from './routes/ops.dashboard'
+import { Route as OpsAgencesRouteImport } from './routes/ops.agences'
 import { Route as MariageTokenRouteImport } from './routes/mariage.$token'
 import { Route as FacturesIdRouteImport } from './routes/factures.$id'
 import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
@@ -108,6 +115,11 @@ const ParametresAgenceRoute = ParametresAgenceRouteImport.update({
 const PaiementsRoute = PaiementsRouteImport.update({
   id: '/paiements',
   path: '/paiements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OpsRoute = OpsRouteImport.update({
+  id: '/ops',
+  path: '/ops',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
@@ -240,10 +252,40 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OpsIndexRoute = OpsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OpsRoute,
+} as any)
 const PTokenRoute = PTokenRouteImport.update({
   id: '/p/$token',
   path: '/p/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const OpsMessagesRoute = OpsMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsErrorsRoute = OpsErrorsRouteImport.update({
+  id: '/errors',
+  path: '/errors',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsDemosRoute = OpsDemosRouteImport.update({
+  id: '/demos',
+  path: '/demos',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsDashboardRoute = OpsDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsAgencesRoute = OpsAgencesRouteImport.update({
+  id: '/agences',
+  path: '/agences',
+  getParentRoute: () => OpsRoute,
 } as any)
 const MariageTokenRoute = MariageTokenRouteImport.update({
   id: '/mariage/$token',
@@ -339,6 +381,7 @@ export interface FileRoutesByFullPath {
   '/inscription-agence': typeof InscriptionAgenceRoute
   '/mariages': typeof MariagesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
+  '/ops': typeof OpsRouteWithChildren
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
   '/pilotage': typeof PilotageRoute
@@ -357,7 +400,13 @@ export interface FileRoutesByFullPath {
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
   '/mariage/$token': typeof MariageTokenRoute
+  '/ops/agences': typeof OpsAgencesRoute
+  '/ops/dashboard': typeof OpsDashboardRoute
+  '/ops/demos': typeof OpsDemosRoute
+  '/ops/errors': typeof OpsErrorsRoute
+  '/ops/messages': typeof OpsMessagesRoute
   '/p/$token': typeof PTokenRoute
+  '/ops/': typeof OpsIndexRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -409,7 +458,13 @@ export interface FileRoutesByTo {
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
   '/mariage/$token': typeof MariageTokenRoute
+  '/ops/agences': typeof OpsAgencesRoute
+  '/ops/dashboard': typeof OpsDashboardRoute
+  '/ops/demos': typeof OpsDemosRoute
+  '/ops/errors': typeof OpsErrorsRoute
+  '/ops/messages': typeof OpsMessagesRoute
   '/p/$token': typeof PTokenRoute
+  '/ops': typeof OpsIndexRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -444,6 +499,7 @@ export interface FileRoutesById {
   '/inscription-agence': typeof InscriptionAgenceRoute
   '/mariages': typeof MariagesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
+  '/ops': typeof OpsRouteWithChildren
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
   '/pilotage': typeof PilotageRoute
@@ -462,7 +518,13 @@ export interface FileRoutesById {
   '/dossiers/$id': typeof DossiersIdRoute
   '/factures/$id': typeof FacturesIdRoute
   '/mariage/$token': typeof MariageTokenRoute
+  '/ops/agences': typeof OpsAgencesRoute
+  '/ops/dashboard': typeof OpsDashboardRoute
+  '/ops/demos': typeof OpsDemosRoute
+  '/ops/errors': typeof OpsErrorsRoute
+  '/ops/messages': typeof OpsMessagesRoute
   '/p/$token': typeof PTokenRoute
+  '/ops/': typeof OpsIndexRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -498,6 +560,7 @@ export interface FileRouteTypes {
     | '/inscription-agence'
     | '/mariages'
     | '/mot-de-passe-oublie'
+    | '/ops'
     | '/paiements'
     | '/parametres-agence'
     | '/pilotage'
@@ -516,7 +579,13 @@ export interface FileRouteTypes {
     | '/dossiers/$id'
     | '/factures/$id'
     | '/mariage/$token'
+    | '/ops/agences'
+    | '/ops/dashboard'
+    | '/ops/demos'
+    | '/ops/errors'
+    | '/ops/messages'
     | '/p/$token'
+    | '/ops/'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
     | '/lovable/email/auth/preview'
@@ -568,7 +637,13 @@ export interface FileRouteTypes {
     | '/dossiers/$id'
     | '/factures/$id'
     | '/mariage/$token'
+    | '/ops/agences'
+    | '/ops/dashboard'
+    | '/ops/demos'
+    | '/ops/errors'
+    | '/ops/messages'
     | '/p/$token'
+    | '/ops'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
     | '/lovable/email/auth/preview'
@@ -602,6 +677,7 @@ export interface FileRouteTypes {
     | '/inscription-agence'
     | '/mariages'
     | '/mot-de-passe-oublie'
+    | '/ops'
     | '/paiements'
     | '/parametres-agence'
     | '/pilotage'
@@ -620,7 +696,13 @@ export interface FileRouteTypes {
     | '/dossiers/$id'
     | '/factures/$id'
     | '/mariage/$token'
+    | '/ops/agences'
+    | '/ops/dashboard'
+    | '/ops/demos'
+    | '/ops/errors'
+    | '/ops/messages'
     | '/p/$token'
+    | '/ops/'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
     | '/lovable/email/auth/preview'
@@ -655,6 +737,7 @@ export interface RootRouteChildren {
   InscriptionAgenceRoute: typeof InscriptionAgenceRoute
   MariagesRoute: typeof MariagesRoute
   MotDePasseOublieRoute: typeof MotDePasseOublieRoute
+  OpsRoute: typeof OpsRouteWithChildren
   PaiementsRoute: typeof PaiementsRoute
   ParametresAgenceRoute: typeof ParametresAgenceRoute
   PilotageRoute: typeof PilotageRoute
@@ -745,6 +828,13 @@ declare module '@tanstack/react-router' {
       path: '/paiements'
       fullPath: '/paiements'
       preLoaderRoute: typeof PaiementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ops': {
+      id: '/ops'
+      path: '/ops'
+      fullPath: '/ops'
+      preLoaderRoute: typeof OpsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mot-de-passe-oublie': {
@@ -929,12 +1019,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ops/': {
+      id: '/ops/'
+      path: '/'
+      fullPath: '/ops/'
+      preLoaderRoute: typeof OpsIndexRouteImport
+      parentRoute: typeof OpsRoute
+    }
     '/p/$token': {
       id: '/p/$token'
       path: '/p/$token'
       fullPath: '/p/$token'
       preLoaderRoute: typeof PTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/ops/messages': {
+      id: '/ops/messages'
+      path: '/messages'
+      fullPath: '/ops/messages'
+      preLoaderRoute: typeof OpsMessagesRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/errors': {
+      id: '/ops/errors'
+      path: '/errors'
+      fullPath: '/ops/errors'
+      preLoaderRoute: typeof OpsErrorsRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/demos': {
+      id: '/ops/demos'
+      path: '/demos'
+      fullPath: '/ops/demos'
+      preLoaderRoute: typeof OpsDemosRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/dashboard': {
+      id: '/ops/dashboard'
+      path: '/dashboard'
+      fullPath: '/ops/dashboard'
+      preLoaderRoute: typeof OpsDashboardRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/agences': {
+      id: '/ops/agences'
+      path: '/agences'
+      fullPath: '/ops/agences'
+      preLoaderRoute: typeof OpsAgencesRouteImport
+      parentRoute: typeof OpsRoute
     }
     '/mariage/$token': {
       id: '/mariage/$token'
@@ -1090,6 +1222,26 @@ const DossiersRouteWithChildren = DossiersRoute._addFileChildren(
   DossiersRouteChildren,
 )
 
+interface OpsRouteChildren {
+  OpsAgencesRoute: typeof OpsAgencesRoute
+  OpsDashboardRoute: typeof OpsDashboardRoute
+  OpsDemosRoute: typeof OpsDemosRoute
+  OpsErrorsRoute: typeof OpsErrorsRoute
+  OpsMessagesRoute: typeof OpsMessagesRoute
+  OpsIndexRoute: typeof OpsIndexRoute
+}
+
+const OpsRouteChildren: OpsRouteChildren = {
+  OpsAgencesRoute: OpsAgencesRoute,
+  OpsDashboardRoute: OpsDashboardRoute,
+  OpsDemosRoute: OpsDemosRoute,
+  OpsErrorsRoute: OpsErrorsRoute,
+  OpsMessagesRoute: OpsMessagesRoute,
+  OpsIndexRoute: OpsIndexRoute,
+}
+
+const OpsRouteWithChildren = OpsRoute._addFileChildren(OpsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminAgencesRoute: AdminAgencesRoute,
@@ -1117,6 +1269,7 @@ const rootRouteChildren: RootRouteChildren = {
   InscriptionAgenceRoute: InscriptionAgenceRoute,
   MariagesRoute: MariagesRoute,
   MotDePasseOublieRoute: MotDePasseOublieRoute,
+  OpsRoute: OpsRouteWithChildren,
   PaiementsRoute: PaiementsRoute,
   ParametresAgenceRoute: ParametresAgenceRoute,
   PilotageRoute: PilotageRoute,

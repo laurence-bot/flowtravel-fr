@@ -18,6 +18,7 @@ const ROUTE_ACCESS: Record<AppRole, string[]> = {
     "/comptes", "/couvertures-fx", "/previsions", "/import-bancaire", "/rapprochement",
     "/export", "/audit", "/utilisateurs", "/import-pdf", "/cotations", "/demandes", "/parametres-agence",
     "/admin-demos", "/admin-agences", "/admin-dashboard", "/admin-messages", "/admin-errors", "/support",
+    "/ops",
   ],
   agent: [
     "/", "/app", "/pilotage", "/contacts", "/dossiers", "/factures", "/factures-clients",
