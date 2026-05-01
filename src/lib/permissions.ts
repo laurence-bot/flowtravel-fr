@@ -14,14 +14,14 @@ export const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
 const ROUTE_ACCESS: Record<AppRole, string[]> = {
   administrateur: [
     "/", "/app", "/pilotage", "/contacts", "/dossiers", "/factures", "/factures-clients",
-    "/bulletins", "/carnets", "/mariages", "/paiements",
+    "/bulletins", "/carnets", "/mariages", "/paiements", "/coaching",
     "/comptes", "/couvertures-fx", "/previsions", "/import-bancaire", "/rapprochement",
     "/export", "/audit", "/utilisateurs", "/import-pdf", "/cotations", "/demandes", "/parametres-agence",
     "/admin-demos", "/admin-agences", "/admin-dashboard", "/admin-messages", "/admin-errors", "/support",
   ],
   agent: [
     "/", "/app", "/pilotage", "/contacts", "/dossiers", "/factures", "/factures-clients",
-    "/bulletins", "/carnets", "/mariages", "/cotations", "/demandes", "/support",
+    "/bulletins", "/carnets", "/mariages", "/cotations", "/demandes", "/coaching", "/support",
   ],
 };
 

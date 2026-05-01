@@ -33,6 +33,7 @@ import { Route as CouverturesFxRouteImport } from './routes/couvertures-fx'
 import { Route as CotationsRouteImport } from './routes/cotations'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as ComptesRouteImport } from './routes/comptes'
+import { Route as CoachingRouteImport } from './routes/coaching'
 import { Route as CarnetsRouteImport } from './routes/carnets'
 import { Route as BulletinsRouteImport } from './routes/bulletins'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -179,6 +180,11 @@ const ComptesRoute = ComptesRouteImport.update({
   path: '/comptes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CoachingRoute = CoachingRouteImport.update({
+  id: '/coaching',
+  path: '/coaching',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CarnetsRoute = CarnetsRouteImport.update({
   id: '/carnets',
   path: '/carnets',
@@ -318,6 +324,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/bulletins': typeof BulletinsRoute
   '/carnets': typeof CarnetsRoute
+  '/coaching': typeof CoachingRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
   '/cotations': typeof CotationsRouteWithChildren
@@ -369,6 +376,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/bulletins': typeof BulletinsRoute
   '/carnets': typeof CarnetsRoute
+  '/coaching': typeof CoachingRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
   '/cotations': typeof CotationsRouteWithChildren
@@ -421,6 +429,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/bulletins': typeof BulletinsRoute
   '/carnets': typeof CarnetsRoute
+  '/coaching': typeof CoachingRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
   '/cotations': typeof CotationsRouteWithChildren
@@ -474,6 +483,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/bulletins'
     | '/carnets'
+    | '/coaching'
     | '/comptes'
     | '/contacts'
     | '/cotations'
@@ -525,6 +535,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/bulletins'
     | '/carnets'
+    | '/coaching'
     | '/comptes'
     | '/contacts'
     | '/cotations'
@@ -576,6 +587,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/bulletins'
     | '/carnets'
+    | '/coaching'
     | '/comptes'
     | '/contacts'
     | '/cotations'
@@ -628,6 +640,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BulletinsRoute: typeof BulletinsRoute
   CarnetsRoute: typeof CarnetsRoute
+  CoachingRoute: typeof CoachingRoute
   ComptesRoute: typeof ComptesRoute
   ContactsRoute: typeof ContactsRouteWithChildren
   CotationsRoute: typeof CotationsRouteWithChildren
@@ -830,6 +843,13 @@ declare module '@tanstack/react-router' {
       path: '/comptes'
       fullPath: '/comptes'
       preLoaderRoute: typeof ComptesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/coaching': {
+      id: '/coaching'
+      path: '/coaching'
+      fullPath: '/coaching'
+      preLoaderRoute: typeof CoachingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/carnets': {
@@ -1082,6 +1102,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BulletinsRoute: BulletinsRoute,
   CarnetsRoute: CarnetsRoute,
+  CoachingRoute: CoachingRoute,
   ComptesRoute: ComptesRoute,
   ContactsRoute: ContactsRouteWithChildren,
   CotationsRoute: CotationsRouteWithChildren,
