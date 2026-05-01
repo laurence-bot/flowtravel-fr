@@ -15,8 +15,10 @@ const compId = process.argv[2] || "main-landscape";
 const out = process.argv[3] || `/tmp/${compId}-video.mp4`;
 const audioDir = path.resolve(__dirname, "../public/audio-v4");
 
-// Durées scènes (frames @30fps) — doivent rester alignées avec MainVideo.tsx (v4)
-const SCENE_DURATIONS_FRAMES = [195, 242, 365, 283, 320, 209, 382, 408, 397, 429];
+// Durées scènes (frames @30fps) — doivent rester alignées avec MainVideo.tsx
+// s1..s10 = voix off, sFinal = slide tarifs/CTA silencieuse 6s
+const SCENE_DURATIONS_FRAMES = [201, 248, 372, 290, 326, 215, 388, 414, 403, 435];
+const FINAL_SILENCE_FRAMES = 180; // 6s slide finale sans voix
 const FPS = 30;
 
 const tmpDir = fs.mkdtempSync("/tmp/rem-render-");
