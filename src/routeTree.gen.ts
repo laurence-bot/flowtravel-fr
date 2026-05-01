@@ -23,6 +23,7 @@ import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oubl
 import { Route as InscriptionAgenceRouteImport } from './routes/inscription-agence'
 import { Route as ImportPdfRouteImport } from './routes/import-pdf'
 import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
+import { Route as FacturesClientsRouteImport } from './routes/factures-clients'
 import { Route as ExportRouteImport } from './routes/export'
 import { Route as DossiersRouteImport } from './routes/dossiers'
 import { Route as DemoRouteImport } from './routes/demo'
@@ -31,6 +32,7 @@ import { Route as CouverturesFxRouteImport } from './routes/couvertures-fx'
 import { Route as CotationsRouteImport } from './routes/cotations'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as ComptesRouteImport } from './routes/comptes'
+import { Route as BulletinsRouteImport } from './routes/bulletins'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as AppRouteImport } from './routes/app'
@@ -123,6 +125,11 @@ const ImportBancaireRoute = ImportBancaireRouteImport.update({
   path: '/import-bancaire',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FacturesClientsRoute = FacturesClientsRouteImport.update({
+  id: '/factures-clients',
+  path: '/factures-clients',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ExportRoute = ExportRouteImport.update({
   id: '/export',
   path: '/export',
@@ -161,6 +168,11 @@ const ContactsRoute = ContactsRouteImport.update({
 const ComptesRoute = ComptesRouteImport.update({
   id: '/comptes',
   path: '/comptes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BulletinsRoute = BulletinsRouteImport.update({
+  id: '/bulletins',
+  path: '/bulletins',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -280,6 +292,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
+  '/bulletins': typeof BulletinsRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
   '/cotations': typeof CotationsRouteWithChildren
@@ -288,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/demo': typeof DemoRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
+  '/factures-clients': typeof FacturesClientsRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
   '/inscription-agence': typeof InscriptionAgenceRoute
@@ -325,6 +339,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
+  '/bulletins': typeof BulletinsRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
   '/cotations': typeof CotationsRouteWithChildren
@@ -333,6 +348,7 @@ export interface FileRoutesByTo {
   '/demo': typeof DemoRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
+  '/factures-clients': typeof FacturesClientsRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
   '/inscription-agence': typeof InscriptionAgenceRoute
@@ -371,6 +387,7 @@ export interface FileRoutesById {
   '/app': typeof AppRoute
   '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
+  '/bulletins': typeof BulletinsRoute
   '/comptes': typeof ComptesRoute
   '/contacts': typeof ContactsRouteWithChildren
   '/cotations': typeof CotationsRouteWithChildren
@@ -379,6 +396,7 @@ export interface FileRoutesById {
   '/demo': typeof DemoRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
+  '/factures-clients': typeof FacturesClientsRoute
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
   '/inscription-agence': typeof InscriptionAgenceRoute
@@ -418,6 +436,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/audit'
     | '/auth'
+    | '/bulletins'
     | '/comptes'
     | '/contacts'
     | '/cotations'
@@ -426,6 +445,7 @@ export interface FileRouteTypes {
     | '/demo'
     | '/dossiers'
     | '/export'
+    | '/factures-clients'
     | '/import-bancaire'
     | '/import-pdf'
     | '/inscription-agence'
@@ -463,6 +483,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/audit'
     | '/auth'
+    | '/bulletins'
     | '/comptes'
     | '/contacts'
     | '/cotations'
@@ -471,6 +492,7 @@ export interface FileRouteTypes {
     | '/demo'
     | '/dossiers'
     | '/export'
+    | '/factures-clients'
     | '/import-bancaire'
     | '/import-pdf'
     | '/inscription-agence'
@@ -508,6 +530,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/audit'
     | '/auth'
+    | '/bulletins'
     | '/comptes'
     | '/contacts'
     | '/cotations'
@@ -516,6 +539,7 @@ export interface FileRouteTypes {
     | '/demo'
     | '/dossiers'
     | '/export'
+    | '/factures-clients'
     | '/import-bancaire'
     | '/import-pdf'
     | '/inscription-agence'
@@ -554,6 +578,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRoute
   AuditRoute: typeof AuditRoute
   AuthRoute: typeof AuthRoute
+  BulletinsRoute: typeof BulletinsRoute
   ComptesRoute: typeof ComptesRoute
   ContactsRoute: typeof ContactsRouteWithChildren
   CotationsRoute: typeof CotationsRouteWithChildren
@@ -562,6 +587,7 @@ export interface RootRouteChildren {
   DemoRoute: typeof DemoRouteWithChildren
   DossiersRoute: typeof DossiersRouteWithChildren
   ExportRoute: typeof ExportRoute
+  FacturesClientsRoute: typeof FacturesClientsRoute
   ImportBancaireRoute: typeof ImportBancaireRoute
   ImportPdfRoute: typeof ImportPdfRoute
   InscriptionAgenceRoute: typeof InscriptionAgenceRoute
@@ -684,6 +710,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ImportBancaireRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/factures-clients': {
+      id: '/factures-clients'
+      path: '/factures-clients'
+      fullPath: '/factures-clients'
+      preLoaderRoute: typeof FacturesClientsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/export': {
       id: '/export'
       path: '/export'
@@ -738,6 +771,13 @@ declare module '@tanstack/react-router' {
       path: '/comptes'
       fullPath: '/comptes'
       preLoaderRoute: typeof ComptesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bulletins': {
+      id: '/bulletins'
+      path: '/bulletins'
+      fullPath: '/bulletins'
+      preLoaderRoute: typeof BulletinsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -960,6 +1000,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRoute,
   AuditRoute: AuditRoute,
   AuthRoute: AuthRoute,
+  BulletinsRoute: BulletinsRoute,
   ComptesRoute: ComptesRoute,
   ContactsRoute: ContactsRouteWithChildren,
   CotationsRoute: CotationsRouteWithChildren,
@@ -968,6 +1009,7 @@ const rootRouteChildren: RootRouteChildren = {
   DemoRoute: DemoRouteWithChildren,
   DossiersRoute: DossiersRouteWithChildren,
   ExportRoute: ExportRoute,
+  FacturesClientsRoute: FacturesClientsRoute,
   ImportBancaireRoute: ImportBancaireRoute,
   ImportPdfRoute: ImportPdfRoute,
   InscriptionAgenceRoute: InscriptionAgenceRoute,
