@@ -417,10 +417,10 @@ const MobileApp: React.FC = () => {
           ))}
         </div>
 
-        {/* NOTIFICATION PUSH qui apparaît */}
+        {/* NOTIFICATION PUSH qui apparaît - en bas pour ne pas masquer le titre */}
         <div style={{
           position: "absolute",
-          top: 50,
+          bottom: 14,
           left: 14,
           right: 14,
           opacity: notifOp,
