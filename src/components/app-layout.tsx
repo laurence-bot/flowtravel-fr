@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog, Shield, FileScan, FileText, Inbox, Building2, Video, ShieldCheck, MessageSquare, AlertTriangle, Sparkles, FileSignature, Receipt, Heart, BookOpen } from "lucide-react";
+import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog, Shield, FileScan, FileText, Inbox, Building2, Video, ShieldCheck, MessageSquare, AlertTriangle, Sparkles, FileSignature, Receipt, Heart, BookOpen, GraduationCap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
@@ -49,6 +49,7 @@ const navAgence: NavItem[] = [
   { to: "/audit", label: "Journal d'audit", icon: ScrollText },
   { to: "/utilisateurs", label: "Utilisateurs", icon: UserCog },
   { to: "/parametres-agence", label: "Paramètres agence", icon: Building2 },
+  { to: "/coaching", label: "Coaching", icon: GraduationCap },
   { to: "/support", label: "Support FlowTravel", icon: MessageSquare },
 ];
 
