@@ -116,8 +116,9 @@ const VoiceTrack: React.FC = () => {
       {tracks.map((t) => {
         const from = cursor;
         cursor += t.dur;
+        // Voix d\u00e9marre exactement \u00e0 l'apparition du visuel (synchro stricte image/parole)
         return (
-          <Sequence key={t.key} from={from + 4}>
+          <Sequence key={t.key} from={from}>
             <Audio src={staticFile(`audio-v4/${t.key}.aac`)} volume={1} />
           </Sequence>
         );
