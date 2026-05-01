@@ -13,10 +13,10 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const compId = process.argv[2] || "main-landscape";
 const out = process.argv[3] || `/tmp/${compId}-video.mp4`;
-const audioDir = path.resolve(__dirname, "../public/audio-v3");
+const audioDir = path.resolve(__dirname, "../public/audio-v4");
 
-// Durées scènes (frames @30fps) — doivent rester alignées avec MainVideo.tsx
-const SCENE_DURATIONS_FRAMES = [175, 215, 315, 275, 175, 295, 245, 510, 495, 150];
+// Durées scènes (frames @30fps) — doivent rester alignées avec MainVideo.tsx (v4)
+const SCENE_DURATIONS_FRAMES = [195, 242, 365, 283, 320, 209, 382, 408, 397, 429];
 const FPS = 30;
 
 const tmpDir = fs.mkdtempSync("/tmp/rem-render-");
