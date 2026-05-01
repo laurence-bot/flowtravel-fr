@@ -108,7 +108,8 @@ function MariagesPage() {
     }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data, error } = await supabase.from("quote_public_links").insert({ cotation_id: current.id, user_id: user.id }).select().single();
+    const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+    const { data, error } = await supabase.from("quote_public_links").insert({ cotation_id: current.id, user_id: user.id, token }).select().single();
     if (error) return toast.error(error.message);
     setLink(`${window.location.origin}/mariage/${data.token}`);
     toast.success("Lien généré");
