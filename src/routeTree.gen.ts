@@ -91,6 +91,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksRelanceBulletinsRouteImport } from './routes/api/public/hooks/relance-bulletins'
+import { Route as ApiPublicHooksRelanceAcomptesRouteImport } from './routes/api/public/hooks/relance-acomptes'
 import { Route as ApiPublicHooksPayrollSummaryRouteImport } from './routes/api/public/hooks/payroll-summary'
 
 const UtilisateursRoute = UtilisateursRouteImport.update({
@@ -507,6 +508,12 @@ const ApiPublicHooksRelanceBulletinsRoute =
     path: '/api/public/hooks/relance-bulletins',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksRelanceAcomptesRoute =
+  ApiPublicHooksRelanceAcomptesRouteImport.update({
+    id: '/api/public/hooks/relance-acomptes',
+    path: '/api/public/hooks/relance-acomptes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksPayrollSummaryRoute =
   ApiPublicHooksPayrollSummaryRouteImport.update({
     id: '/api/public/hooks/payroll-summary',
@@ -592,6 +599,7 @@ export interface FileRoutesByFullPath {
   '/ops/equipe/pointage': typeof OpsEquipePointageRoute
   '/ops/equipe/': typeof OpsEquipeIndexRoute
   '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
+  '/api/public/hooks/relance-acomptes': typeof ApiPublicHooksRelanceAcomptesRoute
   '/api/public/hooks/relance-bulletins': typeof ApiPublicHooksRelanceBulletinsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -676,6 +684,7 @@ export interface FileRoutesByTo {
   '/ops/equipe/pointage': typeof OpsEquipePointageRoute
   '/ops/equipe': typeof OpsEquipeIndexRoute
   '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
+  '/api/public/hooks/relance-acomptes': typeof ApiPublicHooksRelanceAcomptesRoute
   '/api/public/hooks/relance-bulletins': typeof ApiPublicHooksRelanceBulletinsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -762,6 +771,7 @@ export interface FileRoutesById {
   '/ops/equipe/pointage': typeof OpsEquipePointageRoute
   '/ops/equipe/': typeof OpsEquipeIndexRoute
   '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
+  '/api/public/hooks/relance-acomptes': typeof ApiPublicHooksRelanceAcomptesRoute
   '/api/public/hooks/relance-bulletins': typeof ApiPublicHooksRelanceBulletinsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -849,6 +859,7 @@ export interface FileRouteTypes {
     | '/ops/equipe/pointage'
     | '/ops/equipe/'
     | '/api/public/hooks/payroll-summary'
+    | '/api/public/hooks/relance-acomptes'
     | '/api/public/hooks/relance-bulletins'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -933,6 +944,7 @@ export interface FileRouteTypes {
     | '/ops/equipe/pointage'
     | '/ops/equipe'
     | '/api/public/hooks/payroll-summary'
+    | '/api/public/hooks/relance-acomptes'
     | '/api/public/hooks/relance-bulletins'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1018,6 +1030,7 @@ export interface FileRouteTypes {
     | '/ops/equipe/pointage'
     | '/ops/equipe/'
     | '/api/public/hooks/payroll-summary'
+    | '/api/public/hooks/relance-acomptes'
     | '/api/public/hooks/relance-bulletins'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1082,6 +1095,7 @@ export interface RootRouteChildren {
   PaiementTokenRoute: typeof PaiementTokenRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksPayrollSummaryRoute: typeof ApiPublicHooksPayrollSummaryRoute
+  ApiPublicHooksRelanceAcomptesRoute: typeof ApiPublicHooksRelanceAcomptesRoute
   ApiPublicHooksRelanceBulletinsRoute: typeof ApiPublicHooksRelanceBulletinsRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1666,6 +1680,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRelanceBulletinsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/relance-acomptes': {
+      id: '/api/public/hooks/relance-acomptes'
+      path: '/api/public/hooks/relance-acomptes'
+      fullPath: '/api/public/hooks/relance-acomptes'
+      preLoaderRoute: typeof ApiPublicHooksRelanceAcomptesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/payroll-summary': {
       id: '/api/public/hooks/payroll-summary'
       path: '/api/public/hooks/payroll-summary'
@@ -1842,6 +1863,7 @@ const rootRouteChildren: RootRouteChildren = {
   PaiementTokenRoute: PaiementTokenRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksPayrollSummaryRoute: ApiPublicHooksPayrollSummaryRoute,
+  ApiPublicHooksRelanceAcomptesRoute: ApiPublicHooksRelanceAcomptesRoute,
   ApiPublicHooksRelanceBulletinsRoute: ApiPublicHooksRelanceBulletinsRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
