@@ -69,12 +69,56 @@ function DossierDetail() {
     toast.success(`Dossier réassigné à ${newName}`);
   };
 
+  const [cotationId, setCotationId] = useState<string | null>(null);
+  const [bulletinExists, setBulletinExists] = useState<{ token: string; statut: string } | null>(null);
+  const [triggering, setTriggering] = useState(false);
+
   useEffect(() => {
     supabase.from("dossiers").select("*").eq("id", id).maybeSingle().then(({ data }) => {
       if (!data) setNotFound(true);
       else setDossier(data as Dossier);
     });
+    // Récupère la cotation associée + un éventuel bulletin
+    supabase.from("cotations").select("id").eq("dossier_id", id).maybeSingle().then(({ data }) => {
+      if (data?.id) {
+        setCotationId(data.id);
+        supabase
+          .from("bulletins")
+          .select("token,statut")
+          .eq("cotation_id", data.id)
+          .in("statut", ["a_signer", "signe"])
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+          .then(({ data: b }) => setBulletinExists(b ?? null));
+      }
+    });
   }, [id]);
+
+  const handleTriggerBulletin = async () => {
+    if (!cotationId) {
+      toast.error("Aucune cotation associée à ce dossier");
+      return;
+    }
+    setTriggering(true);
+    try {
+      const r = await triggerBulletinAfterAcompte({ data: { cotationId, sendEmail: true } });
+      if (r.ok) {
+        setBulletinExists({ token: r.token, statut: "a_signer" });
+        toast.success(
+          r.emailSent
+            ? "Bulletin généré et envoyé au client par email."
+            : "Bulletin généré (email non envoyé : email client manquant).",
+        );
+      } else {
+        toast.error(r.error ?? "Erreur");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setTriggering(false);
+    }
+  };
 
   if (notFound) {
     return (
