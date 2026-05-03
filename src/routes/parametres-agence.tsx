@@ -157,6 +157,7 @@ function ParametresAgencePage() {
         siret: form.siret || null,
         vat_number: form.vat_number || null,
         logo_url: logoUrl,
+        utilise_couvertures_fx: utiliseCouverturesFx,
       };
       const { error, data } = await supabase
         .from("agency_settings")
