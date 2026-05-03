@@ -169,9 +169,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       });
   }, [user]);
 
+  const fxEnabled = !!agencySettings?.utilise_couvertures_fx;
+
   const filterItems = (items: NavItem[]) =>
     items.filter((item) => {
       if (item.superAdminOnly && !isSuperAdmin) return false;
+      if (item.to === "/couvertures-fx" && !fxEnabled) return false;
       return canAccessRoute(role, item.to);
     });
 

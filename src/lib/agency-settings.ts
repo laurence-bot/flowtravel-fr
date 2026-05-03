@@ -16,6 +16,7 @@ export type AgencySettings = {
   siret: string | null;
   vat_number: string | null;
   primary_contact_name: string | null;
+  utilise_couvertures_fx: boolean;
   created_at: string;
   updated_at: string;
 };

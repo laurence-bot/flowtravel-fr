@@ -60,6 +60,7 @@ function ParametresAgencePage() {
     vat_number: "",
   });
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [utiliseCouverturesFx, setUtiliseCouverturesFx] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -82,6 +83,7 @@ function ParametresAgencePage() {
         vat_number: settings.vat_number ?? "",
       });
       setLogoUrl(settings.logo_url);
+      setUtiliseCouverturesFx(!!settings.utilise_couvertures_fx);
     }
   }, [settings]);
 
@@ -155,6 +157,7 @@ function ParametresAgencePage() {
         siret: form.siret || null,
         vat_number: form.vat_number || null,
         logo_url: logoUrl,
+        utilise_couvertures_fx: utiliseCouverturesFx,
       };
       const { error, data } = await supabase
         .from("agency_settings")
@@ -331,6 +334,30 @@ function ParametresAgencePage() {
             Enregistrer
           </Button>
         </div>
+      </Card>
+
+      {/* Couvertures FX */}
+      <Card className="p-6">
+        <h2 className="font-display text-lg mb-2">Couvertures de change (FX)</h2>
+        <p className="text-xs text-muted-foreground mb-4">
+          Activez si votre agence utilise des contrats de couverture de change
+          (Ebury, iBanFirst…). Désactivé : seul un taux libre est proposé sur les lignes
+          en devise et le menu « Couvertures FX » est masqué.
+        </p>
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            className="mt-0.5"
+            checked={utiliseCouverturesFx}
+            onChange={(e) => setUtiliseCouverturesFx(e.target.checked)}
+          />
+          <span className="text-sm">
+            <strong>Mon agence utilise des couvertures FX</strong>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Vous pourrez créer et réserver des couvertures depuis le menu Finance.
+            </p>
+          </span>
+        </label>
       </Card>
     </div>
   );

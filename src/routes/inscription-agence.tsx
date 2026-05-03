@@ -18,26 +18,38 @@ export const Route = createFileRoute("/inscription-agence")({
 const immatRegex = /^IM\d{9}$/i;
 const siretRegex = /^\d{14}$/;
 
-const formSchema = z.object({
-  nom_commercial: z.string().trim().min(2, "Nom de l'agence requis").max(150),
-  raison_sociale: z.string().trim().max(150).optional().or(z.literal("")),
-  immat_atout_france: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(immatRegex, "Format attendu : IM + 9 chiffres (ex: IM075100001)"),
-  siret: z
-    .string()
-    .trim()
-    .regex(siretRegex, "Le SIRET doit contenir exactement 14 chiffres"),
-  email_contact: z.string().trim().email("Email invalide").max(255),
-  telephone: z.string().trim().max(30).optional().or(z.literal("")),
-  adresse: z.string().trim().max(255).optional().or(z.literal("")),
-  ville: z.string().trim().max(100).optional().or(z.literal("")),
-  code_postal: z.string().trim().max(15).optional().or(z.literal("")),
-  admin_full_name: z.string().trim().min(2, "Nom du gérant requis").max(150),
-  password: z.string().min(8, "Mot de passe : 8 caractères minimum").max(72),
-});
+const sirenRegex = /^\d{9}$/;
+
+const formSchema = z
+  .object({
+    nom_commercial: z.string().trim().min(2, "Nom de l'agence requis").max(150),
+    raison_sociale: z.string().trim().max(150).optional().or(z.literal("")),
+    immat_atout_france: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(immatRegex, "Format attendu : IM + 9 chiffres (ex: IM075100001)"),
+    siret: z
+      .string()
+      .trim()
+      .regex(siretRegex, "Le SIRET doit contenir exactement 14 chiffres"),
+    est_etablissement_secondaire: z.boolean().default(false),
+    siren_siege: z.string().trim().optional().or(z.literal("")),
+    email_contact: z.string().trim().email("Email invalide").max(255),
+    telephone: z.string().trim().max(30).optional().or(z.literal("")),
+    adresse: z.string().trim().max(255).optional().or(z.literal("")),
+    ville: z.string().trim().max(100).optional().or(z.literal("")),
+    code_postal: z.string().trim().max(15).optional().or(z.literal("")),
+    admin_full_name: z.string().trim().min(2, "Nom du gérant requis").max(150),
+    password: z.string().min(8, "Mot de passe : 8 caractères minimum").max(72),
+  })
+  .refine(
+    (d) => !d.est_etablissement_secondaire || sirenRegex.test(d.siren_siege ?? ""),
+    {
+      message: "SIREN du siège requis (9 chiffres) pour un établissement secondaire",
+      path: ["siren_siege"],
+    },
+  );
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -58,6 +70,8 @@ const EMPTY_FORM: FormData = {
   raison_sociale: "",
   immat_atout_france: "",
   siret: "",
+  est_etablissement_secondaire: false,
+  siren_siege: "",
   email_contact: "",
   telephone: "",
   adresse: "",
@@ -181,6 +195,10 @@ function InscriptionAgencePage() {
         raison_sociale: parsed.data.raison_sociale || parsed.data.nom_commercial,
         immat_atout_france: parsed.data.immat_atout_france.toUpperCase(),
         siret: parsed.data.siret,
+        est_etablissement_secondaire: parsed.data.est_etablissement_secondaire,
+        siren_siege: parsed.data.est_etablissement_secondaire
+          ? (parsed.data.siren_siege || null)
+          : null,
         email_contact: parsed.data.email_contact,
         telephone: parsed.data.telephone || null,
         adresse: parsed.data.adresse || null,
@@ -334,6 +352,42 @@ function InscriptionAgencePage() {
                     maxLength={14}
                   />
                 </div>
+              </div>
+
+              <div className="rounded-md border border-border/60 bg-muted/30 p-3 space-y-3">
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5"
+                    checked={form.est_etablissement_secondaire}
+                    onChange={(e) =>
+                      update("est_etablissement_secondaire", e.target.checked)
+                    }
+                  />
+                  <span className="text-sm">
+                    Mon SIRET correspond à un <strong>établissement secondaire</strong>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Cochez si votre agence est rattachée à un siège social distinct.
+                      La vérification sera faite manuellement par notre équipe.
+                    </p>
+                  </span>
+                </label>
+                {form.est_etablissement_secondaire && (
+                  <div className="space-y-1.5 pl-6">
+                    <Label>SIREN du siège social *</Label>
+                    <Input
+                      value={form.siren_siege}
+                      onChange={(e) =>
+                        update("siren_siege", e.target.value.replace(/\D/g, "").slice(0, 9))
+                      }
+                      placeholder="9 chiffres"
+                      maxLength={9}
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Les 9 premiers chiffres du SIRET du siège.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

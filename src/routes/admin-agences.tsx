@@ -37,6 +37,8 @@ type Agence = {
   raison_sociale: string | null;
   immat_atout_france: string;
   siret: string;
+  est_etablissement_secondaire: boolean | null;
+  siren_siege: string | null;
   email_contact: string;
   telephone: string | null;
   adresse: string | null;
@@ -268,7 +270,14 @@ function AdminAgencesPage() {
               {enAttente.map((a) => (
                 <TableRow key={a.id} className="cursor-pointer" onClick={() => openDetail(a)}>
                   <TableCell>
-                    <div className="font-medium text-sm">{a.nom_commercial}</div>
+                    <div className="font-medium text-sm flex items-center gap-2">
+                      {a.nom_commercial}
+                      {a.est_etablissement_secondaire && (
+                        <Badge variant="outline" className="bg-amber-500/15 text-amber-700 border-amber-500/30 text-[10px]">
+                          Établ. secondaire
+                        </Badge>
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground">{a.email_contact} · {a.admin_full_name}</div>
                   </TableCell>
                   <TableCell className="font-mono text-xs">{a.siret}</TableCell>
@@ -353,6 +362,12 @@ function AdminAgencesPage() {
                     <Field label="Raison sociale" value={selected.raison_sociale ?? "—"} />
                     <Field label="ATOUT FRANCE" value={selected.immat_atout_france} mono />
                     <Field label="SIRET" value={selected.siret} mono />
+                    {selected.est_etablissement_secondaire && (
+                      <Field
+                        label="⚠ Établissement secondaire"
+                        value={`Siège : ${selected.siren_siege ?? "(non renseigné)"} — vérification manuelle requise`}
+                      />
+                    )}
                     <Field label="Email contact" value={selected.email_contact} />
                     <Field label="Téléphone" value={selected.telephone ?? "—"} />
                     <Field label="Forfait demandé" value={FORFAIT_LABEL[selected.forfait]} />
