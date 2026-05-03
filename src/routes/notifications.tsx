@@ -135,19 +135,19 @@ function NotificationsPage() {
       <PageHeader
         title="Notifications"
         description="Historique de toutes vos alertes : validations devis, paiements, signatures…"
-        icon={Bell}
-      >
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={markAllRead} disabled={unreadCount === 0}>
-            <CheckCheck className="h-4 w-4 mr-2" />
-            Tout marquer comme lu
-          </Button>
-          <Button variant="outline" size="sm" onClick={deleteAllRead}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Vider les lues
-          </Button>
-        </div>
-      </PageHeader>
+        action={
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={markAllRead} disabled={unreadCount === 0}>
+              <CheckCheck className="h-4 w-4 mr-2" />
+              Tout marquer comme lu
+            </Button>
+            <Button variant="outline" size="sm" onClick={deleteAllRead}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Vider les lues
+            </Button>
+          </div>
+        }
+      />
 
       {/* Filtres */}
       <div className="flex items-center gap-2 flex-wrap">
