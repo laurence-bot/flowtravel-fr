@@ -95,7 +95,8 @@ function PaymentPage() {
           </h1>
           {contact && (
             <p className="text-sm text-stone-600 mt-1">
-              {contact.prenom} {contact.nom}
+              {contact.contact_principal ? `${contact.contact_principal} — ` : ""}
+              {contact.nom}
             </p>
           )}
         </div>
