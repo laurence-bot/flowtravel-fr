@@ -17,22 +17,49 @@ type NavItem = {
   superAdminOnly?: boolean;
 };
 
+type NavGroup = {
+  key: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  items: NavItem[];
+  superAdminOnly?: boolean;
+};
+
 // Section 1 : FlowTravel OPS — pilotage de la plateforme (super admin uniquement)
-const navFlowTravel: NavItem[] = [
+const navFlowTravelTop: NavItem[] = [
   { to: "/ops", label: "Espace OPS", icon: Wrench, superAdminOnly: true },
-  { to: "/ops/equipe", label: "Équipe RH", icon: Users, superAdminOnly: true },
-  { to: "/ops/equipe/absences", label: "— Absences & congés", icon: CalendarDays, superAdminOnly: true },
-  { to: "/ops/equipe/planning", label: "— Planning", icon: CalendarDays, superAdminOnly: true },
-  { to: "/ops/equipe/pointage", label: "— Pointage", icon: Clock, superAdminOnly: true },
-  { to: "/ops/equipe/contrats", label: "— Contrats", icon: FileSignature, superAdminOnly: true },
-  { to: "/ops/equipe/fiches-poste", label: "— Fiches de poste", icon: Briefcase, superAdminOnly: true },
-  { to: "/ops/equipe/evaluations", label: "— Évaluations", icon: Award, superAdminOnly: true },
-  { to: "/ops/equipe/parametres", label: "— Paramètres RH", icon: Settings, superAdminOnly: true },
   { to: "/admin-dashboard", label: "Tableau de bord", icon: Sparkles, superAdminOnly: true },
-  { to: "/admin-agences", label: "Validation agences", icon: ShieldCheck, superAdminOnly: true },
-  { to: "/admin-messages", label: "Messagerie support", icon: MessageSquare, superAdminOnly: true },
-  { to: "/admin-errors", label: "Journal d'erreurs", icon: AlertTriangle, superAdminOnly: true },
-  { to: "/admin-demos", label: "Démos prospects", icon: Video, superAdminOnly: true },
+];
+
+const navFlowTravelGroups: NavGroup[] = [
+  {
+    key: "ops-rh",
+    label: "Équipe RH",
+    icon: Users,
+    superAdminOnly: true,
+    items: [
+      { to: "/ops/equipe", label: "Vue d'ensemble", icon: Users, superAdminOnly: true },
+      { to: "/ops/equipe/absences", label: "Absences & congés", icon: CalendarDays, superAdminOnly: true },
+      { to: "/ops/equipe/planning", label: "Planning", icon: CalendarDays, superAdminOnly: true },
+      { to: "/ops/equipe/pointage", label: "Pointage", icon: Clock, superAdminOnly: true },
+      { to: "/ops/equipe/contrats", label: "Contrats", icon: FileSignature, superAdminOnly: true },
+      { to: "/ops/equipe/fiches-poste", label: "Fiches de poste", icon: Briefcase, superAdminOnly: true },
+      { to: "/ops/equipe/evaluations", label: "Évaluations", icon: Award, superAdminOnly: true },
+      { to: "/ops/equipe/parametres", label: "Paramètres RH", icon: Settings, superAdminOnly: true },
+    ],
+  },
+  {
+    key: "ops-plateforme",
+    label: "Plateforme",
+    icon: ShieldCheck,
+    superAdminOnly: true,
+    items: [
+      { to: "/admin-agences", label: "Validation agences", icon: ShieldCheck, superAdminOnly: true },
+      { to: "/admin-messages", label: "Messagerie support", icon: MessageSquare, superAdminOnly: true },
+      { to: "/admin-errors", label: "Journal d'erreurs", icon: AlertTriangle, superAdminOnly: true },
+      { to: "/admin-demos", label: "Démos prospects", icon: Video, superAdminOnly: true },
+    ],
+  },
 ];
 
 // Section "Mon espace" — accessible à tous les utilisateurs (employés)
@@ -43,31 +70,62 @@ const navMonEspace: NavItem[] = [
   { to: "/mon-espace/evaluation", label: "Mon évaluation", icon: Award },
 ];
 
-// Section 2 : Gestion de l'agence (LA VOYAGERIE pour Laurence, l'agence de chacun pour les autres)
-const navAgence: NavItem[] = [
+// Section 2 : Gestion de l'agence
+const navAgenceTop: NavItem[] = [
   { to: "/app", label: "Tableau de bord", icon: LayoutDashboard },
   { to: "/pilotage", label: "Pilotage", icon: Compass },
-  { to: "/contacts", label: "Clients & Fournisseurs", icon: Users },
-  { to: "/demandes", label: "Demandes", icon: Inbox },
-  { to: "/cotations", label: "Cotations", icon: FileText },
-  { to: "/dossiers", label: "Dossiers", icon: FolderOpen },
-  { to: "/bulletins", label: "Bulletins signature", icon: FileSignature },
-  { to: "/factures-clients", label: "Factures clients", icon: Receipt },
-  { to: "/mariages", label: "Voyages de noces", icon: Heart },
-  { to: "/carnets", label: "Carnets de voyage", icon: BookOpen },
-  { to: "/paiements", label: "Paiements", icon: Wallet },
-  { to: "/comptes", label: "Comptes & Trésorerie", icon: Landmark },
-  { to: "/couvertures-fx", label: "Couvertures FX", icon: Shield },
-  { to: "/previsions", label: "Prévisions", icon: LineChart },
-  { to: "/import-bancaire", label: "Import bancaire", icon: Upload },
-  { to: "/import-pdf", label: "Import PDF", icon: FileScan },
-  { to: "/rapprochement", label: "Rapprochement", icon: Link2 },
-  { to: "/export", label: "Export comptable", icon: FileDown },
-  { to: "/audit", label: "Journal d'audit", icon: ScrollText },
-  { to: "/utilisateurs", label: "Utilisateurs", icon: UserCog },
-  { to: "/parametres-agence", label: "Paramètres agence", icon: Building2 },
-  { to: "/coaching", label: "Coaching", icon: GraduationCap },
-  { to: "/support", label: "Support FlowTravel", icon: MessageSquare },
+];
+
+const navAgenceGroups: NavGroup[] = [
+  {
+    key: "ag-commercial",
+    label: "Commercial",
+    icon: Inbox,
+    items: [
+      { to: "/contacts", label: "Clients & Fournisseurs", icon: Users },
+      { to: "/demandes", label: "Demandes", icon: Inbox },
+      { to: "/cotations", label: "Cotations", icon: FileText },
+      { to: "/dossiers", label: "Dossiers", icon: FolderOpen },
+      { to: "/bulletins", label: "Bulletins signature", icon: FileSignature },
+      { to: "/mariages", label: "Voyages de noces", icon: Heart },
+      { to: "/carnets", label: "Carnets de voyage", icon: BookOpen },
+    ],
+  },
+  {
+    key: "ag-finance",
+    label: "Finance",
+    icon: Wallet,
+    items: [
+      { to: "/factures-clients", label: "Factures clients", icon: Receipt },
+      { to: "/paiements", label: "Paiements", icon: Wallet },
+      { to: "/comptes", label: "Comptes & Trésorerie", icon: Landmark },
+      { to: "/couvertures-fx", label: "Couvertures FX", icon: Shield },
+      { to: "/previsions", label: "Prévisions", icon: LineChart },
+    ],
+  },
+  {
+    key: "ag-imports",
+    label: "Imports & Compta",
+    icon: Upload,
+    items: [
+      { to: "/import-bancaire", label: "Import bancaire", icon: Upload },
+      { to: "/import-pdf", label: "Import PDF", icon: FileScan },
+      { to: "/rapprochement", label: "Rapprochement", icon: Link2 },
+      { to: "/export", label: "Export comptable", icon: FileDown },
+      { to: "/audit", label: "Journal d'audit", icon: ScrollText },
+    ],
+  },
+  {
+    key: "ag-admin",
+    label: "Administration",
+    icon: Settings,
+    items: [
+      { to: "/utilisateurs", label: "Utilisateurs", icon: UserCog },
+      { to: "/parametres-agence", label: "Paramètres agence", icon: Building2 },
+      { to: "/coaching", label: "Coaching", icon: GraduationCap },
+      { to: "/support", label: "Support FlowTravel", icon: MessageSquare },
+    ],
+  },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
