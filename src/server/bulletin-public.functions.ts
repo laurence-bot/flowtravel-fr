@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
+import { TEMPLATES } from "@/lib/email-templates/registry";
+import { render } from "@react-email/render";
+import React from "react";
 
 const adminClient = () =>
   createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
@@ -158,5 +161,88 @@ export const signBulletin = createServerFn({ method: "POST" })
       }
     }
 
+    // Envoi de l'email "bulletin signé + factures" au client
+    try {
+      const [{ data: client }, { data: agency }, { data: factures }] = await Promise.all([
+        bulletin.client_id
+          ? sb.from("contacts").select("nom,email,contact_principal").eq("id", bulletin.client_id).maybeSingle()
+          : Promise.resolve({ data: null }),
+        sb.from("agency_settings").select("agency_name").eq("user_id", bulletin.user_id).maybeSingle(),
+        sb.from("factures_clients")
+          .select("numero,type_facture,montant_ttc")
+          .eq("bulletin_id", bulletin.id)
+          .order("ordre", { ascending: true }),
+      ]);
+
+      const { data: cot } = bulletin.cotation_id
+        ? await sb.from("cotations").select("titre").eq("id", bulletin.cotation_id).maybeSingle()
+        : { data: null };
+
+      if (client?.email) {
+        const origin =
+          process.env.PUBLIC_SITE_URL || process.env.SITE_URL || "https://flowtravel.fr";
+        const baseUrl = origin.replace(/\/$/, "");
+        const props = {
+          prenom: client.contact_principal ?? client.nom,
+          titre: cot?.titre ?? "Voyage",
+          agence: agency?.agency_name ?? "Votre agence",
+          bulletin_url: `${baseUrl}/bulletin/${data.token}`,
+          factures_url: `${baseUrl}/mes-documents/${data.token}`,
+          factures: (factures ?? []).map((f: any) => ({
+            numero: f.numero,
+            type: f.type_facture,
+            montant_ttc: Number(f.montant_ttc),
+          })),
+        };
+        const entry = TEMPLATES["bulletin-signed"];
+        const html = await render(React.createElement(entry.component, props));
+        const subject = typeof entry.subject === "function" ? entry.subject(props) : entry.subject;
+
+        await sb.rpc("enqueue_email", {
+          queue_name: "transactional_emails",
+          payload: {
+            template_name: "bulletin-signed",
+            recipient_email: client.email,
+            subject,
+            html,
+            idempotency_key: `bulletin-signed-${bulletin.id}`,
+            metadata: { bulletin_id: bulletin.id },
+          } as any,
+        });
+      }
+    } catch (e) {
+      console.warn("send bulletin-signed email failed", e);
+    }
+
     return { ok: true as const };
+  });
+
+/** Récupère le bulletin signé + factures associées pour la page publique /mes-documents/$token */
+export const getPublicBulletinDocuments = createServerFn({ method: "GET" })
+  .inputValidator((d) => z.object({ token: z.string().min(8) }).parse(d))
+  .handler(async ({ data }) => {
+    const sb = adminClient();
+    const { data: bulletin } = await sb
+      .from("bulletins")
+      .select("id, statut, signed_at, expires_at, user_id, cotation_id, token")
+      .eq("token", data.token)
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
+    if (!bulletin) return { ok: false as const };
+
+    const [{ data: factures }, { data: agency }, { data: cotation }] = await Promise.all([
+      sb.from("factures_clients")
+        .select("id,numero,type_facture,date_emission,date_echeance,montant_ht,montant_tva,montant_ttc,statut,pct_applique,ordre")
+        .eq("bulletin_id", bulletin.id)
+        .order("ordre", { ascending: true }),
+      sb.from("agency_settings")
+        .select("agency_name,logo_url,color_primary,color_signature")
+        .eq("user_id", bulletin.user_id)
+        .maybeSingle(),
+      bulletin.cotation_id
+        ? sb.from("cotations").select("titre,destination,date_depart,date_retour").eq("id", bulletin.cotation_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+
+    return { ok: true as const, bulletin, factures: factures ?? [], agency, cotation };
   });

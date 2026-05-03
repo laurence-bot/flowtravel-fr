@@ -59,6 +59,7 @@ import { Route as MonEspacePointageRouteImport } from './routes/mon-espace.point
 import { Route as MonEspaceEvaluationRouteImport } from './routes/mon-espace.evaluation'
 import { Route as MonEspaceContratsRouteImport } from './routes/mon-espace.contrats'
 import { Route as MonEspaceCongesRouteImport } from './routes/mon-espace.conges'
+import { Route as MesDocumentsTokenRouteImport } from './routes/mes-documents.$token'
 import { Route as MariageTokenRouteImport } from './routes/mariage.$token'
 import { Route as FacturesIdRouteImport } from './routes/factures.$id'
 import { Route as FacturesClientsIdRouteImport } from './routes/factures-clients.$id'
@@ -340,6 +341,11 @@ const MonEspaceCongesRoute = MonEspaceCongesRouteImport.update({
   path: '/mon-espace/conges',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MesDocumentsTokenRoute = MesDocumentsTokenRouteImport.update({
+  id: '/mes-documents/$token',
+  path: '/mes-documents/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MariageTokenRoute = MariageTokenRouteImport.update({
   id: '/mariage/$token',
   path: '/mariage/$token',
@@ -546,6 +552,7 @@ export interface FileRoutesByFullPath {
   '/factures-clients/$id': typeof FacturesClientsIdRoute
   '/factures/$id': typeof FacturesIdRoute
   '/mariage/$token': typeof MariageTokenRoute
+  '/mes-documents/$token': typeof MesDocumentsTokenRoute
   '/mon-espace/conges': typeof MonEspaceCongesRoute
   '/mon-espace/contrats': typeof MonEspaceContratsRoute
   '/mon-espace/evaluation': typeof MonEspaceEvaluationRoute
@@ -627,6 +634,7 @@ export interface FileRoutesByTo {
   '/factures-clients/$id': typeof FacturesClientsIdRoute
   '/factures/$id': typeof FacturesIdRoute
   '/mariage/$token': typeof MariageTokenRoute
+  '/mes-documents/$token': typeof MesDocumentsTokenRoute
   '/mon-espace/conges': typeof MonEspaceCongesRoute
   '/mon-espace/contrats': typeof MonEspaceContratsRoute
   '/mon-espace/evaluation': typeof MonEspaceEvaluationRoute
@@ -710,6 +718,7 @@ export interface FileRoutesById {
   '/factures-clients/$id': typeof FacturesClientsIdRoute
   '/factures/$id': typeof FacturesIdRoute
   '/mariage/$token': typeof MariageTokenRoute
+  '/mes-documents/$token': typeof MesDocumentsTokenRoute
   '/mon-espace/conges': typeof MonEspaceCongesRoute
   '/mon-espace/contrats': typeof MonEspaceContratsRoute
   '/mon-espace/evaluation': typeof MonEspaceEvaluationRoute
@@ -794,6 +803,7 @@ export interface FileRouteTypes {
     | '/factures-clients/$id'
     | '/factures/$id'
     | '/mariage/$token'
+    | '/mes-documents/$token'
     | '/mon-espace/conges'
     | '/mon-espace/contrats'
     | '/mon-espace/evaluation'
@@ -875,6 +885,7 @@ export interface FileRouteTypes {
     | '/factures-clients/$id'
     | '/factures/$id'
     | '/mariage/$token'
+    | '/mes-documents/$token'
     | '/mon-espace/conges'
     | '/mon-espace/contrats'
     | '/mon-espace/evaluation'
@@ -957,6 +968,7 @@ export interface FileRouteTypes {
     | '/factures-clients/$id'
     | '/factures/$id'
     | '/mariage/$token'
+    | '/mes-documents/$token'
     | '/mon-espace/conges'
     | '/mon-espace/contrats'
     | '/mon-espace/evaluation'
@@ -1035,6 +1047,7 @@ export interface RootRouteChildren {
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   FacturesIdRoute: typeof FacturesIdRoute
   MariageTokenRoute: typeof MariageTokenRoute
+  MesDocumentsTokenRoute: typeof MesDocumentsTokenRoute
   MonEspaceCongesRoute: typeof MonEspaceCongesRoute
   MonEspaceContratsRoute: typeof MonEspaceContratsRoute
   MonEspaceEvaluationRoute: typeof MonEspaceEvaluationRoute
@@ -1400,6 +1413,13 @@ declare module '@tanstack/react-router' {
       path: '/mon-espace/conges'
       fullPath: '/mon-espace/conges'
       preLoaderRoute: typeof MonEspaceCongesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mes-documents/$token': {
+      id: '/mes-documents/$token'
+      path: '/mes-documents/$token'
+      fullPath: '/mes-documents/$token'
+      preLoaderRoute: typeof MesDocumentsTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mariage/$token': {
@@ -1771,6 +1791,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   FacturesIdRoute: FacturesIdRoute,
   MariageTokenRoute: MariageTokenRoute,
+  MesDocumentsTokenRoute: MesDocumentsTokenRoute,
   MonEspaceCongesRoute: MonEspaceCongesRoute,
   MonEspaceContratsRoute: MonEspaceContratsRoute,
   MonEspaceEvaluationRoute: MonEspaceEvaluationRoute,
