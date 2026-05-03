@@ -317,6 +317,38 @@ function UtilisateursPage() {
                           onCheckedChange={() => toggleActif(p)}
                           disabled={savingId === p.user_id || isMe}
                         />
+                        {!isMe && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                disabled={savingId === p.user_id}
+                                aria-label="Supprimer l'utilisateur"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Supprimer cet utilisateur ?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Cette action supprime définitivement le compte <strong>{p.email}</strong> (profil, rôles et accès).
+                                  Les données métier qui lui appartiennent ne seront pas supprimées.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => removeUser(p)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Supprimer
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
