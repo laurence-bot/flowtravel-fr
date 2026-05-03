@@ -61,6 +61,7 @@ import { Route as CotationsIdRouteImport } from './routes/cotations.$id'
 import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
 import { Route as CarnetTokenRouteImport } from './routes/carnet.$token'
 import { Route as BulletinTokenRouteImport } from './routes/bulletin.$token'
+import { Route as OpsEquipeIndexRouteImport } from './routes/ops.equipe.index'
 import { Route as DemoVTokenRouteImport } from './routes/demo.v.$token'
 import { Route as DemoRdvTokenRouteImport } from './routes/demo.rdv.$token'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -327,6 +328,11 @@ const BulletinTokenRoute = BulletinTokenRouteImport.update({
   path: '/bulletin/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OpsEquipeIndexRoute = OpsEquipeIndexRouteImport.update({
+  id: '/equipe/',
+  path: '/equipe/',
+  getParentRoute: () => OpsRoute,
+} as any)
 const DemoVTokenRoute = DemoVTokenRouteImport.update({
   id: '/v/$token',
   path: '/v/$token',
@@ -409,6 +415,7 @@ export interface FileRoutesByFullPath {
   '/ops/': typeof OpsIndexRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
+  '/ops/equipe/': typeof OpsEquipeIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -467,6 +474,7 @@ export interface FileRoutesByTo {
   '/ops': typeof OpsIndexRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
+  '/ops/equipe': typeof OpsEquipeIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -527,6 +535,7 @@ export interface FileRoutesById {
   '/ops/': typeof OpsIndexRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
+  '/ops/equipe/': typeof OpsEquipeIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -588,6 +597,7 @@ export interface FileRouteTypes {
     | '/ops/'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
+    | '/ops/equipe/'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -646,6 +656,7 @@ export interface FileRouteTypes {
     | '/ops'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
+    | '/ops/equipe'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -705,6 +716,7 @@ export interface FileRouteTypes {
     | '/ops/'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
+    | '/ops/equipe/'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1124,6 +1136,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BulletinTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ops/equipe/': {
+      id: '/ops/equipe/'
+      path: '/equipe'
+      fullPath: '/ops/equipe/'
+      preLoaderRoute: typeof OpsEquipeIndexRouteImport
+      parentRoute: typeof OpsRoute
+    }
     '/demo/v/$token': {
       id: '/demo/v/$token'
       path: '/v/$token'
@@ -1229,6 +1248,7 @@ interface OpsRouteChildren {
   OpsErrorsRoute: typeof OpsErrorsRoute
   OpsMessagesRoute: typeof OpsMessagesRoute
   OpsIndexRoute: typeof OpsIndexRoute
+  OpsEquipeIndexRoute: typeof OpsEquipeIndexRoute
 }
 
 const OpsRouteChildren: OpsRouteChildren = {
@@ -1238,6 +1258,7 @@ const OpsRouteChildren: OpsRouteChildren = {
   OpsErrorsRoute: OpsErrorsRoute,
   OpsMessagesRoute: OpsMessagesRoute,
   OpsIndexRoute: OpsIndexRoute,
+  OpsEquipeIndexRoute: OpsEquipeIndexRoute,
 }
 
 const OpsRouteWithChildren = OpsRoute._addFileChildren(OpsRouteChildren)
