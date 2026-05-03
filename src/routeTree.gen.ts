@@ -73,6 +73,7 @@ import { Route as OpsEquipeIndexRouteImport } from './routes/ops.equipe.index'
 import { Route as OpsEquipePointageRouteImport } from './routes/ops.equipe.pointage'
 import { Route as OpsEquipePlanningRouteImport } from './routes/ops.equipe.planning'
 import { Route as OpsEquipeParametresRouteImport } from './routes/ops.equipe.parametres'
+import { Route as OpsEquipeFichesPosteRouteImport } from './routes/ops.equipe.fiches-poste'
 import { Route as OpsEquipeEvaluationsRouteImport } from './routes/ops.equipe.evaluations'
 import { Route as OpsEquipeContratsRouteImport } from './routes/ops.equipe.contrats'
 import { Route as OpsEquipeAbsencesRouteImport } from './routes/ops.equipe.absences'
@@ -407,6 +408,11 @@ const OpsEquipeParametresRoute = OpsEquipeParametresRouteImport.update({
   path: '/equipe/parametres',
   getParentRoute: () => OpsRoute,
 } as any)
+const OpsEquipeFichesPosteRoute = OpsEquipeFichesPosteRouteImport.update({
+  id: '/equipe/fiches-poste',
+  path: '/equipe/fiches-poste',
+  getParentRoute: () => OpsRoute,
+} as any)
 const OpsEquipeEvaluationsRoute = OpsEquipeEvaluationsRouteImport.update({
   id: '/equipe/evaluations',
   path: '/equipe/evaluations',
@@ -545,6 +551,7 @@ export interface FileRoutesByFullPath {
   '/ops/equipe/absences': typeof OpsEquipeAbsencesRoute
   '/ops/equipe/contrats': typeof OpsEquipeContratsRoute
   '/ops/equipe/evaluations': typeof OpsEquipeEvaluationsRoute
+  '/ops/equipe/fiches-poste': typeof OpsEquipeFichesPosteRoute
   '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
   '/ops/equipe/planning': typeof OpsEquipePlanningRoute
   '/ops/equipe/pointage': typeof OpsEquipePointageRoute
@@ -623,6 +630,7 @@ export interface FileRoutesByTo {
   '/ops/equipe/absences': typeof OpsEquipeAbsencesRoute
   '/ops/equipe/contrats': typeof OpsEquipeContratsRoute
   '/ops/equipe/evaluations': typeof OpsEquipeEvaluationsRoute
+  '/ops/equipe/fiches-poste': typeof OpsEquipeFichesPosteRoute
   '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
   '/ops/equipe/planning': typeof OpsEquipePlanningRoute
   '/ops/equipe/pointage': typeof OpsEquipePointageRoute
@@ -703,6 +711,7 @@ export interface FileRoutesById {
   '/ops/equipe/absences': typeof OpsEquipeAbsencesRoute
   '/ops/equipe/contrats': typeof OpsEquipeContratsRoute
   '/ops/equipe/evaluations': typeof OpsEquipeEvaluationsRoute
+  '/ops/equipe/fiches-poste': typeof OpsEquipeFichesPosteRoute
   '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
   '/ops/equipe/planning': typeof OpsEquipePlanningRoute
   '/ops/equipe/pointage': typeof OpsEquipePointageRoute
@@ -784,6 +793,7 @@ export interface FileRouteTypes {
     | '/ops/equipe/absences'
     | '/ops/equipe/contrats'
     | '/ops/equipe/evaluations'
+    | '/ops/equipe/fiches-poste'
     | '/ops/equipe/parametres'
     | '/ops/equipe/planning'
     | '/ops/equipe/pointage'
@@ -862,6 +872,7 @@ export interface FileRouteTypes {
     | '/ops/equipe/absences'
     | '/ops/equipe/contrats'
     | '/ops/equipe/evaluations'
+    | '/ops/equipe/fiches-poste'
     | '/ops/equipe/parametres'
     | '/ops/equipe/planning'
     | '/ops/equipe/pointage'
@@ -941,6 +952,7 @@ export interface FileRouteTypes {
     | '/ops/equipe/absences'
     | '/ops/equipe/contrats'
     | '/ops/equipe/evaluations'
+    | '/ops/equipe/fiches-poste'
     | '/ops/equipe/parametres'
     | '/ops/equipe/planning'
     | '/ops/equipe/pointage'
@@ -1463,6 +1475,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpsEquipeParametresRouteImport
       parentRoute: typeof OpsRoute
     }
+    '/ops/equipe/fiches-poste': {
+      id: '/ops/equipe/fiches-poste'
+      path: '/equipe/fiches-poste'
+      fullPath: '/ops/equipe/fiches-poste'
+      preLoaderRoute: typeof OpsEquipeFichesPosteRouteImport
+      parentRoute: typeof OpsRoute
+    }
     '/ops/equipe/evaluations': {
       id: '/ops/equipe/evaluations'
       path: '/equipe/evaluations'
@@ -1628,6 +1647,7 @@ interface OpsRouteChildren {
   OpsEquipeAbsencesRoute: typeof OpsEquipeAbsencesRoute
   OpsEquipeContratsRoute: typeof OpsEquipeContratsRoute
   OpsEquipeEvaluationsRoute: typeof OpsEquipeEvaluationsRoute
+  OpsEquipeFichesPosteRoute: typeof OpsEquipeFichesPosteRoute
   OpsEquipeParametresRoute: typeof OpsEquipeParametresRoute
   OpsEquipePlanningRoute: typeof OpsEquipePlanningRoute
   OpsEquipePointageRoute: typeof OpsEquipePointageRoute
@@ -1645,6 +1665,7 @@ const OpsRouteChildren: OpsRouteChildren = {
   OpsEquipeAbsencesRoute: OpsEquipeAbsencesRoute,
   OpsEquipeContratsRoute: OpsEquipeContratsRoute,
   OpsEquipeEvaluationsRoute: OpsEquipeEvaluationsRoute,
+  OpsEquipeFichesPosteRoute: OpsEquipeFichesPosteRoute,
   OpsEquipeParametresRoute: OpsEquipeParametresRoute,
   OpsEquipePlanningRoute: OpsEquipePlanningRoute,
   OpsEquipePointageRoute: OpsEquipePointageRoute,
