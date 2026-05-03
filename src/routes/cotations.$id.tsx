@@ -50,7 +50,7 @@ import {
   computeAcompteClient,
   duplicateCotation,
   ligneCoutEur,
-  transformerCotationEnDossier,
+  // transformerCotationEnDossier remplacé par RPC Postgres atomique
   type Cotation,
   type CotationLigne,
   type CotationLigneModeTarifaire,
