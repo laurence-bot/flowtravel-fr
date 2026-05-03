@@ -191,6 +191,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </>
       )}
+      {visibleMonEspaceNav.length > 0 && (
+        <>
+          <SectionHeader label="Mon espace" sublabel="Espace employé" />
+          <div className="space-y-1">
+            {visibleMonEspaceNav.map((item) => (
+              <NavLinkItem key={item.to} item={item} onClick={onClick} />
+            ))}
+          </div>
+        </>
+      )}
     </nav>
   );
 
