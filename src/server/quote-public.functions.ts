@@ -227,10 +227,38 @@ export const declarePaymentDone = createServerFn({ method: "POST" })
     try {
       const { data: cot } = await supabaseAdmin
         .from("cotations")
-        .select("id, user_id, agent_id, titre, dossier_id, client_id")
+        .select("id, user_id, agent_id, titre, dossier_id, client_id, statut")
         .eq("id", link.cotation_id)
         .maybeSingle();
+
       if (cot) {
+        // Auto-transformation : si la cotation est validée et pas encore transformée,
+        // on crée le dossier + on enchaîne avec l'envoi du bulletin.
+        let dossierId = cot.dossier_id;
+        let bulletinSent = false;
+
+        if (!dossierId && cot.statut === "validee") {
+          const { data: rpcRes, error: rpcErr } = await supabaseAdmin.rpc(
+            "transformer_cotation_en_dossier",
+            { _cotation_id: cot.id },
+          );
+          if (!rpcErr && rpcRes) {
+            dossierId = rpcRes as unknown as string;
+            // Déclencher le bulletin automatiquement
+            try {
+              const { triggerBulletinForCotation } = await import("./bulletin-trigger.functions");
+              const trig = await triggerBulletinForCotation({
+                data: { cotationId: cot.id, sendEmail: true },
+              });
+              bulletinSent = !!(trig as any)?.emailSent;
+            } catch (e) {
+              console.warn("auto-trigger bulletin after acompte failed", e);
+            }
+          } else if (rpcErr) {
+            console.warn("auto-transform cotation failed", rpcErr.message);
+          }
+        }
+
         const { data: client } = cot.client_id
           ? await supabaseAdmin.from("contacts").select("nom").eq("id", cot.client_id).maybeSingle()
           : { data: null as any };
@@ -241,17 +269,17 @@ export const declarePaymentDone = createServerFn({ method: "POST" })
           type: "acompte_paye",
           titre: `Acompte déclaré payé — ${cot.titre}`,
           message: client?.nom
-            ? `${client.nom} a confirmé avoir effectué le paiement${data.method ? ` (${data.method})` : ""}.`
+            ? `${client.nom} a confirmé le paiement${data.method ? ` (${data.method})` : ""}.${dossierId && dossierId !== cot.dossier_id ? " Dossier créé automatiquement." : ""}${bulletinSent ? " Bulletin envoyé au client." : ""}`
             : "Le client a confirmé le paiement de l'acompte.",
-          link: cot.dossier_id ? `/dossiers/${cot.dossier_id}` : `/cotations/${cot.id}`,
-          dossierId: cot.dossier_id,
+          link: dossierId ? `/dossiers/${dossierId}` : `/cotations/${cot.id}`,
+          dossierId,
           cotationId: cot.id,
           emailEvent: {
             eventLabel: "Acompte déclaré payé",
             clientNom: client?.nom,
             titreDossier: cot.titre,
-            details: `Le client a déclaré avoir payé${data.method ? ` (${data.method})` : ""}. Vérifiez la réception puis envoyez le bulletin d'inscription.`,
-            ctaLabel: cot.dossier_id ? "Ouvrir le dossier" : "Ouvrir la cotation",
+            details: `Le client a déclaré avoir payé${data.method ? ` (${data.method})` : ""}.${dossierId && dossierId !== cot.dossier_id ? " Le dossier a été créé automatiquement." : ""}${bulletinSent ? " Le bulletin d'inscription a été envoyé au client pour signature." : " Vérifiez la réception puis envoyez le bulletin d'inscription."}`,
+            ctaLabel: dossierId ? "Ouvrir le dossier" : "Ouvrir la cotation",
           },
         });
       }
