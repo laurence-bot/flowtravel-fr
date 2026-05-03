@@ -125,9 +125,8 @@ export const approveAgence = createServerFn({ method: "POST" })
     const email = agence.email_contact.toLowerCase().trim();
     let adminUserId: string | null = agence.admin_user_id;
 
-    // 3. Si pas encore de compte lié : inviter ou réutiliser
+    // 3. Si pas encore de compte lié : créer (sans email) ou réutiliser un user existant
     if (!adminUserId) {
-      // Vérifier si un user existe déjà avec cet email
       const { data: existingList } = await supabaseAdmin.auth.admin.listUsers({
         page: 1,
         perPage: 200,
@@ -139,16 +138,19 @@ export const approveAgence = createServerFn({ method: "POST" })
       if (existing) {
         adminUserId = existing.id;
       } else {
-        const redirectTo =
-          (process.env.PUBLIC_SITE_URL ?? "https://flowtravel.fr") + "/auth";
-        const { data: invited, error: invErr } =
-          await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-            data: { full_name: agence.admin_full_name },
-            redirectTo,
+        // Création silencieuse : pas d'email envoyé. L'agence utilisera "mot de passe oublié".
+        const tempPassword = crypto.randomUUID().replace(/-/g, "") + "Aa1!";
+        const { data: created, error: createErr } =
+          await supabaseAdmin.auth.admin.createUser({
+            email,
+            password: tempPassword,
+            email_confirm: true,
+            user_metadata: { full_name: agence.admin_full_name },
           });
-        if (invErr) throw new Error(`Invitation échouée : ${invErr.message}`);
-        adminUserId = invited.user?.id ?? null;
-        if (!adminUserId) throw new Error("Création de compte échouée");
+        if (createErr || !created?.user) {
+          throw new Error(`Création échouée : ${createErr?.message ?? "erreur inconnue"}`);
+        }
+        adminUserId = created.user.id;
       }
     }
 

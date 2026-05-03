@@ -48,6 +48,7 @@ import { Route as AdminDashboardRouteImport } from './routes/admin-dashboard'
 import { Route as AdminAgencesRouteImport } from './routes/admin-agences'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OpsIndexRouteImport } from './routes/ops.index'
+import { Route as PaiementTokenRouteImport } from './routes/paiement.$token'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as OpsMessagesRouteImport } from './routes/ops.messages'
 import { Route as OpsErrorsRouteImport } from './routes/ops.errors'
@@ -282,6 +283,11 @@ const OpsIndexRoute = OpsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => OpsRoute,
+} as any)
+const PaiementTokenRoute = PaiementTokenRouteImport.update({
+  id: '/paiement/$token',
+  path: '/paiement/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PTokenRoute = PTokenRouteImport.update({
   id: '/p/$token',
@@ -543,6 +549,7 @@ export interface FileRoutesByFullPath {
   '/ops/errors': typeof OpsErrorsRoute
   '/ops/messages': typeof OpsMessagesRoute
   '/p/$token': typeof PTokenRoute
+  '/paiement/$token': typeof PaiementTokenRoute
   '/ops/': typeof OpsIndexRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
@@ -622,6 +629,7 @@ export interface FileRoutesByTo {
   '/ops/errors': typeof OpsErrorsRoute
   '/ops/messages': typeof OpsMessagesRoute
   '/p/$token': typeof PTokenRoute
+  '/paiement/$token': typeof PaiementTokenRoute
   '/ops': typeof OpsIndexRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
@@ -703,6 +711,7 @@ export interface FileRoutesById {
   '/ops/errors': typeof OpsErrorsRoute
   '/ops/messages': typeof OpsMessagesRoute
   '/p/$token': typeof PTokenRoute
+  '/paiement/$token': typeof PaiementTokenRoute
   '/ops/': typeof OpsIndexRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
@@ -785,6 +794,7 @@ export interface FileRouteTypes {
     | '/ops/errors'
     | '/ops/messages'
     | '/p/$token'
+    | '/paiement/$token'
     | '/ops/'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
@@ -864,6 +874,7 @@ export interface FileRouteTypes {
     | '/ops/errors'
     | '/ops/messages'
     | '/p/$token'
+    | '/paiement/$token'
     | '/ops'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
@@ -944,6 +955,7 @@ export interface FileRouteTypes {
     | '/ops/errors'
     | '/ops/messages'
     | '/p/$token'
+    | '/paiement/$token'
     | '/ops/'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
@@ -1016,6 +1028,7 @@ export interface RootRouteChildren {
   MonEspaceEvaluationRoute: typeof MonEspaceEvaluationRoute
   MonEspacePointageRoute: typeof MonEspacePointageRoute
   PTokenRoute: typeof PTokenRoute
+  PaiementTokenRoute: typeof PaiementTokenRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksPayrollSummaryRoute: typeof ApiPublicHooksPayrollSummaryRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -1299,6 +1312,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/ops/'
       preLoaderRoute: typeof OpsIndexRouteImport
       parentRoute: typeof OpsRoute
+    }
+    '/paiement/$token': {
+      id: '/paiement/$token'
+      path: '/paiement/$token'
+      fullPath: '/paiement/$token'
+      preLoaderRoute: typeof PaiementTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/p/$token': {
       id: '/p/$token'
@@ -1725,6 +1745,7 @@ const rootRouteChildren: RootRouteChildren = {
   MonEspaceEvaluationRoute: MonEspaceEvaluationRoute,
   MonEspacePointageRoute: MonEspacePointageRoute,
   PTokenRoute: PTokenRoute,
+  PaiementTokenRoute: PaiementTokenRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksPayrollSummaryRoute: ApiPublicHooksPayrollSummaryRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,

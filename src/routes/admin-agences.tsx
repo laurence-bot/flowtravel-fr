@@ -187,7 +187,7 @@ function AdminAgencesPage() {
     try {
       const res = await approveAgence({ data: { agenceId: selected.id } });
       toast.success(
-        `Agence "${selected.nom_commercial}" validée. Email d'invitation envoyé à ${res.email}`,
+        `Agence "${selected.nom_commercial}" validée. Compte créé pour ${res.email} (l'agence définira son mot de passe via "Mot de passe oublié").`,
       );
       setSelected(null);
       refresh();
