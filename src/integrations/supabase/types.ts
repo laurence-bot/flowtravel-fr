@@ -25,6 +25,7 @@ export type Database = {
           doc_kbis_url: string | null
           doc_piece_identite_url: string | null
           email_contact: string
+          est_etablissement_secondaire: boolean
           forfait: Database["public"]["Enums"]["agence_forfait"]
           id: string
           immat_atout_france: string
@@ -37,6 +38,7 @@ export type Database = {
           pappers_verified_at: string | null
           pays: string | null
           raison_sociale: string | null
+          siren_siege: string | null
           siret: string
           statut: Database["public"]["Enums"]["agence_statut"]
           telephone: string | null
@@ -55,6 +57,7 @@ export type Database = {
           doc_kbis_url?: string | null
           doc_piece_identite_url?: string | null
           email_contact: string
+          est_etablissement_secondaire?: boolean
           forfait?: Database["public"]["Enums"]["agence_forfait"]
           id?: string
           immat_atout_france: string
@@ -67,6 +70,7 @@ export type Database = {
           pappers_verified_at?: string | null
           pays?: string | null
           raison_sociale?: string | null
+          siren_siege?: string | null
           siret: string
           statut?: Database["public"]["Enums"]["agence_statut"]
           telephone?: string | null
@@ -85,6 +89,7 @@ export type Database = {
           doc_kbis_url?: string | null
           doc_piece_identite_url?: string | null
           email_contact?: string
+          est_etablissement_secondaire?: boolean
           forfait?: Database["public"]["Enums"]["agence_forfait"]
           id?: string
           immat_atout_france?: string
@@ -97,6 +102,7 @@ export type Database = {
           pappers_verified_at?: string | null
           pays?: string | null
           raison_sociale?: string | null
+          siren_siege?: string | null
           siret?: string
           statut?: Database["public"]["Enums"]["agence_statut"]
           telephone?: string | null
@@ -139,6 +145,7 @@ export type Database = {
           siret: string | null
           updated_at: string
           user_id: string
+          utilise_couvertures_fx: boolean
           vat_number: string | null
           website: string | null
         }
@@ -173,6 +180,7 @@ export type Database = {
           siret?: string | null
           updated_at?: string
           user_id: string
+          utilise_couvertures_fx?: boolean
           vat_number?: string | null
           website?: string | null
         }
@@ -207,6 +215,7 @@ export type Database = {
           siret?: string | null
           updated_at?: string
           user_id?: string
+          utilise_couvertures_fx?: boolean
           vat_number?: string | null
           website?: string | null
         }
@@ -3104,6 +3113,10 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      transformer_cotation_en_dossier: {
+        Args: { _cotation_id: string }
+        Returns: string
       }
     }
     Enums: {
