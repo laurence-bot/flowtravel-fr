@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UtilisateursRouteImport } from './routes/utilisateurs'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TarifsRouteImport } from './routes/tarifs'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
@@ -53,26 +54,47 @@ import { Route as OpsErrorsRouteImport } from './routes/ops.errors'
 import { Route as OpsDemosRouteImport } from './routes/ops.demos'
 import { Route as OpsDashboardRouteImport } from './routes/ops.dashboard'
 import { Route as OpsAgencesRouteImport } from './routes/ops.agences'
+import { Route as MonEspacePointageRouteImport } from './routes/mon-espace.pointage'
+import { Route as MonEspaceEvaluationRouteImport } from './routes/mon-espace.evaluation'
+import { Route as MonEspaceContratsRouteImport } from './routes/mon-espace.contrats'
+import { Route as MonEspaceCongesRouteImport } from './routes/mon-espace.conges'
 import { Route as MariageTokenRouteImport } from './routes/mariage.$token'
 import { Route as FacturesIdRouteImport } from './routes/factures.$id'
+import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
 import { Route as DemandesIdRouteImport } from './routes/demandes.$id'
 import { Route as CotationsIdRouteImport } from './routes/cotations.$id'
+import { Route as ContratSignerTokenRouteImport } from './routes/contrat-signer.$token'
 import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
+import { Route as CongeSignerTokenRouteImport } from './routes/conge-signer.$token'
 import { Route as CarnetTokenRouteImport } from './routes/carnet.$token'
 import { Route as BulletinTokenRouteImport } from './routes/bulletin.$token'
 import { Route as OpsEquipeIndexRouteImport } from './routes/ops.equipe.index'
+import { Route as OpsEquipePointageRouteImport } from './routes/ops.equipe.pointage'
+import { Route as OpsEquipePlanningRouteImport } from './routes/ops.equipe.planning'
 import { Route as OpsEquipeParametresRouteImport } from './routes/ops.equipe.parametres'
+import { Route as OpsEquipeEvaluationsRouteImport } from './routes/ops.equipe.evaluations'
+import { Route as OpsEquipeContratsRouteImport } from './routes/ops.equipe.contrats'
+import { Route as OpsEquipeAbsencesRouteImport } from './routes/ops.equipe.absences'
 import { Route as OpsEquipeIdRouteImport } from './routes/ops.equipe.$id'
+import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as DemoVTokenRouteImport } from './routes/demo.v.$token'
 import { Route as DemoRdvTokenRouteImport } from './routes/demo.rdv.$token'
+import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicHooksPayrollSummaryRouteImport } from './routes/api/public/hooks/payroll-summary'
 
 const UtilisateursRoute = UtilisateursRouteImport.update({
   id: '/utilisateurs',
   path: '/utilisateurs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TarifsRoute = TarifsRouteImport.update({
@@ -290,6 +312,26 @@ const OpsAgencesRoute = OpsAgencesRouteImport.update({
   path: '/agences',
   getParentRoute: () => OpsRoute,
 } as any)
+const MonEspacePointageRoute = MonEspacePointageRouteImport.update({
+  id: '/mon-espace/pointage',
+  path: '/mon-espace/pointage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonEspaceEvaluationRoute = MonEspaceEvaluationRouteImport.update({
+  id: '/mon-espace/evaluation',
+  path: '/mon-espace/evaluation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonEspaceContratsRoute = MonEspaceContratsRouteImport.update({
+  id: '/mon-espace/contrats',
+  path: '/mon-espace/contrats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonEspaceCongesRoute = MonEspaceCongesRouteImport.update({
+  id: '/mon-espace/conges',
+  path: '/mon-espace/conges',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MariageTokenRoute = MariageTokenRouteImport.update({
   id: '/mariage/$token',
   path: '/mariage/$token',
@@ -298,6 +340,11 @@ const MariageTokenRoute = MariageTokenRouteImport.update({
 const FacturesIdRoute = FacturesIdRouteImport.update({
   id: '/factures/$id',
   path: '/factures/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
+  id: '/email/unsubscribe',
+  path: '/email/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DossiersIdRoute = DossiersIdRouteImport.update({
@@ -315,10 +362,20 @@ const CotationsIdRoute = CotationsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => CotationsRoute,
 } as any)
+const ContratSignerTokenRoute = ContratSignerTokenRouteImport.update({
+  id: '/contrat-signer/$token',
+  path: '/contrat-signer/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactsIdRoute = ContactsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ContactsRoute,
+} as any)
+const CongeSignerTokenRoute = CongeSignerTokenRouteImport.update({
+  id: '/conge-signer/$token',
+  path: '/conge-signer/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CarnetTokenRoute = CarnetTokenRouteImport.update({
   id: '/carnet/$token',
@@ -335,15 +392,45 @@ const OpsEquipeIndexRoute = OpsEquipeIndexRouteImport.update({
   path: '/equipe/',
   getParentRoute: () => OpsRoute,
 } as any)
+const OpsEquipePointageRoute = OpsEquipePointageRouteImport.update({
+  id: '/equipe/pointage',
+  path: '/equipe/pointage',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsEquipePlanningRoute = OpsEquipePlanningRouteImport.update({
+  id: '/equipe/planning',
+  path: '/equipe/planning',
+  getParentRoute: () => OpsRoute,
+} as any)
 const OpsEquipeParametresRoute = OpsEquipeParametresRouteImport.update({
   id: '/equipe/parametres',
   path: '/equipe/parametres',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsEquipeEvaluationsRoute = OpsEquipeEvaluationsRouteImport.update({
+  id: '/equipe/evaluations',
+  path: '/equipe/evaluations',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsEquipeContratsRoute = OpsEquipeContratsRouteImport.update({
+  id: '/equipe/contrats',
+  path: '/equipe/contrats',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsEquipeAbsencesRoute = OpsEquipeAbsencesRouteImport.update({
+  id: '/equipe/absences',
+  path: '/equipe/absences',
   getParentRoute: () => OpsRoute,
 } as any)
 const OpsEquipeIdRoute = OpsEquipeIdRouteImport.update({
   id: '/equipe/$id',
   path: '/equipe/$id',
   getParentRoute: () => OpsRoute,
+} as any)
+const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
+  id: '/lovable/email/suppression',
+  path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DemoVTokenRoute = DemoVTokenRouteImport.update({
   id: '/v/$token',
@@ -355,6 +442,18 @@ const DemoRdvTokenRoute = DemoRdvTokenRouteImport.update({
   path: '/rdv/$token',
   getParentRoute: () => DemoRoute,
 } as any)
+const LovableEmailTransactionalSendRoute =
+  LovableEmailTransactionalSendRouteImport.update({
+    id: '/lovable/email/transactional/send',
+    path: '/lovable/email/transactional/send',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -371,6 +470,12 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksPayrollSummaryRoute =
+  ApiPublicHooksPayrollSummaryRouteImport.update({
+    id: '/api/public/hooks/payroll-summary',
+    path: '/api/public/hooks/payroll-summary',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -409,15 +514,23 @@ export interface FileRoutesByFullPath {
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/bulletin/$token': typeof BulletinTokenRoute
   '/carnet/$token': typeof CarnetTokenRoute
+  '/conge-signer/$token': typeof CongeSignerTokenRoute
   '/contacts/$id': typeof ContactsIdRoute
+  '/contrat-signer/$token': typeof ContratSignerTokenRoute
   '/cotations/$id': typeof CotationsIdRoute
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/factures/$id': typeof FacturesIdRoute
   '/mariage/$token': typeof MariageTokenRoute
+  '/mon-espace/conges': typeof MonEspaceCongesRoute
+  '/mon-espace/contrats': typeof MonEspaceContratsRoute
+  '/mon-espace/evaluation': typeof MonEspaceEvaluationRoute
+  '/mon-espace/pointage': typeof MonEspacePointageRoute
   '/ops/agences': typeof OpsAgencesRoute
   '/ops/dashboard': typeof OpsDashboardRoute
   '/ops/demos': typeof OpsDemosRoute
@@ -427,12 +540,21 @@ export interface FileRoutesByFullPath {
   '/ops/': typeof OpsIndexRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ops/equipe/$id': typeof OpsEquipeIdRoute
+  '/ops/equipe/absences': typeof OpsEquipeAbsencesRoute
+  '/ops/equipe/contrats': typeof OpsEquipeContratsRoute
+  '/ops/equipe/evaluations': typeof OpsEquipeEvaluationsRoute
   '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
+  '/ops/equipe/planning': typeof OpsEquipePlanningRoute
+  '/ops/equipe/pointage': typeof OpsEquipePointageRoute
   '/ops/equipe/': typeof OpsEquipeIndexRoute
+  '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -470,15 +592,23 @@ export interface FileRoutesByTo {
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/bulletin/$token': typeof BulletinTokenRoute
   '/carnet/$token': typeof CarnetTokenRoute
+  '/conge-signer/$token': typeof CongeSignerTokenRoute
   '/contacts/$id': typeof ContactsIdRoute
+  '/contrat-signer/$token': typeof ContratSignerTokenRoute
   '/cotations/$id': typeof CotationsIdRoute
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/factures/$id': typeof FacturesIdRoute
   '/mariage/$token': typeof MariageTokenRoute
+  '/mon-espace/conges': typeof MonEspaceCongesRoute
+  '/mon-espace/contrats': typeof MonEspaceContratsRoute
+  '/mon-espace/evaluation': typeof MonEspaceEvaluationRoute
+  '/mon-espace/pointage': typeof MonEspacePointageRoute
   '/ops/agences': typeof OpsAgencesRoute
   '/ops/dashboard': typeof OpsDashboardRoute
   '/ops/demos': typeof OpsDemosRoute
@@ -488,12 +618,21 @@ export interface FileRoutesByTo {
   '/ops': typeof OpsIndexRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ops/equipe/$id': typeof OpsEquipeIdRoute
+  '/ops/equipe/absences': typeof OpsEquipeAbsencesRoute
+  '/ops/equipe/contrats': typeof OpsEquipeContratsRoute
+  '/ops/equipe/evaluations': typeof OpsEquipeEvaluationsRoute
   '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
+  '/ops/equipe/planning': typeof OpsEquipePlanningRoute
+  '/ops/equipe/pointage': typeof OpsEquipePointageRoute
   '/ops/equipe': typeof OpsEquipeIndexRoute
+  '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -533,15 +672,23 @@ export interface FileRoutesById {
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/bulletin/$token': typeof BulletinTokenRoute
   '/carnet/$token': typeof CarnetTokenRoute
+  '/conge-signer/$token': typeof CongeSignerTokenRoute
   '/contacts/$id': typeof ContactsIdRoute
+  '/contrat-signer/$token': typeof ContratSignerTokenRoute
   '/cotations/$id': typeof CotationsIdRoute
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/factures/$id': typeof FacturesIdRoute
   '/mariage/$token': typeof MariageTokenRoute
+  '/mon-espace/conges': typeof MonEspaceCongesRoute
+  '/mon-espace/contrats': typeof MonEspaceContratsRoute
+  '/mon-espace/evaluation': typeof MonEspaceEvaluationRoute
+  '/mon-espace/pointage': typeof MonEspacePointageRoute
   '/ops/agences': typeof OpsAgencesRoute
   '/ops/dashboard': typeof OpsDashboardRoute
   '/ops/demos': typeof OpsDemosRoute
@@ -551,12 +698,21 @@ export interface FileRoutesById {
   '/ops/': typeof OpsIndexRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ops/equipe/$id': typeof OpsEquipeIdRoute
+  '/ops/equipe/absences': typeof OpsEquipeAbsencesRoute
+  '/ops/equipe/contrats': typeof OpsEquipeContratsRoute
+  '/ops/equipe/evaluations': typeof OpsEquipeEvaluationsRoute
   '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
+  '/ops/equipe/planning': typeof OpsEquipePlanningRoute
+  '/ops/equipe/pointage': typeof OpsEquipePointageRoute
   '/ops/equipe/': typeof OpsEquipeIndexRoute
+  '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -597,15 +753,23 @@ export interface FileRouteTypes {
     | '/reinitialiser-mot-de-passe'
     | '/support'
     | '/tarifs'
+    | '/unsubscribe'
     | '/utilisateurs'
     | '/bulletin/$token'
     | '/carnet/$token'
+    | '/conge-signer/$token'
     | '/contacts/$id'
+    | '/contrat-signer/$token'
     | '/cotations/$id'
     | '/demandes/$id'
     | '/dossiers/$id'
+    | '/email/unsubscribe'
     | '/factures/$id'
     | '/mariage/$token'
+    | '/mon-espace/conges'
+    | '/mon-espace/contrats'
+    | '/mon-espace/evaluation'
+    | '/mon-espace/pointage'
     | '/ops/agences'
     | '/ops/dashboard'
     | '/ops/demos'
@@ -615,12 +779,21 @@ export interface FileRouteTypes {
     | '/ops/'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
+    | '/lovable/email/suppression'
     | '/ops/equipe/$id'
+    | '/ops/equipe/absences'
+    | '/ops/equipe/contrats'
+    | '/ops/equipe/evaluations'
     | '/ops/equipe/parametres'
+    | '/ops/equipe/planning'
+    | '/ops/equipe/pointage'
     | '/ops/equipe/'
+    | '/api/public/hooks/payroll-summary'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -658,15 +831,23 @@ export interface FileRouteTypes {
     | '/reinitialiser-mot-de-passe'
     | '/support'
     | '/tarifs'
+    | '/unsubscribe'
     | '/utilisateurs'
     | '/bulletin/$token'
     | '/carnet/$token'
+    | '/conge-signer/$token'
     | '/contacts/$id'
+    | '/contrat-signer/$token'
     | '/cotations/$id'
     | '/demandes/$id'
     | '/dossiers/$id'
+    | '/email/unsubscribe'
     | '/factures/$id'
     | '/mariage/$token'
+    | '/mon-espace/conges'
+    | '/mon-espace/contrats'
+    | '/mon-espace/evaluation'
+    | '/mon-espace/pointage'
     | '/ops/agences'
     | '/ops/dashboard'
     | '/ops/demos'
@@ -676,12 +857,21 @@ export interface FileRouteTypes {
     | '/ops'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
+    | '/lovable/email/suppression'
     | '/ops/equipe/$id'
+    | '/ops/equipe/absences'
+    | '/ops/equipe/contrats'
+    | '/ops/equipe/evaluations'
     | '/ops/equipe/parametres'
+    | '/ops/equipe/planning'
+    | '/ops/equipe/pointage'
     | '/ops/equipe'
+    | '/api/public/hooks/payroll-summary'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
   id:
     | '__root__'
     | '/'
@@ -720,15 +910,23 @@ export interface FileRouteTypes {
     | '/reinitialiser-mot-de-passe'
     | '/support'
     | '/tarifs'
+    | '/unsubscribe'
     | '/utilisateurs'
     | '/bulletin/$token'
     | '/carnet/$token'
+    | '/conge-signer/$token'
     | '/contacts/$id'
+    | '/contrat-signer/$token'
     | '/cotations/$id'
     | '/demandes/$id'
     | '/dossiers/$id'
+    | '/email/unsubscribe'
     | '/factures/$id'
     | '/mariage/$token'
+    | '/mon-espace/conges'
+    | '/mon-espace/contrats'
+    | '/mon-espace/evaluation'
+    | '/mon-espace/pointage'
     | '/ops/agences'
     | '/ops/dashboard'
     | '/ops/demos'
@@ -738,12 +936,21 @@ export interface FileRouteTypes {
     | '/ops/'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
+    | '/lovable/email/suppression'
     | '/ops/equipe/$id'
+    | '/ops/equipe/absences'
+    | '/ops/equipe/contrats'
+    | '/ops/equipe/evaluations'
     | '/ops/equipe/parametres'
+    | '/ops/equipe/planning'
+    | '/ops/equipe/pointage'
     | '/ops/equipe/'
+    | '/api/public/hooks/payroll-summary'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -783,15 +990,27 @@ export interface RootRouteChildren {
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
   SupportRoute: typeof SupportRoute
   TarifsRoute: typeof TarifsRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   UtilisateursRoute: typeof UtilisateursRoute
   BulletinTokenRoute: typeof BulletinTokenRoute
   CarnetTokenRoute: typeof CarnetTokenRoute
+  CongeSignerTokenRoute: typeof CongeSignerTokenRoute
+  ContratSignerTokenRoute: typeof ContratSignerTokenRoute
+  EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   FacturesIdRoute: typeof FacturesIdRoute
   MariageTokenRoute: typeof MariageTokenRoute
+  MonEspaceCongesRoute: typeof MonEspaceCongesRoute
+  MonEspaceContratsRoute: typeof MonEspaceContratsRoute
+  MonEspaceEvaluationRoute: typeof MonEspaceEvaluationRoute
+  MonEspacePointageRoute: typeof MonEspacePointageRoute
   PTokenRoute: typeof PTokenRoute
+  LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiPublicHooksPayrollSummaryRoute: typeof ApiPublicHooksPayrollSummaryRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -801,6 +1020,13 @@ declare module '@tanstack/react-router' {
       path: '/utilisateurs'
       fullPath: '/utilisateurs'
       preLoaderRoute: typeof UtilisateursRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tarifs': {
@@ -1104,6 +1330,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpsAgencesRouteImport
       parentRoute: typeof OpsRoute
     }
+    '/mon-espace/pointage': {
+      id: '/mon-espace/pointage'
+      path: '/mon-espace/pointage'
+      fullPath: '/mon-espace/pointage'
+      preLoaderRoute: typeof MonEspacePointageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mon-espace/evaluation': {
+      id: '/mon-espace/evaluation'
+      path: '/mon-espace/evaluation'
+      fullPath: '/mon-espace/evaluation'
+      preLoaderRoute: typeof MonEspaceEvaluationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mon-espace/contrats': {
+      id: '/mon-espace/contrats'
+      path: '/mon-espace/contrats'
+      fullPath: '/mon-espace/contrats'
+      preLoaderRoute: typeof MonEspaceContratsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mon-espace/conges': {
+      id: '/mon-espace/conges'
+      path: '/mon-espace/conges'
+      fullPath: '/mon-espace/conges'
+      preLoaderRoute: typeof MonEspaceCongesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mariage/$token': {
       id: '/mariage/$token'
       path: '/mariage/$token'
@@ -1116,6 +1370,13 @@ declare module '@tanstack/react-router' {
       path: '/factures/$id'
       fullPath: '/factures/$id'
       preLoaderRoute: typeof FacturesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/email/unsubscribe': {
+      id: '/email/unsubscribe'
+      path: '/email/unsubscribe'
+      fullPath: '/email/unsubscribe'
+      preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dossiers/$id': {
@@ -1139,12 +1400,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CotationsIdRouteImport
       parentRoute: typeof CotationsRoute
     }
+    '/contrat-signer/$token': {
+      id: '/contrat-signer/$token'
+      path: '/contrat-signer/$token'
+      fullPath: '/contrat-signer/$token'
+      preLoaderRoute: typeof ContratSignerTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contacts/$id': {
       id: '/contacts/$id'
       path: '/$id'
       fullPath: '/contacts/$id'
       preLoaderRoute: typeof ContactsIdRouteImport
       parentRoute: typeof ContactsRoute
+    }
+    '/conge-signer/$token': {
+      id: '/conge-signer/$token'
+      path: '/conge-signer/$token'
+      fullPath: '/conge-signer/$token'
+      preLoaderRoute: typeof CongeSignerTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/carnet/$token': {
       id: '/carnet/$token'
@@ -1167,11 +1442,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpsEquipeIndexRouteImport
       parentRoute: typeof OpsRoute
     }
+    '/ops/equipe/pointage': {
+      id: '/ops/equipe/pointage'
+      path: '/equipe/pointage'
+      fullPath: '/ops/equipe/pointage'
+      preLoaderRoute: typeof OpsEquipePointageRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/equipe/planning': {
+      id: '/ops/equipe/planning'
+      path: '/equipe/planning'
+      fullPath: '/ops/equipe/planning'
+      preLoaderRoute: typeof OpsEquipePlanningRouteImport
+      parentRoute: typeof OpsRoute
+    }
     '/ops/equipe/parametres': {
       id: '/ops/equipe/parametres'
       path: '/equipe/parametres'
       fullPath: '/ops/equipe/parametres'
       preLoaderRoute: typeof OpsEquipeParametresRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/equipe/evaluations': {
+      id: '/ops/equipe/evaluations'
+      path: '/equipe/evaluations'
+      fullPath: '/ops/equipe/evaluations'
+      preLoaderRoute: typeof OpsEquipeEvaluationsRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/equipe/contrats': {
+      id: '/ops/equipe/contrats'
+      path: '/equipe/contrats'
+      fullPath: '/ops/equipe/contrats'
+      preLoaderRoute: typeof OpsEquipeContratsRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/equipe/absences': {
+      id: '/ops/equipe/absences'
+      path: '/equipe/absences'
+      fullPath: '/ops/equipe/absences'
+      preLoaderRoute: typeof OpsEquipeAbsencesRouteImport
       parentRoute: typeof OpsRoute
     }
     '/ops/equipe/$id': {
@@ -1180,6 +1490,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/ops/equipe/$id'
       preLoaderRoute: typeof OpsEquipeIdRouteImport
       parentRoute: typeof OpsRoute
+    }
+    '/lovable/email/suppression': {
+      id: '/lovable/email/suppression'
+      path: '/lovable/email/suppression'
+      fullPath: '/lovable/email/suppression'
+      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/demo/v/$token': {
       id: '/demo/v/$token'
@@ -1194,6 +1511,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/demo/rdv/$token'
       preLoaderRoute: typeof DemoRdvTokenRouteImport
       parentRoute: typeof DemoRoute
+    }
+    '/lovable/email/transactional/send': {
+      id: '/lovable/email/transactional/send'
+      path: '/lovable/email/transactional/send'
+      fullPath: '/lovable/email/transactional/send'
+      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
@@ -1214,6 +1545,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/auth/preview'
       fullPath: '/lovable/email/auth/preview'
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/payroll-summary': {
+      id: '/api/public/hooks/payroll-summary'
+      path: '/api/public/hooks/payroll-summary'
+      fullPath: '/api/public/hooks/payroll-summary'
+      preLoaderRoute: typeof ApiPublicHooksPayrollSummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -1287,7 +1625,12 @@ interface OpsRouteChildren {
   OpsMessagesRoute: typeof OpsMessagesRoute
   OpsIndexRoute: typeof OpsIndexRoute
   OpsEquipeIdRoute: typeof OpsEquipeIdRoute
+  OpsEquipeAbsencesRoute: typeof OpsEquipeAbsencesRoute
+  OpsEquipeContratsRoute: typeof OpsEquipeContratsRoute
+  OpsEquipeEvaluationsRoute: typeof OpsEquipeEvaluationsRoute
   OpsEquipeParametresRoute: typeof OpsEquipeParametresRoute
+  OpsEquipePlanningRoute: typeof OpsEquipePlanningRoute
+  OpsEquipePointageRoute: typeof OpsEquipePointageRoute
   OpsEquipeIndexRoute: typeof OpsEquipeIndexRoute
 }
 
@@ -1299,7 +1642,12 @@ const OpsRouteChildren: OpsRouteChildren = {
   OpsMessagesRoute: OpsMessagesRoute,
   OpsIndexRoute: OpsIndexRoute,
   OpsEquipeIdRoute: OpsEquipeIdRoute,
+  OpsEquipeAbsencesRoute: OpsEquipeAbsencesRoute,
+  OpsEquipeContratsRoute: OpsEquipeContratsRoute,
+  OpsEquipeEvaluationsRoute: OpsEquipeEvaluationsRoute,
   OpsEquipeParametresRoute: OpsEquipeParametresRoute,
+  OpsEquipePlanningRoute: OpsEquipePlanningRoute,
+  OpsEquipePointageRoute: OpsEquipePointageRoute,
   OpsEquipeIndexRoute: OpsEquipeIndexRoute,
 }
 
@@ -1342,15 +1690,27 @@ const rootRouteChildren: RootRouteChildren = {
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
   SupportRoute: SupportRoute,
   TarifsRoute: TarifsRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   UtilisateursRoute: UtilisateursRoute,
   BulletinTokenRoute: BulletinTokenRoute,
   CarnetTokenRoute: CarnetTokenRoute,
+  CongeSignerTokenRoute: CongeSignerTokenRoute,
+  ContratSignerTokenRoute: ContratSignerTokenRoute,
+  EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   FacturesIdRoute: FacturesIdRoute,
   MariageTokenRoute: MariageTokenRoute,
+  MonEspaceCongesRoute: MonEspaceCongesRoute,
+  MonEspaceContratsRoute: MonEspaceContratsRoute,
+  MonEspaceEvaluationRoute: MonEspaceEvaluationRoute,
+  MonEspacePointageRoute: MonEspacePointageRoute,
   PTokenRoute: PTokenRoute,
+  LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiPublicHooksPayrollSummaryRoute: ApiPublicHooksPayrollSummaryRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
