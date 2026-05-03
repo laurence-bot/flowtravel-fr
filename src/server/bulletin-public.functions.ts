@@ -68,37 +68,93 @@ export const signBulletin = createServerFn({ method: "POST" })
       .eq("id", bulletin.id);
     if (updErr) return { ok: false as const, error: updErr.message };
 
-    // Génération automatique de la facture client si cotation présente
+    // Génération automatique des factures clients (acompte 1, acompte 2, solde)
     if (bulletin.cotation_id) {
       const { data: cotation } = await sb
         .from("cotations")
-        .select("prix_vente_ht,prix_vente_ttc,taux_tva_marge,regime_tva")
+        .select("prix_vente_ht,prix_vente_ttc,taux_tva_marge,regime_tva,date_depart")
         .eq("id", bulletin.cotation_id)
         .maybeSingle();
+
+      const { data: agency } = await sb
+        .from("agency_settings")
+        .select("pct_acompte_client_1,pct_acompte_client_2,pct_solde_client,delai_acompte_2_jours,delai_solde_jours")
+        .eq("user_id", bulletin.user_id)
+        .maybeSingle();
+
       if (cotation) {
-        const year = new Date().getFullYear();
-        const { count } = await sb
+        // Évite les doublons en cas de re-signature
+        const { count: alreadyCount } = await sb
           .from("factures_clients")
           .select("id", { count: "exact", head: true })
-          .eq("user_id", bulletin.user_id)
-          .like("numero", `FA-${year}-%`);
-        const numero = `FA-${year}-${String((count ?? 0) + 1).padStart(4, "0")}`;
-        const ht = Number(cotation.prix_vente_ht ?? 0);
-        const ttc = Number(cotation.prix_vente_ttc ?? 0);
-        await sb.from("factures_clients").insert({
-          user_id: bulletin.user_id,
-          numero,
-          client_id: bulletin.client_id,
-          cotation_id: bulletin.cotation_id,
-          dossier_id: bulletin.dossier_id,
-          bulletin_id: bulletin.id,
-          montant_ht: ht,
-          montant_ttc: ttc,
-          montant_tva: Math.max(0, ttc - ht),
-          taux_tva: Number(cotation.taux_tva_marge ?? 20),
-          regime_tva: cotation.regime_tva,
-          statut: "emise",
-        });
+          .eq("bulletin_id", bulletin.id);
+
+        if (!alreadyCount || alreadyCount === 0) {
+          const ht = Number(cotation.prix_vente_ht ?? 0);
+          const ttc = Number(cotation.prix_vente_ttc ?? 0);
+          const tauxTva = Number(cotation.taux_tva_marge ?? 20);
+          const dateDepart = cotation.date_depart ? new Date(cotation.date_depart) : null;
+
+          const pct1 = Number(agency?.pct_acompte_client_1 ?? 30);
+          const pct2 = Number(agency?.pct_acompte_client_2 ?? 0);
+          const pctSolde = Number(agency?.pct_solde_client ?? 70);
+          const delai2 = agency?.delai_acompte_2_jours ?? null;
+          const delaiSolde = agency?.delai_solde_jours ?? 30;
+
+          const addDays = (base: Date, days: number) => {
+            const d = new Date(base);
+            d.setDate(d.getDate() + days);
+            return d.toISOString().slice(0, 10);
+          };
+
+          type Tranche = { type: "acompte_1" | "acompte_2" | "solde"; pct: number; date_echeance: string | null };
+          const tranches: Tranche[] = [];
+          if (pct1 > 0) tranches.push({ type: "acompte_1", pct: pct1, date_echeance: new Date().toISOString().slice(0, 10) });
+          if (pct2 > 0) tranches.push({
+            type: "acompte_2",
+            pct: pct2,
+            date_echeance: delai2 != null ? addDays(new Date(), delai2) : null,
+          });
+          if (pctSolde > 0) tranches.push({
+            type: "solde",
+            pct: pctSolde,
+            date_echeance: dateDepart ? addDays(dateDepart, -Math.abs(delaiSolde)) : null,
+          });
+
+          const year = new Date().getFullYear();
+          const { count: existing } = await sb
+            .from("factures_clients")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", bulletin.user_id)
+            .like("numero", `FA-${year}-%`);
+          let nextNum = (existing ?? 0) + 1;
+
+          for (let i = 0; i < tranches.length; i++) {
+            const t = tranches[i];
+            const factHt = Math.round(((ht * t.pct) / 100) * 100) / 100;
+            const factTtc = Math.round(((ttc * t.pct) / 100) * 100) / 100;
+            const factTva = Math.max(0, Math.round((factTtc - factHt) * 100) / 100);
+            const numero = `FA-${year}-${String(nextNum++).padStart(4, "0")}`;
+            await sb.from("factures_clients").insert({
+              user_id: bulletin.user_id,
+              numero,
+              client_id: bulletin.client_id,
+              cotation_id: bulletin.cotation_id,
+              dossier_id: bulletin.dossier_id,
+              bulletin_id: bulletin.id,
+              montant_ht: factHt,
+              montant_ttc: factTtc,
+              montant_tva: factTva,
+              taux_tva: tauxTva,
+              regime_tva: cotation.regime_tva,
+              statut: "emise",
+              type_facture: t.type,
+              pct_applique: t.pct,
+              ordre: i + 1,
+              date_echeance: t.date_echeance,
+            });
+          }
+        }
       }
     }
 
