@@ -1,10 +1,9 @@
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { getPublicPaymentInfo } from "@/server/payment-public.functions";
-import { acceptPublicQuote } from "@/server/quote-public.functions";
+import { acceptPublicQuote, declarePaymentDone } from "@/server/quote-public.functions";
 import { themeStyle } from "@/lib/agency-theme";
 import { formatEUR } from "@/lib/format";
-import { computeAcompteClient } from "@/lib/cotations";
 import { Building2, CreditCard, Copy, ExternalLink, Check, ArrowLeft, Info } from "lucide-react";
 import { toast } from "sonner";
 import type { PaymentMethodKey } from "@/lib/agency-settings";
@@ -36,11 +35,12 @@ function PaymentPage() {
   const { cotation, agency, contact, link } = data;
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState(Boolean(link.accepted_at));
+  const [paymentDeclared, setPaymentDeclared] = useState(
+    Boolean((link as { payment_declared_at?: string | null }).payment_declared_at),
+  );
+  const [declaring, setDeclaring] = useState(false);
   const [selected, setSelected] = useState<PaymentMethodKey | null>(null);
 
-  // On a besoin des lignes pour le calcul d'acompte. Pour rester léger, on
-  // utilise prix_vente_ttc et un acompte par défaut 30 % si pas dispo.
-  // (Le détail fin est calculable côté p/$token ; ici on affiche prix + acompte.)
   const acompte = Math.round(Number(cotation.prix_vente_ttc) * 0.30);
   const solde = Math.max(0, Number(cotation.prix_vente_ttc) - acompte);
 
@@ -56,6 +56,29 @@ function PaymentPage() {
     if (r.ok) {
       setConfirmed(true);
       toast.success("Devis validé. Votre conseiller a été prévenu.");
+    } else {
+      toast.error(r.error || "Erreur");
+    }
+  };
+
+  const handleDeclarePayment = async () => {
+    if (!selected) {
+      toast.error("Sélectionnez d'abord votre mode de paiement.");
+      return;
+    }
+    setDeclaring(true);
+    const labelMap: Record<PaymentMethodKey, string> = {
+      virement: "virement bancaire",
+      lien_cb: "carte bancaire",
+      autre: "autre moyen",
+    };
+    const r = await declarePaymentDone({
+      data: { token: params.token, method: labelMap[selected] },
+    });
+    setDeclaring(false);
+    if (r.ok) {
+      setPaymentDeclared(true);
+      toast.success("Merci ! Votre conseiller vérifie la réception du paiement.");
     } else {
       toast.error(r.error || "Erreur");
     }
@@ -202,13 +225,13 @@ function PaymentPage() {
           </div>
         )}
 
-        {/* Confirmation */}
+        {/* Étape 1 — validation du devis */}
         <div className="mt-8 bg-white border brand-border rounded-sm p-6">
+          <div className="text-xs uppercase tracking-widest brand-signature mb-2">Étape 1</div>
           <p className="text-sm text-stone-600 mb-4">
             En cliquant sur <strong>« Je valide mon voyage »</strong>, vous acceptez le devis
             et confirmez votre intention d'effectuer le paiement de l'acompte selon le mode
-            choisi. Votre conseiller sera prévenu et vous fera parvenir le bulletin
-            d'inscription à signer dès réception du premier acompte.
+            choisi. Votre conseiller sera prévenu.
           </p>
           <button
             onClick={handleConfirm}
@@ -226,6 +249,38 @@ function PaymentPage() {
             )}
           </button>
         </div>
+
+        {/* Étape 2 — déclaration de paiement (apparaît une fois le devis validé) */}
+        {confirmed && (
+          <div className="mt-4 bg-white border brand-border rounded-sm p-6">
+            <div className="text-xs uppercase tracking-widest brand-signature mb-2">Étape 2</div>
+            <p className="text-sm text-stone-600 mb-4">
+              Une fois votre virement effectué (ou paiement par carte réalisé), cliquez ici pour
+              prévenir votre conseiller. Il vérifie la réception puis vous envoie le bulletin
+              d'inscription à signer.
+            </p>
+            <button
+              onClick={handleDeclarePayment}
+              disabled={declaring || paymentDeclared || !selected}
+              className="brand-bg-primary text-white w-full py-4 text-sm uppercase tracking-widest font-medium hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {paymentDeclared ? (
+                <>
+                  <Check className="h-4 w-4" /> Paiement déclaré
+                </>
+              ) : declaring ? (
+                "Envoi…"
+              ) : (
+                "J'ai effectué le paiement"
+              )}
+            </button>
+            {!selected && !paymentDeclared && (
+              <p className="text-xs text-stone-500 mt-2 text-center">
+                Sélectionnez votre mode de paiement ci-dessus pour activer ce bouton.
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

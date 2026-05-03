@@ -2945,8 +2945,10 @@ export type Database = {
           expires_at: string
           flight_chosen_at: string | null
           id: string
+          last_relance_acompte_at: string | null
           modification_request_text: string | null
           modification_requested_at: string | null
+          payment_declared_at: string | null
           token: string
           updated_at: string
           user_id: string
@@ -2961,8 +2963,10 @@ export type Database = {
           expires_at?: string
           flight_chosen_at?: string | null
           id?: string
+          last_relance_acompte_at?: string | null
           modification_request_text?: string | null
           modification_requested_at?: string | null
+          payment_declared_at?: string | null
           token: string
           updated_at?: string
           user_id: string
@@ -2977,8 +2981,10 @@ export type Database = {
           expires_at?: string
           flight_chosen_at?: string | null
           id?: string
+          last_relance_acompte_at?: string | null
           modification_request_text?: string | null
           modification_requested_at?: string | null
+          payment_declared_at?: string | null
           token?: string
           updated_at?: string
           user_id?: string

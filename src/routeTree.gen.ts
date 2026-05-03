@@ -22,6 +22,7 @@ import { Route as PilotageRouteImport } from './routes/pilotage'
 import { Route as ParametresAgenceRouteImport } from './routes/parametres-agence'
 import { Route as PaiementsRouteImport } from './routes/paiements'
 import { Route as OpsRouteImport } from './routes/ops'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
 import { Route as MariagesRouteImport } from './routes/mariages'
 import { Route as InscriptionAgenceRouteImport } from './routes/inscription-agence'
@@ -91,6 +92,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksRelanceBulletinsRouteImport } from './routes/api/public/hooks/relance-bulletins'
+import { Route as ApiPublicHooksRelanceAcomptesRouteImport } from './routes/api/public/hooks/relance-acomptes'
 import { Route as ApiPublicHooksPayrollSummaryRouteImport } from './routes/api/public/hooks/payroll-summary'
 
 const UtilisateursRoute = UtilisateursRouteImport.update({
@@ -156,6 +158,11 @@ const PaiementsRoute = PaiementsRouteImport.update({
 const OpsRoute = OpsRouteImport.update({
   id: '/ops',
   path: '/ops',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
@@ -507,6 +514,12 @@ const ApiPublicHooksRelanceBulletinsRoute =
     path: '/api/public/hooks/relance-bulletins',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksRelanceAcomptesRoute =
+  ApiPublicHooksRelanceAcomptesRouteImport.update({
+    id: '/api/public/hooks/relance-acomptes',
+    path: '/api/public/hooks/relance-acomptes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksPayrollSummaryRoute =
   ApiPublicHooksPayrollSummaryRouteImport.update({
     id: '/api/public/hooks/payroll-summary',
@@ -541,6 +554,7 @@ export interface FileRoutesByFullPath {
   '/inscription-agence': typeof InscriptionAgenceRoute
   '/mariages': typeof MariagesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
+  '/notifications': typeof NotificationsRoute
   '/ops': typeof OpsRouteWithChildren
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
@@ -592,6 +606,7 @@ export interface FileRoutesByFullPath {
   '/ops/equipe/pointage': typeof OpsEquipePointageRoute
   '/ops/equipe/': typeof OpsEquipeIndexRoute
   '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
+  '/api/public/hooks/relance-acomptes': typeof ApiPublicHooksRelanceAcomptesRoute
   '/api/public/hooks/relance-bulletins': typeof ApiPublicHooksRelanceBulletinsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -626,6 +641,7 @@ export interface FileRoutesByTo {
   '/inscription-agence': typeof InscriptionAgenceRoute
   '/mariages': typeof MariagesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
+  '/notifications': typeof NotificationsRoute
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
   '/pilotage': typeof PilotageRoute
@@ -676,6 +692,7 @@ export interface FileRoutesByTo {
   '/ops/equipe/pointage': typeof OpsEquipePointageRoute
   '/ops/equipe': typeof OpsEquipeIndexRoute
   '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
+  '/api/public/hooks/relance-acomptes': typeof ApiPublicHooksRelanceAcomptesRoute
   '/api/public/hooks/relance-bulletins': typeof ApiPublicHooksRelanceBulletinsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -711,6 +728,7 @@ export interface FileRoutesById {
   '/inscription-agence': typeof InscriptionAgenceRoute
   '/mariages': typeof MariagesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
+  '/notifications': typeof NotificationsRoute
   '/ops': typeof OpsRouteWithChildren
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
@@ -762,6 +780,7 @@ export interface FileRoutesById {
   '/ops/equipe/pointage': typeof OpsEquipePointageRoute
   '/ops/equipe/': typeof OpsEquipeIndexRoute
   '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
+  '/api/public/hooks/relance-acomptes': typeof ApiPublicHooksRelanceAcomptesRoute
   '/api/public/hooks/relance-bulletins': typeof ApiPublicHooksRelanceBulletinsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -798,6 +817,7 @@ export interface FileRouteTypes {
     | '/inscription-agence'
     | '/mariages'
     | '/mot-de-passe-oublie'
+    | '/notifications'
     | '/ops'
     | '/paiements'
     | '/parametres-agence'
@@ -849,6 +869,7 @@ export interface FileRouteTypes {
     | '/ops/equipe/pointage'
     | '/ops/equipe/'
     | '/api/public/hooks/payroll-summary'
+    | '/api/public/hooks/relance-acomptes'
     | '/api/public/hooks/relance-bulletins'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -883,6 +904,7 @@ export interface FileRouteTypes {
     | '/inscription-agence'
     | '/mariages'
     | '/mot-de-passe-oublie'
+    | '/notifications'
     | '/paiements'
     | '/parametres-agence'
     | '/pilotage'
@@ -933,6 +955,7 @@ export interface FileRouteTypes {
     | '/ops/equipe/pointage'
     | '/ops/equipe'
     | '/api/public/hooks/payroll-summary'
+    | '/api/public/hooks/relance-acomptes'
     | '/api/public/hooks/relance-bulletins'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -967,6 +990,7 @@ export interface FileRouteTypes {
     | '/inscription-agence'
     | '/mariages'
     | '/mot-de-passe-oublie'
+    | '/notifications'
     | '/ops'
     | '/paiements'
     | '/parametres-agence'
@@ -1018,6 +1042,7 @@ export interface FileRouteTypes {
     | '/ops/equipe/pointage'
     | '/ops/equipe/'
     | '/api/public/hooks/payroll-summary'
+    | '/api/public/hooks/relance-acomptes'
     | '/api/public/hooks/relance-bulletins'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1053,6 +1078,7 @@ export interface RootRouteChildren {
   InscriptionAgenceRoute: typeof InscriptionAgenceRoute
   MariagesRoute: typeof MariagesRoute
   MotDePasseOublieRoute: typeof MotDePasseOublieRoute
+  NotificationsRoute: typeof NotificationsRoute
   OpsRoute: typeof OpsRouteWithChildren
   PaiementsRoute: typeof PaiementsRoute
   ParametresAgenceRoute: typeof ParametresAgenceRoute
@@ -1082,6 +1108,7 @@ export interface RootRouteChildren {
   PaiementTokenRoute: typeof PaiementTokenRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksPayrollSummaryRoute: typeof ApiPublicHooksPayrollSummaryRoute
+  ApiPublicHooksRelanceAcomptesRoute: typeof ApiPublicHooksRelanceAcomptesRoute
   ApiPublicHooksRelanceBulletinsRoute: typeof ApiPublicHooksRelanceBulletinsRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1181,6 +1208,13 @@ declare module '@tanstack/react-router' {
       path: '/ops'
       fullPath: '/ops'
       preLoaderRoute: typeof OpsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mot-de-passe-oublie': {
@@ -1666,6 +1700,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRelanceBulletinsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/relance-acomptes': {
+      id: '/api/public/hooks/relance-acomptes'
+      path: '/api/public/hooks/relance-acomptes'
+      fullPath: '/api/public/hooks/relance-acomptes'
+      preLoaderRoute: typeof ApiPublicHooksRelanceAcomptesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/payroll-summary': {
       id: '/api/public/hooks/payroll-summary'
       path: '/api/public/hooks/payroll-summary'
@@ -1813,6 +1854,7 @@ const rootRouteChildren: RootRouteChildren = {
   InscriptionAgenceRoute: InscriptionAgenceRoute,
   MariagesRoute: MariagesRoute,
   MotDePasseOublieRoute: MotDePasseOublieRoute,
+  NotificationsRoute: NotificationsRoute,
   OpsRoute: OpsRouteWithChildren,
   PaiementsRoute: PaiementsRoute,
   ParametresAgenceRoute: ParametresAgenceRoute,
@@ -1842,6 +1884,7 @@ const rootRouteChildren: RootRouteChildren = {
   PaiementTokenRoute: PaiementTokenRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksPayrollSummaryRoute: ApiPublicHooksPayrollSummaryRoute,
+  ApiPublicHooksRelanceAcomptesRoute: ApiPublicHooksRelanceAcomptesRoute,
   ApiPublicHooksRelanceBulletinsRoute: ApiPublicHooksRelanceBulletinsRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
