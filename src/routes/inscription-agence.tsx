@@ -18,26 +18,38 @@ export const Route = createFileRoute("/inscription-agence")({
 const immatRegex = /^IM\d{9}$/i;
 const siretRegex = /^\d{14}$/;
 
-const formSchema = z.object({
-  nom_commercial: z.string().trim().min(2, "Nom de l'agence requis").max(150),
-  raison_sociale: z.string().trim().max(150).optional().or(z.literal("")),
-  immat_atout_france: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(immatRegex, "Format attendu : IM + 9 chiffres (ex: IM075100001)"),
-  siret: z
-    .string()
-    .trim()
-    .regex(siretRegex, "Le SIRET doit contenir exactement 14 chiffres"),
-  email_contact: z.string().trim().email("Email invalide").max(255),
-  telephone: z.string().trim().max(30).optional().or(z.literal("")),
-  adresse: z.string().trim().max(255).optional().or(z.literal("")),
-  ville: z.string().trim().max(100).optional().or(z.literal("")),
-  code_postal: z.string().trim().max(15).optional().or(z.literal("")),
-  admin_full_name: z.string().trim().min(2, "Nom du gérant requis").max(150),
-  password: z.string().min(8, "Mot de passe : 8 caractères minimum").max(72),
-});
+const sirenRegex = /^\d{9}$/;
+
+const formSchema = z
+  .object({
+    nom_commercial: z.string().trim().min(2, "Nom de l'agence requis").max(150),
+    raison_sociale: z.string().trim().max(150).optional().or(z.literal("")),
+    immat_atout_france: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(immatRegex, "Format attendu : IM + 9 chiffres (ex: IM075100001)"),
+    siret: z
+      .string()
+      .trim()
+      .regex(siretRegex, "Le SIRET doit contenir exactement 14 chiffres"),
+    est_etablissement_secondaire: z.boolean().default(false),
+    siren_siege: z.string().trim().optional().or(z.literal("")),
+    email_contact: z.string().trim().email("Email invalide").max(255),
+    telephone: z.string().trim().max(30).optional().or(z.literal("")),
+    adresse: z.string().trim().max(255).optional().or(z.literal("")),
+    ville: z.string().trim().max(100).optional().or(z.literal("")),
+    code_postal: z.string().trim().max(15).optional().or(z.literal("")),
+    admin_full_name: z.string().trim().min(2, "Nom du gérant requis").max(150),
+    password: z.string().min(8, "Mot de passe : 8 caractères minimum").max(72),
+  })
+  .refine(
+    (d) => !d.est_etablissement_secondaire || sirenRegex.test(d.siren_siege ?? ""),
+    {
+      message: "SIREN du siège requis (9 chiffres) pour un établissement secondaire",
+      path: ["siren_siege"],
+    },
+  );
 
 type FormData = z.infer<typeof formSchema>;
 
