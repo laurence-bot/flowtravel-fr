@@ -164,7 +164,67 @@ function UtilisateursPage() {
       <PageHeader
         title="Utilisateurs"
         description="Gérez les accès, rôles et activation des membres de votre équipe"
+        action={
+          <Button onClick={() => setInviteOpen(true)} className="gap-2">
+            <UserPlus className="h-4 w-4" /> Ajouter un utilisateur
+          </Button>
+        }
       />
+
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajouter un utilisateur</DialogTitle>
+            <DialogDescription>
+              Un email d'invitation lui sera envoyé pour définir son mot de passe.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="inv-name">Nom complet</Label>
+              <Input id="inv-name" value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="Jean Dupont" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="inv-email">Email</Label>
+              <Input id="inv-email" type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="jean@agence.fr" />
+            </div>
+            <div className="space-y-2">
+              <Label>Rôle</Label>
+              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as AppRole)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(ROLE_LABELS) as AppRole[]).map((r) => (
+                    <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setInviteOpen(false)} disabled={inviting}>Annuler</Button>
+            <Button
+              disabled={inviting || !inviteEmail || !inviteName}
+              onClick={async () => {
+                setInviting(true);
+                try {
+                  await inviteUser({ data: { email: inviteEmail, full_name: inviteName, role: inviteRole } });
+                  toast.success("Invitation envoyée");
+                  setInviteOpen(false);
+                  setInviteEmail(""); setInviteName(""); setInviteRole("agent");
+                  await refresh();
+                } catch (e: any) {
+                  toast.error(e?.message ?? "Échec de l'invitation");
+                } finally {
+                  setInviting(false);
+                }
+              }}
+            >
+              {inviting ? "Envoi…" : "Envoyer l'invitation"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       <Card className="p-5 mb-6">
         <h3 className="font-display text-base mb-3">Rôles disponibles</h3>
