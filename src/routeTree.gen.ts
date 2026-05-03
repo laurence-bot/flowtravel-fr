@@ -64,7 +64,9 @@ import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe
 import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
 import { Route as DemandesIdRouteImport } from './routes/demandes.$id'
 import { Route as CotationsIdRouteImport } from './routes/cotations.$id'
+import { Route as ContratSignerTokenRouteImport } from './routes/contrat-signer.$token'
 import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
+import { Route as CongeSignerTokenRouteImport } from './routes/conge-signer.$token'
 import { Route as CarnetTokenRouteImport } from './routes/carnet.$token'
 import { Route as BulletinTokenRouteImport } from './routes/bulletin.$token'
 import { Route as OpsEquipeIndexRouteImport } from './routes/ops.equipe.index'
@@ -360,10 +362,20 @@ const CotationsIdRoute = CotationsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => CotationsRoute,
 } as any)
+const ContratSignerTokenRoute = ContratSignerTokenRouteImport.update({
+  id: '/contrat-signer/$token',
+  path: '/contrat-signer/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactsIdRoute = ContactsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ContactsRoute,
+} as any)
+const CongeSignerTokenRoute = CongeSignerTokenRouteImport.update({
+  id: '/conge-signer/$token',
+  path: '/conge-signer/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CarnetTokenRoute = CarnetTokenRouteImport.update({
   id: '/carnet/$token',
@@ -506,7 +518,9 @@ export interface FileRoutesByFullPath {
   '/utilisateurs': typeof UtilisateursRoute
   '/bulletin/$token': typeof BulletinTokenRoute
   '/carnet/$token': typeof CarnetTokenRoute
+  '/conge-signer/$token': typeof CongeSignerTokenRoute
   '/contacts/$id': typeof ContactsIdRoute
+  '/contrat-signer/$token': typeof ContratSignerTokenRoute
   '/cotations/$id': typeof CotationsIdRoute
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
@@ -582,7 +596,9 @@ export interface FileRoutesByTo {
   '/utilisateurs': typeof UtilisateursRoute
   '/bulletin/$token': typeof BulletinTokenRoute
   '/carnet/$token': typeof CarnetTokenRoute
+  '/conge-signer/$token': typeof CongeSignerTokenRoute
   '/contacts/$id': typeof ContactsIdRoute
+  '/contrat-signer/$token': typeof ContratSignerTokenRoute
   '/cotations/$id': typeof CotationsIdRoute
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
@@ -660,7 +676,9 @@ export interface FileRoutesById {
   '/utilisateurs': typeof UtilisateursRoute
   '/bulletin/$token': typeof BulletinTokenRoute
   '/carnet/$token': typeof CarnetTokenRoute
+  '/conge-signer/$token': typeof CongeSignerTokenRoute
   '/contacts/$id': typeof ContactsIdRoute
+  '/contrat-signer/$token': typeof ContratSignerTokenRoute
   '/cotations/$id': typeof CotationsIdRoute
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
@@ -739,7 +757,9 @@ export interface FileRouteTypes {
     | '/utilisateurs'
     | '/bulletin/$token'
     | '/carnet/$token'
+    | '/conge-signer/$token'
     | '/contacts/$id'
+    | '/contrat-signer/$token'
     | '/cotations/$id'
     | '/demandes/$id'
     | '/dossiers/$id'
@@ -815,7 +835,9 @@ export interface FileRouteTypes {
     | '/utilisateurs'
     | '/bulletin/$token'
     | '/carnet/$token'
+    | '/conge-signer/$token'
     | '/contacts/$id'
+    | '/contrat-signer/$token'
     | '/cotations/$id'
     | '/demandes/$id'
     | '/dossiers/$id'
@@ -892,7 +914,9 @@ export interface FileRouteTypes {
     | '/utilisateurs'
     | '/bulletin/$token'
     | '/carnet/$token'
+    | '/conge-signer/$token'
     | '/contacts/$id'
+    | '/contrat-signer/$token'
     | '/cotations/$id'
     | '/demandes/$id'
     | '/dossiers/$id'
@@ -970,6 +994,8 @@ export interface RootRouteChildren {
   UtilisateursRoute: typeof UtilisateursRoute
   BulletinTokenRoute: typeof BulletinTokenRoute
   CarnetTokenRoute: typeof CarnetTokenRoute
+  CongeSignerTokenRoute: typeof CongeSignerTokenRoute
+  ContratSignerTokenRoute: typeof ContratSignerTokenRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   FacturesIdRoute: typeof FacturesIdRoute
   MariageTokenRoute: typeof MariageTokenRoute
@@ -1374,12 +1400,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CotationsIdRouteImport
       parentRoute: typeof CotationsRoute
     }
+    '/contrat-signer/$token': {
+      id: '/contrat-signer/$token'
+      path: '/contrat-signer/$token'
+      fullPath: '/contrat-signer/$token'
+      preLoaderRoute: typeof ContratSignerTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contacts/$id': {
       id: '/contacts/$id'
       path: '/$id'
       fullPath: '/contacts/$id'
       preLoaderRoute: typeof ContactsIdRouteImport
       parentRoute: typeof ContactsRoute
+    }
+    '/conge-signer/$token': {
+      id: '/conge-signer/$token'
+      path: '/conge-signer/$token'
+      fullPath: '/conge-signer/$token'
+      preLoaderRoute: typeof CongeSignerTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/carnet/$token': {
       id: '/carnet/$token'
@@ -1654,6 +1694,8 @@ const rootRouteChildren: RootRouteChildren = {
   UtilisateursRoute: UtilisateursRoute,
   BulletinTokenRoute: BulletinTokenRoute,
   CarnetTokenRoute: CarnetTokenRoute,
+  CongeSignerTokenRoute: CongeSignerTokenRoute,
+  ContratSignerTokenRoute: ContratSignerTokenRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   FacturesIdRoute: FacturesIdRoute,
   MariageTokenRoute: MariageTokenRoute,

@@ -18,9 +18,11 @@ function ContractSign() {
   const drawing = useRef(false);
 
   useEffect(() => {
-    supabase.from("hr_contracts").select("*").eq("token", token).maybeSingle()
-      .then(({ data }) => { if (!data) throw notFound(); setContract(data); setSigned(data.statut === "signe"); })
-      .finally(() => setLoading(false));
+    (async () => {
+      const { data } = await supabase.from("hr_contracts").select("*").eq("token", token).maybeSingle();
+      setContract(data); setSigned(data?.statut === "signe");
+      setLoading(false);
+    })();
   }, [token]);
 
   const sign = async () => {
