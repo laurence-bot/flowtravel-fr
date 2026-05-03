@@ -142,16 +142,20 @@ export const chooseFlightOption = createServerFn({ method: "POST" })
   });
 
 /** Le client accepte le devis. */
+/** Le client valide le devis (acceptation), sans déclaration de paiement. */
 export const acceptPublicQuote = createServerFn({ method: "POST" })
   .inputValidator((d: { token: string }) => z.object({ token: z.string().min(20).max(100) }).parse(d))
   .handler(async ({ data }) => {
     const { data: link } = await supabaseAdmin
       .from("quote_public_links")
-      .select("cotation_id")
+      .select("cotation_id, accepted_at")
       .eq("token", data.token)
       .gt("expires_at", new Date().toISOString())
       .maybeSingle();
     if (!link) return { ok: false as const, error: "Lien invalide" };
+
+    // Idempotent : on ne re-notifie pas si déjà accepté
+    if (link.accepted_at) return { ok: true as const, alreadyAccepted: true };
 
     const { error } = await supabaseAdmin
       .from("quote_public_links")
@@ -159,7 +163,67 @@ export const acceptPublicQuote = createServerFn({ method: "POST" })
       .eq("token", data.token);
     if (error) return { ok: false as const, error: error.message };
 
-    // Notification agent : "acompte déclaré payé par le client"
+    // Notification agent : "devis validé par le client"
+    try {
+      const { data: cot } = await supabaseAdmin
+        .from("cotations")
+        .select("id, user_id, agent_id, titre, dossier_id, client_id")
+        .eq("id", link.cotation_id)
+        .maybeSingle();
+      if (cot) {
+        const { data: client } = cot.client_id
+          ? await supabaseAdmin.from("contacts").select("nom").eq("id", cot.client_id).maybeSingle()
+          : { data: null as any };
+        const { notifyAgent } = await import("./agent-notifications.server");
+        await notifyAgent({
+          ownerUserId: cot.user_id,
+          agentId: cot.agent_id,
+          type: "devis_valide",
+          titre: `Devis validé par le client — ${cot.titre}`,
+          message: client?.nom ? `${client.nom} a validé le devis et va procéder au paiement de l'acompte.` : "Le client a validé le devis.",
+          link: `/cotations/${cot.id}`,
+          dossierId: cot.dossier_id,
+          cotationId: cot.id,
+          emailEvent: {
+            eventLabel: "Devis validé par le client",
+            clientNom: client?.nom,
+            titreDossier: cot.titre,
+            details: "Le client va procéder au paiement de l'acompte. Vous serez notifié dès qu'il l'aura déclaré.",
+            ctaLabel: "Ouvrir la cotation",
+          },
+        });
+      }
+    } catch (e) {
+      console.warn("notify devis_valide failed", e);
+    }
+
+    return { ok: true as const };
+  });
+
+/** Le client déclare avoir effectué le paiement de l'acompte. */
+export const declarePaymentDone = createServerFn({ method: "POST" })
+  .inputValidator((d: { token: string; method?: string }) =>
+    z.object({
+      token: z.string().min(20).max(100),
+      method: z.string().max(50).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { data: link } = await supabaseAdmin
+      .from("quote_public_links")
+      .select("cotation_id, payment_declared_at")
+      .eq("token", data.token)
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
+    if (!link) return { ok: false as const, error: "Lien invalide" };
+    if (link.payment_declared_at) return { ok: true as const, alreadyDone: true };
+
+    const { error } = await supabaseAdmin
+      .from("quote_public_links")
+      .update({ payment_declared_at: new Date().toISOString() })
+      .eq("token", data.token);
+    if (error) return { ok: false as const, error: error.message };
+
     try {
       const { data: cot } = await supabaseAdmin
         .from("cotations")
@@ -176,7 +240,9 @@ export const acceptPublicQuote = createServerFn({ method: "POST" })
           agentId: cot.agent_id,
           type: "acompte_paye",
           titre: `Acompte déclaré payé — ${cot.titre}`,
-          message: client?.nom ? `Le client ${client.nom} a confirmé le paiement de l'acompte.` : "Le client a confirmé le paiement de l'acompte.",
+          message: client?.nom
+            ? `${client.nom} a confirmé avoir effectué le paiement${data.method ? ` (${data.method})` : ""}.`
+            : "Le client a confirmé le paiement de l'acompte.",
           link: cot.dossier_id ? `/dossiers/${cot.dossier_id}` : `/cotations/${cot.id}`,
           dossierId: cot.dossier_id,
           cotationId: cot.id,
@@ -184,7 +250,7 @@ export const acceptPublicQuote = createServerFn({ method: "POST" })
             eventLabel: "Acompte déclaré payé",
             clientNom: client?.nom,
             titreDossier: cot.titre,
-            details: "Vérifiez la réception sur votre compte bancaire puis envoyez le bulletin d'inscription.",
+            details: `Le client a déclaré avoir payé${data.method ? ` (${data.method})` : ""}. Vérifiez la réception puis envoyez le bulletin d'inscription.`,
             ctaLabel: cot.dossier_id ? "Ouvrir le dossier" : "Ouvrir la cotation",
           },
         });
