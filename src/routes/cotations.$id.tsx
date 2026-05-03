@@ -637,7 +637,7 @@ function CotationDetailPage() {
                 {formatEUR(acompteInfo.acompte)}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                = {formatEUR(acompteInfo.totalFournisseurs)} fournisseurs
+                = {formatEUR(acompteInfo.acomptesFournisseurs)} acomptes fournisseurs
                 {acompteInfo.partMarge > 0 && ` + ${formatEUR(acompteInfo.partMarge)} (50% de la marge)`}
               </div>
               {acompteInfo.margeNegative && (
