@@ -71,7 +71,6 @@ const navMonEspace: NavItem[] = [
 
 // Section 2 : Gestion de l'agence
 const navAgenceTop: NavItem[] = [
-  { to: "/app", label: "Tableau de bord", icon: LayoutDashboard },
   { to: "/pilotage", label: "Pilotage", icon: Compass },
 ];
 
