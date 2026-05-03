@@ -99,14 +99,11 @@ function PublicQuotePage() {
     return /hôtel|hotel|lodge|camp|riad|resort|h[eé]bergement|villa|maison/.test(p);
   });
 
+  const navigate = useNavigate();
   const handleAccept = async () => {
-    setSubmitting(true);
-    const r = await acceptPublicQuote({ data: { token: params.token } });
-    setSubmitting(false);
-    if (r.ok) {
-      setAccepted(true);
-      toast.success("Merci ! Votre conseiller a été prévenu.");
-    } else toast.error(r.error || "Erreur");
+    // Le client est redirigé vers la page paiement de l'agence.
+    // L'acceptation effective est enregistrée à la confirmation sur /paiement/$token.
+    navigate({ to: "/paiement/$token", params: { token: params.token } });
   };
 
   const handleCallback = async () => {
