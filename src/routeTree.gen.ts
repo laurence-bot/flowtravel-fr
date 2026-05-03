@@ -62,6 +62,7 @@ import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
 import { Route as CarnetTokenRouteImport } from './routes/carnet.$token'
 import { Route as BulletinTokenRouteImport } from './routes/bulletin.$token'
 import { Route as OpsEquipeIndexRouteImport } from './routes/ops.equipe.index'
+import { Route as OpsEquipeParametresRouteImport } from './routes/ops.equipe.parametres'
 import { Route as OpsEquipeIdRouteImport } from './routes/ops.equipe.$id'
 import { Route as DemoVTokenRouteImport } from './routes/demo.v.$token'
 import { Route as DemoRdvTokenRouteImport } from './routes/demo.rdv.$token'
@@ -334,6 +335,11 @@ const OpsEquipeIndexRoute = OpsEquipeIndexRouteImport.update({
   path: '/equipe/',
   getParentRoute: () => OpsRoute,
 } as any)
+const OpsEquipeParametresRoute = OpsEquipeParametresRouteImport.update({
+  id: '/equipe/parametres',
+  path: '/equipe/parametres',
+  getParentRoute: () => OpsRoute,
+} as any)
 const OpsEquipeIdRoute = OpsEquipeIdRouteImport.update({
   id: '/equipe/$id',
   path: '/equipe/$id',
@@ -422,6 +428,7 @@ export interface FileRoutesByFullPath {
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
   '/ops/equipe/$id': typeof OpsEquipeIdRoute
+  '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
   '/ops/equipe/': typeof OpsEquipeIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -482,6 +489,7 @@ export interface FileRoutesByTo {
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
   '/ops/equipe/$id': typeof OpsEquipeIdRoute
+  '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
   '/ops/equipe': typeof OpsEquipeIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -544,6 +552,7 @@ export interface FileRoutesById {
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
   '/ops/equipe/$id': typeof OpsEquipeIdRoute
+  '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
   '/ops/equipe/': typeof OpsEquipeIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -607,6 +616,7 @@ export interface FileRouteTypes {
     | '/demo/rdv/$token'
     | '/demo/v/$token'
     | '/ops/equipe/$id'
+    | '/ops/equipe/parametres'
     | '/ops/equipe/'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -667,6 +677,7 @@ export interface FileRouteTypes {
     | '/demo/rdv/$token'
     | '/demo/v/$token'
     | '/ops/equipe/$id'
+    | '/ops/equipe/parametres'
     | '/ops/equipe'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -728,6 +739,7 @@ export interface FileRouteTypes {
     | '/demo/rdv/$token'
     | '/demo/v/$token'
     | '/ops/equipe/$id'
+    | '/ops/equipe/parametres'
     | '/ops/equipe/'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1155,6 +1167,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpsEquipeIndexRouteImport
       parentRoute: typeof OpsRoute
     }
+    '/ops/equipe/parametres': {
+      id: '/ops/equipe/parametres'
+      path: '/equipe/parametres'
+      fullPath: '/ops/equipe/parametres'
+      preLoaderRoute: typeof OpsEquipeParametresRouteImport
+      parentRoute: typeof OpsRoute
+    }
     '/ops/equipe/$id': {
       id: '/ops/equipe/$id'
       path: '/equipe/$id'
@@ -1268,6 +1287,7 @@ interface OpsRouteChildren {
   OpsMessagesRoute: typeof OpsMessagesRoute
   OpsIndexRoute: typeof OpsIndexRoute
   OpsEquipeIdRoute: typeof OpsEquipeIdRoute
+  OpsEquipeParametresRoute: typeof OpsEquipeParametresRoute
   OpsEquipeIndexRoute: typeof OpsEquipeIndexRoute
 }
 
@@ -1279,6 +1299,7 @@ const OpsRouteChildren: OpsRouteChildren = {
   OpsMessagesRoute: OpsMessagesRoute,
   OpsIndexRoute: OpsIndexRoute,
   OpsEquipeIdRoute: OpsEquipeIdRoute,
+  OpsEquipeParametresRoute: OpsEquipeParametresRoute,
   OpsEquipeIndexRoute: OpsEquipeIndexRoute,
 }
 
