@@ -1221,26 +1221,27 @@ function CotationDetailPage() {
               </Field>
             </div>
 
-            <InlineFxCoveragePicker
-              devise={ligneForm.devise}
-              montantDevise={
-                Number(ligneForm.montant_devise) *
-                Number(ligneForm.quantite || 1) *
-                (ligneForm.mode_tarifaire === "par_personne"
-                  ? Math.max(1, cot.nombre_pax)
-                  : 1)
-              }
-              selectedCoverageId={ligneForm.couverture_id || null}
-              onPick={({ coverage, taux }) =>
-                setLigneForm({
-                  ...ligneForm,
-                  couverture_id: coverage.id,
-                  source_fx: "couverture",
-                  taux_change_vers_eur: String(taux),
-                })
-              }
-            />
-
+            {fxEnabled && (
+              <InlineFxCoveragePicker
+                devise={ligneForm.devise}
+                montantDevise={
+                  Number(ligneForm.montant_devise) *
+                  Number(ligneForm.quantite || 1) *
+                  (ligneForm.mode_tarifaire === "par_personne"
+                    ? Math.max(1, cot.nombre_pax)
+                    : 1)
+                }
+                selectedCoverageId={ligneForm.couverture_id || null}
+                onPick={({ coverage, taux }) =>
+                  setLigneForm({
+                    ...ligneForm,
+                    couverture_id: coverage.id,
+                    source_fx: "couverture",
+                    taux_change_vers_eur: String(taux),
+                  })
+                }
+              />
+            )}
             <div className="border-t pt-3">
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">
                 Échéances (% du montant)
