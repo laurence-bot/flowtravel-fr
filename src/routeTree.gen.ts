@@ -54,6 +54,10 @@ import { Route as OpsErrorsRouteImport } from './routes/ops.errors'
 import { Route as OpsDemosRouteImport } from './routes/ops.demos'
 import { Route as OpsDashboardRouteImport } from './routes/ops.dashboard'
 import { Route as OpsAgencesRouteImport } from './routes/ops.agences'
+import { Route as MonEspacePointageRouteImport } from './routes/mon-espace.pointage'
+import { Route as MonEspaceEvaluationRouteImport } from './routes/mon-espace.evaluation'
+import { Route as MonEspaceContratsRouteImport } from './routes/mon-espace.contrats'
+import { Route as MonEspaceCongesRouteImport } from './routes/mon-espace.conges'
 import { Route as MariageTokenRouteImport } from './routes/mariage.$token'
 import { Route as FacturesIdRouteImport } from './routes/factures.$id'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
@@ -64,7 +68,12 @@ import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
 import { Route as CarnetTokenRouteImport } from './routes/carnet.$token'
 import { Route as BulletinTokenRouteImport } from './routes/bulletin.$token'
 import { Route as OpsEquipeIndexRouteImport } from './routes/ops.equipe.index'
+import { Route as OpsEquipePointageRouteImport } from './routes/ops.equipe.pointage'
+import { Route as OpsEquipePlanningRouteImport } from './routes/ops.equipe.planning'
 import { Route as OpsEquipeParametresRouteImport } from './routes/ops.equipe.parametres'
+import { Route as OpsEquipeEvaluationsRouteImport } from './routes/ops.equipe.evaluations'
+import { Route as OpsEquipeContratsRouteImport } from './routes/ops.equipe.contrats'
+import { Route as OpsEquipeAbsencesRouteImport } from './routes/ops.equipe.absences'
 import { Route as OpsEquipeIdRouteImport } from './routes/ops.equipe.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as DemoVTokenRouteImport } from './routes/demo.v.$token'
@@ -301,6 +310,26 @@ const OpsAgencesRoute = OpsAgencesRouteImport.update({
   path: '/agences',
   getParentRoute: () => OpsRoute,
 } as any)
+const MonEspacePointageRoute = MonEspacePointageRouteImport.update({
+  id: '/mon-espace/pointage',
+  path: '/mon-espace/pointage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonEspaceEvaluationRoute = MonEspaceEvaluationRouteImport.update({
+  id: '/mon-espace/evaluation',
+  path: '/mon-espace/evaluation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonEspaceContratsRoute = MonEspaceContratsRouteImport.update({
+  id: '/mon-espace/contrats',
+  path: '/mon-espace/contrats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonEspaceCongesRoute = MonEspaceCongesRouteImport.update({
+  id: '/mon-espace/conges',
+  path: '/mon-espace/conges',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MariageTokenRoute = MariageTokenRouteImport.update({
   id: '/mariage/$token',
   path: '/mariage/$token',
@@ -351,9 +380,34 @@ const OpsEquipeIndexRoute = OpsEquipeIndexRouteImport.update({
   path: '/equipe/',
   getParentRoute: () => OpsRoute,
 } as any)
+const OpsEquipePointageRoute = OpsEquipePointageRouteImport.update({
+  id: '/equipe/pointage',
+  path: '/equipe/pointage',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsEquipePlanningRoute = OpsEquipePlanningRouteImport.update({
+  id: '/equipe/planning',
+  path: '/equipe/planning',
+  getParentRoute: () => OpsRoute,
+} as any)
 const OpsEquipeParametresRoute = OpsEquipeParametresRouteImport.update({
   id: '/equipe/parametres',
   path: '/equipe/parametres',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsEquipeEvaluationsRoute = OpsEquipeEvaluationsRouteImport.update({
+  id: '/equipe/evaluations',
+  path: '/equipe/evaluations',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsEquipeContratsRoute = OpsEquipeContratsRouteImport.update({
+  id: '/equipe/contrats',
+  path: '/equipe/contrats',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsEquipeAbsencesRoute = OpsEquipeAbsencesRouteImport.update({
+  id: '/equipe/absences',
+  path: '/equipe/absences',
   getParentRoute: () => OpsRoute,
 } as any)
 const OpsEquipeIdRoute = OpsEquipeIdRouteImport.update({
@@ -459,6 +513,10 @@ export interface FileRoutesByFullPath {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/factures/$id': typeof FacturesIdRoute
   '/mariage/$token': typeof MariageTokenRoute
+  '/mon-espace/conges': typeof MonEspaceCongesRoute
+  '/mon-espace/contrats': typeof MonEspaceContratsRoute
+  '/mon-espace/evaluation': typeof MonEspaceEvaluationRoute
+  '/mon-espace/pointage': typeof MonEspacePointageRoute
   '/ops/agences': typeof OpsAgencesRoute
   '/ops/dashboard': typeof OpsDashboardRoute
   '/ops/demos': typeof OpsDemosRoute
@@ -470,7 +528,12 @@ export interface FileRoutesByFullPath {
   '/demo/v/$token': typeof DemoVTokenRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ops/equipe/$id': typeof OpsEquipeIdRoute
+  '/ops/equipe/absences': typeof OpsEquipeAbsencesRoute
+  '/ops/equipe/contrats': typeof OpsEquipeContratsRoute
+  '/ops/equipe/evaluations': typeof OpsEquipeEvaluationsRoute
   '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
+  '/ops/equipe/planning': typeof OpsEquipePlanningRoute
+  '/ops/equipe/pointage': typeof OpsEquipePointageRoute
   '/ops/equipe/': typeof OpsEquipeIndexRoute
   '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -526,6 +589,10 @@ export interface FileRoutesByTo {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/factures/$id': typeof FacturesIdRoute
   '/mariage/$token': typeof MariageTokenRoute
+  '/mon-espace/conges': typeof MonEspaceCongesRoute
+  '/mon-espace/contrats': typeof MonEspaceContratsRoute
+  '/mon-espace/evaluation': typeof MonEspaceEvaluationRoute
+  '/mon-espace/pointage': typeof MonEspacePointageRoute
   '/ops/agences': typeof OpsAgencesRoute
   '/ops/dashboard': typeof OpsDashboardRoute
   '/ops/demos': typeof OpsDemosRoute
@@ -537,7 +604,12 @@ export interface FileRoutesByTo {
   '/demo/v/$token': typeof DemoVTokenRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ops/equipe/$id': typeof OpsEquipeIdRoute
+  '/ops/equipe/absences': typeof OpsEquipeAbsencesRoute
+  '/ops/equipe/contrats': typeof OpsEquipeContratsRoute
+  '/ops/equipe/evaluations': typeof OpsEquipeEvaluationsRoute
   '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
+  '/ops/equipe/planning': typeof OpsEquipePlanningRoute
+  '/ops/equipe/pointage': typeof OpsEquipePointageRoute
   '/ops/equipe': typeof OpsEquipeIndexRoute
   '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -595,6 +667,10 @@ export interface FileRoutesById {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/factures/$id': typeof FacturesIdRoute
   '/mariage/$token': typeof MariageTokenRoute
+  '/mon-espace/conges': typeof MonEspaceCongesRoute
+  '/mon-espace/contrats': typeof MonEspaceContratsRoute
+  '/mon-espace/evaluation': typeof MonEspaceEvaluationRoute
+  '/mon-espace/pointage': typeof MonEspacePointageRoute
   '/ops/agences': typeof OpsAgencesRoute
   '/ops/dashboard': typeof OpsDashboardRoute
   '/ops/demos': typeof OpsDemosRoute
@@ -606,7 +682,12 @@ export interface FileRoutesById {
   '/demo/v/$token': typeof DemoVTokenRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ops/equipe/$id': typeof OpsEquipeIdRoute
+  '/ops/equipe/absences': typeof OpsEquipeAbsencesRoute
+  '/ops/equipe/contrats': typeof OpsEquipeContratsRoute
+  '/ops/equipe/evaluations': typeof OpsEquipeEvaluationsRoute
   '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
+  '/ops/equipe/planning': typeof OpsEquipePlanningRoute
+  '/ops/equipe/pointage': typeof OpsEquipePointageRoute
   '/ops/equipe/': typeof OpsEquipeIndexRoute
   '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -665,6 +746,10 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/factures/$id'
     | '/mariage/$token'
+    | '/mon-espace/conges'
+    | '/mon-espace/contrats'
+    | '/mon-espace/evaluation'
+    | '/mon-espace/pointage'
     | '/ops/agences'
     | '/ops/dashboard'
     | '/ops/demos'
@@ -676,7 +761,12 @@ export interface FileRouteTypes {
     | '/demo/v/$token'
     | '/lovable/email/suppression'
     | '/ops/equipe/$id'
+    | '/ops/equipe/absences'
+    | '/ops/equipe/contrats'
+    | '/ops/equipe/evaluations'
     | '/ops/equipe/parametres'
+    | '/ops/equipe/planning'
+    | '/ops/equipe/pointage'
     | '/ops/equipe/'
     | '/api/public/hooks/payroll-summary'
     | '/lovable/email/auth/preview'
@@ -732,6 +822,10 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/factures/$id'
     | '/mariage/$token'
+    | '/mon-espace/conges'
+    | '/mon-espace/contrats'
+    | '/mon-espace/evaluation'
+    | '/mon-espace/pointage'
     | '/ops/agences'
     | '/ops/dashboard'
     | '/ops/demos'
@@ -743,7 +837,12 @@ export interface FileRouteTypes {
     | '/demo/v/$token'
     | '/lovable/email/suppression'
     | '/ops/equipe/$id'
+    | '/ops/equipe/absences'
+    | '/ops/equipe/contrats'
+    | '/ops/equipe/evaluations'
     | '/ops/equipe/parametres'
+    | '/ops/equipe/planning'
+    | '/ops/equipe/pointage'
     | '/ops/equipe'
     | '/api/public/hooks/payroll-summary'
     | '/lovable/email/auth/preview'
@@ -800,6 +899,10 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/factures/$id'
     | '/mariage/$token'
+    | '/mon-espace/conges'
+    | '/mon-espace/contrats'
+    | '/mon-espace/evaluation'
+    | '/mon-espace/pointage'
     | '/ops/agences'
     | '/ops/dashboard'
     | '/ops/demos'
@@ -811,7 +914,12 @@ export interface FileRouteTypes {
     | '/demo/v/$token'
     | '/lovable/email/suppression'
     | '/ops/equipe/$id'
+    | '/ops/equipe/absences'
+    | '/ops/equipe/contrats'
+    | '/ops/equipe/evaluations'
     | '/ops/equipe/parametres'
+    | '/ops/equipe/planning'
+    | '/ops/equipe/pointage'
     | '/ops/equipe/'
     | '/api/public/hooks/payroll-summary'
     | '/lovable/email/auth/preview'
@@ -865,6 +973,10 @@ export interface RootRouteChildren {
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   FacturesIdRoute: typeof FacturesIdRoute
   MariageTokenRoute: typeof MariageTokenRoute
+  MonEspaceCongesRoute: typeof MonEspaceCongesRoute
+  MonEspaceContratsRoute: typeof MonEspaceContratsRoute
+  MonEspaceEvaluationRoute: typeof MonEspaceEvaluationRoute
+  MonEspacePointageRoute: typeof MonEspacePointageRoute
   PTokenRoute: typeof PTokenRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksPayrollSummaryRoute: typeof ApiPublicHooksPayrollSummaryRoute
@@ -1192,6 +1304,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpsAgencesRouteImport
       parentRoute: typeof OpsRoute
     }
+    '/mon-espace/pointage': {
+      id: '/mon-espace/pointage'
+      path: '/mon-espace/pointage'
+      fullPath: '/mon-espace/pointage'
+      preLoaderRoute: typeof MonEspacePointageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mon-espace/evaluation': {
+      id: '/mon-espace/evaluation'
+      path: '/mon-espace/evaluation'
+      fullPath: '/mon-espace/evaluation'
+      preLoaderRoute: typeof MonEspaceEvaluationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mon-espace/contrats': {
+      id: '/mon-espace/contrats'
+      path: '/mon-espace/contrats'
+      fullPath: '/mon-espace/contrats'
+      preLoaderRoute: typeof MonEspaceContratsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mon-espace/conges': {
+      id: '/mon-espace/conges'
+      path: '/mon-espace/conges'
+      fullPath: '/mon-espace/conges'
+      preLoaderRoute: typeof MonEspaceCongesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mariage/$token': {
       id: '/mariage/$token'
       path: '/mariage/$token'
@@ -1262,11 +1402,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpsEquipeIndexRouteImport
       parentRoute: typeof OpsRoute
     }
+    '/ops/equipe/pointage': {
+      id: '/ops/equipe/pointage'
+      path: '/equipe/pointage'
+      fullPath: '/ops/equipe/pointage'
+      preLoaderRoute: typeof OpsEquipePointageRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/equipe/planning': {
+      id: '/ops/equipe/planning'
+      path: '/equipe/planning'
+      fullPath: '/ops/equipe/planning'
+      preLoaderRoute: typeof OpsEquipePlanningRouteImport
+      parentRoute: typeof OpsRoute
+    }
     '/ops/equipe/parametres': {
       id: '/ops/equipe/parametres'
       path: '/equipe/parametres'
       fullPath: '/ops/equipe/parametres'
       preLoaderRoute: typeof OpsEquipeParametresRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/equipe/evaluations': {
+      id: '/ops/equipe/evaluations'
+      path: '/equipe/evaluations'
+      fullPath: '/ops/equipe/evaluations'
+      preLoaderRoute: typeof OpsEquipeEvaluationsRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/equipe/contrats': {
+      id: '/ops/equipe/contrats'
+      path: '/equipe/contrats'
+      fullPath: '/ops/equipe/contrats'
+      preLoaderRoute: typeof OpsEquipeContratsRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/equipe/absences': {
+      id: '/ops/equipe/absences'
+      path: '/equipe/absences'
+      fullPath: '/ops/equipe/absences'
+      preLoaderRoute: typeof OpsEquipeAbsencesRouteImport
       parentRoute: typeof OpsRoute
     }
     '/ops/equipe/$id': {
@@ -1410,7 +1585,12 @@ interface OpsRouteChildren {
   OpsMessagesRoute: typeof OpsMessagesRoute
   OpsIndexRoute: typeof OpsIndexRoute
   OpsEquipeIdRoute: typeof OpsEquipeIdRoute
+  OpsEquipeAbsencesRoute: typeof OpsEquipeAbsencesRoute
+  OpsEquipeContratsRoute: typeof OpsEquipeContratsRoute
+  OpsEquipeEvaluationsRoute: typeof OpsEquipeEvaluationsRoute
   OpsEquipeParametresRoute: typeof OpsEquipeParametresRoute
+  OpsEquipePlanningRoute: typeof OpsEquipePlanningRoute
+  OpsEquipePointageRoute: typeof OpsEquipePointageRoute
   OpsEquipeIndexRoute: typeof OpsEquipeIndexRoute
 }
 
@@ -1422,7 +1602,12 @@ const OpsRouteChildren: OpsRouteChildren = {
   OpsMessagesRoute: OpsMessagesRoute,
   OpsIndexRoute: OpsIndexRoute,
   OpsEquipeIdRoute: OpsEquipeIdRoute,
+  OpsEquipeAbsencesRoute: OpsEquipeAbsencesRoute,
+  OpsEquipeContratsRoute: OpsEquipeContratsRoute,
+  OpsEquipeEvaluationsRoute: OpsEquipeEvaluationsRoute,
   OpsEquipeParametresRoute: OpsEquipeParametresRoute,
+  OpsEquipePlanningRoute: OpsEquipePlanningRoute,
+  OpsEquipePointageRoute: OpsEquipePointageRoute,
   OpsEquipeIndexRoute: OpsEquipeIndexRoute,
 }
 
@@ -1472,6 +1657,10 @@ const rootRouteChildren: RootRouteChildren = {
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   FacturesIdRoute: FacturesIdRoute,
   MariageTokenRoute: MariageTokenRoute,
+  MonEspaceCongesRoute: MonEspaceCongesRoute,
+  MonEspaceContratsRoute: MonEspaceContratsRoute,
+  MonEspaceEvaluationRoute: MonEspaceEvaluationRoute,
+  MonEspacePointageRoute: MonEspacePointageRoute,
   PTokenRoute: PTokenRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksPayrollSummaryRoute: ApiPublicHooksPayrollSummaryRoute,

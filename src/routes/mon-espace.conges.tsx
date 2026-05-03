@@ -1,0 +1,110 @@
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { AppLayout } from "@/components/app-layout";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Plus } from "lucide-react";
+import { getEmployeeByUserId, listAbsences, createAbsence, ABSENCE_TYPE_LABELS, ABSENCE_STATUT_LABELS, type Employee, type Absence, type AbsenceType, computeWorkingDays } from "@/lib/hr";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/mon-espace/conges")({
+  beforeLoad: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw redirect({ to: "/auth" });
+  },
+  component: () => <AppLayout><CongesPage /></AppLayout>,
+});
+
+function CongesPage() {
+  const [emp, setEmp] = useState<Employee | null>(null);
+  const [items, setItems] = useState<Absence[]>([]);
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ type: "conge_paye" as AbsenceType, date_debut: "", date_fin: "", motif: "" });
+
+  const load = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const e = await getEmployeeByUserId(user.id);
+    setEmp(e);
+    if (e) setItems(await listAbsences(e.id));
+  };
+  useEffect(() => { load().catch(err => toast.error(err.message)); }, []);
+
+  const submit = async () => {
+    if (!emp || !form.date_debut || !form.date_fin) return;
+    try { await createAbsence({ employee_id: emp.id, ...form }); setOpen(false); setForm({ type: "conge_paye", date_debut: "", date_fin: "", motif: "" }); load(); toast.success("Demande envoyée"); }
+    catch (e: any) { toast.error(e.message); }
+  };
+
+  if (!emp) return <Card className="p-10 text-center">Aucune fiche employé liée à votre compte.</Card>;
+
+  // soldes simples
+  const taken = (t: AbsenceType) => items.filter(a => a.type === t && (a.statut === "approuvee" || a.statut === "signee")).reduce((s, a) => s + Number(a.nb_jours ?? 0), 0);
+  const cpRest = (emp.jours_conges_par_an ?? 0) - taken("conge_paye");
+  const rttRest = (emp.jours_rtt_par_an ?? 0) - taken("rtt");
+
+  return (
+    <div className="space-y-6 max-w-4xl">
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="font-display text-3xl">Mes congés</h1>
+          <p className="text-muted-foreground">Demandes & soldes</p>
+        </div>
+        <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />Demander</Button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="p-4"><div className="text-xs uppercase text-muted-foreground">Congés payés restants</div><div className="text-3xl font-display">{cpRest}</div></Card>
+        <Card className="p-4"><div className="text-xs uppercase text-muted-foreground">RTT restants</div><div className="text-3xl font-display">{rttRest}</div></Card>
+      </div>
+
+      <Card className="p-0 overflow-hidden">
+        {items.length === 0 ? <div className="p-10 text-center text-muted-foreground">Aucune demande</div> :
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+              <tr><th className="text-left px-4 py-3">Type</th><th className="text-left px-4 py-3">Du</th><th className="text-left px-4 py-3">Au</th><th className="text-left px-4 py-3">Jours</th><th className="text-left px-4 py-3">Statut</th></tr>
+            </thead>
+            <tbody>{items.map(a => (
+              <tr key={a.id} className="border-t">
+                <td className="px-4 py-2">{ABSENCE_TYPE_LABELS[a.type]}</td>
+                <td className="px-4 py-2">{a.date_debut}</td>
+                <td className="px-4 py-2">{a.date_fin}</td>
+                <td className="px-4 py-2">{a.nb_jours ?? "—"}</td>
+                <td className="px-4 py-2"><span className="text-xs px-2 py-0.5 rounded-full bg-muted">{ABSENCE_STATUT_LABELS[a.statut]}</span></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        }
+      </Card>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Nouvelle demande</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div><Label>Type</Label>
+              <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v as AbsenceType })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{Object.entries(ABSENCE_TYPE_LABELS).map(([k,v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Du</Label><Input type="date" value={form.date_debut} onChange={(e) => setForm({ ...form, date_debut: e.target.value })} /></div>
+              <div><Label>Au</Label><Input type="date" value={form.date_fin} onChange={(e) => setForm({ ...form, date_fin: e.target.value })} /></div>
+            </div>
+            {form.date_debut && form.date_fin && <p className="text-xs text-muted-foreground">{computeWorkingDays(form.date_debut, form.date_fin)} jours ouvrés</p>}
+            <div><Label>Motif (optionnel)</Label><Input value={form.motif} onChange={(e) => setForm({ ...form, motif: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
+            <Button onClick={submit}>Envoyer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
