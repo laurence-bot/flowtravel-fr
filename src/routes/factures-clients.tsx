@@ -83,6 +83,7 @@ function FacturesClientsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>N°</TableHead>
+              <TableHead>Type</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Client</TableHead>
               <TableHead className="text-right">HT</TableHead>
@@ -93,13 +94,16 @@ function FacturesClientsPage() {
           </TableHeader>
           <TableBody>
             {list.length === 0 && (
-              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                 <Receipt className="w-8 h-8 mx-auto mb-2 opacity-50" />Aucune facture pour l'instant
               </TableCell></TableRow>
             )}
             {list.map((f) => (
-              <TableRow key={f.id}>
-                <TableCell className="font-mono text-sm">{f.numero}</TableCell>
+              <TableRow key={f.id} className="hover:bg-muted/30">
+                <TableCell className="font-mono text-sm">
+                  <Link to="/factures-clients/$id" params={{ id: f.id }} className="hover:underline">{f.numero}</Link>
+                </TableCell>
+                <TableCell><Badge variant="outline">{TYPE_LABEL[f.type_facture] ?? f.type_facture}</Badge></TableCell>
                 <TableCell>{formatDate(f.date_emission)}</TableCell>
                 <TableCell>{clientLabel(f.client_id)}</TableCell>
                 <TableCell className="text-right">{formatEUR(f.montant_ht)}</TableCell>
