@@ -18,10 +18,14 @@ import { ROLE_LABELS, ROLE_DESCRIPTIONS, type AppRole, isAdmin } from "@/lib/per
 import { logAudit } from "@/lib/audit";
 import { RequireAuth } from "@/components/require-auth";
 import { toast } from "sonner";
-import { ShieldAlert, Users, UserPlus } from "lucide-react";
+import { ShieldAlert, Users, UserPlus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { inviteUser } from "@/server/users.functions";
+import { inviteUser, deleteUser } from "@/server/users.functions";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 
 export const Route = createFileRoute("/utilisateurs")({
@@ -159,6 +163,29 @@ function UtilisateursPage() {
     setSavingId(null);
   };
 
+  const removeUser = async (p: ProfileRow) => {
+    if (p.user_id === user?.id) {
+      toast.error("Vous ne pouvez pas supprimer votre propre compte.");
+      return;
+    }
+    setSavingId(p.user_id);
+    try {
+      await deleteUser({ data: { user_id: p.user_id } });
+      setProfiles(profiles.filter((x) => x.user_id !== p.user_id));
+      await logAudit({
+        userId: user?.id,
+        entity: "compte",
+        action: "delete",
+        entityId: p.user_id,
+        description: `Utilisateur supprimé : ${p.email}`,
+      });
+      toast.success("Utilisateur supprimé");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Échec de la suppression");
+    } finally {
+      setSavingId(null);
+    }
+  };
   return (
     <div>
       <PageHeader
@@ -290,6 +317,38 @@ function UtilisateursPage() {
                           onCheckedChange={() => toggleActif(p)}
                           disabled={savingId === p.user_id || isMe}
                         />
+                        {!isMe && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                disabled={savingId === p.user_id}
+                                aria-label="Supprimer l'utilisateur"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Supprimer cet utilisateur ?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Cette action supprime définitivement le compte <strong>{p.email}</strong> (profil, rôles et accès).
+                                  Les données métier qui lui appartiennent ne seront pas supprimées.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => removeUser(p)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Supprimer
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
