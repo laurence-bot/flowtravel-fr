@@ -6,6 +6,10 @@ import { useRole } from "@/hooks/use-role";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -14,9 +18,11 @@ import { ROLE_LABELS, ROLE_DESCRIPTIONS, type AppRole, isAdmin } from "@/lib/per
 import { logAudit } from "@/lib/audit";
 import { RequireAuth } from "@/components/require-auth";
 import { toast } from "sonner";
-import { ShieldAlert, Users } from "lucide-react";
+import { ShieldAlert, Users, UserPlus } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { inviteUser } from "@/server/users.functions";
+
 
 export const Route = createFileRoute("/utilisateurs")({
   component: UtilisateursRoute,
@@ -53,6 +59,12 @@ function UtilisateursPage() {
   const [roles, setRoles] = useState<Record<string, AppRole>>({});
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteName, setInviteName] = useState("");
+  const [inviteRole, setInviteRole] = useState<AppRole>("agent");
+  const [inviting, setInviting] = useState(false);
+
 
   const refresh = async () => {
     setLoading(true);
@@ -152,7 +164,67 @@ function UtilisateursPage() {
       <PageHeader
         title="Utilisateurs"
         description="Gérez les accès, rôles et activation des membres de votre équipe"
+        action={
+          <Button onClick={() => setInviteOpen(true)} className="gap-2">
+            <UserPlus className="h-4 w-4" /> Ajouter un utilisateur
+          </Button>
+        }
       />
+
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajouter un utilisateur</DialogTitle>
+            <DialogDescription>
+              Un email d'invitation lui sera envoyé pour définir son mot de passe.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="inv-name">Nom complet</Label>
+              <Input id="inv-name" value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="Jean Dupont" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="inv-email">Email</Label>
+              <Input id="inv-email" type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="jean@agence.fr" />
+            </div>
+            <div className="space-y-2">
+              <Label>Rôle</Label>
+              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as AppRole)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(ROLE_LABELS) as AppRole[]).map((r) => (
+                    <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setInviteOpen(false)} disabled={inviting}>Annuler</Button>
+            <Button
+              disabled={inviting || !inviteEmail || !inviteName}
+              onClick={async () => {
+                setInviting(true);
+                try {
+                  await inviteUser({ data: { email: inviteEmail, full_name: inviteName, role: inviteRole } });
+                  toast.success("Invitation envoyée");
+                  setInviteOpen(false);
+                  setInviteEmail(""); setInviteName(""); setInviteRole("agent");
+                  await refresh();
+                } catch (e: any) {
+                  toast.error(e?.message ?? "Échec de l'invitation");
+                } finally {
+                  setInviting(false);
+                }
+              }}
+            >
+              {inviting ? "Envoi…" : "Envoyer l'invitation"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       <Card className="p-5 mb-6">
         <h3 className="font-display text-base mb-3">Rôles disponibles</h3>
