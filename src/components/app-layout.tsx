@@ -397,9 +397,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <Menu className="h-5 w-5" />
           </button>
           <Logo variant="dark" />
-          <div className="w-5" />
+          <NotificationsBell />
         </div>
-        <div className="flex-1 px-5 py-8 md:px-10 md:py-10 max-w-[1400px] w-full mx-auto">
+        {/* Desktop top bar */}
+        <div className="hidden md:flex items-center justify-end px-10 pt-4">
+          <NotificationsBell />
+        </div>
+        <div className="flex-1 px-5 py-8 md:px-10 md:py-6 max-w-[1400px] w-full mx-auto">
           <ReadOnlyShield>{children}</ReadOnlyShield>
         </div>
       </main>
