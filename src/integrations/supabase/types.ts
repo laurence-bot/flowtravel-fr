@@ -3086,6 +3086,7 @@ export type Database = {
         Returns: boolean
       }
       is_agence_admin: { Args: { _agence_id: string }; Returns: boolean }
+      is_eu_country: { Args: { _pays: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       move_to_dlq: {
         Args: {
