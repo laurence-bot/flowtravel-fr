@@ -36,8 +36,9 @@ export function NotificationsBell() {
   useEffect(() => {
     if (!user) return;
     load();
+    const topic = `agent_notifs:${user.id}:${Math.random().toString(36).slice(2)}`;
     const channel = supabase
-      .channel(`agent_notifs:${user.id}`)
+      .channel(topic)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "agent_notifications", filter: `user_id=eq.${user.id}` },
