@@ -6,6 +6,10 @@ import { useRole } from "@/hooks/use-role";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -14,9 +18,11 @@ import { ROLE_LABELS, ROLE_DESCRIPTIONS, type AppRole, isAdmin } from "@/lib/per
 import { logAudit } from "@/lib/audit";
 import { RequireAuth } from "@/components/require-auth";
 import { toast } from "sonner";
-import { ShieldAlert, Users } from "lucide-react";
+import { ShieldAlert, Users, UserPlus } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { inviteUser } from "@/server/users.functions";
+
 
 export const Route = createFileRoute("/utilisateurs")({
   component: UtilisateursRoute,
