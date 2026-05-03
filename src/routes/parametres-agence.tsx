@@ -83,6 +83,7 @@ function ParametresAgencePage() {
         vat_number: settings.vat_number ?? "",
       });
       setLogoUrl(settings.logo_url);
+      setUtiliseCouverturesFx(!!settings.utilise_couvertures_fx);
     }
   }, [settings]);
 
