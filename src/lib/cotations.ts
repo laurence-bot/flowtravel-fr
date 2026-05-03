@@ -154,19 +154,26 @@ export function computeCotationFinance(cot: Cotation, lignes: CotationLigne[]) {
 
 /**
  * Acompte client à verser à la confirmation.
- * Règle métier agence de voyage :
- *   acompte = total_fournisseurs + (marge × 0.5)
- * Si la marge est négative (cotation déficitaire), on demande au moins
- * de quoi couvrir les fournisseurs (la part marge est ignorée).
- * Plafonné au prix de vente.
+ * Règle métier agence de voyage (zéro découvert) :
+ *   acompte = Σ (coût ligne EUR × pct_acompte_1 de la ligne) + 50 % marge brute
+ * On couvre exactement les acomptes fournisseurs réellement dûs à la résa,
+ * + la moitié de la marge sécurisée. Si la marge est négative, la part marge
+ * est ignorée. Plafonné au prix de vente.
  */
 export function computeAcompteClient(cot: Cotation, lignes: CotationLigne[]) {
   const fin = computeCotationFinance(cot, lignes);
+  const ligneOfCot = lignes.filter((l) => l.cotation_id === cot.id);
+  const acomptesFournisseurs = ligneOfCot.reduce((s, l) => {
+    const cout = ligneCoutEur(l, cot.nombre_pax);
+    const pct = Number(l.pct_acompte_1 || 0);
+    return s + cout * (pct / 100);
+  }, 0);
   const partMarge = Math.max(0, fin.margeBrute) * 0.5;
-  const acompte = Math.min(fin.prixVente, fin.coutTotal + partMarge);
+  const acompte = Math.min(fin.prixVente, acomptesFournisseurs + partMarge);
   const solde = Math.max(0, fin.prixVente - acompte);
   return {
     totalFournisseurs: fin.coutTotal,
+    acomptesFournisseurs,
     margeBrute: fin.margeBrute,
     partMarge,
     acompte,
