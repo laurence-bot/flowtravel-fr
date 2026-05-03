@@ -152,20 +152,26 @@ export function computeCotationFinance(cot: Cotation, lignes: CotationLigne[]) {
   };
 }
 
+/** Détecte si une ligne fournisseur correspond à un vol/billet d'avion. */
+export function isLigneVol(l: { prestation: string | null; nom_fournisseur?: string | null }): boolean {
+  const txt = `${l.prestation || ""} ${l.nom_fournisseur || ""}`.toLowerCase();
+  return /\b(vol|vols|avion|avions|billet|billets|flight|flights|airlines?|airways)\b/.test(txt);
+}
+
 /**
  * Acompte client à verser à la confirmation.
  * Règle métier agence de voyage (zéro découvert) :
- *   acompte = Σ (coût ligne EUR × pct_acompte_1 de la ligne) + 50 % marge brute
- * On couvre exactement les acomptes fournisseurs réellement dûs à la résa,
- * + la moitié de la marge sécurisée. Si la marge est négative, la part marge
- * est ignorée. Plafonné au prix de vente.
+ *   - Vols : 100 % du coût (billets payés cash à l'émission)
+ *   - Autres lignes : pct_acompte_1 de la ligne (typiquement 30 %)
+ *   - + 50 % marge brute (sécurisation marge)
+ * Si la marge est négative, la part marge est ignorée. Plafonné au prix de vente.
  */
 export function computeAcompteClient(cot: Cotation, lignes: CotationLigne[]) {
   const fin = computeCotationFinance(cot, lignes);
   const ligneOfCot = lignes.filter((l) => l.cotation_id === cot.id);
   const acomptesFournisseurs = ligneOfCot.reduce((s, l) => {
     const cout = ligneCoutEur(l, cot.nombre_pax);
-    const pct = Number(l.pct_acompte_1 || 0);
+    const pct = isLigneVol(l) ? 100 : Number(l.pct_acompte_1 || 0);
     return s + cout * (pct / 100);
   }, 0);
   const partMarge = Math.max(0, fin.margeBrute) * 0.5;
