@@ -20,6 +20,7 @@ type NavItem = {
 // Section 1 : FlowTravel OPS — pilotage de la plateforme (super admin uniquement)
 const navFlowTravel: NavItem[] = [
   { to: "/ops", label: "Espace OPS", icon: Wrench, superAdminOnly: true },
+  { to: "/ops/equipe", label: "Équipe RH", icon: Users, superAdminOnly: true },
   { to: "/admin-dashboard", label: "Tableau de bord", icon: Sparkles, superAdminOnly: true },
   { to: "/admin-agences", label: "Validation agences", icon: ShieldCheck, superAdminOnly: true },
   { to: "/admin-messages", label: "Messagerie support", icon: MessageSquare, superAdminOnly: true },

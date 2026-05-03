@@ -2025,6 +2025,594 @@ export type Database = {
         }
         Relationships: []
       }
+      hr_absences: {
+        Row: {
+          agence_id: string | null
+          approuve_at: string | null
+          approuve_par: string | null
+          created_at: string
+          created_by: string | null
+          date_debut: string
+          date_fin: string
+          demi_journee_debut: boolean
+          demi_journee_fin: boolean
+          employee_id: string
+          expires_at: string
+          id: string
+          justificatif_url: string | null
+          motif: string | null
+          motif_refus: string | null
+          nb_jours: number | null
+          signature_data: string | null
+          signed_at: string | null
+          signed_ip: string | null
+          statut: Database["public"]["Enums"]["hr_absence_statut"]
+          token: string
+          type: Database["public"]["Enums"]["hr_absence_type"]
+          updated_at: string
+        }
+        Insert: {
+          agence_id?: string | null
+          approuve_at?: string | null
+          approuve_par?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_debut: string
+          date_fin: string
+          demi_journee_debut?: boolean
+          demi_journee_fin?: boolean
+          employee_id: string
+          expires_at?: string
+          id?: string
+          justificatif_url?: string | null
+          motif?: string | null
+          motif_refus?: string | null
+          nb_jours?: number | null
+          signature_data?: string | null
+          signed_at?: string | null
+          signed_ip?: string | null
+          statut?: Database["public"]["Enums"]["hr_absence_statut"]
+          token?: string
+          type?: Database["public"]["Enums"]["hr_absence_type"]
+          updated_at?: string
+        }
+        Update: {
+          agence_id?: string | null
+          approuve_at?: string | null
+          approuve_par?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_debut?: string
+          date_fin?: string
+          demi_journee_debut?: boolean
+          demi_journee_fin?: boolean
+          employee_id?: string
+          expires_at?: string
+          id?: string
+          justificatif_url?: string | null
+          motif?: string | null
+          motif_refus?: string | null
+          nb_jours?: number | null
+          signature_data?: string | null
+          signed_at?: string | null
+          signed_ip?: string | null
+          statut?: Database["public"]["Enums"]["hr_absence_statut"]
+          token?: string
+          type?: Database["public"]["Enums"]["hr_absence_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_absences_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_contracts: {
+        Row: {
+          agence_id: string | null
+          contenu_html: string | null
+          created_at: string
+          created_by: string | null
+          date_debut: string | null
+          date_fin: string | null
+          employee_id: string
+          expires_at: string
+          id: string
+          parent_contract_id: string | null
+          pdf_url: string | null
+          signataire_nom: string | null
+          signature_data: string | null
+          signed_at: string | null
+          signed_ip: string | null
+          statut: Database["public"]["Enums"]["hr_contract_statut"]
+          titre: string
+          token: string
+          type_contrat: Database["public"]["Enums"]["hr_contract_type"] | null
+          updated_at: string
+        }
+        Insert: {
+          agence_id?: string | null
+          contenu_html?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          employee_id: string
+          expires_at?: string
+          id?: string
+          parent_contract_id?: string | null
+          pdf_url?: string | null
+          signataire_nom?: string | null
+          signature_data?: string | null
+          signed_at?: string | null
+          signed_ip?: string | null
+          statut?: Database["public"]["Enums"]["hr_contract_statut"]
+          titre: string
+          token?: string
+          type_contrat?: Database["public"]["Enums"]["hr_contract_type"] | null
+          updated_at?: string
+        }
+        Update: {
+          agence_id?: string | null
+          contenu_html?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          employee_id?: string
+          expires_at?: string
+          id?: string
+          parent_contract_id?: string | null
+          pdf_url?: string | null
+          signataire_nom?: string | null
+          signature_data?: string | null
+          signed_at?: string | null
+          signed_ip?: string | null
+          statut?: Database["public"]["Enums"]["hr_contract_statut"]
+          titre?: string
+          token?: string
+          type_contrat?: Database["public"]["Enums"]["hr_contract_type"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_contracts_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_contracts_parent_contract_id_fkey"
+            columns: ["parent_contract_id"]
+            isOneToOne: false
+            referencedRelation: "hr_contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_employees: {
+        Row: {
+          actif: boolean
+          adresse: string | null
+          agence_id: string | null
+          civilite: string | null
+          code_postal: string | null
+          created_at: string
+          created_by: string | null
+          date_embauche: string | null
+          date_naissance: string | null
+          date_sortie: string | null
+          email: string | null
+          iban: string | null
+          id: string
+          jours_conges_par_an: number | null
+          jours_rtt_par_an: number | null
+          manager_id: string | null
+          nom: string
+          notes: string | null
+          numero_secu: string | null
+          pays: string | null
+          poste: string | null
+          prenom: string
+          salaire_brut_mensuel: number | null
+          telephone: string | null
+          type_contrat: Database["public"]["Enums"]["hr_contract_type"] | null
+          updated_at: string
+          user_id: string | null
+          ville: string | null
+        }
+        Insert: {
+          actif?: boolean
+          adresse?: string | null
+          agence_id?: string | null
+          civilite?: string | null
+          code_postal?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_embauche?: string | null
+          date_naissance?: string | null
+          date_sortie?: string | null
+          email?: string | null
+          iban?: string | null
+          id?: string
+          jours_conges_par_an?: number | null
+          jours_rtt_par_an?: number | null
+          manager_id?: string | null
+          nom: string
+          notes?: string | null
+          numero_secu?: string | null
+          pays?: string | null
+          poste?: string | null
+          prenom: string
+          salaire_brut_mensuel?: number | null
+          telephone?: string | null
+          type_contrat?: Database["public"]["Enums"]["hr_contract_type"] | null
+          updated_at?: string
+          user_id?: string | null
+          ville?: string | null
+        }
+        Update: {
+          actif?: boolean
+          adresse?: string | null
+          agence_id?: string | null
+          civilite?: string | null
+          code_postal?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_embauche?: string | null
+          date_naissance?: string | null
+          date_sortie?: string | null
+          email?: string | null
+          iban?: string | null
+          id?: string
+          jours_conges_par_an?: number | null
+          jours_rtt_par_an?: number | null
+          manager_id?: string | null
+          nom?: string
+          notes?: string | null
+          numero_secu?: string | null
+          pays?: string | null
+          poste?: string | null
+          prenom?: string
+          salaire_brut_mensuel?: number | null
+          telephone?: string | null
+          type_contrat?: Database["public"]["Enums"]["hr_contract_type"] | null
+          updated_at?: string
+          user_id?: string | null
+          ville?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_employees_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_evaluations: {
+        Row: {
+          agence_id: string | null
+          annee: number
+          atteinte_objectifs: string | null
+          auto_evaluation: Json | null
+          axes_progres: string | null
+          bilan_n_moins_1: string | null
+          created_at: string
+          created_by: string | null
+          date_entretien: string | null
+          employee_id: string
+          evaluateur_id: string | null
+          evaluation_manager: Json | null
+          evolution_souhaitee: string | null
+          expires_at: string
+          formations_souhaitees: string | null
+          id: string
+          note_globale: number | null
+          objectifs_n_plus_1: string | null
+          points_forts: string | null
+          signature_employee: string | null
+          signature_manager: string | null
+          signed_employee_at: string | null
+          signed_manager_at: string | null
+          statut: Database["public"]["Enums"]["hr_evaluation_statut"]
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          agence_id?: string | null
+          annee: number
+          atteinte_objectifs?: string | null
+          auto_evaluation?: Json | null
+          axes_progres?: string | null
+          bilan_n_moins_1?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_entretien?: string | null
+          employee_id: string
+          evaluateur_id?: string | null
+          evaluation_manager?: Json | null
+          evolution_souhaitee?: string | null
+          expires_at?: string
+          formations_souhaitees?: string | null
+          id?: string
+          note_globale?: number | null
+          objectifs_n_plus_1?: string | null
+          points_forts?: string | null
+          signature_employee?: string | null
+          signature_manager?: string | null
+          signed_employee_at?: string | null
+          signed_manager_at?: string | null
+          statut?: Database["public"]["Enums"]["hr_evaluation_statut"]
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          agence_id?: string | null
+          annee?: number
+          atteinte_objectifs?: string | null
+          auto_evaluation?: Json | null
+          axes_progres?: string | null
+          bilan_n_moins_1?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_entretien?: string | null
+          employee_id?: string
+          evaluateur_id?: string | null
+          evaluation_manager?: Json | null
+          evolution_souhaitee?: string | null
+          expires_at?: string
+          formations_souhaitees?: string | null
+          id?: string
+          note_globale?: number | null
+          objectifs_n_plus_1?: string | null
+          points_forts?: string | null
+          signature_employee?: string | null
+          signature_manager?: string | null
+          signed_employee_at?: string | null
+          signed_manager_at?: string | null
+          statut?: Database["public"]["Enums"]["hr_evaluation_statut"]
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_evaluations_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_job_descriptions: {
+        Row: {
+          agence_id: string | null
+          competences_attendues: string | null
+          created_at: string
+          created_by: string | null
+          date_application: string | null
+          employee_id: string
+          est_active: boolean
+          id: string
+          intitule: string
+          kpi: string | null
+          missions: string | null
+          objectifs: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          agence_id?: string | null
+          competences_attendues?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_application?: string | null
+          employee_id: string
+          est_active?: boolean
+          id?: string
+          intitule: string
+          kpi?: string | null
+          missions?: string | null
+          objectifs?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          agence_id?: string | null
+          competences_attendues?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_application?: string | null
+          employee_id?: string
+          est_active?: boolean
+          id?: string
+          intitule?: string
+          kpi?: string | null
+          missions?: string | null
+          objectifs?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_job_descriptions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_planning_entries: {
+        Row: {
+          agence_id: string | null
+          created_at: string
+          created_by: string | null
+          date_jour: string
+          employee_id: string
+          heure_debut: string | null
+          heure_fin: string | null
+          id: string
+          note: string | null
+          type: Database["public"]["Enums"]["hr_planning_type"]
+          updated_at: string
+        }
+        Insert: {
+          agence_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_jour: string
+          employee_id: string
+          heure_debut?: string | null
+          heure_fin?: string | null
+          id?: string
+          note?: string | null
+          type?: Database["public"]["Enums"]["hr_planning_type"]
+          updated_at?: string
+        }
+        Update: {
+          agence_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_jour?: string
+          employee_id?: string
+          heure_debut?: string | null
+          heure_fin?: string | null
+          id?: string
+          note?: string | null
+          type?: Database["public"]["Enums"]["hr_planning_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_planning_entries_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_push_subscriptions: {
+        Row: {
+          auth_key: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth_key: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth_key?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hr_settings: {
+        Row: {
+          agence_id: string | null
+          created_at: string
+          derniere_execution_at: string | null
+          email_comptable: string | null
+          email_comptable_cc: string | null
+          id: string
+          jour_envoi_recap: number
+          jours_feries: Json | null
+          notifications_push_actives: boolean
+          updated_at: string
+        }
+        Insert: {
+          agence_id?: string | null
+          created_at?: string
+          derniere_execution_at?: string | null
+          email_comptable?: string | null
+          email_comptable_cc?: string | null
+          id?: string
+          jour_envoi_recap?: number
+          jours_feries?: Json | null
+          notifications_push_actives?: boolean
+          updated_at?: string
+        }
+        Update: {
+          agence_id?: string | null
+          created_at?: string
+          derniere_execution_at?: string | null
+          email_comptable?: string | null
+          email_comptable_cc?: string | null
+          id?: string
+          jour_envoi_recap?: number
+          jours_feries?: Json | null
+          notifications_push_actives?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hr_time_entries: {
+        Row: {
+          agence_id: string | null
+          created_at: string
+          employee_id: string
+          event_at: string
+          event_type: Database["public"]["Enums"]["hr_time_event"]
+          id: string
+          ip_address: string | null
+          note: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          agence_id?: string | null
+          created_at?: string
+          employee_id: string
+          event_at?: string
+          event_type: Database["public"]["Enums"]["hr_time_event"]
+          id?: string
+          ip_address?: string | null
+          note?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          agence_id?: string | null
+          created_at?: string
+          employee_id?: string
+          event_at?: string
+          event_type?: Database["public"]["Enums"]["hr_time_event"]
+          id?: string
+          ip_address?: string | null
+          note?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_time_entries_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mariage_contributions: {
         Row: {
           cotation_id: string
@@ -2497,6 +3085,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_agence_admin: { Args: { _agence_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       move_to_dlq: {
         Args: {
@@ -2650,6 +3239,49 @@ export type Database = {
         | "engagee"
         | "liberee"
       fx_source: "taux_du_jour" | "couverture" | "manuel"
+      hr_absence_statut:
+        | "demande"
+        | "approuvee"
+        | "refusee"
+        | "signee"
+        | "annulee"
+      hr_absence_type:
+        | "conge_paye"
+        | "rtt"
+        | "maladie"
+        | "sans_solde"
+        | "formation"
+        | "recup"
+        | "parental"
+        | "autre"
+      hr_contract_statut:
+        | "brouillon"
+        | "a_signer"
+        | "signe"
+        | "archive"
+        | "rompu"
+      hr_contract_type:
+        | "cdi"
+        | "cdd"
+        | "stage"
+        | "alternance"
+        | "freelance"
+        | "interim"
+        | "autre"
+      hr_evaluation_statut:
+        | "a_completer"
+        | "auto_eval_faite"
+        | "entretien_fait"
+        | "signee"
+        | "cloturee"
+      hr_planning_type:
+        | "travail"
+        | "teletravail"
+        | "reunion"
+        | "deplacement"
+        | "formation"
+        | "autre"
+      hr_time_event: "arrivee" | "pause_debut" | "pause_fin" | "sortie"
       mariage_contribution_statut: "en_attente" | "paye" | "annule"
       paiement_methode: "virement" | "carte" | "especes"
       paiement_source: "banque" | "manuel"
@@ -2932,6 +3564,55 @@ export const Constants = {
         "liberee",
       ],
       fx_source: ["taux_du_jour", "couverture", "manuel"],
+      hr_absence_statut: [
+        "demande",
+        "approuvee",
+        "refusee",
+        "signee",
+        "annulee",
+      ],
+      hr_absence_type: [
+        "conge_paye",
+        "rtt",
+        "maladie",
+        "sans_solde",
+        "formation",
+        "recup",
+        "parental",
+        "autre",
+      ],
+      hr_contract_statut: [
+        "brouillon",
+        "a_signer",
+        "signe",
+        "archive",
+        "rompu",
+      ],
+      hr_contract_type: [
+        "cdi",
+        "cdd",
+        "stage",
+        "alternance",
+        "freelance",
+        "interim",
+        "autre",
+      ],
+      hr_evaluation_statut: [
+        "a_completer",
+        "auto_eval_faite",
+        "entretien_fait",
+        "signee",
+        "cloturee",
+      ],
+      hr_planning_type: [
+        "travail",
+        "teletravail",
+        "reunion",
+        "deplacement",
+        "formation",
+        "autre",
+      ],
+      hr_time_event: ["arrivee", "pause_debut", "pause_fin", "sortie"],
       mariage_contribution_statut: ["en_attente", "paye", "annule"],
       paiement_methode: ["virement", "carte", "especes"],
       paiement_source: ["banque", "manuel"],

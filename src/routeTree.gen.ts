@@ -61,6 +61,9 @@ import { Route as CotationsIdRouteImport } from './routes/cotations.$id'
 import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
 import { Route as CarnetTokenRouteImport } from './routes/carnet.$token'
 import { Route as BulletinTokenRouteImport } from './routes/bulletin.$token'
+import { Route as OpsEquipeIndexRouteImport } from './routes/ops.equipe.index'
+import { Route as OpsEquipeParametresRouteImport } from './routes/ops.equipe.parametres'
+import { Route as OpsEquipeIdRouteImport } from './routes/ops.equipe.$id'
 import { Route as DemoVTokenRouteImport } from './routes/demo.v.$token'
 import { Route as DemoRdvTokenRouteImport } from './routes/demo.rdv.$token'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -327,6 +330,21 @@ const BulletinTokenRoute = BulletinTokenRouteImport.update({
   path: '/bulletin/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OpsEquipeIndexRoute = OpsEquipeIndexRouteImport.update({
+  id: '/equipe/',
+  path: '/equipe/',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsEquipeParametresRoute = OpsEquipeParametresRouteImport.update({
+  id: '/equipe/parametres',
+  path: '/equipe/parametres',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsEquipeIdRoute = OpsEquipeIdRouteImport.update({
+  id: '/equipe/$id',
+  path: '/equipe/$id',
+  getParentRoute: () => OpsRoute,
+} as any)
 const DemoVTokenRoute = DemoVTokenRouteImport.update({
   id: '/v/$token',
   path: '/v/$token',
@@ -409,6 +427,9 @@ export interface FileRoutesByFullPath {
   '/ops/': typeof OpsIndexRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
+  '/ops/equipe/$id': typeof OpsEquipeIdRoute
+  '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
+  '/ops/equipe/': typeof OpsEquipeIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -467,6 +488,9 @@ export interface FileRoutesByTo {
   '/ops': typeof OpsIndexRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
+  '/ops/equipe/$id': typeof OpsEquipeIdRoute
+  '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
+  '/ops/equipe': typeof OpsEquipeIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -527,6 +551,9 @@ export interface FileRoutesById {
   '/ops/': typeof OpsIndexRoute
   '/demo/rdv/$token': typeof DemoRdvTokenRoute
   '/demo/v/$token': typeof DemoVTokenRoute
+  '/ops/equipe/$id': typeof OpsEquipeIdRoute
+  '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
+  '/ops/equipe/': typeof OpsEquipeIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -588,6 +615,9 @@ export interface FileRouteTypes {
     | '/ops/'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
+    | '/ops/equipe/$id'
+    | '/ops/equipe/parametres'
+    | '/ops/equipe/'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -646,6 +676,9 @@ export interface FileRouteTypes {
     | '/ops'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
+    | '/ops/equipe/$id'
+    | '/ops/equipe/parametres'
+    | '/ops/equipe'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -705,6 +738,9 @@ export interface FileRouteTypes {
     | '/ops/'
     | '/demo/rdv/$token'
     | '/demo/v/$token'
+    | '/ops/equipe/$id'
+    | '/ops/equipe/parametres'
+    | '/ops/equipe/'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1124,6 +1160,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BulletinTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ops/equipe/': {
+      id: '/ops/equipe/'
+      path: '/equipe'
+      fullPath: '/ops/equipe/'
+      preLoaderRoute: typeof OpsEquipeIndexRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/equipe/parametres': {
+      id: '/ops/equipe/parametres'
+      path: '/equipe/parametres'
+      fullPath: '/ops/equipe/parametres'
+      preLoaderRoute: typeof OpsEquipeParametresRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/equipe/$id': {
+      id: '/ops/equipe/$id'
+      path: '/equipe/$id'
+      fullPath: '/ops/equipe/$id'
+      preLoaderRoute: typeof OpsEquipeIdRouteImport
+      parentRoute: typeof OpsRoute
+    }
     '/demo/v/$token': {
       id: '/demo/v/$token'
       path: '/v/$token'
@@ -1229,6 +1286,9 @@ interface OpsRouteChildren {
   OpsErrorsRoute: typeof OpsErrorsRoute
   OpsMessagesRoute: typeof OpsMessagesRoute
   OpsIndexRoute: typeof OpsIndexRoute
+  OpsEquipeIdRoute: typeof OpsEquipeIdRoute
+  OpsEquipeParametresRoute: typeof OpsEquipeParametresRoute
+  OpsEquipeIndexRoute: typeof OpsEquipeIndexRoute
 }
 
 const OpsRouteChildren: OpsRouteChildren = {
@@ -1238,6 +1298,9 @@ const OpsRouteChildren: OpsRouteChildren = {
   OpsErrorsRoute: OpsErrorsRoute,
   OpsMessagesRoute: OpsMessagesRoute,
   OpsIndexRoute: OpsIndexRoute,
+  OpsEquipeIdRoute: OpsEquipeIdRoute,
+  OpsEquipeParametresRoute: OpsEquipeParametresRoute,
+  OpsEquipeIndexRoute: OpsEquipeIndexRoute,
 }
 
 const OpsRouteWithChildren = OpsRoute._addFileChildren(OpsRouteChildren)
