@@ -70,6 +70,8 @@ const EMPTY_FORM: FormData = {
   raison_sociale: "",
   immat_atout_france: "",
   siret: "",
+  est_etablissement_secondaire: false,
+  siren_siege: "",
   email_contact: "",
   telephone: "",
   adresse: "",
