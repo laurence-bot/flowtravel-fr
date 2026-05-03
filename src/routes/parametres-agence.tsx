@@ -60,6 +60,7 @@ function ParametresAgencePage() {
     vat_number: "",
   });
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [utiliseCouverturesFx, setUtiliseCouverturesFx] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
