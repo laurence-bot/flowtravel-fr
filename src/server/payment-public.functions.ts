@@ -37,7 +37,7 @@ export const getPublicPaymentInfo = createServerFn({ method: "POST" })
     const contact = cotation.client_id
       ? (await supabaseAdmin
           .from("contacts")
-          .select("nom, prenom, email")
+          .select("nom, email, contact_principal")
           .eq("id", cotation.client_id)
           .maybeSingle()).data
       : null;
