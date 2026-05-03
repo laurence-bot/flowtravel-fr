@@ -23,10 +23,11 @@ import { formatMoney } from "@/lib/fx";
 import { computeDossierFinance, paiementEUR, factureEUR } from "@/lib/finance";
 import { FxFieldGroup, fxValueToDb, emptyFxValue, type FxFieldValue } from "@/components/fx-field-group";
 import { StatutBadge } from "@/components/statut-badge";
-import { ArrowLeft, Trash2, User, Receipt, ArrowDownLeft, ArrowUpRight, Plus, Users as UsersIcon } from "lucide-react";
+import { ArrowLeft, Trash2, User, Receipt, ArrowDownLeft, ArrowUpRight, Plus, Users as UsersIcon, FileSignature, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 import { DossierTasksBlock } from "@/components/dossier-tasks-block";
+import { triggerBulletinAfterAcompte } from "@/server/bulletin-trigger.functions";
 
 export const Route = createFileRoute("/dossiers/$id")({
   component: () => (
