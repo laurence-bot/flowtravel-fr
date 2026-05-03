@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/empty-state";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -90,6 +91,7 @@ function AdminAgencesPage() {
   const [refusing, setRefusing] = useState(false);
   const [motifRefus, setMotifRefus] = useState("");
   const [acting, setActing] = useState(false);
+  const [sendWelcomeEmail, setSendWelcomeEmail] = useState(false);
 
   // Vérifie le statut super-admin
   useEffect(() => {
@@ -154,6 +156,7 @@ function AdminAgencesPage() {
     );
     setRefusing(false);
     setMotifRefus("");
+    setSendWelcomeEmail(false);
   };
 
   const runSiretCheck = async () => {
@@ -185,10 +188,8 @@ function AdminAgencesPage() {
     if (!selected || !user) return;
     setActing(true);
     try {
-      const res = await approveAgence({ data: { agenceId: selected.id } });
-      toast.success(
-        `Agence "${selected.nom_commercial}" validée. Compte créé pour ${res.email} (l'agence définira son mot de passe via "Mot de passe oublié").`,
-      );
+      const res = await approveAgence({ data: { agenceId: selected.id, sendWelcomeEmail } });
+      toast.success(`Agence "${selected.nom_commercial}" validée${res.emailSent ? " et email envoyé" : " sans email envoyé"}.`);
       setSelected(null);
       refresh();
     } catch (e) {
@@ -514,6 +515,22 @@ function AdminAgencesPage() {
                       Motif du refus
                     </h4>
                     <p className="text-sm">{selected.motif_refus}</p>
+                  </section>
+                )}
+
+                {selected.statut === "en_attente" && !refusing && (
+                  <section className="border-t pt-4">
+                    <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/20 px-3 py-2">
+                      <Label htmlFor="send-welcome-email" className="text-sm font-normal">
+                        Envoyer l'email de bienvenue
+                      </Label>
+                      <Switch
+                        id="send-welcome-email"
+                        checked={sendWelcomeEmail}
+                        onCheckedChange={setSendWelcomeEmail}
+                        disabled={acting}
+                      />
+                    </div>
                   </section>
                 )}
 

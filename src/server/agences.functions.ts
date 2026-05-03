@@ -180,12 +180,15 @@ export const registerAgence = createServerFn({ method: "POST" })
   });
 
 /**
- * Validation par le super-admin : active le compte (actif=true), lie agence_id,
- * et envoie l'email de bienvenue. Le mot de passe a déjà été fixé à l'inscription.
+ * Validation par le super-admin : active le compte (actif=true) et lie agence_id.
+ * L'email de bienvenue est optionnel. Le mot de passe a déjà été fixé à l'inscription.
  */
 export const approveAgence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ agenceId: z.string().uuid() }).parse(d))
+  .inputValidator((d) => z.object({
+    agenceId: z.string().uuid(),
+    sendWelcomeEmail: z.boolean().optional().default(false),
+  }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
@@ -271,34 +274,35 @@ export const approveAgence = createServerFn({ method: "POST" })
       })
       .eq("id", agence.id);
 
-    // Envoi email de bienvenue (non bloquant)
-    try {
-      const React = await import("react");
-      const { render } = await import("@react-email/render");
-      const { TEMPLATES } = await import("@/lib/email-templates/registry");
-      const entry = TEMPLATES["agence-validee"];
-      const origin = process.env.PUBLIC_SITE_URL || process.env.SITE_URL || "https://flowtravel.fr";
-      const props = {
-        agenceName: agence.nom_commercial,
-        loginUrl: `${origin.replace(/\/$/, "")}/auth`,
-        email,
-      };
-      const html = await render(React.createElement(entry.component as any, props));
-      const subject = typeof entry.subject === "function" ? entry.subject(props) : entry.subject;
-      await supabaseAdmin.rpc("enqueue_email", {
-        queue_name: "transactional_emails",
-        payload: {
-          template_name: "agence-validee",
-          recipient_email: email,
-          subject,
-          html,
-          idempotency_key: `agence-validee-${agence.id}`,
-          metadata: { agence_id: agence.id },
-        } as any,
-      });
-    } catch (e) {
-      console.warn("agence-validee email enqueue failed", e);
+    if (data.sendWelcomeEmail) {
+      try {
+        const React = await import("react");
+        const { render } = await import("@react-email/render");
+        const { TEMPLATES } = await import("@/lib/email-templates/registry");
+        const entry = TEMPLATES["agence-validee"];
+        const origin = process.env.PUBLIC_SITE_URL || process.env.SITE_URL || "https://flowtravel.fr";
+        const props = {
+          agenceName: agence.nom_commercial,
+          loginUrl: `${origin.replace(/\/$/, "")}/auth`,
+          email,
+        };
+        const html = await render(React.createElement(entry.component as any, props));
+        const subject = typeof entry.subject === "function" ? entry.subject(props) : entry.subject;
+        await supabaseAdmin.rpc("enqueue_email", {
+          queue_name: "transactional_emails",
+          payload: {
+            template_name: "agence-validee",
+            recipient_email: email,
+            subject,
+            html,
+            idempotency_key: `agence-validee-${agence.id}`,
+            metadata: { agence_id: agence.id },
+          } as any,
+        });
+      } catch (e) {
+        console.warn("agence-validee email enqueue failed", e);
+      }
     }
 
-    return { success: true, adminUserId, email };
+    return { success: true, adminUserId, email, emailSent: data.sendWelcomeEmail };
   });

@@ -203,7 +203,7 @@ function UtilisateursPage() {
           <DialogHeader>
             <DialogTitle>Ajouter un utilisateur</DialogTitle>
             <DialogDescription>
-              Un email d'invitation lui sera envoyé pour définir son mot de passe.
+              Créez l'accès immédiatement. Aucun message n'est envoyé automatiquement.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -235,7 +235,7 @@ function UtilisateursPage() {
                 setInviting(true);
                 try {
                   await inviteUser({ data: { email: inviteEmail, full_name: inviteName, role: inviteRole } });
-                  toast.success("Invitation envoyée");
+                  toast.success("Utilisateur créé sans message envoyé");
                   setInviteOpen(false);
                   setInviteEmail(""); setInviteName(""); setInviteRole("agent");
                   await refresh();
@@ -246,7 +246,7 @@ function UtilisateursPage() {
                 }
               }}
             >
-              {inviting ? "Envoi…" : "Envoyer l'invitation"}
+              {inviting ? "Création…" : "Créer sans message"}
             </Button>
           </DialogFooter>
         </DialogContent>
