@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
+import { TEMPLATES } from "@/lib/email-templates/registry";
+import { render } from "@react-email/render";
+import React from "react";
 
 const adminClient = () =>
   createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
