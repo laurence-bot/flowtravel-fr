@@ -28,7 +28,7 @@ export function AgencySettingsProvider({ children }: { children: ReactNode }) {
       .select("*")
       .eq("user_id", user.id)
       .maybeSingle();
-    setSettings((data as AgencySettings) ?? null);
+    setSettings((data as unknown as AgencySettings) ?? null);
     setLoading(false);
   };
 
