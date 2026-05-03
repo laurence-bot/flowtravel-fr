@@ -118,6 +118,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   });
 
   const visibleAgenceNav = navAgence.filter((item) => canAccessRoute(role, item.to));
+  const visibleMonEspaceNav = navMonEspace.filter((item) => canAccessRoute(role, item.to));
 
   const handleSignOut = async () => {
     await signOut();
