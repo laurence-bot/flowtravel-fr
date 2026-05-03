@@ -189,40 +189,32 @@ function InscriptionAgencePage() {
         uploadOne("piece_identite", files.piece_identite),
       ]);
 
-      // 2. Insertion de l'agence (statut = en_attente, admin_user_id = null pour l'instant)
-      const { error: insErr } = await supabase.from("agences").insert({
-        nom_commercial: parsed.data.nom_commercial,
-        raison_sociale: parsed.data.raison_sociale || parsed.data.nom_commercial,
-        immat_atout_france: parsed.data.immat_atout_france.toUpperCase(),
-        siret: parsed.data.siret,
-        est_etablissement_secondaire: parsed.data.est_etablissement_secondaire,
-        siren_siege: parsed.data.est_etablissement_secondaire
-          ? (parsed.data.siren_siege || null)
-          : null,
-        email_contact: parsed.data.email_contact,
-        telephone: parsed.data.telephone || null,
-        adresse: parsed.data.adresse || null,
-        ville: parsed.data.ville || null,
-        code_postal: parsed.data.code_postal || null,
-        admin_full_name: parsed.data.admin_full_name,
-        statut: "en_attente",
-        forfait: "solo",
-        max_agents: 1,
-        doc_atout_france_url: pAtout,
-        doc_kbis_url: pKbis,
-        doc_piece_identite_url: pPid,
+      // 2. Création atomique compte auth + agence (statut=en_attente, profil actif=false)
+      const { registerAgence } = await import("@/server/agences.functions");
+      const result = await registerAgence({
+        data: {
+          nom_commercial: parsed.data.nom_commercial,
+          raison_sociale: parsed.data.raison_sociale || null,
+          immat_atout_france: parsed.data.immat_atout_france.toUpperCase(),
+          siret: parsed.data.siret,
+          est_etablissement_secondaire: parsed.data.est_etablissement_secondaire,
+          siren_siege: parsed.data.siren_siege || null,
+          email_contact: parsed.data.email_contact,
+          password: parsed.data.password,
+          telephone: parsed.data.telephone || null,
+          adresse: parsed.data.adresse || null,
+          ville: parsed.data.ville || null,
+          code_postal: parsed.data.code_postal || null,
+          admin_full_name: parsed.data.admin_full_name,
+          doc_atout_france_url: pAtout,
+          doc_kbis_url: pKbis,
+          doc_piece_identite_url: pPid,
+        },
       });
 
-      if (insErr) {
-        throw new Error(insErr.message.includes("duplicate") || insErr.code === "23505"
-          ? "Ce numéro d'immatriculation ATOUT FRANCE est déjà enregistré."
-          : insErr.message);
+      if (!result.ok) {
+        throw new Error(result.error);
       }
-
-      // 3. (Le compte utilisateur sera créé à la validation par le super-admin —
-      // on mémorise juste le mot de passe souhaité côté serveur via signUp inactif ?
-      // → Approche choisie : on crée le compte auth tout de suite, mais le profil
-      //    sera lié à l'agence + activé seulement à la validation. Simplifié dans le Lot 2.)
 
       setDone(true);
       try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
