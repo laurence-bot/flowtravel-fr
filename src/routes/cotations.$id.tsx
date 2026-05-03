@@ -50,7 +50,7 @@ import {
   computeAcompteClient,
   duplicateCotation,
   ligneCoutEur,
-  transformerCotationEnDossier,
+  // transformerCotationEnDossier remplacé par RPC Postgres atomique
   type Cotation,
   type CotationLigne,
   type CotationLigneModeTarifaire,
@@ -79,6 +79,7 @@ import { QuoteContentEditorBlock } from "@/components/quote-content-editor-block
 import { FxOptimizerBlock } from "@/components/fx-optimizer-block";
 import { InlineFxCoveragePicker } from "@/components/inline-fx-coverage-picker";
 import { MargeCalculator } from "@/components/marge-calculator";
+import { useAgencySettings } from "@/hooks/use-agency-settings";
 
 export const Route = createFileRoute("/cotations/$id")({
   component: () => (
@@ -117,6 +118,8 @@ function CotationDetailPage() {
   const { canWrite } = usePageWriteAccess();
   const { agents } = useAgents();
   const navigate = useNavigate();
+  const { settings: agencySettings } = useAgencySettings();
+  const fxEnabled = !!agencySettings?.utilise_couvertures_fx;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: cotations, loading: cotationsLoading, refetch: refetchCot } = useTable<Cotation>("cotations" as any);
@@ -490,18 +493,21 @@ function CotationDetailPage() {
     if (cot.statut !== "validee")
       return toast.error("La cotation doit être validée.");
     if (!cot.client_id) return toast.error("Client requis.");
-    const res = await transformerCotationEnDossier(user.id, cot, lignes);
-    if ("error" in res) return toast.error(res.error);
+    const { data: dossierId, error } = await (supabase as any).rpc(
+      "transformer_cotation_en_dossier",
+      { _cotation_id: cot.id },
+    );
+    if (error) return toast.error(error.message);
     await logAudit({
       userId: user.id,
       entity: "cotation",
       entityId: cot.id,
       action: "update",
       description: `Cotation transformée en dossier`,
-      newValue: { dossier_id: res.dossierId },
+      newValue: { dossier_id: dossierId },
     });
     toast.success("Dossier créé.");
-    navigate({ to: "/dossiers/$id", params: { id: res.dossierId } });
+    navigate({ to: "/dossiers/$id", params: { id: dossierId as string } });
   };
 
   return (
@@ -1215,26 +1221,27 @@ function CotationDetailPage() {
               </Field>
             </div>
 
-            <InlineFxCoveragePicker
-              devise={ligneForm.devise}
-              montantDevise={
-                Number(ligneForm.montant_devise) *
-                Number(ligneForm.quantite || 1) *
-                (ligneForm.mode_tarifaire === "par_personne"
-                  ? Math.max(1, cot.nombre_pax)
-                  : 1)
-              }
-              selectedCoverageId={ligneForm.couverture_id || null}
-              onPick={({ coverage, taux }) =>
-                setLigneForm({
-                  ...ligneForm,
-                  couverture_id: coverage.id,
-                  source_fx: "couverture",
-                  taux_change_vers_eur: String(taux),
-                })
-              }
-            />
-
+            {fxEnabled && (
+              <InlineFxCoveragePicker
+                devise={ligneForm.devise}
+                montantDevise={
+                  Number(ligneForm.montant_devise) *
+                  Number(ligneForm.quantite || 1) *
+                  (ligneForm.mode_tarifaire === "par_personne"
+                    ? Math.max(1, cot.nombre_pax)
+                    : 1)
+                }
+                selectedCoverageId={ligneForm.couverture_id || null}
+                onPick={({ coverage, taux }) =>
+                  setLigneForm({
+                    ...ligneForm,
+                    couverture_id: coverage.id,
+                    source_fx: "couverture",
+                    taux_change_vers_eur: String(taux),
+                  })
+                }
+              />
+            )}
             <div className="border-t pt-3">
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">
                 Échéances (% du montant)
