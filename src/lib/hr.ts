@@ -278,3 +278,49 @@ export async function upsertHrSettings(patch: Partial<HrSettings>): Promise<void
   const { error } = await supabase.from("hr_settings").upsert({ agence_id, ...patch }, { onConflict: "agence_id" });
   if (error) throw error;
 }
+
+// =========== Job Descriptions ===========
+export type JobDescription = {
+  id: string; employee_id: string; agence_id: string | null;
+  intitule: string; missions: string | null; competences_attendues: string | null;
+  objectifs: string | null; kpi: string | null;
+  date_application: string | null; version: number; est_active: boolean;
+  created_at: string; updated_at: string;
+};
+
+export async function listJobDescriptions(employeeId?: string): Promise<JobDescription[]> {
+  let q = supabase.from("hr_job_descriptions").select("*").order("created_at", { ascending: false });
+  if (employeeId) q = q.eq("employee_id", employeeId);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as JobDescription[];
+}
+
+export async function createJobDescription(input: Partial<JobDescription> & { employee_id: string; intitule: string }): Promise<JobDescription> {
+  const agence_id = await getMyAgenceId();
+  const { data: { user } } = await supabase.auth.getUser();
+  // Désactiver les anciennes versions actives pour cet employé
+  await supabase.from("hr_job_descriptions").update({ est_active: false }).eq("employee_id", input.employee_id).eq("est_active", true);
+  // Trouver la prochaine version
+  const { data: prev } = await supabase.from("hr_job_descriptions").select("version").eq("employee_id", input.employee_id).order("version", { ascending: false }).limit(1).maybeSingle();
+  const nextVersion = ((prev as any)?.version ?? 0) + 1;
+  const { data, error } = await supabase.from("hr_job_descriptions").insert({
+    agence_id, created_by: user?.id ?? null, est_active: true, version: nextVersion,
+    employee_id: input.employee_id, intitule: input.intitule,
+    missions: input.missions ?? null, competences_attendues: input.competences_attendues ?? null,
+    objectifs: input.objectifs ?? null, kpi: input.kpi ?? null,
+    date_application: input.date_application ?? null,
+  }).select("*").single();
+  if (error) throw error;
+  return data as JobDescription;
+}
+
+export async function updateJobDescription(id: string, patch: Partial<JobDescription>): Promise<void> {
+  const { error } = await supabase.from("hr_job_descriptions").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteJobDescription(id: string): Promise<void> {
+  const { error } = await supabase.from("hr_job_descriptions").delete().eq("id", id);
+  if (error) throw error;
+}

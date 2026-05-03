@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog, Shield, FileScan, FileText, Inbox, Building2, Video, ShieldCheck, MessageSquare, AlertTriangle, Sparkles, FileSignature, Receipt, Heart, BookOpen, GraduationCap, Wrench } from "lucide-react";
+import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog, Shield, FileScan, FileText, Inbox, Building2, Video, ShieldCheck, MessageSquare, AlertTriangle, Sparkles, FileSignature, Receipt, Heart, BookOpen, GraduationCap, Wrench, Clock, CalendarDays, Briefcase, Award, Settings, UserCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
@@ -21,11 +21,26 @@ type NavItem = {
 const navFlowTravel: NavItem[] = [
   { to: "/ops", label: "Espace OPS", icon: Wrench, superAdminOnly: true },
   { to: "/ops/equipe", label: "Équipe RH", icon: Users, superAdminOnly: true },
+  { to: "/ops/equipe/absences", label: "— Absences & congés", icon: CalendarDays, superAdminOnly: true },
+  { to: "/ops/equipe/planning", label: "— Planning", icon: CalendarDays, superAdminOnly: true },
+  { to: "/ops/equipe/pointage", label: "— Pointage", icon: Clock, superAdminOnly: true },
+  { to: "/ops/equipe/contrats", label: "— Contrats", icon: FileSignature, superAdminOnly: true },
+  { to: "/ops/equipe/fiches-poste", label: "— Fiches de poste", icon: Briefcase, superAdminOnly: true },
+  { to: "/ops/equipe/evaluations", label: "— Évaluations", icon: Award, superAdminOnly: true },
+  { to: "/ops/equipe/parametres", label: "— Paramètres RH", icon: Settings, superAdminOnly: true },
   { to: "/admin-dashboard", label: "Tableau de bord", icon: Sparkles, superAdminOnly: true },
   { to: "/admin-agences", label: "Validation agences", icon: ShieldCheck, superAdminOnly: true },
   { to: "/admin-messages", label: "Messagerie support", icon: MessageSquare, superAdminOnly: true },
   { to: "/admin-errors", label: "Journal d'erreurs", icon: AlertTriangle, superAdminOnly: true },
   { to: "/admin-demos", label: "Démos prospects", icon: Video, superAdminOnly: true },
+];
+
+// Section "Mon espace" — accessible à tous les utilisateurs (employés)
+const navMonEspace: NavItem[] = [
+  { to: "/mon-espace/pointage", label: "Pointage", icon: Clock },
+  { to: "/mon-espace/conges", label: "Mes congés", icon: CalendarDays },
+  { to: "/mon-espace/contrats", label: "Mes contrats", icon: FileSignature },
+  { to: "/mon-espace/evaluation", label: "Mon évaluation", icon: Award },
 ];
 
 // Section 2 : Gestion de l'agence (LA VOYAGERIE pour Laurence, l'agence de chacun pour les autres)
@@ -103,6 +118,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   });
 
   const visibleAgenceNav = navAgence.filter((item) => canAccessRoute(role, item.to));
+  const visibleMonEspaceNav = navMonEspace.filter((item) => canAccessRoute(role, item.to));
 
   const handleSignOut = async () => {
     await signOut();
@@ -170,6 +186,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           />
           <div className="space-y-1">
             {visibleAgenceNav.map((item) => (
+              <NavLinkItem key={item.to} item={item} onClick={onClick} />
+            ))}
+          </div>
+        </>
+      )}
+      {visibleMonEspaceNav.length > 0 && (
+        <>
+          <SectionHeader label="Mon espace" sublabel="Espace employé" />
+          <div className="space-y-1">
+            {visibleMonEspaceNav.map((item) => (
               <NavLinkItem key={item.to} item={item} onClick={onClick} />
             ))}
           </div>

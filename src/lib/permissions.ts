@@ -18,11 +18,12 @@ const ROUTE_ACCESS: Record<AppRole, string[]> = {
     "/comptes", "/couvertures-fx", "/previsions", "/import-bancaire", "/rapprochement",
     "/export", "/audit", "/utilisateurs", "/import-pdf", "/cotations", "/demandes", "/parametres-agence",
     "/admin-demos", "/admin-agences", "/admin-dashboard", "/admin-messages", "/admin-errors", "/support",
-    "/ops",
+    "/ops", "/mon-espace",
   ],
   agent: [
     "/", "/app", "/pilotage", "/contacts", "/dossiers", "/factures", "/factures-clients",
     "/bulletins", "/carnets", "/mariages", "/cotations", "/demandes", "/coaching", "/support",
+    "/mon-espace",
   ],
 };
 
