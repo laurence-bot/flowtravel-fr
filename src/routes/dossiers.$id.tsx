@@ -23,10 +23,11 @@ import { formatMoney } from "@/lib/fx";
 import { computeDossierFinance, paiementEUR, factureEUR } from "@/lib/finance";
 import { FxFieldGroup, fxValueToDb, emptyFxValue, type FxFieldValue } from "@/components/fx-field-group";
 import { StatutBadge } from "@/components/statut-badge";
-import { ArrowLeft, Trash2, User, Receipt, ArrowDownLeft, ArrowUpRight, Plus, Users as UsersIcon } from "lucide-react";
+import { ArrowLeft, Trash2, User, Receipt, ArrowDownLeft, ArrowUpRight, Plus, Users as UsersIcon, FileSignature, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 import { DossierTasksBlock } from "@/components/dossier-tasks-block";
+import { triggerBulletinAfterAcompte } from "@/server/bulletin-trigger.functions";
 
 export const Route = createFileRoute("/dossiers/$id")({
   component: () => (
@@ -68,12 +69,56 @@ function DossierDetail() {
     toast.success(`Dossier réassigné à ${newName}`);
   };
 
+  const [cotationId, setCotationId] = useState<string | null>(null);
+  const [bulletinExists, setBulletinExists] = useState<{ token: string; statut: string } | null>(null);
+  const [triggering, setTriggering] = useState(false);
+
   useEffect(() => {
     supabase.from("dossiers").select("*").eq("id", id).maybeSingle().then(({ data }) => {
       if (!data) setNotFound(true);
       else setDossier(data as Dossier);
     });
+    // Récupère la cotation associée + un éventuel bulletin
+    supabase.from("cotations").select("id").eq("dossier_id", id).maybeSingle().then(({ data }) => {
+      if (data?.id) {
+        setCotationId(data.id);
+        supabase
+          .from("bulletins")
+          .select("token,statut")
+          .eq("cotation_id", data.id)
+          .in("statut", ["a_signer", "signe"])
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+          .then(({ data: b }) => setBulletinExists(b ?? null));
+      }
+    });
   }, [id]);
+
+  const handleTriggerBulletin = async () => {
+    if (!cotationId) {
+      toast.error("Aucune cotation associée à ce dossier");
+      return;
+    }
+    setTriggering(true);
+    try {
+      const r = await triggerBulletinAfterAcompte({ data: { cotationId, sendEmail: true } });
+      if (r.ok) {
+        setBulletinExists({ token: r.token, statut: "a_signer" });
+        toast.success(
+          r.emailSent
+            ? "Bulletin généré et envoyé au client par email."
+            : "Bulletin généré (email non envoyé : email client manquant).",
+        );
+      } else {
+        toast.error(r.error ?? "Erreur");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setTriggering(false);
+    }
+  };
 
   if (notFound) {
     return (
@@ -295,6 +340,49 @@ function DossierDetail() {
 
       {/* Suivi opérationnel */}
       <DossierTasksBlock dossierId={dossier.id} />
+
+      {/* Bulletin d'inscription */}
+      {cotationId && (
+        <Card className="p-5 border-border/60">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex gap-3">
+              <FileSignature className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div>
+                <h3 className="font-display text-base">Bulletin d'inscription</h3>
+                {bulletinExists ? (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {bulletinExists.statut === "signe"
+                      ? "✓ Bulletin signé par le client."
+                      : "Bulletin envoyé au client — en attente de signature."}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Dès le 1ᵉʳ acompte reçu, déclenchez l'envoi du bulletin pré-signé au client
+                    pour signature en ligne.
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {bulletinExists && (
+                <Button asChild size="sm" variant="outline">
+                  <a href={`/bulletin/${bulletinExists.token}`} target="_blank" rel="noopener noreferrer">
+                    Voir le lien
+                  </a>
+                </Button>
+              )}
+              <Button
+                size="sm"
+                onClick={handleTriggerBulletin}
+                disabled={triggering || bulletinExists?.statut === "signe"}
+              >
+                <Mail className="h-3.5 w-3.5 mr-1.5" />
+                {bulletinExists ? "Renvoyer au client" : "Acompte 1 reçu — Envoyer le bulletin"}
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Paiements clients & fournisseurs */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
