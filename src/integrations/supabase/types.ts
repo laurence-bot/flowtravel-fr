@@ -1584,10 +1584,13 @@ export type Database = {
           montant_tva: number
           notes: string | null
           numero: string
+          ordre: number
+          pct_applique: number
           pdf_url: string | null
           regime_tva: string | null
           statut: Database["public"]["Enums"]["facture_client_statut"]
           taux_tva: number
+          type_facture: Database["public"]["Enums"]["facture_client_type"]
           updated_at: string
           user_id: string
         }
@@ -1606,10 +1609,13 @@ export type Database = {
           montant_tva?: number
           notes?: string | null
           numero: string
+          ordre?: number
+          pct_applique?: number
           pdf_url?: string | null
           regime_tva?: string | null
           statut?: Database["public"]["Enums"]["facture_client_statut"]
           taux_tva?: number
+          type_facture?: Database["public"]["Enums"]["facture_client_type"]
           updated_at?: string
           user_id: string
         }
@@ -1628,10 +1634,13 @@ export type Database = {
           montant_tva?: number
           notes?: string | null
           numero?: string
+          ordre?: number
+          pct_applique?: number
           pdf_url?: string | null
           regime_tva?: string | null
           statut?: Database["public"]["Enums"]["facture_client_statut"]
           taux_tva?: number
+          type_facture?: Database["public"]["Enums"]["facture_client_type"]
           updated_at?: string
           user_id?: string
         }
@@ -3290,6 +3299,7 @@ export type Database = {
       echeance_statut: "a_payer" | "paye" | "en_retard" | "annule"
       echeance_type: "acompte_1" | "acompte_2" | "acompte_3" | "solde" | "autre"
       facture_client_statut: "brouillon" | "emise" | "payee" | "annulee"
+      facture_client_type: "acompte_1" | "acompte_2" | "solde" | "globale"
       flight_option_statut: "en_option" | "confirmee" | "expiree" | "annulee"
       fournisseur_option_statut:
         | "a_demander"
@@ -3612,6 +3622,7 @@ export const Constants = {
       echeance_statut: ["a_payer", "paye", "en_retard", "annule"],
       echeance_type: ["acompte_1", "acompte_2", "acompte_3", "solde", "autre"],
       facture_client_statut: ["brouillon", "emise", "payee", "annulee"],
+      facture_client_type: ["acompte_1", "acompte_2", "solde", "globale"],
       flight_option_statut: ["en_option", "confirmee", "expiree", "annulee"],
       fournisseur_option_statut: [
         "a_demander",

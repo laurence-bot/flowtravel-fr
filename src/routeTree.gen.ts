@@ -61,6 +61,7 @@ import { Route as MonEspaceContratsRouteImport } from './routes/mon-espace.contr
 import { Route as MonEspaceCongesRouteImport } from './routes/mon-espace.conges'
 import { Route as MariageTokenRouteImport } from './routes/mariage.$token'
 import { Route as FacturesIdRouteImport } from './routes/factures.$id'
+import { Route as FacturesClientsIdRouteImport } from './routes/factures-clients.$id'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
 import { Route as DemandesIdRouteImport } from './routes/demandes.$id'
@@ -349,6 +350,11 @@ const FacturesIdRoute = FacturesIdRouteImport.update({
   path: '/factures/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FacturesClientsIdRoute = FacturesClientsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => FacturesClientsRoute,
+} as any)
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   id: '/email/unsubscribe',
   path: '/email/unsubscribe',
@@ -510,7 +516,7 @@ export interface FileRoutesByFullPath {
   '/demo': typeof DemoRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
-  '/factures-clients': typeof FacturesClientsRoute
+  '/factures-clients': typeof FacturesClientsRouteWithChildren
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
   '/inscription-agence': typeof InscriptionAgenceRoute
@@ -537,6 +543,7 @@ export interface FileRoutesByFullPath {
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/factures-clients/$id': typeof FacturesClientsIdRoute
   '/factures/$id': typeof FacturesIdRoute
   '/mariage/$token': typeof MariageTokenRoute
   '/mon-espace/conges': typeof MonEspaceCongesRoute
@@ -591,7 +598,7 @@ export interface FileRoutesByTo {
   '/demo': typeof DemoRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
-  '/factures-clients': typeof FacturesClientsRoute
+  '/factures-clients': typeof FacturesClientsRouteWithChildren
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
   '/inscription-agence': typeof InscriptionAgenceRoute
@@ -617,6 +624,7 @@ export interface FileRoutesByTo {
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/factures-clients/$id': typeof FacturesClientsIdRoute
   '/factures/$id': typeof FacturesIdRoute
   '/mariage/$token': typeof MariageTokenRoute
   '/mon-espace/conges': typeof MonEspaceCongesRoute
@@ -672,7 +680,7 @@ export interface FileRoutesById {
   '/demo': typeof DemoRouteWithChildren
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
-  '/factures-clients': typeof FacturesClientsRoute
+  '/factures-clients': typeof FacturesClientsRouteWithChildren
   '/import-bancaire': typeof ImportBancaireRoute
   '/import-pdf': typeof ImportPdfRoute
   '/inscription-agence': typeof InscriptionAgenceRoute
@@ -699,6 +707,7 @@ export interface FileRoutesById {
   '/demandes/$id': typeof DemandesIdRoute
   '/dossiers/$id': typeof DossiersIdRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/factures-clients/$id': typeof FacturesClientsIdRoute
   '/factures/$id': typeof FacturesIdRoute
   '/mariage/$token': typeof MariageTokenRoute
   '/mon-espace/conges': typeof MonEspaceCongesRoute
@@ -782,6 +791,7 @@ export interface FileRouteTypes {
     | '/demandes/$id'
     | '/dossiers/$id'
     | '/email/unsubscribe'
+    | '/factures-clients/$id'
     | '/factures/$id'
     | '/mariage/$token'
     | '/mon-espace/conges'
@@ -862,6 +872,7 @@ export interface FileRouteTypes {
     | '/demandes/$id'
     | '/dossiers/$id'
     | '/email/unsubscribe'
+    | '/factures-clients/$id'
     | '/factures/$id'
     | '/mariage/$token'
     | '/mon-espace/conges'
@@ -943,6 +954,7 @@ export interface FileRouteTypes {
     | '/demandes/$id'
     | '/dossiers/$id'
     | '/email/unsubscribe'
+    | '/factures-clients/$id'
     | '/factures/$id'
     | '/mariage/$token'
     | '/mon-espace/conges'
@@ -998,7 +1010,7 @@ export interface RootRouteChildren {
   DemoRoute: typeof DemoRouteWithChildren
   DossiersRoute: typeof DossiersRouteWithChildren
   ExportRoute: typeof ExportRoute
-  FacturesClientsRoute: typeof FacturesClientsRoute
+  FacturesClientsRoute: typeof FacturesClientsRouteWithChildren
   ImportBancaireRoute: typeof ImportBancaireRoute
   ImportPdfRoute: typeof ImportPdfRoute
   InscriptionAgenceRoute: typeof InscriptionAgenceRoute
@@ -1404,6 +1416,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FacturesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/factures-clients/$id': {
+      id: '/factures-clients/$id'
+      path: '/$id'
+      fullPath: '/factures-clients/$id'
+      preLoaderRoute: typeof FacturesClientsIdRouteImport
+      parentRoute: typeof FacturesClientsRoute
+    }
     '/email/unsubscribe': {
       id: '/email/unsubscribe'
       path: '/email/unsubscribe'
@@ -1656,6 +1675,18 @@ const DossiersRouteWithChildren = DossiersRoute._addFileChildren(
   DossiersRouteChildren,
 )
 
+interface FacturesClientsRouteChildren {
+  FacturesClientsIdRoute: typeof FacturesClientsIdRoute
+}
+
+const FacturesClientsRouteChildren: FacturesClientsRouteChildren = {
+  FacturesClientsIdRoute: FacturesClientsIdRoute,
+}
+
+const FacturesClientsRouteWithChildren = FacturesClientsRoute._addFileChildren(
+  FacturesClientsRouteChildren,
+)
+
 interface OpsRouteChildren {
   OpsAgencesRoute: typeof OpsAgencesRoute
   OpsDashboardRoute: typeof OpsDashboardRoute
@@ -1715,7 +1746,7 @@ const rootRouteChildren: RootRouteChildren = {
   DemoRoute: DemoRouteWithChildren,
   DossiersRoute: DossiersRouteWithChildren,
   ExportRoute: ExportRoute,
-  FacturesClientsRoute: FacturesClientsRoute,
+  FacturesClientsRoute: FacturesClientsRouteWithChildren,
   ImportBancaireRoute: ImportBancaireRoute,
   ImportPdfRoute: ImportPdfRoute,
   InscriptionAgenceRoute: InscriptionAgenceRoute,
