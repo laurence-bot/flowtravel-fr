@@ -195,6 +195,10 @@ function InscriptionAgencePage() {
         raison_sociale: parsed.data.raison_sociale || parsed.data.nom_commercial,
         immat_atout_france: parsed.data.immat_atout_france.toUpperCase(),
         siret: parsed.data.siret,
+        est_etablissement_secondaire: parsed.data.est_etablissement_secondaire,
+        siren_siege: parsed.data.est_etablissement_secondaire
+          ? (parsed.data.siren_siege || null)
+          : null,
         email_contact: parsed.data.email_contact,
         telephone: parsed.data.telephone || null,
         adresse: parsed.data.adresse || null,
