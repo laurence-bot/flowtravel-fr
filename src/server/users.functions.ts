@@ -66,3 +66,55 @@ export const inviteUser = createServerFn({ method: "POST" })
 
     return { ok: true, user_id: newUserId, email };
   });
+
+const DeleteSchema = z.object({ user_id: z.string().uuid() });
+
+export const deleteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => DeleteSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabase: userClient, userId } = context;
+
+    if (data.user_id === userId) {
+      throw new Response("Impossible de supprimer votre propre compte", { status: 400 });
+    }
+
+    const { data: roleRow } = await userClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "administrateur")
+      .maybeSingle();
+    if (!roleRow) {
+      throw new Response("Forbidden: administrateur required", { status: 403 });
+    }
+
+    const { data: caller } = await userClient
+      .from("user_profiles")
+      .select("agence_id, is_super_admin")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const { data: target } = await supabaseAdmin
+      .from("user_profiles")
+      .select("agence_id, email")
+      .eq("user_id", data.user_id)
+      .maybeSingle();
+    if (!target) throw new Response("Utilisateur introuvable", { status: 404 });
+
+    if (!caller?.is_super_admin && caller?.agence_id !== target.agence_id) {
+      throw new Response("Forbidden: agence différente", { status: 403 });
+    }
+
+    if ((target.email ?? "").toLowerCase() === "bonjour@flowtravel.fr") {
+      throw new Response("Ce compte est protégé.", { status: 400 });
+    }
+
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", data.user_id);
+    await supabaseAdmin.from("user_profiles").delete().eq("user_id", data.user_id);
+    const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(data.user_id);
+    if (delErr) {
+      throw new Response(delErr.message, { status: 400 });
+    }
+
+    return { ok: true };
+  });
