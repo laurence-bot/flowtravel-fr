@@ -317,6 +317,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             ))}
           </div>
         </>
+      )}
+    </nav>
+  );
 
   return (
     <div className="flex min-h-screen w-full bg-background">
