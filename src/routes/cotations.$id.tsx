@@ -493,18 +493,21 @@ function CotationDetailPage() {
     if (cot.statut !== "validee")
       return toast.error("La cotation doit être validée.");
     if (!cot.client_id) return toast.error("Client requis.");
-    const res = await transformerCotationEnDossier(user.id, cot, lignes);
-    if ("error" in res) return toast.error(res.error);
+    const { data: dossierId, error } = await (supabase as any).rpc(
+      "transformer_cotation_en_dossier",
+      { _cotation_id: cot.id },
+    );
+    if (error) return toast.error(error.message);
     await logAudit({
       userId: user.id,
       entity: "cotation",
       entityId: cot.id,
       action: "update",
       description: `Cotation transformée en dossier`,
-      newValue: { dossier_id: res.dossierId },
+      newValue: { dossier_id: dossierId },
     });
     toast.success("Dossier créé.");
-    navigate({ to: "/dossiers/$id", params: { id: res.dossierId } });
+    navigate({ to: "/dossiers/$id", params: { id: dossierId as string } });
   };
 
   return (
