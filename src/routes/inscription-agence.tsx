@@ -350,6 +350,42 @@ function InscriptionAgencePage() {
                 </div>
               </div>
 
+              <div className="rounded-md border border-border/60 bg-muted/30 p-3 space-y-3">
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5"
+                    checked={form.est_etablissement_secondaire}
+                    onChange={(e) =>
+                      update("est_etablissement_secondaire", e.target.checked)
+                    }
+                  />
+                  <span className="text-sm">
+                    Mon SIRET correspond à un <strong>établissement secondaire</strong>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Cochez si votre agence est rattachée à un siège social distinct.
+                      La vérification sera faite manuellement par notre équipe.
+                    </p>
+                  </span>
+                </label>
+                {form.est_etablissement_secondaire && (
+                  <div className="space-y-1.5 pl-6">
+                    <Label>SIREN du siège social *</Label>
+                    <Input
+                      value={form.siren_siege}
+                      onChange={(e) =>
+                        update("siren_siege", e.target.value.replace(/\D/g, "").slice(0, 9))
+                      }
+                      placeholder="9 chiffres"
+                      maxLength={9}
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Les 9 premiers chiffres du SIRET du siège.
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1.5 md:col-span-2">
                   <Label>Adresse</Label>
