@@ -31,6 +31,14 @@ type FactureClient = {
   montant_ttc: number;
   montant_tva: number;
   statut: "brouillon" | "emise" | "payee" | "annulee";
+  type_facture: "acompte_1" | "acompte_2" | "solde" | "globale";
+};
+
+const TYPE_LABEL: Record<string, string> = {
+  acompte_1: "Acompte 1",
+  acompte_2: "Acompte 2",
+  solde: "Solde",
+  globale: "Globale",
 };
 
 function FacturesClientsPage() {
