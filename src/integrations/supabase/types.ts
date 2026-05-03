@@ -281,6 +281,48 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_notifications: {
+        Row: {
+          bulletin_id: string | null
+          cotation_id: string | null
+          created_at: string
+          dossier_id: string | null
+          id: string
+          link: string | null
+          message: string | null
+          read_at: string | null
+          titre: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          bulletin_id?: string | null
+          cotation_id?: string | null
+          created_at?: string
+          dossier_id?: string | null
+          id?: string
+          link?: string | null
+          message?: string | null
+          read_at?: string | null
+          titre: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          bulletin_id?: string | null
+          cotation_id?: string | null
+          created_at?: string
+          dossier_id?: string | null
+          id?: string
+          link?: string | null
+          message?: string | null
+          read_at?: string | null
+          titre?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: Database["public"]["Enums"]["audit_action"]
@@ -391,6 +433,7 @@ export type Database = {
           dossier_id: string | null
           expires_at: string
           id: string
+          last_relance_at: string | null
           signataire_email: string | null
           signataire_nom: string | null
           signature_data: string | null
@@ -412,6 +455,7 @@ export type Database = {
           dossier_id?: string | null
           expires_at?: string
           id?: string
+          last_relance_at?: string | null
           signataire_email?: string | null
           signataire_nom?: string | null
           signature_data?: string | null
@@ -433,6 +477,7 @@ export type Database = {
           dossier_id?: string | null
           expires_at?: string
           id?: string
+          last_relance_at?: string | null
           signataire_email?: string | null
           signataire_nom?: string | null
           signature_data?: string | null
