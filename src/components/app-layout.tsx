@@ -28,7 +28,7 @@ type NavGroup = {
 // Section 1 : FlowTravel OPS — pilotage de la plateforme (super admin uniquement)
 const navFlowTravelTop: NavItem[] = [
   { to: "/ops", label: "Espace OPS", icon: Wrench, superAdminOnly: true },
-  { to: "/admin-dashboard", label: "Tableau de bord", icon: Sparkles, superAdminOnly: true },
+  { to: "/admin-dashboard", label: "Tableau de bord OPS", icon: Sparkles, superAdminOnly: true },
 ];
 
 const navFlowTravelGroups: NavGroup[] = [
