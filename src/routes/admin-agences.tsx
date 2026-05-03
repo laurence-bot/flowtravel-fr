@@ -355,6 +355,12 @@ function AdminAgencesPage() {
                     <Field label="Raison sociale" value={selected.raison_sociale ?? "—"} />
                     <Field label="ATOUT FRANCE" value={selected.immat_atout_france} mono />
                     <Field label="SIRET" value={selected.siret} mono />
+                    {selected.est_etablissement_secondaire && (
+                      <Field
+                        label="⚠ Établissement secondaire"
+                        value={`Siège : ${selected.siren_siege ?? "(non renseigné)"} — vérification manuelle requise`}
+                      />
+                    )}
                     <Field label="Email contact" value={selected.email_contact} />
                     <Field label="Téléphone" value={selected.telephone ?? "—"} />
                     <Field label="Forfait demandé" value={FORFAIT_LABEL[selected.forfait]} />
