@@ -214,6 +214,37 @@ export const signBulletin = createServerFn({ method: "POST" })
       console.warn("send bulletin-signed email failed", e);
     }
 
+    // Notification agent : bulletin signé
+    try {
+      const { data: cot } = bulletin.cotation_id
+        ? await sb.from("cotations").select("titre, agent_id, dossier_id").eq("id", bulletin.cotation_id).maybeSingle()
+        : { data: null as any };
+      const { data: client } = bulletin.client_id
+        ? await sb.from("contacts").select("nom").eq("id", bulletin.client_id).maybeSingle()
+        : { data: null as any };
+      const { notifyAgent } = await import("./agent-notifications.server");
+      await notifyAgent({
+        ownerUserId: bulletin.user_id,
+        agentId: cot?.agent_id ?? null,
+        type: "bulletin_signe",
+        titre: `Bulletin signé — ${cot?.titre ?? "Voyage"}`,
+        message: client?.nom ? `${client.nom} a signé le bulletin d'inscription.` : "Le bulletin a été signé.",
+        link: (cot?.dossier_id ?? bulletin.dossier_id) ? `/dossiers/${cot?.dossier_id ?? bulletin.dossier_id}` : "/bulletins",
+        dossierId: cot?.dossier_id ?? bulletin.dossier_id,
+        cotationId: bulletin.cotation_id,
+        bulletinId: bulletin.id,
+        emailEvent: {
+          eventLabel: "Bulletin signé",
+          clientNom: client?.nom,
+          titreDossier: cot?.titre ?? "Voyage",
+          details: "Les factures clients ont été générées automatiquement.",
+          ctaLabel: "Ouvrir le dossier",
+        },
+      });
+    } catch (e) {
+      console.warn("notify bulletin_signe failed", e);
+    }
+
     return { ok: true as const };
   });
 

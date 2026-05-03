@@ -13,6 +13,8 @@ import { template as contractToSign } from './contract-to-sign'
 import { template as leaveDecision } from './leave-decision'
 import { template as bulletinToSign } from './bulletin-to-sign'
 import { template as bulletinSigned } from './bulletin-signed'
+import { template as bulletinRelance } from './bulletin-relance'
+import { template as agentEvent } from './agent-event'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'payroll-monthly': payrollMonthly,
@@ -20,4 +22,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'leave-decision': leaveDecision,
   'bulletin-to-sign': bulletinToSign,
   'bulletin-signed': bulletinSigned,
+  'bulletin-relance': bulletinRelance,
+  'agent-event': agentEvent,
 }

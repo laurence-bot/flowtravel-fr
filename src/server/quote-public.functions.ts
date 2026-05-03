@@ -145,12 +145,54 @@ export const chooseFlightOption = createServerFn({ method: "POST" })
 export const acceptPublicQuote = createServerFn({ method: "POST" })
   .inputValidator((d: { token: string }) => z.object({ token: z.string().min(20).max(100) }).parse(d))
   .handler(async ({ data }) => {
+    const { data: link } = await supabaseAdmin
+      .from("quote_public_links")
+      .select("cotation_id")
+      .eq("token", data.token)
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
+    if (!link) return { ok: false as const, error: "Lien invalide" };
+
     const { error } = await supabaseAdmin
       .from("quote_public_links")
       .update({ accepted_at: new Date().toISOString() })
-      .eq("token", data.token)
-      .gt("expires_at", new Date().toISOString());
+      .eq("token", data.token);
     if (error) return { ok: false as const, error: error.message };
+
+    // Notification agent : "acompte déclaré payé par le client"
+    try {
+      const { data: cot } = await supabaseAdmin
+        .from("cotations")
+        .select("id, user_id, agent_id, titre, dossier_id, client_id")
+        .eq("id", link.cotation_id)
+        .maybeSingle();
+      if (cot) {
+        const { data: client } = cot.client_id
+          ? await supabaseAdmin.from("contacts").select("nom").eq("id", cot.client_id).maybeSingle()
+          : { data: null as any };
+        const { notifyAgent } = await import("./agent-notifications.server");
+        await notifyAgent({
+          ownerUserId: cot.user_id,
+          agentId: cot.agent_id,
+          type: "acompte_paye",
+          titre: `Acompte déclaré payé — ${cot.titre}`,
+          message: client?.nom ? `Le client ${client.nom} a confirmé le paiement de l'acompte.` : "Le client a confirmé le paiement de l'acompte.",
+          link: cot.dossier_id ? `/dossiers/${cot.dossier_id}` : `/cotations/${cot.id}`,
+          dossierId: cot.dossier_id,
+          cotationId: cot.id,
+          emailEvent: {
+            eventLabel: "Acompte déclaré payé",
+            clientNom: client?.nom,
+            titreDossier: cot.titre,
+            details: "Vérifiez la réception sur votre compte bancaire puis envoyez le bulletin d'inscription.",
+            ctaLabel: cot.dossier_id ? "Ouvrir le dossier" : "Ouvrir la cotation",
+          },
+        });
+      }
+    } catch (e) {
+      console.warn("notify acompte_paye failed", e);
+    }
+
     return { ok: true as const };
   });
 

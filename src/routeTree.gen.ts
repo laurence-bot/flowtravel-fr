@@ -13,6 +13,7 @@ import { Route as UtilisateursRouteImport } from './routes/utilisateurs'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TarifsRouteImport } from './routes/tarifs'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as SuiviDossiersRouteImport } from './routes/suivi-dossiers'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
 import { Route as RapprochementRouteImport } from './routes/rapprochement'
 import { Route as QaRouteImport } from './routes/qa'
@@ -89,6 +90,7 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicHooksRelanceBulletinsRouteImport } from './routes/api/public/hooks/relance-bulletins'
 import { Route as ApiPublicHooksPayrollSummaryRouteImport } from './routes/api/public/hooks/payroll-summary'
 
 const UtilisateursRoute = UtilisateursRouteImport.update({
@@ -109,6 +111,11 @@ const TarifsRoute = TarifsRouteImport.update({
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuiviDossiersRoute = SuiviDossiersRouteImport.update({
+  id: '/suivi-dossiers',
+  path: '/suivi-dossiers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
@@ -494,6 +501,12 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksRelanceBulletinsRoute =
+  ApiPublicHooksRelanceBulletinsRouteImport.update({
+    id: '/api/public/hooks/relance-bulletins',
+    path: '/api/public/hooks/relance-bulletins',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksPayrollSummaryRoute =
   ApiPublicHooksPayrollSummaryRouteImport.update({
     id: '/api/public/hooks/payroll-summary',
@@ -536,6 +549,7 @@ export interface FileRoutesByFullPath {
   '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/suivi-dossiers': typeof SuiviDossiersRoute
   '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -578,6 +592,7 @@ export interface FileRoutesByFullPath {
   '/ops/equipe/pointage': typeof OpsEquipePointageRoute
   '/ops/equipe/': typeof OpsEquipeIndexRoute
   '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
+  '/api/public/hooks/relance-bulletins': typeof ApiPublicHooksRelanceBulletinsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -618,6 +633,7 @@ export interface FileRoutesByTo {
   '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/suivi-dossiers': typeof SuiviDossiersRoute
   '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -660,6 +676,7 @@ export interface FileRoutesByTo {
   '/ops/equipe/pointage': typeof OpsEquipePointageRoute
   '/ops/equipe': typeof OpsEquipeIndexRoute
   '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
+  '/api/public/hooks/relance-bulletins': typeof ApiPublicHooksRelanceBulletinsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -702,6 +719,7 @@ export interface FileRoutesById {
   '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/suivi-dossiers': typeof SuiviDossiersRoute
   '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -744,6 +762,7 @@ export interface FileRoutesById {
   '/ops/equipe/pointage': typeof OpsEquipePointageRoute
   '/ops/equipe/': typeof OpsEquipeIndexRoute
   '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
+  '/api/public/hooks/relance-bulletins': typeof ApiPublicHooksRelanceBulletinsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -787,6 +806,7 @@ export interface FileRouteTypes {
     | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
+    | '/suivi-dossiers'
     | '/support'
     | '/tarifs'
     | '/unsubscribe'
@@ -829,6 +849,7 @@ export interface FileRouteTypes {
     | '/ops/equipe/pointage'
     | '/ops/equipe/'
     | '/api/public/hooks/payroll-summary'
+    | '/api/public/hooks/relance-bulletins'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -869,6 +890,7 @@ export interface FileRouteTypes {
     | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
+    | '/suivi-dossiers'
     | '/support'
     | '/tarifs'
     | '/unsubscribe'
@@ -911,6 +933,7 @@ export interface FileRouteTypes {
     | '/ops/equipe/pointage'
     | '/ops/equipe'
     | '/api/public/hooks/payroll-summary'
+    | '/api/public/hooks/relance-bulletins'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -952,6 +975,7 @@ export interface FileRouteTypes {
     | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
+    | '/suivi-dossiers'
     | '/support'
     | '/tarifs'
     | '/unsubscribe'
@@ -994,6 +1018,7 @@ export interface FileRouteTypes {
     | '/ops/equipe/pointage'
     | '/ops/equipe/'
     | '/api/public/hooks/payroll-summary'
+    | '/api/public/hooks/relance-bulletins'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1036,6 +1061,7 @@ export interface RootRouteChildren {
   QaRoute: typeof QaRoute
   RapprochementRoute: typeof RapprochementRoute
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
+  SuiviDossiersRoute: typeof SuiviDossiersRoute
   SupportRoute: typeof SupportRoute
   TarifsRoute: typeof TarifsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
@@ -1056,6 +1082,7 @@ export interface RootRouteChildren {
   PaiementTokenRoute: typeof PaiementTokenRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksPayrollSummaryRoute: typeof ApiPublicHooksPayrollSummaryRoute
+  ApiPublicHooksRelanceBulletinsRoute: typeof ApiPublicHooksRelanceBulletinsRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -1091,6 +1118,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/suivi-dossiers': {
+      id: '/suivi-dossiers'
+      path: '/suivi-dossiers'
+      fullPath: '/suivi-dossiers'
+      preLoaderRoute: typeof SuiviDossiersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reinitialiser-mot-de-passe': {
@@ -1625,6 +1659,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/relance-bulletins': {
+      id: '/api/public/hooks/relance-bulletins'
+      path: '/api/public/hooks/relance-bulletins'
+      fullPath: '/api/public/hooks/relance-bulletins'
+      preLoaderRoute: typeof ApiPublicHooksRelanceBulletinsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/payroll-summary': {
       id: '/api/public/hooks/payroll-summary'
       path: '/api/public/hooks/payroll-summary'
@@ -1780,6 +1821,7 @@ const rootRouteChildren: RootRouteChildren = {
   QaRoute: QaRoute,
   RapprochementRoute: RapprochementRoute,
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
+  SuiviDossiersRoute: SuiviDossiersRoute,
   SupportRoute: SupportRoute,
   TarifsRoute: TarifsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
@@ -1800,6 +1842,7 @@ const rootRouteChildren: RootRouteChildren = {
   PaiementTokenRoute: PaiementTokenRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksPayrollSummaryRoute: ApiPublicHooksPayrollSummaryRoute,
+  ApiPublicHooksRelanceBulletinsRoute: ApiPublicHooksRelanceBulletinsRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,

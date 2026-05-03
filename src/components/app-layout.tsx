@@ -8,6 +8,7 @@ import { Logo } from "@/components/logo";
 import { useAgencySettings } from "@/hooks/use-agency-settings";
 import { canAccessRoute, ROLE_LABELS } from "@/lib/permissions";
 import { ReadOnlyShield } from "@/components/read-only-shield";
+import { NotificationsBell } from "@/components/notifications-bell";
 import { supabase } from "@/integrations/supabase/client";
 
 type NavItem = {
@@ -85,6 +86,7 @@ const navAgenceGroups: NavGroup[] = [
       { to: "/demandes", label: "Demandes", icon: Inbox },
       { to: "/cotations", label: "Cotations", icon: FileText },
       { to: "/dossiers", label: "Dossiers", icon: FolderOpen },
+      { to: "/suivi-dossiers", label: "Suivi parcours client", icon: LineChart },
       { to: "/bulletins", label: "Bulletins signature", icon: FileSignature },
       { to: "/mariages", label: "Voyages de noces", icon: Heart },
       { to: "/carnets", label: "Carnets de voyage", icon: BookOpen },
@@ -397,9 +399,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <Menu className="h-5 w-5" />
           </button>
           <Logo variant="dark" />
-          <div className="w-5" />
+          <NotificationsBell />
         </div>
-        <div className="flex-1 px-5 py-8 md:px-10 md:py-10 max-w-[1400px] w-full mx-auto">
+        {/* Desktop top bar */}
+        <div className="hidden md:flex items-center justify-end px-10 pt-4">
+          <NotificationsBell />
+        </div>
+        <div className="flex-1 px-5 py-8 md:px-10 md:py-6 max-w-[1400px] w-full mx-auto">
           <ReadOnlyShield>{children}</ReadOnlyShield>
         </div>
       </main>
