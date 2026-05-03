@@ -246,8 +246,8 @@ export const declarePaymentDone = createServerFn({ method: "POST" })
             dossierId = rpcRes as unknown as string;
             // Déclencher le bulletin automatiquement
             try {
-              const { triggerBulletinForCotation } = await import("./bulletin-trigger.functions");
-              const trig = await triggerBulletinForCotation({
+              const { triggerBulletinAfterAcompte } = await import("./bulletin-trigger.functions");
+              const trig = await triggerBulletinAfterAcompte({
                 data: { cotationId: cot.id, sendEmail: true },
               });
               bulletinSent = !!(trig as any)?.emailSent;
