@@ -118,6 +118,8 @@ function CotationDetailPage() {
   const { canWrite } = usePageWriteAccess();
   const { agents } = useAgents();
   const navigate = useNavigate();
+  const { settings: agencySettings } = useAgencySettings();
+  const fxEnabled = !!agencySettings?.utilise_couvertures_fx;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: cotations, loading: cotationsLoading, refetch: refetchCot } = useTable<Cotation>("cotations" as any);
