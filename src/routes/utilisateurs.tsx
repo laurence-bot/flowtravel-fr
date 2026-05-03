@@ -163,6 +163,29 @@ function UtilisateursPage() {
     setSavingId(null);
   };
 
+  const removeUser = async (p: ProfileRow) => {
+    if (p.user_id === user?.id) {
+      toast.error("Vous ne pouvez pas supprimer votre propre compte.");
+      return;
+    }
+    setSavingId(p.user_id);
+    try {
+      await deleteUser({ data: { user_id: p.user_id } });
+      setProfiles(profiles.filter((x) => x.user_id !== p.user_id));
+      await logAudit({
+        userId: user?.id,
+        entity: "compte",
+        action: "delete",
+        entityId: p.user_id,
+        description: `Utilisateur supprimé : ${p.email}`,
+      });
+      toast.success("Utilisateur supprimé");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Échec de la suppression");
+    } finally {
+      setSavingId(null);
+    }
+  };
   return (
     <div>
       <PageHeader
