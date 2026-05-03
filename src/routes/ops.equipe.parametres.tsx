@@ -89,12 +89,33 @@ function ParametresEquipe() {
         )}
       </Card>
 
+      <Card className="p-6 space-y-3 max-w-2xl">
+        <h3 className="font-display text-lg">Tester l'envoi maintenant</h3>
+        <p className="text-sm text-muted-foreground">
+          Lance immédiatement la génération du récap (mois précédent) et l'envoi par email à toutes les agences ayant un email comptable configuré.
+        </p>
+        <Button
+          variant="outline"
+          onClick={async () => {
+            try {
+              const res = await fetch("/api/public/hooks/payroll-summary", { method: "POST" });
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const json = await res.json();
+              toast.success(`Récap envoyé (${json.processed ?? 0} agence(s))`);
+            } catch (e: any) {
+              toast.error(`Échec : ${e.message}`);
+            }
+          }}
+        >
+          <Send className="h-4 w-4 mr-2" /> Envoyer le récap maintenant
+        </Button>
+      </Card>
+
       <Card className="p-6 space-y-3 max-w-2xl border-dashed">
         <h3 className="font-display text-lg text-muted-foreground">Bientôt disponible</h3>
         <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-5">
           <li>Configuration des jours fériés</li>
           <li>Paramètres des notifications push</li>
-          <li>Bouton "Envoyer le récap maintenant" (test)</li>
           <li>Modèles de contrats type</li>
         </ul>
       </Card>
