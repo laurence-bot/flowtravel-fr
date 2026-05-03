@@ -22,6 +22,7 @@ import { Route as PilotageRouteImport } from './routes/pilotage'
 import { Route as ParametresAgenceRouteImport } from './routes/parametres-agence'
 import { Route as PaiementsRouteImport } from './routes/paiements'
 import { Route as OpsRouteImport } from './routes/ops'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
 import { Route as MariagesRouteImport } from './routes/mariages'
 import { Route as InscriptionAgenceRouteImport } from './routes/inscription-agence'
@@ -157,6 +158,11 @@ const PaiementsRoute = PaiementsRouteImport.update({
 const OpsRoute = OpsRouteImport.update({
   id: '/ops',
   path: '/ops',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
@@ -548,6 +554,7 @@ export interface FileRoutesByFullPath {
   '/inscription-agence': typeof InscriptionAgenceRoute
   '/mariages': typeof MariagesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
+  '/notifications': typeof NotificationsRoute
   '/ops': typeof OpsRouteWithChildren
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
@@ -634,6 +641,7 @@ export interface FileRoutesByTo {
   '/inscription-agence': typeof InscriptionAgenceRoute
   '/mariages': typeof MariagesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
+  '/notifications': typeof NotificationsRoute
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
   '/pilotage': typeof PilotageRoute
@@ -720,6 +728,7 @@ export interface FileRoutesById {
   '/inscription-agence': typeof InscriptionAgenceRoute
   '/mariages': typeof MariagesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
+  '/notifications': typeof NotificationsRoute
   '/ops': typeof OpsRouteWithChildren
   '/paiements': typeof PaiementsRoute
   '/parametres-agence': typeof ParametresAgenceRoute
@@ -808,6 +817,7 @@ export interface FileRouteTypes {
     | '/inscription-agence'
     | '/mariages'
     | '/mot-de-passe-oublie'
+    | '/notifications'
     | '/ops'
     | '/paiements'
     | '/parametres-agence'
@@ -894,6 +904,7 @@ export interface FileRouteTypes {
     | '/inscription-agence'
     | '/mariages'
     | '/mot-de-passe-oublie'
+    | '/notifications'
     | '/paiements'
     | '/parametres-agence'
     | '/pilotage'
@@ -979,6 +990,7 @@ export interface FileRouteTypes {
     | '/inscription-agence'
     | '/mariages'
     | '/mot-de-passe-oublie'
+    | '/notifications'
     | '/ops'
     | '/paiements'
     | '/parametres-agence'
@@ -1066,6 +1078,7 @@ export interface RootRouteChildren {
   InscriptionAgenceRoute: typeof InscriptionAgenceRoute
   MariagesRoute: typeof MariagesRoute
   MotDePasseOublieRoute: typeof MotDePasseOublieRoute
+  NotificationsRoute: typeof NotificationsRoute
   OpsRoute: typeof OpsRouteWithChildren
   PaiementsRoute: typeof PaiementsRoute
   ParametresAgenceRoute: typeof ParametresAgenceRoute
@@ -1195,6 +1208,13 @@ declare module '@tanstack/react-router' {
       path: '/ops'
       fullPath: '/ops'
       preLoaderRoute: typeof OpsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mot-de-passe-oublie': {
@@ -1834,6 +1854,7 @@ const rootRouteChildren: RootRouteChildren = {
   InscriptionAgenceRoute: InscriptionAgenceRoute,
   MariagesRoute: MariagesRoute,
   MotDePasseOublieRoute: MotDePasseOublieRoute,
+  NotificationsRoute: NotificationsRoute,
   OpsRoute: OpsRouteWithChildren,
   PaiementsRoute: PaiementsRoute,
   ParametresAgenceRoute: ParametresAgenceRoute,
