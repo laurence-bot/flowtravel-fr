@@ -74,6 +74,7 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicHooksPayrollSummaryRouteImport } from './routes/api/public/hooks/payroll-summary'
 
 const UtilisateursRoute = UtilisateursRouteImport.update({
   id: '/utilisateurs',
@@ -403,6 +404,12 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksPayrollSummaryRoute =
+  ApiPublicHooksPayrollSummaryRouteImport.update({
+    id: '/api/public/hooks/payroll-summary',
+    path: '/api/public/hooks/payroll-summary',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -465,6 +472,7 @@ export interface FileRoutesByFullPath {
   '/ops/equipe/$id': typeof OpsEquipeIdRoute
   '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
   '/ops/equipe/': typeof OpsEquipeIndexRoute
+  '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -531,6 +539,7 @@ export interface FileRoutesByTo {
   '/ops/equipe/$id': typeof OpsEquipeIdRoute
   '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
   '/ops/equipe': typeof OpsEquipeIndexRoute
+  '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -599,6 +608,7 @@ export interface FileRoutesById {
   '/ops/equipe/$id': typeof OpsEquipeIdRoute
   '/ops/equipe/parametres': typeof OpsEquipeParametresRoute
   '/ops/equipe/': typeof OpsEquipeIndexRoute
+  '/api/public/hooks/payroll-summary': typeof ApiPublicHooksPayrollSummaryRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -668,6 +678,7 @@ export interface FileRouteTypes {
     | '/ops/equipe/$id'
     | '/ops/equipe/parametres'
     | '/ops/equipe/'
+    | '/api/public/hooks/payroll-summary'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -734,6 +745,7 @@ export interface FileRouteTypes {
     | '/ops/equipe/$id'
     | '/ops/equipe/parametres'
     | '/ops/equipe'
+    | '/api/public/hooks/payroll-summary'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -801,6 +813,7 @@ export interface FileRouteTypes {
     | '/ops/equipe/$id'
     | '/ops/equipe/parametres'
     | '/ops/equipe/'
+    | '/api/public/hooks/payroll-summary'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -854,6 +867,7 @@ export interface RootRouteChildren {
   MariageTokenRoute: typeof MariageTokenRoute
   PTokenRoute: typeof PTokenRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiPublicHooksPayrollSummaryRoute: typeof ApiPublicHooksPayrollSummaryRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -1318,6 +1332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/payroll-summary': {
+      id: '/api/public/hooks/payroll-summary'
+      path: '/api/public/hooks/payroll-summary'
+      fullPath: '/api/public/hooks/payroll-summary'
+      preLoaderRoute: typeof ApiPublicHooksPayrollSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1453,6 +1474,7 @@ const rootRouteChildren: RootRouteChildren = {
   MariageTokenRoute: MariageTokenRoute,
   PTokenRoute: PTokenRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiPublicHooksPayrollSummaryRoute: ApiPublicHooksPayrollSummaryRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
