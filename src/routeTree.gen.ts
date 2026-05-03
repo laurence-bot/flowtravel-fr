@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UtilisateursRouteImport } from './routes/utilisateurs'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TarifsRouteImport } from './routes/tarifs'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
@@ -77,6 +78,11 @@ import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/em
 const UtilisateursRoute = UtilisateursRouteImport.update({
   id: '/utilisateurs',
   path: '/utilisateurs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TarifsRoute = TarifsRouteImport.update({
@@ -435,6 +441,7 @@ export interface FileRoutesByFullPath {
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/bulletin/$token': typeof BulletinTokenRoute
   '/carnet/$token': typeof CarnetTokenRoute
@@ -500,6 +507,7 @@ export interface FileRoutesByTo {
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/bulletin/$token': typeof BulletinTokenRoute
   '/carnet/$token': typeof CarnetTokenRoute
@@ -567,6 +575,7 @@ export interface FileRoutesById {
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/utilisateurs': typeof UtilisateursRoute
   '/bulletin/$token': typeof BulletinTokenRoute
   '/carnet/$token': typeof CarnetTokenRoute
@@ -635,6 +644,7 @@ export interface FileRouteTypes {
     | '/reinitialiser-mot-de-passe'
     | '/support'
     | '/tarifs'
+    | '/unsubscribe'
     | '/utilisateurs'
     | '/bulletin/$token'
     | '/carnet/$token'
@@ -700,6 +710,7 @@ export interface FileRouteTypes {
     | '/reinitialiser-mot-de-passe'
     | '/support'
     | '/tarifs'
+    | '/unsubscribe'
     | '/utilisateurs'
     | '/bulletin/$token'
     | '/carnet/$token'
@@ -766,6 +777,7 @@ export interface FileRouteTypes {
     | '/reinitialiser-mot-de-passe'
     | '/support'
     | '/tarifs'
+    | '/unsubscribe'
     | '/utilisateurs'
     | '/bulletin/$token'
     | '/carnet/$token'
@@ -833,6 +845,7 @@ export interface RootRouteChildren {
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
   SupportRoute: typeof SupportRoute
   TarifsRoute: typeof TarifsRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   UtilisateursRoute: typeof UtilisateursRoute
   BulletinTokenRoute: typeof BulletinTokenRoute
   CarnetTokenRoute: typeof CarnetTokenRoute
@@ -855,6 +868,13 @@ declare module '@tanstack/react-router' {
       path: '/utilisateurs'
       fullPath: '/utilisateurs'
       preLoaderRoute: typeof UtilisateursRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tarifs': {
@@ -1424,6 +1444,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
   SupportRoute: SupportRoute,
   TarifsRoute: TarifsRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   UtilisateursRoute: UtilisateursRoute,
   BulletinTokenRoute: BulletinTokenRoute,
   CarnetTokenRoute: CarnetTokenRoute,
