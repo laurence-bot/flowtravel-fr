@@ -59,6 +59,12 @@ function UtilisateursPage() {
   const [roles, setRoles] = useState<Record<string, AppRole>>({});
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteName, setInviteName] = useState("");
+  const [inviteRole, setInviteRole] = useState<AppRole>("agent");
+  const [inviting, setInviting] = useState(false);
+
 
   const refresh = async () => {
     setLoading(true);
