@@ -335,6 +335,30 @@ function ParametresAgencePage() {
           </Button>
         </div>
       </Card>
+
+      {/* Couvertures FX */}
+      <Card className="p-6">
+        <h2 className="font-display text-lg mb-2">Couvertures de change (FX)</h2>
+        <p className="text-xs text-muted-foreground mb-4">
+          Activez si votre agence utilise des contrats de couverture de change
+          (Ebury, iBanFirst…). Désactivé : seul un taux libre est proposé sur les lignes
+          en devise et le menu « Couvertures FX » est masqué.
+        </p>
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            className="mt-0.5"
+            checked={utiliseCouverturesFx}
+            onChange={(e) => setUtiliseCouverturesFx(e.target.checked)}
+          />
+          <span className="text-sm">
+            <strong>Mon agence utilise des couvertures FX</strong>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Vous pourrez créer et réserver des couvertures depuis le menu Finance.
+            </p>
+          </span>
+        </label>
+      </Card>
     </div>
   );
 }
