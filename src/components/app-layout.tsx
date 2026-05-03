@@ -86,6 +86,7 @@ const navAgenceGroups: NavGroup[] = [
       { to: "/demandes", label: "Demandes", icon: Inbox },
       { to: "/cotations", label: "Cotations", icon: FileText },
       { to: "/dossiers", label: "Dossiers", icon: FolderOpen },
+      { to: "/suivi-dossiers", label: "Suivi parcours client", icon: LineChart },
       { to: "/bulletins", label: "Bulletins signature", icon: FileSignature },
       { to: "/mariages", label: "Voyages de noces", icon: Heart },
       { to: "/carnets", label: "Carnets de voyage", icon: BookOpen },

@@ -13,6 +13,7 @@ import { Route as UtilisateursRouteImport } from './routes/utilisateurs'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TarifsRouteImport } from './routes/tarifs'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as SuiviDossiersRouteImport } from './routes/suivi-dossiers'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
 import { Route as RapprochementRouteImport } from './routes/rapprochement'
 import { Route as QaRouteImport } from './routes/qa'
@@ -110,6 +111,11 @@ const TarifsRoute = TarifsRouteImport.update({
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuiviDossiersRoute = SuiviDossiersRouteImport.update({
+  id: '/suivi-dossiers',
+  path: '/suivi-dossiers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
@@ -543,6 +549,7 @@ export interface FileRoutesByFullPath {
   '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/suivi-dossiers': typeof SuiviDossiersRoute
   '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -626,6 +633,7 @@ export interface FileRoutesByTo {
   '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/suivi-dossiers': typeof SuiviDossiersRoute
   '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -711,6 +719,7 @@ export interface FileRoutesById {
   '/qa': typeof QaRoute
   '/rapprochement': typeof RapprochementRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/suivi-dossiers': typeof SuiviDossiersRoute
   '/support': typeof SupportRoute
   '/tarifs': typeof TarifsRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -797,6 +806,7 @@ export interface FileRouteTypes {
     | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
+    | '/suivi-dossiers'
     | '/support'
     | '/tarifs'
     | '/unsubscribe'
@@ -880,6 +890,7 @@ export interface FileRouteTypes {
     | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
+    | '/suivi-dossiers'
     | '/support'
     | '/tarifs'
     | '/unsubscribe'
@@ -964,6 +975,7 @@ export interface FileRouteTypes {
     | '/qa'
     | '/rapprochement'
     | '/reinitialiser-mot-de-passe'
+    | '/suivi-dossiers'
     | '/support'
     | '/tarifs'
     | '/unsubscribe'
@@ -1049,6 +1061,7 @@ export interface RootRouteChildren {
   QaRoute: typeof QaRoute
   RapprochementRoute: typeof RapprochementRoute
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
+  SuiviDossiersRoute: typeof SuiviDossiersRoute
   SupportRoute: typeof SupportRoute
   TarifsRoute: typeof TarifsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
@@ -1105,6 +1118,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/suivi-dossiers': {
+      id: '/suivi-dossiers'
+      path: '/suivi-dossiers'
+      fullPath: '/suivi-dossiers'
+      preLoaderRoute: typeof SuiviDossiersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reinitialiser-mot-de-passe': {
@@ -1801,6 +1821,7 @@ const rootRouteChildren: RootRouteChildren = {
   QaRoute: QaRoute,
   RapprochementRoute: RapprochementRoute,
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
+  SuiviDossiersRoute: SuiviDossiersRoute,
   SupportRoute: SupportRoute,
   TarifsRoute: TarifsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
