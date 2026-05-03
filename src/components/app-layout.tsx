@@ -8,6 +8,7 @@ import { Logo } from "@/components/logo";
 import { useAgencySettings } from "@/hooks/use-agency-settings";
 import { canAccessRoute, ROLE_LABELS } from "@/lib/permissions";
 import { ReadOnlyShield } from "@/components/read-only-shield";
+import { NotificationsBell } from "@/components/notifications-bell";
 import { supabase } from "@/integrations/supabase/client";
 
 type NavItem = {
