@@ -7,7 +7,6 @@ const InviteSchema = z.object({
   email: z.string().email("Email invalide"),
   full_name: z.string().trim().min(1, "Nom requis").max(120),
   role: z.enum(["administrateur", "agent"]),
-  sendInviteEmail: z.boolean().optional().default(false),
 });
 
 export const inviteUser = createServerFn({ method: "POST" })
