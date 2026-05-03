@@ -18,10 +18,14 @@ import { ROLE_LABELS, ROLE_DESCRIPTIONS, type AppRole, isAdmin } from "@/lib/per
 import { logAudit } from "@/lib/audit";
 import { RequireAuth } from "@/components/require-auth";
 import { toast } from "sonner";
-import { ShieldAlert, Users, UserPlus } from "lucide-react";
+import { ShieldAlert, Users, UserPlus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { inviteUser } from "@/server/users.functions";
+import { inviteUser, deleteUser } from "@/server/users.functions";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 
 export const Route = createFileRoute("/utilisateurs")({
