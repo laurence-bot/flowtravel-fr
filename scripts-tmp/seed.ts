@@ -41,7 +41,7 @@ async function main() {
     max_agents: 1,
     statut: 'validee',
     validee_at: new Date().toISOString(),
-  }).select().single();
+  }).select().single(); 
   if (agErr) throw agErr;
   console.log('  agence_id:', ag.id);
 
@@ -85,7 +85,7 @@ async function main() {
     nom: 'Famille Dubois', email: 'jean.dubois@example.com', telephone: '+33 6 12 34 56 78',
     adresse: '42 avenue Victor Hugo', code_postal: '75116', ville: 'Paris', pays: 'France',
     contact_principal: 'Jean Dubois',
-  }).select().single();
+  }).select().single(); 
   console.log('  client_id:', client!.id);
 
   const { data: demande } = await supabase.from('demandes').insert({
@@ -93,9 +93,9 @@ async function main() {
     nom_client: 'Jean Dubois', email: 'jean.dubois@example.com', telephone: '+33 6 12 34 56 78',
     canal: 'site_web', destination: 'Bali, Indonésie', pays_destination: 'Indonésie',
     date_depart_souhaitee: '2026-09-15', date_retour_souhaitee: '2026-09-30',
-    nombre_pax: 2, budget: 8000, statut: 'qualifiee',
+    nombre_pax: 2, budget: 8000, statut: 'en_cours',
     message_client: 'Voyage de noces, hôtels boutique, plages calmes, expérience temple privée.',
-  }).select().single();
+  }).select().single(); 
   console.log('  demande_id:', demande!.id);
 
   console.log('=== STEP 5: Fournisseur + Cotation ===');
@@ -103,7 +103,7 @@ async function main() {
     user_id: userId, type: 'fournisseur',
     nom: 'Asia DMC Bali', email: 'reservations@asiadmc.com',
     pays: 'Indonésie', ville: 'Denpasar', contact_principal: 'Wayan Putu',
-  }).select().single();
+  }).select().single(); 
 
   const { data: cot } = await supabase.from('cotations').insert({
     user_id: userId, agent_id: userId, client_id: client!.id, demande_id: demande!.id,
@@ -115,8 +115,8 @@ async function main() {
     inclus_text: 'Vols A/R • Transferts privés • Hôtels 5* • Petits-déjeuners • Excursions privées',
     non_inclus_text: 'Repas non mentionnés • Visa • Pourboires',
     prix_vente_ht: 7500, prix_vente_ttc: 9000,
-    statut: 'envoyee_client',
-  }).select().single();
+    statut: 'envoyee',
+  }).select().single(); 
   console.log('  cotation_id:', cot!.id);
 
   await supabase.from('cotation_lignes_fournisseurs').insert([
@@ -138,7 +138,7 @@ async function main() {
   const { data: link } = await supabase.from('quote_public_links' as any).insert({
     cotation_id: cot!.id,
     expires_at: new Date(Date.now() + 30*24*3600*1000).toISOString(),
-  }).select().single();
+  }).select().single(); 
   console.log('  public_token:', (link as any)?.token);
 
   console.log('\n✅ SEED OK');
