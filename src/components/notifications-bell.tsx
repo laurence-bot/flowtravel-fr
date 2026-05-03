@@ -147,6 +147,15 @@ export function NotificationsBell() {
                 })
               )}
             </div>
+            <div className="px-3 py-2 border-t text-center">
+              <Link
+                to={"/notifications" as any}
+                onClick={() => setOpen(false)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Voir toutes les notifications →
+              </Link>
+            </div>
           </div>
         </>
       )}
