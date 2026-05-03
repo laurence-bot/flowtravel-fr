@@ -79,6 +79,7 @@ import { QuoteContentEditorBlock } from "@/components/quote-content-editor-block
 import { FxOptimizerBlock } from "@/components/fx-optimizer-block";
 import { InlineFxCoveragePicker } from "@/components/inline-fx-coverage-picker";
 import { MargeCalculator } from "@/components/marge-calculator";
+import { useAgencySettings } from "@/hooks/use-agency-settings";
 
 export const Route = createFileRoute("/cotations/$id")({
   component: () => (
