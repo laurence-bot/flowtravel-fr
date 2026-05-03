@@ -1,6 +1,19 @@
 // Module Paramètres agence : types, validation Zod, helpers signature email.
 import { z } from "zod";
 
+export type PaymentMethodKey = "virement" | "lien_cb" | "autre";
+
+export type CancelationTierAgence = {
+  jours_avant: number;
+  /** Pénalité en pourcentage (0-100). */
+  pct_penalite?: number;
+  /** Pénalité forfaitaire en EUR (utilisée si pct_penalite est nul). */
+  montant_eur?: number;
+  /** Précision : "par personne" ou "par dossier". */
+  par_personne?: boolean;
+  libelle?: string;
+};
+
 export type AgencySettings = {
   id: string;
   user_id: string;
@@ -17,6 +30,32 @@ export type AgencySettings = {
   vat_number: string | null;
   primary_contact_name: string | null;
   utilise_couvertures_fx: boolean;
+  // Bulletin / signature
+  signature_url: string | null;
+  signature_nom: string | null;
+  // Paiement client
+  payment_methods: PaymentMethodKey[];
+  iban: string | null;
+  bic: string | null;
+  titulaire_compte: string | null;
+  lien_paiement_cb: string | null;
+  lien_paiement_cb_libelle: string | null;
+  instructions_paiement_autres: string | null;
+  // Échéancier client par défaut
+  pct_acompte_client_1: number;
+  pct_acompte_client_2: number;
+  pct_solde_client: number;
+  delai_acompte_2_jours: number | null;
+  delai_solde_jours: number | null;
+  // Conditions annulation agence
+  conditions_annulation_agence: CancelationTierAgence[];
+  // Mentions légales
+  garant_insolvabilite: string | null;
+  assureur_rc_pro: string | null;
+  numero_police_rc: string | null;
+  immat_atout_france: string | null;
+  numero_iata: string | null;
+  cgv_text: string | null;
   created_at: string;
   updated_at: string;
 };

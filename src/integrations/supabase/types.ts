@@ -117,6 +117,8 @@ export type Database = {
         Row: {
           address: string | null
           agency_name: string | null
+          assureur_rc_pro: string | null
+          bic: string | null
           brand_baseline: string | null
           brand_signature_quote: string | null
           cgv_text: string | null
@@ -127,22 +129,40 @@ export type Database = {
           color_primary: string | null
           color_secondary: string | null
           color_signature: string | null
+          conditions_annulation_agence: Json
           country: string | null
           created_at: string
+          delai_acompte_2_jours: number | null
+          delai_solde_jours: number | null
           email: string | null
           favicon_url: string | null
           font_body: string | null
           font_heading: string | null
+          garant_insolvabilite: string | null
+          iban: string | null
           id: string
+          immat_atout_france: string | null
+          instructions_paiement_autres: string | null
           legal_name: string | null
+          lien_paiement_cb: string | null
+          lien_paiement_cb_libelle: string | null
           logo_dark_url: string | null
           logo_symbol_url: string | null
           logo_url: string | null
+          numero_iata: string | null
+          numero_police_rc: string | null
+          payment_methods: Json
+          pct_acompte_client_1: number
+          pct_acompte_client_2: number
+          pct_solde_client: number
           pdf_footer_text: string | null
           phone: string | null
           primary_contact_name: string | null
           public_subdomain_slug: string | null
+          signature_nom: string | null
+          signature_url: string | null
           siret: string | null
+          titulaire_compte: string | null
           updated_at: string
           user_id: string
           utilise_couvertures_fx: boolean
@@ -152,6 +172,8 @@ export type Database = {
         Insert: {
           address?: string | null
           agency_name?: string | null
+          assureur_rc_pro?: string | null
+          bic?: string | null
           brand_baseline?: string | null
           brand_signature_quote?: string | null
           cgv_text?: string | null
@@ -162,22 +184,40 @@ export type Database = {
           color_primary?: string | null
           color_secondary?: string | null
           color_signature?: string | null
+          conditions_annulation_agence?: Json
           country?: string | null
           created_at?: string
+          delai_acompte_2_jours?: number | null
+          delai_solde_jours?: number | null
           email?: string | null
           favicon_url?: string | null
           font_body?: string | null
           font_heading?: string | null
+          garant_insolvabilite?: string | null
+          iban?: string | null
           id?: string
+          immat_atout_france?: string | null
+          instructions_paiement_autres?: string | null
           legal_name?: string | null
+          lien_paiement_cb?: string | null
+          lien_paiement_cb_libelle?: string | null
           logo_dark_url?: string | null
           logo_symbol_url?: string | null
           logo_url?: string | null
+          numero_iata?: string | null
+          numero_police_rc?: string | null
+          payment_methods?: Json
+          pct_acompte_client_1?: number
+          pct_acompte_client_2?: number
+          pct_solde_client?: number
           pdf_footer_text?: string | null
           phone?: string | null
           primary_contact_name?: string | null
           public_subdomain_slug?: string | null
+          signature_nom?: string | null
+          signature_url?: string | null
           siret?: string | null
+          titulaire_compte?: string | null
           updated_at?: string
           user_id: string
           utilise_couvertures_fx?: boolean
@@ -187,6 +227,8 @@ export type Database = {
         Update: {
           address?: string | null
           agency_name?: string | null
+          assureur_rc_pro?: string | null
+          bic?: string | null
           brand_baseline?: string | null
           brand_signature_quote?: string | null
           cgv_text?: string | null
@@ -197,22 +239,40 @@ export type Database = {
           color_primary?: string | null
           color_secondary?: string | null
           color_signature?: string | null
+          conditions_annulation_agence?: Json
           country?: string | null
           created_at?: string
+          delai_acompte_2_jours?: number | null
+          delai_solde_jours?: number | null
           email?: string | null
           favicon_url?: string | null
           font_body?: string | null
           font_heading?: string | null
+          garant_insolvabilite?: string | null
+          iban?: string | null
           id?: string
+          immat_atout_france?: string | null
+          instructions_paiement_autres?: string | null
           legal_name?: string | null
+          lien_paiement_cb?: string | null
+          lien_paiement_cb_libelle?: string | null
           logo_dark_url?: string | null
           logo_symbol_url?: string | null
           logo_url?: string | null
+          numero_iata?: string | null
+          numero_police_rc?: string | null
+          payment_methods?: Json
+          pct_acompte_client_1?: number
+          pct_acompte_client_2?: number
+          pct_solde_client?: number
           pdf_footer_text?: string | null
           phone?: string | null
           primary_contact_name?: string | null
           public_subdomain_slug?: string | null
+          signature_nom?: string | null
+          signature_url?: string | null
           siret?: string | null
+          titulaire_compte?: string | null
           updated_at?: string
           user_id?: string
           utilise_couvertures_fx?: boolean
