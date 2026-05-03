@@ -170,13 +170,24 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       });
   }, [user]);
 
-  const visibleFlowTravelNav = navFlowTravel.filter((item) => {
-    if (item.superAdminOnly && !isSuperAdmin) return false;
-    return canAccessRoute(role, item.to);
-  });
+  const filterItems = (items: NavItem[]) =>
+    items.filter((item) => {
+      if (item.superAdminOnly && !isSuperAdmin) return false;
+      return canAccessRoute(role, item.to);
+    });
 
-  const visibleAgenceNav = navAgence.filter((item) => canAccessRoute(role, item.to));
-  const visibleMonEspaceNav = navMonEspace.filter((item) => canAccessRoute(role, item.to));
+  const visibleFlowTopRaw = isSuperAdmin ? filterItems(navFlowTravelTop) : [];
+  const visibleFlowGroups = navFlowTravelGroups
+    .filter((g) => !g.superAdminOnly || isSuperAdmin)
+    .map((g) => ({ ...g, items: filterItems(g.items) }))
+    .filter((g) => g.items.length > 0);
+
+  const visibleAgenceTop = filterItems(navAgenceTop);
+  const visibleAgenceGroups = navAgenceGroups
+    .map((g) => ({ ...g, items: filterItems(g.items) }))
+    .filter((g) => g.items.length > 0);
+
+  const visibleMonEspaceNav = filterItems(navMonEspace);
 
   const handleSignOut = async () => {
     await signOut();
@@ -186,7 +197,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isActive = (to: string) =>
     to === "/app" ? location.pathname === "/app" : location.pathname.startsWith(to);
 
-  const NavLinkItem = ({ item, onClick }: { item: NavItem; onClick?: () => void }) => {
+  const NavLinkItem = ({ item, onClick, indent }: { item: NavItem; onClick?: () => void; indent?: boolean }) => {
     const Icon = item.icon;
     const active = isActive(item.to);
     return (
@@ -194,7 +205,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         to={item.to}
         onClick={onClick}
         className={cn(
-          "group flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] transition-all relative",
+          "group flex items-center gap-3 px-3 py-2 rounded-md text-[13px] transition-all relative",
+          indent && "pl-8",
           active
             ? "bg-sidebar-accent text-sidebar-accent-foreground"
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
@@ -203,9 +215,52 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {active && (
           <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2px] bg-[color:var(--gold)] rounded-r" />
         )}
-        <Icon className={cn("h-4 w-4", active && "text-[color:var(--gold)]")} />
-        <span className="font-medium tracking-wide">{item.label}</span>
+        <Icon className={cn("h-4 w-4 shrink-0", active && "text-[color:var(--gold)]")} />
+        <span className="font-medium tracking-wide truncate">{item.label}</span>
       </Link>
+    );
+  };
+
+  const CollapsibleGroup = ({ group, onClick }: { group: NavGroup; onClick?: () => void }) => {
+    const containsActive = group.items.some((i) => isActive(i.to));
+    const storageKey = `nav-group:${group.key}`;
+    const [open, setOpen] = useState<boolean>(() => {
+      if (typeof window === "undefined") return containsActive;
+      const stored = window.localStorage.getItem(storageKey);
+      if (stored === null) return containsActive;
+      return stored === "1";
+    });
+    useEffect(() => {
+      if (containsActive && !open) setOpen(true);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [containsActive]);
+    const toggle = () => {
+      setOpen((v) => {
+        const nv = !v;
+        try { window.localStorage.setItem(storageKey, nv ? "1" : "0"); } catch {}
+        return nv;
+      });
+    };
+    const Icon = group.icon;
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={toggle}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-[13px] text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
+        >
+          <Icon className="h-4 w-4 shrink-0" />
+          <span className="font-medium tracking-wide flex-1 text-left truncate">{group.label}</span>
+          {open ? <ChevronDown className="h-3.5 w-3.5 opacity-60" /> : <ChevronRight className="h-3.5 w-3.5 opacity-60" />}
+        </button>
+        {open && (
+          <div className="mt-1 space-y-0.5">
+            {group.items.map((item) => (
+              <NavLinkItem key={item.to} item={item} onClick={onClick} indent />
+            ))}
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -224,27 +279,31 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const NavList = ({ onClick }: { onClick?: () => void }) => (
     <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-      {visibleFlowTravelNav.length > 0 && (
-        <>
-          <div className="rounded-md border border-[color:var(--gold)]/20 bg-[color:var(--gold)]/5 p-2 mb-4">
-            <SectionHeader label="FlowTravel OPS" sublabel="Vous seul · pilotage plateforme" />
-            <div className="space-y-1">
-              {visibleFlowTravelNav.map((item) => (
-                <NavLinkItem key={item.to} item={item} onClick={onClick} />
-              ))}
-            </div>
+      {(visibleFlowTopRaw.length > 0 || visibleFlowGroups.length > 0) && (
+        <div className="rounded-md border border-[color:var(--gold)]/20 bg-[color:var(--gold)]/5 p-2 mb-4">
+          <SectionHeader label="FlowTravel OPS" sublabel="Vous seul · pilotage plateforme" />
+          <div className="space-y-1">
+            {visibleFlowTopRaw.map((item) => (
+              <NavLinkItem key={item.to} item={item} onClick={onClick} />
+            ))}
+            {visibleFlowGroups.map((g) => (
+              <CollapsibleGroup key={g.key} group={g} onClick={onClick} />
+            ))}
           </div>
-        </>
+        </div>
       )}
-      {visibleAgenceNav.length > 0 && (
+      {(visibleAgenceTop.length > 0 || visibleAgenceGroups.length > 0) && (
         <>
           <SectionHeader
             label="Mon agence"
             sublabel={agencyName ?? "Espace de travail"}
           />
           <div className="space-y-1">
-            {visibleAgenceNav.map((item) => (
+            {visibleAgenceTop.map((item) => (
               <NavLinkItem key={item.to} item={item} onClick={onClick} />
+            ))}
+            {visibleAgenceGroups.map((g) => (
+              <CollapsibleGroup key={g.key} group={g} onClick={onClick} />
             ))}
           </div>
         </>
@@ -258,9 +317,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             ))}
           </div>
         </>
-      )}
-    </nav>
-  );
 
   return (
     <div className="flex min-h-screen w-full bg-background">
