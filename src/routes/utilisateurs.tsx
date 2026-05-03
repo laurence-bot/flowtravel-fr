@@ -67,6 +67,7 @@ function UtilisateursPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [inviteRole, setInviteRole] = useState<AppRole>("agent");
+  const [sendInviteEmail, setSendInviteEmail] = useState(false);
   const [inviting, setInviting] = useState(false);
 
 
@@ -203,7 +204,7 @@ function UtilisateursPage() {
           <DialogHeader>
             <DialogTitle>Ajouter un utilisateur</DialogTitle>
             <DialogDescription>
-              Un email d'invitation lui sera envoyé pour définir son mot de passe.
+              Créez l'accès immédiatement, avec email d'invitation optionnel.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -226,6 +227,17 @@ function UtilisateursPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/20 px-3 py-2">
+              <Label htmlFor="send-invite-email" className="text-sm font-normal">
+                Envoyer l'email d'invitation
+              </Label>
+              <Switch
+                id="send-invite-email"
+                checked={sendInviteEmail}
+                onCheckedChange={setSendInviteEmail}
+                disabled={inviting}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setInviteOpen(false)} disabled={inviting}>Annuler</Button>
@@ -234,10 +246,10 @@ function UtilisateursPage() {
               onClick={async () => {
                 setInviting(true);
                 try {
-                  await inviteUser({ data: { email: inviteEmail, full_name: inviteName, role: inviteRole } });
-                  toast.success("Invitation envoyée");
+                  await inviteUser({ data: { email: inviteEmail, full_name: inviteName, role: inviteRole, sendInviteEmail } });
+                  toast.success(sendInviteEmail ? "Invitation envoyée" : "Utilisateur créé sans invitation");
                   setInviteOpen(false);
-                  setInviteEmail(""); setInviteName(""); setInviteRole("agent");
+                  setInviteEmail(""); setInviteName(""); setInviteRole("agent"); setSendInviteEmail(false);
                   await refresh();
                 } catch (e: any) {
                   toast.error(e?.message ?? "Échec de l'invitation");
@@ -246,7 +258,7 @@ function UtilisateursPage() {
                 }
               }}
             >
-              {inviting ? "Envoi…" : "Envoyer l'invitation"}
+              {inviting ? "Création…" : sendInviteEmail ? "Créer et inviter" : "Créer sans email"}
             </Button>
           </DialogFooter>
         </DialogContent>
