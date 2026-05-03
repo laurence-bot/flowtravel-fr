@@ -37,6 +37,8 @@ type Agence = {
   raison_sociale: string | null;
   immat_atout_france: string;
   siret: string;
+  est_etablissement_secondaire: boolean | null;
+  siren_siege: string | null;
   email_contact: string;
   telephone: string | null;
   adresse: string | null;
