@@ -35,16 +35,21 @@ export const inviteUser = createServerFn({ method: "POST" })
 
     const email = data.email.trim().toLowerCase();
 
-    // Invite via admin API
-    const { data: invited, error: inviteErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+    // Création directe sans envoi d'email (le super-admin gère l'onboarding manuellement).
+    // Mot de passe temporaire aléatoire — l'utilisateur passera par "mot de passe oublié" si besoin.
+    const tempPassword = crypto.randomUUID().replace(/-/g, "") + "Aa1!";
+
+    const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
       email,
-      { data: { full_name: data.full_name } }
-    );
-    if (inviteErr || !invited?.user) {
-      throw new Response(inviteErr?.message ?? "Échec de l'invitation", { status: 400 });
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: { full_name: data.full_name },
+    });
+    if (createErr || !created?.user) {
+      throw new Response(createErr?.message ?? "Échec de la création", { status: 400 });
     }
 
-    const newUserId = invited.user.id;
+    const newUserId = created.user.id;
 
     // Update profile (handle_new_user trigger created it)
     await supabaseAdmin
