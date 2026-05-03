@@ -270,7 +270,14 @@ function AdminAgencesPage() {
               {enAttente.map((a) => (
                 <TableRow key={a.id} className="cursor-pointer" onClick={() => openDetail(a)}>
                   <TableCell>
-                    <div className="font-medium text-sm">{a.nom_commercial}</div>
+                    <div className="font-medium text-sm flex items-center gap-2">
+                      {a.nom_commercial}
+                      {a.est_etablissement_secondaire && (
+                        <Badge variant="outline" className="bg-amber-500/15 text-amber-700 border-amber-500/30 text-[10px]">
+                          Établ. secondaire
+                        </Badge>
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground">{a.email_contact} · {a.admin_full_name}</div>
                   </TableCell>
                   <TableCell className="font-mono text-xs">{a.siret}</TableCell>
