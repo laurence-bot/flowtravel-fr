@@ -518,6 +518,22 @@ function AdminAgencesPage() {
                   </section>
                 )}
 
+                {selected.statut === "en_attente" && !refusing && (
+                  <section className="border-t pt-4">
+                    <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/20 px-3 py-2">
+                      <Label htmlFor="send-welcome-email" className="text-sm font-normal">
+                        Envoyer l'email de bienvenue
+                      </Label>
+                      <Switch
+                        id="send-welcome-email"
+                        checked={sendWelcomeEmail}
+                        onCheckedChange={setSendWelcomeEmail}
+                        disabled={acting}
+                      />
+                    </div>
+                  </section>
+                )}
+
                 {/* Refus */}
                 {refusing && (
                   <section className="border-t pt-4 space-y-2">
