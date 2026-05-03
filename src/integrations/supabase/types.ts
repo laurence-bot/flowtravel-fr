@@ -3133,6 +3133,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_super_admin: boolean
+          pending_agence_id: string | null
           updated_at: string
           user_id: string
         }
@@ -3144,6 +3145,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_super_admin?: boolean
+          pending_agence_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -3155,6 +3157,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_super_admin?: boolean
+          pending_agence_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -3162,6 +3165,13 @@ export type Database = {
           {
             foreignKeyName: "user_profiles_agence_id_fkey"
             columns: ["agence_id"]
+            isOneToOne: false
+            referencedRelation: "agences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_pending_agence_id_fkey"
+            columns: ["pending_agence_id"]
             isOneToOne: false
             referencedRelation: "agences"
             referencedColumns: ["id"]
