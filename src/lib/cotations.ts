@@ -391,6 +391,13 @@ export async function deleteCotation(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any;
 
+  const { data: cotationMeta } = await sb
+    .from("cotations")
+    .select("demande_id")
+    .eq("id", cotationId)
+    .maybeSingle();
+  const demandeId = cotationMeta?.demande_id as string | null | undefined;
+
   // Récupérer les flight_options pour supprimer leurs segments
   const { data: flightOpts } = await sb
     .from("flight_options")
@@ -422,6 +429,21 @@ export async function deleteCotation(
 
   const { error } = await sb.from("cotations").delete().eq("id", cotationId);
   if (error) return { ok: false, error: error.message };
+
+  if (demandeId) {
+    const { data: remaining } = await sb
+      .from("cotations")
+      .select("id")
+      .eq("demande_id", demandeId)
+      .limit(1);
+    if ((remaining ?? []).length === 0) {
+      await sb
+        .from("demandes")
+        .update({ statut: "en_cours", raison_perte: null, dernier_contact_at: new Date().toISOString() })
+        .eq("id", demandeId)
+        .eq("statut", "transformee_en_cotation");
+    }
+  }
   return { ok: true };
 }
 
