@@ -4,7 +4,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { DEVISES, type DeviseCode } from "@/lib/fx";
-import { extractTextFromPdf } from "@/lib/pdf-import";
 
 export type Confiance = "faible" | "moyenne" | "elevee";
 
@@ -73,6 +72,53 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
   });
 }
 
+type ProgramPayload = { type: "programme_fournisseur"; text?: string; images?: string[] };
+type ProgressCallback = (message: string) => void;
+
+async function loadPdf(file: File): Promise<any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdfjs: any = await import("pdfjs-dist");
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+  const buf = await file.arrayBuffer();
+  return withTimeout(
+    pdfjs.getDocument({ data: buf }).promise,
+    20000,
+    "Impossible d'ouvrir le PDF automatiquement. Essayez de l'exporter à nouveau en PDF standard.",
+  );
+}
+
+/** Extrait le texte page par page, en petits blocs, pour éviter de bloquer sur les gros PDF. */
+async function extractPdfTextChunks(file: File): Promise<string[]> {
+  const pdf = await loadPdf(file);
+  const maxPages = Math.min(pdf.numPages, 45);
+  const chunkLimit = 9000;
+  const maxChunks = 7;
+  const chunks: string[] = [];
+  let current = "";
+
+  for (let i = 1; i <= maxPages && chunks.length < maxChunks; i++) {
+    const page: any = await withTimeout(pdf.getPage(i), 12000, `Lecture impossible de la page ${i}.`);
+    const content: any = await withTimeout(
+      page.getTextContent(),
+      12000,
+      `Extraction texte trop longue sur la page ${i}.`,
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pageText = content.items.map((it: any) => it.str ?? "").join(" ").trim();
+    if (!pageText) continue;
+    const block = `\n\n--- Page ${i} ---\n${pageText.slice(0, 5000)}`;
+    if (current && current.length + block.length > chunkLimit) {
+      chunks.push(current);
+      current = block;
+    } else {
+      current += block;
+    }
+  }
+
+  if (current.trim() && chunks.length < maxChunks) chunks.push(current);
+  return chunks.filter((chunk) => chunk.trim().length >= 40);
+}
+
 /** Convertit un fichier image en data URL base64. */
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -83,97 +129,32 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-/** Rasterise les premières pages d'un PDF en images JPEG légères — fallback OCR. */
-async function pdfToImages(file: File, maxPages = 4): Promise<string[]> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfjs: any = await import("pdfjs-dist");
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
-  const buf = await file.arrayBuffer();
-  const pdf = await pdfjs.getDocument({ data: buf }).promise;
+/** Rasterise les premières pages d'un PDF en images JPEG légères, par petits lots — fallback OCR. */
+async function pdfToImageBatches(file: File, maxPages = 10, pagesPerBatch = 2): Promise<string[][]> {
+  const pdf = await loadPdf(file);
   const pages = Math.min(pdf.numPages, maxPages);
-  const out: string[] = [];
+  const batches: string[][] = [];
+  let current: string[] = [];
   for (let i = 1; i <= pages; i++) {
     const page = await pdf.getPage(i);
-    const viewport = page.getViewport({ scale: 1.15 });
+    const viewport = page.getViewport({ scale: 0.95 });
     const canvas = document.createElement("canvas");
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
+    canvas.width = Math.floor(viewport.width);
+    canvas.height = Math.floor(viewport.height);
     const ctx = canvas.getContext("2d");
     if (!ctx) continue;
     await page.render({ canvasContext: ctx, viewport }).promise;
-    out.push(canvas.toDataURL("image/jpeg", 0.72));
+    current.push(canvas.toDataURL("image/jpeg", 0.62));
+    if (current.length >= pagesPerBatch) {
+      batches.push(current);
+      current = [];
+    }
   }
-  return out;
+  if (current.length) batches.push(current);
+  return batches;
 }
 
-/** Extrait un programme depuis un fichier (PDF ou image). */
-export async function extractProgramFromFile(
-  file: File,
-): Promise<{ result: ExtractedProgram | null; error?: string }> {
-  let payload: { type: "programme_fournisseur"; text?: string; images?: string[] };
-
-  try {
-    if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
-      let text = "";
-      try {
-        text = await withTimeout(
-          extractTextFromPdf(file),
-          25000,
-          "La lecture du PDF prend trop de temps. Essayez avec un PDF plus léger ou une image.",
-        );
-      } catch (e) {
-        console.warn("[program-import] extractTextFromPdf failed:", e);
-      }
-      if (text && text.length >= 40) {
-        payload = { type: "programme_fournisseur", text: text.slice(0, 30000) };
-      } else {
-        // PDF scanné / sans texte → on rasterise en images
-        console.info("[program-import] PDF sans texte exploitable, rasterisation en images.");
-        const images = await withTimeout(
-          pdfToImages(file),
-          30000,
-          "La conversion du PDF scanné prend trop de temps. Essayez avec une image JPG/PNG ou un PDF plus léger.",
-        );
-        if (images.length === 0) {
-          return { result: null, error: "Impossible de lire le PDF." };
-        }
-        payload = { type: "programme_fournisseur", images };
-      }
-    } else if (file.type.startsWith("image/")) {
-      const url = await fileToDataUrl(file);
-      payload = { type: "programme_fournisseur", images: [url] };
-    } else {
-      return { result: null, error: "Format non supporté. Utilisez PDF ou image (JPG/PNG)." };
-    }
-  } catch (e) {
-    console.error("[program-import] preparation error:", e);
-    return {
-      result: null,
-      error: e instanceof Error ? e.message : "Erreur de préparation du fichier",
-    };
-  }
-
-  console.info("[program-import] envoi à extract-pdf", {
-    hasText: !!payload.text,
-    textLen: payload.text?.length,
-    images: payload.images?.length,
-  });
-
-  const { data, error } = await withTimeout(
-    supabase.functions.invoke("extract-pdf", { body: payload }),
-    65000,
-    "L'analyse IA dépasse le délai maximum. Essayez avec un document plus court ou séparé en plusieurs parties.",
-  );
-  if (error) {
-    console.error("[program-import] invoke error:", error);
-    return { result: null, error: error.message };
-  }
-  if (data?.error) {
-    console.error("[program-import] data error:", data.error);
-    return { result: null, error: data.error };
-  }
-
-  const raw = (data?.data ?? {}) as Record<string, unknown>;
+function normalizeExtractedProgram(raw: Record<string, unknown>, confiance: Confiance): ExtractedProgram {
   const joursRaw = Array.isArray(raw.jours) ? (raw.jours as Array<Record<string, unknown>>) : [];
   const lignesRaw = Array.isArray(raw.lignes) ? (raw.lignes as Array<Record<string, unknown>>) : [];
 
@@ -185,6 +166,7 @@ export async function extractProgramFromFile(
       date_jour: isoDate(j.date_jour),
       description: j.description ? String(j.description).trim() : undefined,
     }))
+    .filter((j) => j.titre)
     .sort((a, b) => a.ordre - b.ordre);
 
   const lignes: ExtractedLigne[] = lignesRaw
@@ -204,16 +186,117 @@ export async function extractProgramFromFile(
     .filter((l) => l.prestation && l.montant_devise > 0);
 
   return {
-    result: {
-      fournisseur_nom: (raw.fournisseur_nom as string) || undefined,
-      destination: (raw.destination as string) || undefined,
-      nombre_pax: num(raw.nombre_pax),
-      date_depart: isoDate(raw.date_depart),
-      jours,
-      lignes,
-      confiance: (data?.confiance as Confiance) ?? "moyenne",
-    },
+    fournisseur_nom: (raw.fournisseur_nom as string) || undefined,
+    destination: (raw.destination as string) || undefined,
+    nombre_pax: num(raw.nombre_pax),
+    date_depart: isoDate(raw.date_depart),
+    jours,
+    lignes,
+    confiance,
   };
+}
+
+function mergePrograms(parts: ExtractedProgram[]): ExtractedProgram | null {
+  if (parts.length === 0) return null;
+  const jourKeys = new Set<string>();
+  const ligneKeys = new Set<string>();
+  const jours: ExtractedJour[] = [];
+  const lignes: ExtractedLigne[] = [];
+
+  for (const part of parts) {
+    for (const j of part.jours) {
+      const key = `${j.date_jour ?? ""}|${j.titre.toLowerCase()}|${(j.description ?? "").slice(0, 80).toLowerCase()}`;
+      if (jourKeys.has(key)) continue;
+      jourKeys.add(key);
+      jours.push({ ...j, ordre: jours.length + 1 });
+    }
+    for (const l of part.lignes) {
+      const key = `${l.prestation.toLowerCase()}|${l.montant_devise}|${l.devise}|${l.jour_ordre ?? ""}`;
+      if (ligneKeys.has(key)) continue;
+      ligneKeys.add(key);
+      lignes.push(l);
+    }
+  }
+
+  const rank: Record<Confiance, number> = { faible: 0, moyenne: 1, elevee: 2 };
+  const confiance = parts.reduce<Confiance>((lowest, part) =>
+    rank[part.confiance] < rank[lowest] ? part.confiance : lowest,
+  "elevee");
+
+  return {
+    fournisseur_nom: parts.find((p) => p.fournisseur_nom)?.fournisseur_nom,
+    destination: parts.find((p) => p.destination)?.destination,
+    nombre_pax: parts.find((p) => p.nombre_pax)?.nombre_pax,
+    date_depart: parts.find((p) => p.date_depart)?.date_depart,
+    jours,
+    lignes,
+    confiance,
+  };
+}
+
+async function analyzeProgramPayload(payload: ProgramPayload): Promise<{ result: ExtractedProgram | null; error?: string }> {
+  const { data, error } = await withTimeout(
+    supabase.functions.invoke("extract-pdf", { body: payload }),
+    70000,
+    "Une partie du document est trop longue à analyser automatiquement.",
+  );
+  if (error) return { result: null, error: error.message };
+  if (data?.error) return { result: null, error: data.error };
+
+  const raw = (data?.data ?? {}) as Record<string, unknown>;
+  const confiance = (data?.confiance as Confiance) ?? "moyenne";
+  return { result: normalizeExtractedProgram(raw, confiance) };
+}
+
+/** Extrait un programme depuis un fichier (PDF ou image). */
+export async function extractProgramFromFile(
+  file: File,
+  onProgress?: ProgressCallback,
+): Promise<{ result: ExtractedProgram | null; error?: string }> {
+  try {
+    if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
+      onProgress?.("Lecture du PDF page par page…");
+      const textChunks = await extractPdfTextChunks(file);
+      const parts: ExtractedProgram[] = [];
+
+      if (textChunks.length > 0) {
+        for (let i = 0; i < textChunks.length; i++) {
+          onProgress?.(`Analyse du texte ${i + 1}/${textChunks.length}…`);
+          const analyzed = await analyzeProgramPayload({
+            type: "programme_fournisseur",
+            text: textChunks[i],
+          });
+          if (analyzed.result) parts.push(analyzed.result);
+        }
+        return { result: mergePrograms(parts), error: parts.length ? undefined : "Aucune donnée exploitable détectée dans le PDF." };
+      }
+
+      onProgress?.("PDF scanné détecté : analyse visuelle par lots…");
+      const batches = await pdfToImageBatches(file);
+      if (batches.length === 0) return { result: null, error: "Impossible de lire le PDF scanné." };
+      for (let i = 0; i < batches.length; i++) {
+        onProgress?.(`Analyse des pages scannées ${i + 1}/${batches.length}…`);
+        const analyzed = await analyzeProgramPayload({
+          type: "programme_fournisseur",
+          images: batches[i],
+        });
+        if (analyzed.result) parts.push(analyzed.result);
+      }
+      return { result: mergePrograms(parts), error: parts.length ? undefined : "Aucune donnée exploitable détectée dans le PDF scanné." };
+    } else if (file.type.startsWith("image/")) {
+      onProgress?.("Analyse de l'image…");
+      const url = await fileToDataUrl(file);
+      return analyzeProgramPayload({ type: "programme_fournisseur", images: [url] });
+    } else {
+      return { result: null, error: "Format non supporté. Utilisez PDF ou image (JPG/PNG)." };
+    }
+  } catch (e) {
+    console.error("[program-import] preparation error:", e);
+    return {
+      result: null,
+      error: e instanceof Error ? e.message : "Erreur de préparation du fichier",
+    };
+  }
 }
 
 /** Insère les jours sélectionnés dans cotation_jours (en append à la fin). */

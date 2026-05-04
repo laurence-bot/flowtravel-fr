@@ -34,6 +34,7 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [progressLabel, setProgressLabel] = useState("");
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ExtractedProgram | null>(null);
   const [selJours, setSelJours] = useState<Set<number>>(new Set());
@@ -42,6 +43,7 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
   const reset = () => {
     setFile(null);
     setResult(null);
+    setProgressLabel("");
     setSelJours(new Set());
     setSelLignes(new Set());
   };
@@ -49,8 +51,9 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
   const handleAnalyze = async () => {
     if (!file) return;
     setLoading(true);
+    setProgressLabel("Préparation du document…");
     try {
-      const { result: r, error } = await extractProgramFromFile(file);
+      const { result: r, error } = await extractProgramFromFile(file, setProgressLabel);
       if (error || !r) {
         toast.error(error ?? "Extraction échouée");
         return;
@@ -66,6 +69,7 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
       toast.error(e instanceof Error ? e.message : "Erreur inattendue pendant l'analyse");
     } finally {
       setLoading(false);
+      setProgressLabel("");
     }
   };
 
@@ -173,7 +177,7 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Analyse en cours…
+                    {progressLabel || "Analyse en cours…"}
                   </>
                 ) : (
                   <>
