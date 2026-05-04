@@ -1,19 +1,21 @@
-import { Eye, Pencil, Users, X } from "lucide-react";
+import { Eye, Pencil, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEditLock } from "@/hooks/use-edit-lock";
+import type { useEditLock } from "@/hooks/use-edit-lock";
 import { toast } from "sonner";
 import { useEffect } from "react";
 
 type Props = {
-  resource: "cotation" | "dossier" | "demande";
-  resourceId: string | undefined;
+  lock: ReturnType<typeof useEditLock>;
 };
 
 /**
  * Bannière de verrou collaboratif. À placer en haut d'une fiche éditable.
  * Affiche qui édite, qui consulte, et permet de demander/céder la main.
+ *
+ * IMPORTANT : passer l'instance unique du hook `useEditLock` depuis la page parente
+ * (afin de partager le même channel Realtime que celui qui gouverne canWrite).
  */
-export function EditLockBanner({ resource, resourceId }: Props) {
+export function EditLockBanner({ lock }: Props) {
   const {
     canEdit,
     editor,
@@ -23,7 +25,7 @@ export function EditLockBanner({ resource, resourceId }: Props) {
     requestTakeover,
     grantTakeover,
     dismissTakeover,
-  } = useEditLock(resource, resourceId);
+  } = lock;
 
   // Notification quand quelqu'un demande la main
   useEffect(() => {
