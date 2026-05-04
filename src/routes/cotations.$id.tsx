@@ -694,6 +694,8 @@ function CotationDetailPage() {
           nombrePax={cot.nombre_pax ?? null}
           dateDepart={cot.date_depart ?? null}
           dateRetour={cot.date_retour ?? null}
+          programmePdfUrl={cot.programme_pdf_url ?? null}
+          programmePdfName={cot.programme_pdf_name ?? null}
           onDataChanged={() => {
             refetchCot();
             refetchLignes();
