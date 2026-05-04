@@ -701,16 +701,30 @@ export function QuoteContentEditorBlock({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => void resyncDatesFromFlights()}
-                disabled={resyncLoading || !hasFlights}
-                title="Aligne les dates de la cotation et des jours sur les vols"
+                onClick={() => void resyncProgramAndFlights()}
+                disabled={resyncLoading || (!hasFlights && jours.length === 0)}
+                title="Synchronise le programme PDF avec les dates de vol et alerte en cas d'écart"
               >
                 {resyncLoading ? (
                   <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                 ) : (
                   <RefreshCw className="h-4 w-4 mr-1" />
                 )}
-                Resynchroniser dates
+                Synchroniser PDF + vols
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => void cleanDuplicates()}
+                disabled={cleanLoading || jours.length === 0}
+                title="Supprime en masse les doublons de jours et de lignes prix"
+              >
+                {cleanLoading ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4 mr-1" />
+                )}
+                Nettoyer doublons
               </Button>
               <Button
                 size="sm"
