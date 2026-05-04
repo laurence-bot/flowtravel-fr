@@ -526,6 +526,18 @@ function CotationDetailPage() {
           action={
             <div className="flex flex-wrap items-center gap-2">
               {user && (
+                <ProgramImportDialog
+                  cotationId={cot.id}
+                  userId={user.id}
+                  canWrite={canWrite}
+                  onImported={() => {
+                    refetchLignes();
+                    // Force le rechargement des jours (QuoteContentEditorBlock relit au mount)
+                    window.location.reload();
+                  }}
+                />
+              )}
+              {user && (
                 <Button asChild size="sm">
                   <a href="#devis-web-client">
                     <Sparkles className="mr-2 h-4 w-4" />
