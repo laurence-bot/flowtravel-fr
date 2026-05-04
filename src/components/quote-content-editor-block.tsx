@@ -42,7 +42,7 @@ import {
   duplicateLineKey,
   type SyncJour,
 } from "@/lib/cotation-sync";
-import { extractProgramFromFile, insertJours, insertLignes } from "@/lib/program-import";
+import { extractProgramFromFile, insertJours, insertLignes, purgeEtReinserer } from "@/lib/program-import";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -516,19 +516,13 @@ export function QuoteContentEditorBlock({
           const file = new File([blob], programmePdfName ?? "programme.pdf", { type: "application/pdf" });
           const extracted = await extractProgramFromFile(file);
           if (extracted.result) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const [{ data: joursMax }, { data: lignesMax }] = await Promise.all([
-              (supabase as any).from("cotation_jours").select("ordre").eq("cotation_id", cotationId).order("ordre", { ascending: false }).limit(1),
-              (supabase as any).from("cotation_lignes_fournisseurs").select("ordre").eq("cotation_id", cotationId).order("ordre", { ascending: false }).limit(1),
-            ]);
-            const j = await insertJours(userId, cotationId, extracted.result.jours, ((joursMax?.[0]?.ordre as number) ?? 0) + 1);
-            const l = await insertLignes(userId, cotationId, extracted.result.lignes, ((lignesMax?.[0]?.ordre as number) ?? 0) + 1);
-            if (j.error) throw new Error(j.error);
-            if (l.error) throw new Error(l.error);
-            importedPdfJours = j.count;
-            skippedPdfJours = j.skipped;
-            importedPdfLines = l.count;
-            skippedPdfLines = l.skipped;
+            // Resynchronisation : purge totale puis réinsertion — jamais de cumul.
+            const r = await purgeEtReinserer(userId, cotationId, extracted.result, { regenJours: true });
+            if (r.error) throw new Error(r.error);
+            importedPdfJours = r.joursCount;
+            skippedPdfJours = 0;
+            importedPdfLines = r.lignesCount;
+            skippedPdfLines = 0;
           }
         }
       }
