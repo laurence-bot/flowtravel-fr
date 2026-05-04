@@ -28,6 +28,8 @@ import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 import { DossierTasksBlock } from "@/components/dossier-tasks-block";
 import { triggerBulletinAfterAcompte } from "@/server/bulletin-trigger.functions";
+import { useEditLock } from "@/hooks/use-edit-lock";
+import { EditLockBanner } from "@/components/edit-lock-banner";
 
 export const Route = createFileRoute("/dossiers/$id")({
   component: () => (
