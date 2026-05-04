@@ -493,6 +493,20 @@ export function QuoteContentEditorBlock({
               <Button
                 size="sm"
                 variant="outline"
+                onClick={() => void resyncDatesFromFlights()}
+                disabled={resyncLoading || !hasFlights}
+                title="Aligne les dates de la cotation et des jours sur les vols"
+              >
+                {resyncLoading ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                )}
+                Resynchroniser dates
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={handleRegenClick}
                 disabled={regenLoading || !hasFlights}
                 title={
