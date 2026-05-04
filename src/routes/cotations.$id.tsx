@@ -80,6 +80,7 @@ import { FxOptimizerBlock } from "@/components/fx-optimizer-block";
 import { InlineFxCoveragePicker } from "@/components/inline-fx-coverage-picker";
 import { MargeCalculator } from "@/components/marge-calculator";
 import { useAgencySettings } from "@/hooks/use-agency-settings";
+import { ProgramImportDialog } from "@/components/program-import-dialog";
 
 export const Route = createFileRoute("/cotations/$id")({
   component: () => (
