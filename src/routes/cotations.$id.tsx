@@ -804,7 +804,7 @@ function CotationDetailPage() {
               <ArrowRight className="h-4 w-4 mr-2" /> Transformer en dossier
             </Button>
           )}
-          <Button onClick={nouvelleVersion} variant="outline">
+          <Button onClick={openDuplicateDialog} variant="outline">
             <Copy className="h-4 w-4 mr-2" /> Nouvelle version
           </Button>
           <Button
@@ -813,6 +813,13 @@ function CotationDetailPage() {
             className="text-destructive hover:text-destructive"
           >
             <XCircle className="h-4 w-4 mr-2" /> Marquer comme perdue
+          </Button>
+          <Button
+            onClick={() => setDeleteOpen(true)}
+            variant="outline"
+            className="text-destructive hover:text-destructive border-destructive/40"
+          >
+            <Trash2 className="h-4 w-4 mr-2" /> Supprimer
           </Button>
         </Card>
       )}
