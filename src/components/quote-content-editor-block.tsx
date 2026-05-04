@@ -336,6 +336,90 @@ export function QuoteContentEditorBlock({
     }
   };
 
+  /** Resynchronise les dates de la cotation + des jours sur les vols, sans toucher aux contenus. */
+  const resyncDatesFromFlights = async () => {
+    setResyncLoading(true);
+    try {
+      const [volsRes, linkRes] = await Promise.all([
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from("flight_options")
+          .select("*")
+          .eq("cotation_id", cotationId)
+          .order("created_at", { ascending: true }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from("quote_public_links")
+          .select("chosen_flight_option_id")
+          .eq("cotation_id", cotationId)
+          .maybeSingle(),
+      ]);
+      const vols = (volsRes.data ?? []) as FlightOptionLite[];
+      if (vols.length === 0) {
+        toast.error("Aucun vol renseigné.");
+        return;
+      }
+      const chosenId = (linkRes.data?.chosen_flight_option_id ?? null) as string | null;
+      const refVol = pickReferenceFlight(vols, chosenId);
+      if (!refVol) {
+        toast.error("Vol de référence introuvable.");
+        return;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: segs } = await (supabase as any)
+        .from("flight_segments")
+        .select("*")
+        .eq("flight_option_id", refVol.id)
+        .order("ordre", { ascending: true });
+      const segments = (segs ?? []) as FlightSegmentLite[];
+
+      // Date arrivée à destination = date_arrivee du dernier segment aller
+      // Heuristique : on prend date_depart = 1er segment, date_retour = dernier segment
+      const sorted = [...segments].sort((a, b) => a.ordre - b.ordre);
+      const newDepart = sorted[0]?.date_depart ?? refVol.date_depart ?? null;
+      const newRetour =
+        sorted[sorted.length - 1]?.date_arrivee ?? refVol.date_retour ?? null;
+
+      if (!newDepart || !newRetour) {
+        toast.error("Dates de vol incomplètes.");
+        return;
+      }
+
+      // 1. Mettre à jour la cotation
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: cotErr } = await (supabase as any)
+        .from("cotations")
+        .update({ date_depart: newDepart, date_retour: newRetour })
+        .eq("id", cotationId);
+      if (cotErr) throw cotErr;
+
+      // 2. Réaligner les date_jour des jours existants (en gardant ordre + contenu)
+      const sortedJours = [...jours].sort((a, b) => a.ordre - b.ordre);
+      const baseDate = new Date(newDepart);
+      const updates = sortedJours.map((j, i) => {
+        const d = new Date(baseDate);
+        d.setDate(baseDate.getDate() + i);
+        const newDateJour = d.toISOString().slice(0, 10);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (supabase as any)
+          .from("cotation_jours")
+          .update({ date_jour: newDateJour })
+          .eq("id", j.id);
+      });
+      const results = await Promise.all(updates);
+      const failed = results.find((r) => r.error);
+      if (failed) throw failed.error;
+
+      toast.success("Dates resynchronisées sur les vols.");
+      await loadJours();
+    } catch (e) {
+      console.error("[resync dates] erreur:", e);
+      toast.error(e instanceof Error ? e.message : "Erreur de resynchronisation.");
+    } finally {
+      setResyncLoading(false);
+    }
+  };
+
   const runRegenerate = async () => {
     setRegenOpen(false);
     setRegenLoading(true);
