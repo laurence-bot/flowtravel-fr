@@ -1418,6 +1418,93 @@ function CotationDetailPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog suppression */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer cette cotation&nbsp;?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Cette action est <strong>irréversible</strong>. Toutes les étapes,
+              lignes prix fournisseurs, options de vols et liens publics liés
+              seront supprimés.
+            </p>
+            {cot.dossier_id && (
+              <p className="text-sm text-destructive">
+                Cette cotation a déjà été transformée en dossier — la suppression est bloquée.
+              </p>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>Annuler</Button>
+              <Button variant="destructive" onClick={confirmDelete} disabled={deleting || !!cot.dossier_id}>
+                {deleting ? "Suppression…" : "Supprimer définitivement"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog nouvelle version */}
+      <Dialog open={duplicateOpen} onOpenChange={setDuplicateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nouvelle version de la cotation</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Field label="Nom de la version (optionnel)">
+              <Input
+                value={dupForm.versionLabel}
+                onChange={(e) => setDupForm({ ...dupForm, versionLabel: e.target.value })}
+                placeholder="ex. Premium, Court séjour, Sans vols…"
+              />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Date de départ">
+                <Input type="date" value={dupForm.newDateDepart}
+                  onChange={(e) => setDupForm({ ...dupForm, newDateDepart: e.target.value })} />
+              </Field>
+              <Field label="Date de retour">
+                <Input type="date" value={dupForm.newDateRetour}
+                  onChange={(e) => setDupForm({ ...dupForm, newDateRetour: e.target.value })} />
+              </Field>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Si tu changes la date de départ, les dates des étapes, prestations
+              et échéances fournisseurs seront décalées automatiquement du même
+              nombre de jours.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDuplicateOpen(false)} disabled={duplicating}>Annuler</Button>
+              <Button onClick={confirmDuplicate} disabled={duplicating}>
+                {duplicating ? "Création…" : "Créer la version"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Document fournisseur importé */}
+      {cot.programme_pdf_url && (
+        <Card className="p-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+            <div className="min-w-0">
+              <div className="text-sm font-medium truncate">
+                {cot.programme_pdf_name ?? "Document fournisseur importé"}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Source utilisée pour l'import automatique des étapes et lignes prix.
+              </div>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={openProgrammePdf} disabled={pdfLoading}>
+            <ExternalLink className="h-4 w-4 mr-2" />
+            {pdfLoading ? "Ouverture…" : "Ouvrir le PDF"}
+          </Button>
+        </Card>
+      )}
+
       {/* Versions */}
       {(() => {
         const versions = cotations
