@@ -6,6 +6,7 @@
 
 import { iataToCity } from "@/lib/iata";
 import { airlineName } from "@/lib/airlines";
+import { analyserConnexionVol, type VolPoint } from "@/lib/flight-connections";
 
 export type FlightSegmentLite = {
   id: string;
@@ -275,5 +276,42 @@ export function buildItineraryFromFlights(
     }
   }
 
+  // Détection automatique des transits entre segments (escales longues / nuits hors réceptif).
+  // Pour chaque paire (segment N → N+1) du vol aller puis du vol retour, on calcule la
+  // durée au sol et le type de connexion. Les ESCALES (<8h) ne créent pas de jour ; les
+  // NUIT_ENTIERE et STOPOVER_JOUR enrichissent le jour correspondant à la date d'arrivée.
+  const enrichTransit = (segs: FlightSegmentLite[]) => {
+    for (let i = 0; i < segs.length - 1; i++) {
+      const cur = segs[i];
+      const nxt = segs[i + 1];
+      if (!cur.date_arrivee || !cur.heure_arrivee || !nxt.date_depart || !nxt.heure_depart) continue;
+      const a: VolPoint = {
+        ville: iataToCity(cur.aeroport_arrivee),
+        codeIATA: cur.aeroport_arrivee,
+        dateArrivee: cur.date_arrivee,
+        heureArrivee: cur.heure_arrivee.slice(0, 5),
+        dateDepart: cur.date_arrivee,
+        heureDepart: cur.heure_arrivee.slice(0, 5),
+      };
+      const b: VolPoint = {
+        ...a,
+        dateDepart: nxt.date_depart,
+        heureDepart: nxt.heure_depart.slice(0, 5),
+      };
+      const conn = analyserConnexionVol(a, b);
+      if (!conn.jourDedie) continue;
+      const target = days.find((d) => d.date_jour === cur.date_arrivee);
+      if (!target) continue;
+      target.titre = conn.titreJour || target.titre;
+      target.lieu = conn.ville;
+      target.isFlightDay = true;
+      const alerte = conn.alerte ? `${conn.alerte}\n\n` : "";
+      target.description = `${alerte}Transit ${conn.ville} — durée ${conn.dureeHeures}h.`;
+    }
+  };
+  enrichTransit(outbound);
+  enrichTransit(inbound);
+
   return days;
 }
+
