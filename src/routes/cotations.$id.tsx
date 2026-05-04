@@ -1505,28 +1505,8 @@ function CotationDetailPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Document fournisseur importé */}
-      {cot.programme_pdf_url && (
-        <Card className="p-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
-            <div className="min-w-0">
-              <div className="text-sm font-medium truncate">
-                {cot.programme_pdf_name ?? "Document fournisseur importé"}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Source utilisée pour l'import automatique des étapes et lignes prix.
-              </div>
-            </div>
-          </div>
-          <Button variant="outline" size="sm" onClick={openProgrammePdf} disabled={pdfLoading}>
-            <ExternalLink className="h-4 w-4 mr-2" />
-            {pdfLoading ? "Ouverture…" : "Ouvrir le PDF"}
-          </Button>
-        </Card>
-      )}
 
-      {/* Versions */}
+
       {(() => {
         const versions = cotations
           .filter((c) => c.group_id === cot.group_id)
