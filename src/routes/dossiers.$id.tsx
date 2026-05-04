@@ -162,6 +162,7 @@ function DossierDetail() {
 
   return (
     <div className="space-y-8">
+      <EditLockBanner lock={editLock} />
       <Link to="/dossiers" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
         <ArrowLeft className="h-4 w-4" />
         Retour aux dossiers
