@@ -1104,10 +1104,24 @@ function CotationDetailPage() {
               </div>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={openProgrammePdf} disabled={pdfLoading}>
-            <ExternalLink className="h-4 w-4 mr-2" />
-            {pdfLoading ? "Ouverture…" : "Ouvrir le PDF"}
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button variant="outline" size="sm" onClick={openProgrammePdf} disabled={pdfLoading}>
+              <ExternalLink className="h-4 w-4 mr-2" />
+              {pdfLoading ? "Ouverture…" : "Ouvrir le PDF"}
+            </Button>
+            {canWrite && !isLocked && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={deleteProgrammePdf}
+                disabled={pdfDeleting}
+                className="text-destructive hover:text-destructive border-destructive/40"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {pdfDeleting ? "Suppression…" : "Supprimer"}
+              </Button>
+            )}
+          </div>
         </Card>
       )}
 
