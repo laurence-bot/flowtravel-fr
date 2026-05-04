@@ -270,7 +270,7 @@ export function buildItineraryFromFlights(
         (outbound[outbound.length - 1]?.heure_arrivee
           ? ` à ${fmtTime(outbound[outbound.length - 1].heure_arrivee)}`
           : "") +
-        `. Transfert et installation à votre hébergement.`;
+        `.`;
     }
   }
 
