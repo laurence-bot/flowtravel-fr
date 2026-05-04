@@ -361,15 +361,43 @@ export async function insertJours(
   return { count: rows.length, skipped };
 }
 
-/** Insère les lignes fournisseurs sélectionnées (taux 1 par défaut sauf EUR — l'agent réajuste après). */
+/** Insère les lignes fournisseurs sélectionnées en évitant les doublons existants
+ *  (même prestation normalisée + montant + devise + fournisseur). */
 export async function insertLignes(
   userId: string,
   cotationId: string,
   lignes: ExtractedLigne[],
   startOrdre: number,
-): Promise<{ count: number; error?: string }> {
-  if (lignes.length === 0) return { count: 0 };
-  const rows = lignes.map((l, i) => {
+): Promise<{ count: number; skipped: number; error?: string }> {
+  if (lignes.length === 0) return { count: 0, skipped: 0 };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: existingData } = await (supabase as any)
+    .from("cotation_lignes_fournisseurs")
+    .select("prestation, montant_devise, devise, nom_fournisseur")
+    .eq("cotation_id", cotationId);
+  const existing = (existingData ?? []) as Array<{
+    prestation: string | null; montant_devise: number | null;
+    devise: string | null; nom_fournisseur: string | null;
+  }>;
+  const keyOf = (p: string, m: number, d: string, n: string) =>
+    `${normKey(p)}|${Number(m).toFixed(2)}|${(d || "").toUpperCase()}|${normKey(n)}`;
+  const existingKeys = new Set(
+    existing.map((e) => keyOf(e.prestation ?? "", e.montant_devise ?? 0, e.devise ?? "", e.nom_fournisseur ?? "")),
+  );
+
+  const toInsert: ExtractedLigne[] = [];
+  const batchKeys = new Set<string>();
+  for (const l of lignes) {
+    const k = keyOf(l.prestation, l.montant_devise, l.devise, l.nom_fournisseur || "Fournisseur");
+    if (existingKeys.has(k) || batchKeys.has(k)) continue;
+    toInsert.push(l);
+    batchKeys.add(k);
+  }
+  const skipped = lignes.length - toInsert.length;
+  if (toInsert.length === 0) return { count: 0, skipped };
+
+  const rows = toInsert.map((l, i) => {
     const taux = l.devise === "EUR" ? 1 : 1; // l'agent ajustera ; FX par défaut
     return {
       user_id: userId,
@@ -397,6 +425,6 @@ export async function insertLignes(
   const { error } = await (supabase as any)
     .from("cotation_lignes_fournisseurs")
     .insert(rows);
-  if (error) return { count: 0, error: error.message };
-  return { count: rows.length };
+  if (error) return { count: 0, skipped, error: error.message };
+  return { count: rows.length, skipped };
 }
