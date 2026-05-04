@@ -164,16 +164,17 @@ export function buildFlightNarrative(
   return parts.join(" ");
 }
 
-/** Liste de toutes les dates entre deux dates (incluses). */
+/** Liste de toutes les dates entre deux dates (incluses). Calcul en UTC pour éviter les décalages de fuseau. */
 function daysBetween(start: string, end: string): string[] {
   const out: string[] = [];
-  const s = new Date(start + "T00:00:00");
-  const e = new Date(end + "T00:00:00");
-  if (isNaN(s.getTime()) || isNaN(e.getTime()) || e < s) return out;
-  const cur = new Date(s);
-  while (cur <= e) {
-    out.push(cur.toISOString().slice(0, 10));
-    cur.setDate(cur.getDate() + 1);
+  const sm = start.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const em = end.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!sm || !em) return out;
+  const s = Date.UTC(+sm[1], +sm[2] - 1, +sm[3]);
+  const e = Date.UTC(+em[1], +em[2] - 1, +em[3]);
+  if (e < s) return out;
+  for (let t = s; t <= e; t += 86400000) {
+    out.push(new Date(t).toISOString().slice(0, 10));
   }
   return out;
 }
