@@ -78,6 +78,125 @@ const SUPPLIER_TOOL = {
   },
 };
 
+const PROGRAM_TOOL = {
+  type: "function",
+  function: {
+    name: "extract_supplier_program",
+    description:
+      "Extrait un programme de voyage / itinéraire fournisseur (DMC, réceptif, hôtel) : la liste des jours et la liste des prestations chiffrées. Réécris les textes des jours dans un ton premium, sensoriel et fluide, MAIS sans inventer ni retirer aucune information factuelle, sans modifier le sens, sans changer les noms d'hébergements, lieux, durées, services, transferts, repas. Corrige uniquement orthographe et grammaire.",
+    parameters: {
+      type: "object",
+      properties: {
+        fournisseur_nom: {
+          type: "string",
+          description: "Nom du fournisseur / DMC / hôtel émetteur du programme.",
+        },
+        destination: {
+          type: "string",
+          description: "Destination principale du programme.",
+        },
+        nombre_pax: {
+          type: "number",
+          description: "Nombre de voyageurs si mentionné.",
+        },
+        date_depart: {
+          type: "string",
+          description: "Date de début au format YYYY-MM-DD si mentionnée.",
+        },
+        jours: {
+          type: "array",
+          description:
+            "Liste ordonnée des jours du programme. Un jour = un objet. Conserve absolument tous les jours présents dans le document.",
+          items: {
+            type: "object",
+            properties: {
+              ordre: {
+                type: "number",
+                description: "Numéro du jour (1, 2, 3...).",
+              },
+              titre: {
+                type: "string",
+                description:
+                  "Titre court du jour, ex : 'Arrivée à Marrakech', 'Désert d'Agafay'. Reste fidèle au document.",
+              },
+              lieu: {
+                type: "string",
+                description: "Lieu principal du jour si identifiable.",
+              },
+              date_jour: {
+                type: "string",
+                description: "Date YYYY-MM-DD si présente.",
+              },
+              description: {
+                type: "string",
+                description:
+                  "Description du jour reformulée dans un ton premium, sensoriel, fluide et naturel (français impeccable). INTERDIT : inventer une activité, un hébergement, un horaire, un service, un transfert, un repas qui n'est pas dans le document. INTERDIT : retirer une information factuelle. Conserve les noms propres exacts (hôtels, lieux, restaurants, prestataires). Pas d'émojis, pas de superlatifs creux ('inoubliable', 'magique').",
+              },
+            },
+            required: ["ordre", "titre"],
+            additionalProperties: false,
+          },
+        },
+        lignes: {
+          type: "array",
+          description:
+            "Liste des prestations chiffrées trouvées dans le document (hébergements, transferts, excursions, vols internes, repas facturés...). Une ligne par prestation distincte avec un prix.",
+          items: {
+            type: "object",
+            properties: {
+              prestation: {
+                type: "string",
+                description:
+                  "Libellé court de la prestation tel qu'écrit dans le document (ex : '3 nuits Riad Yasmine', 'Transfert aéroport-hôtel', 'Excursion Atlas').",
+              },
+              nom_fournisseur: {
+                type: "string",
+                description:
+                  "Nom du fournisseur / prestataire si différent du fournisseur principal, sinon réutilise le nom principal.",
+              },
+              quantite: {
+                type: "number",
+                description: "Quantité (nuits, personnes, unités). Défaut 1.",
+              },
+              mode_tarifaire: {
+                type: "string",
+                enum: ["global", "par_personne"],
+                description:
+                  "Choisis 'par_personne' si le prix est explicitement par personne (per pax / pp), sinon 'global'.",
+              },
+              devise: {
+                type: "string",
+                description: "Code ISO 4217 de la prestation.",
+              },
+              montant_devise: {
+                type: "number",
+                description: "Prix unitaire dans la devise.",
+              },
+              jour_ordre: {
+                type: "number",
+                description:
+                  "Numéro du jour auquel la prestation est rattachée si identifiable.",
+              },
+              date_prestation: {
+                type: "string",
+                description: "Date YYYY-MM-DD si présente.",
+              },
+            },
+            required: ["prestation", "devise", "montant_devise"],
+            additionalProperties: false,
+          },
+        },
+        confiance: {
+          type: "string",
+          enum: ["faible", "moyenne", "elevee"],
+        },
+      },
+      required: ["jours", "lignes", "confiance"],
+      additionalProperties: false,
+    },
+  },
+};
+
 const FX_TOOL = {
   type: "function",
   function: {
