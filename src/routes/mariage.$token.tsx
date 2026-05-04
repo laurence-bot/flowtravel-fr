@@ -151,7 +151,7 @@ function MariagePublicPage() {
           <Card className="p-6">
             <h2 className="text-lg font-serif mb-3">Contributions récentes</h2>
             <div className="space-y-3">
-              {contributions.slice(0, 20).map((c, i) => (
+              {contributions.slice(0, 20).map((c: { invite_prenom?: string | null; invite_nom?: string | null; message?: string | null; montant?: number | string | null }, i: number) => (
                 <div key={i} className="flex items-start justify-between border-b border-stone-100 pb-2 last:border-0">
                   <div>
                     <div className="font-medium text-stone-800">{c.invite_prenom} {c.invite_nom}</div>
