@@ -41,6 +41,7 @@ import {
   COTATION_STATUT_LABELS,
   COTATION_STATUT_TONES,
   computeCotationFinance,
+  deleteCotation,
   type Cotation,
   type CotationLigne,
   type CotationStatut,
@@ -195,20 +196,9 @@ function CotationsPage() {
 
   const handleDelete = async (c: Cotation) => {
     if (!user) return;
-    if (c.dossier_id) {
-      toast.error("Impossible : cette cotation a déjà été transformée en dossier.");
-      return;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sb = supabase as any;
-    // Supprime les dépendances (RLS = own)
-    await sb.from("cotation_lignes_fournisseurs").delete().eq("cotation_id", c.id);
-    await sb.from("cotation_jours").delete().eq("cotation_id", c.id);
-    await sb.from("flight_options").delete().eq("cotation_id", c.id);
-    await sb.from("quote_public_links").delete().eq("cotation_id", c.id);
-    const { error } = await sb.from("cotations").delete().eq("id", c.id);
-    if (error) {
-      toast.error(error.message ?? "Suppression impossible.");
+    const res = await deleteCotation(c.id, { hasDossier: !!c.dossier_id });
+    if (!res.ok) {
+      toast.error(res.error);
       return;
     }
     await logAudit({
