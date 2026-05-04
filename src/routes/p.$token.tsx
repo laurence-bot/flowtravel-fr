@@ -339,6 +339,44 @@ function PublicQuotePage() {
                             ))}
                           </div>
                         )}
+                        {(j.hotel_nom || j.hotel_photo_url || j.hotel_url) && (
+                          <div className="mt-5 flex items-center gap-4 brand-bg-muted p-3 rounded-sm">
+                            {j.hotel_photo_url && (
+                              <a
+                                href={j.hotel_url || j.hotel_photo_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block w-24 h-20 shrink-0 rounded-sm overflow-hidden bg-stone-200"
+                              >
+                                <img
+                                  src={j.hotel_photo_url}
+                                  alt={j.hotel_nom ?? "Hôtel"}
+                                  className="w-full h-full object-cover"
+                                />
+                              </a>
+                            )}
+                            <div className="min-w-0">
+                              <div className="text-[10px] uppercase tracking-wider text-stone-500">
+                                Hébergement
+                              </div>
+                              {j.hotel_nom && (
+                                <div className="brand-heading text-base brand-primary">
+                                  {j.hotel_nom}
+                                </div>
+                              )}
+                              {j.hotel_url && (
+                                <a
+                                  href={j.hotel_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs brand-signature hover:underline break-all"
+                                >
+                                  Visiter le site de l'hôtel ↗
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </article>
                   ))}
