@@ -1,0 +1,204 @@
+// Import d'un programme fournisseur (PDF, image scannée, texte) :
+// - extraction des jours et des lignes prix via l'edge function extract-pdf
+// - prévisualisation et insertion dans cotation_jours + cotation_lignes_fournisseurs
+
+import { supabase } from "@/integrations/supabase/client";
+import { DEVISES, type DeviseCode } from "@/lib/fx";
+import { extractTextFromPdf } from "@/lib/pdf-import";
+
+export type Confiance = "faible" | "moyenne" | "elevee";
+
+export type ExtractedJour = {
+  ordre: number;
+  titre: string;
+  lieu?: string;
+  date_jour?: string;
+  description?: string;
+};
+
+export type ExtractedLigne = {
+  prestation: string;
+  nom_fournisseur?: string;
+  quantite?: number;
+  mode_tarifaire?: "global" | "par_personne";
+  devise: DeviseCode;
+  montant_devise: number;
+  jour_ordre?: number;
+  date_prestation?: string;
+};
+
+export type ExtractedProgram = {
+  fournisseur_nom?: string;
+  destination?: string;
+  nombre_pax?: number;
+  date_depart?: string;
+  jours: ExtractedJour[];
+  lignes: ExtractedLigne[];
+  confiance: Confiance;
+};
+
+const VALID_DEVISES = new Set(DEVISES.map((d) => d.code));
+
+const num = (v: unknown): number | undefined => {
+  if (v == null || v === "") return undefined;
+  const n = Number(String(v).replace(/[^0-9.,-]/g, "").replace(",", "."));
+  return Number.isFinite(n) ? n : undefined;
+};
+
+const isoDate = (v: unknown): string | undefined => {
+  if (typeof v !== "string" || !v.trim()) return undefined;
+  if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
+  const m = v.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})/);
+  if (m) {
+    const [, d, mo, y] = m;
+    const yy = y.length === 2 ? `20${y}` : y;
+    return `${yy}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+  return undefined;
+};
+
+const devise = (v: unknown): DeviseCode => {
+  if (typeof v !== "string") return "EUR";
+  const code = v.trim().toUpperCase();
+  return VALID_DEVISES.has(code as DeviseCode) ? (code as DeviseCode) : "EUR";
+};
+
+/** Convertit un fichier image en data URL base64. */
+async function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(file);
+  });
+}
+
+/** Extrait un programme depuis un fichier (PDF ou image). */
+export async function extractProgramFromFile(
+  file: File,
+): Promise<{ result: ExtractedProgram | null; error?: string }> {
+  let payload: { type: "programme_fournisseur"; text?: string; images?: string[] };
+
+  if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
+    const text = await extractTextFromPdf(file);
+    if (!text || text.length < 20) {
+      // PDF probablement scanné : on l'envoie comme image (1ère page seulement n'est pas trivial → on tente texte vide → fallback)
+      return { result: null, error: "PDF illisible (peut-être scanné). Essayez en image." };
+    }
+    payload = { type: "programme_fournisseur", text };
+  } else if (file.type.startsWith("image/")) {
+    const url = await fileToDataUrl(file);
+    payload = { type: "programme_fournisseur", images: [url] };
+  } else {
+    return { result: null, error: "Format non supporté. Utilisez PDF ou image (JPG/PNG)." };
+  }
+
+  const { data, error } = await supabase.functions.invoke("extract-pdf", { body: payload });
+  if (error) return { result: null, error: error.message };
+  if (data?.error) return { result: null, error: data.error };
+
+  const raw = (data?.data ?? {}) as Record<string, unknown>;
+  const joursRaw = Array.isArray(raw.jours) ? (raw.jours as Array<Record<string, unknown>>) : [];
+  const lignesRaw = Array.isArray(raw.lignes) ? (raw.lignes as Array<Record<string, unknown>>) : [];
+
+  const jours: ExtractedJour[] = joursRaw
+    .map((j, i) => ({
+      ordre: Number(j.ordre) || i + 1,
+      titre: String(j.titre || `Jour ${i + 1}`).trim(),
+      lieu: j.lieu ? String(j.lieu).trim() : undefined,
+      date_jour: isoDate(j.date_jour),
+      description: j.description ? String(j.description).trim() : undefined,
+    }))
+    .sort((a, b) => a.ordre - b.ordre);
+
+  const lignes: ExtractedLigne[] = lignesRaw
+    .map((l) => ({
+      prestation: String(l.prestation || "").trim(),
+      nom_fournisseur: l.nom_fournisseur
+        ? String(l.nom_fournisseur).trim()
+        : (raw.fournisseur_nom as string | undefined)?.trim(),
+      quantite: num(l.quantite) ?? 1,
+      mode_tarifaire:
+        l.mode_tarifaire === "par_personne" ? ("par_personne" as const) : ("global" as const),
+      devise: devise(l.devise),
+      montant_devise: num(l.montant_devise) ?? 0,
+      jour_ordre: num(l.jour_ordre),
+      date_prestation: isoDate(l.date_prestation),
+    }))
+    .filter((l) => l.prestation && l.montant_devise > 0);
+
+  return {
+    result: {
+      fournisseur_nom: (raw.fournisseur_nom as string) || undefined,
+      destination: (raw.destination as string) || undefined,
+      nombre_pax: num(raw.nombre_pax),
+      date_depart: isoDate(raw.date_depart),
+      jours,
+      lignes,
+      confiance: (data?.confiance as Confiance) ?? "moyenne",
+    },
+  };
+}
+
+/** Insère les jours sélectionnés dans cotation_jours (en append à la fin). */
+export async function insertJours(
+  userId: string,
+  cotationId: string,
+  jours: ExtractedJour[],
+  startOrdre: number,
+): Promise<{ count: number; error?: string }> {
+  if (jours.length === 0) return { count: 0 };
+  const rows = jours.map((j, i) => ({
+    user_id: userId,
+    cotation_id: cotationId,
+    ordre: startOrdre + i,
+    titre: j.titre || `Jour ${startOrdre + i}`,
+    lieu: j.lieu ?? null,
+    date_jour: j.date_jour ?? null,
+    description: j.description ?? null,
+  }));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any).from("cotation_jours").insert(rows);
+  if (error) return { count: 0, error: error.message };
+  return { count: rows.length };
+}
+
+/** Insère les lignes fournisseurs sélectionnées (taux 1 par défaut sauf EUR — l'agent réajuste après). */
+export async function insertLignes(
+  userId: string,
+  cotationId: string,
+  lignes: ExtractedLigne[],
+  startOrdre: number,
+): Promise<{ count: number; error?: string }> {
+  if (lignes.length === 0) return { count: 0 };
+  const rows = lignes.map((l, i) => {
+    const taux = l.devise === "EUR" ? 1 : 1; // l'agent ajustera ; FX par défaut
+    return {
+      user_id: userId,
+      cotation_id: cotationId,
+      fournisseur_id: null,
+      nom_fournisseur: l.nom_fournisseur || "Fournisseur",
+      payeur: null,
+      prestation: l.prestation,
+      date_prestation: l.date_prestation ?? null,
+      mode_tarifaire: l.mode_tarifaire ?? "global",
+      quantite: l.quantite ?? 1,
+      devise: l.devise,
+      montant_devise: l.montant_devise,
+      taux_change_vers_eur: taux,
+      montant_eur: l.montant_devise * taux,
+      source_fx: "taux_du_jour",
+      pct_acompte_1: 30,
+      pct_acompte_2: 0,
+      pct_acompte_3: 0,
+      pct_solde: 70,
+      ordre: startOrdre + i,
+    };
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
+    .from("cotation_lignes_fournisseurs")
+    .insert(rows);
+  if (error) return { count: 0, error: error.message };
+  return { count: rows.length };
+}

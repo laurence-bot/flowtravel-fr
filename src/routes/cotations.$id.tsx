@@ -80,6 +80,7 @@ import { FxOptimizerBlock } from "@/components/fx-optimizer-block";
 import { InlineFxCoveragePicker } from "@/components/inline-fx-coverage-picker";
 import { MargeCalculator } from "@/components/marge-calculator";
 import { useAgencySettings } from "@/hooks/use-agency-settings";
+import { ProgramImportDialog } from "@/components/program-import-dialog";
 
 export const Route = createFileRoute("/cotations/$id")({
   component: () => (
@@ -524,6 +525,18 @@ function CotationDetailPage() {
           description={`Version ${cot.version_number}${client ? ` · ${client.nom}` : ""}${cot.destination ? ` · ${cot.destination}` : ""}`}
           action={
             <div className="flex flex-wrap items-center gap-2">
+              {user && (
+                <ProgramImportDialog
+                  cotationId={cot.id}
+                  userId={user.id}
+                  canWrite={canWrite}
+                  onImported={() => {
+                    refetchLignes();
+                    // Force le rechargement des jours (QuoteContentEditorBlock relit au mount)
+                    window.location.reload();
+                  }}
+                />
+              )}
               {user && (
                 <Button asChild size="sm">
                   <a href="#devis-web-client">
