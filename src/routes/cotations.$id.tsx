@@ -345,6 +345,13 @@ function CotationDetailPage() {
       }
     }
     setSubmittingLigne(true);
+    if (replaceId) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
+        .from("cotation_lignes_fournisseurs")
+        .delete()
+        .eq("id", replaceId);
+    }
     const montantEur = parsed.data.montant_devise * parsed.data.taux_change_vers_eur;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: created, error } = await (supabase as any)
