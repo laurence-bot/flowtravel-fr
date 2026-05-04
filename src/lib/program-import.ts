@@ -4,6 +4,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { DEVISES, type DeviseCode } from "@/lib/fx";
+import { duplicateLineKey, normKey } from "@/lib/cotation-sync";
 
 export type Confiance = "faible" | "moyenne" | "elevee";
 
@@ -296,17 +297,6 @@ export async function extractProgramFromFile(
   }
 }
 
-/** Normalise une chaîne pour comparaison (minuscules, sans accents, espaces compactés). */
-function normKey(s: string | null | undefined): string {
-  return (s ?? "")
-    .toString()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 /** Insère les jours sélectionnés dans cotation_jours, en évitant les doublons existants
  *  (même date OU même titre+description normalisés). */
 export async function insertJours(
@@ -380,16 +370,19 @@ export async function insertLignes(
     prestation: string | null; montant_devise: number | null;
     devise: string | null; nom_fournisseur: string | null;
   }>;
-  const keyOf = (p: string, m: number, d: string, n: string) =>
-    `${normKey(p)}|${Number(m).toFixed(2)}|${(d || "").toUpperCase()}|${normKey(n)}`;
   const existingKeys = new Set(
-    existing.map((e) => keyOf(e.prestation ?? "", e.montant_devise ?? 0, e.devise ?? "", e.nom_fournisseur ?? "")),
+    existing.map((e) => duplicateLineKey(e)),
   );
 
   const toInsert: ExtractedLigne[] = [];
   const batchKeys = new Set<string>();
   for (const l of lignes) {
-    const k = keyOf(l.prestation, l.montant_devise, l.devise, l.nom_fournisseur || "Fournisseur");
+    const k = duplicateLineKey({
+      prestation: l.prestation,
+      montant_devise: l.montant_devise,
+      devise: l.devise,
+      nom_fournisseur: l.nom_fournisseur || "Fournisseur",
+    });
     if (existingKeys.has(k) || batchKeys.has(k)) continue;
     toInsert.push(l);
     batchKeys.add(k);
