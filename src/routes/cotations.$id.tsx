@@ -594,7 +594,7 @@ function CotationDetailPage() {
         </Button>
         <PageHeader
           title={cot.titre}
-          description={`Version ${cot.version_number}${client ? ` · ${client.nom}` : ""}${cot.destination ? ` · ${cot.destination}` : ""}`}
+          description={`Version ${cot.version_number}${cot.version_label ? ` — ${cot.version_label}` : ""}${client ? ` · ${client.nom}` : ""}${cot.destination ? ` · ${cot.destination}` : ""}`}
           action={
             <div className="flex flex-wrap items-center gap-2">
               {user && (
