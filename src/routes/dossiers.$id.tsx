@@ -43,6 +43,7 @@ function DossierDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const editLock = useEditLock("dossier", id);
   const [dossier, setDossier] = useState<Dossier | null>(null);
   const [notFound, setNotFound] = useState(false);
   const { data: contacts } = useTable<Contact>("contacts");
