@@ -42,6 +42,7 @@ import {
   duplicateLineKey,
   type SyncJour,
 } from "@/lib/cotation-sync";
+import { extractProgramFromFile, insertJours, insertLignes } from "@/lib/program-import";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -89,6 +90,8 @@ type Props = {
   nombrePax?: number | null;
   dateDepart?: string | null;
   dateRetour?: string | null;
+  programmePdfUrl?: string | null;
+  programmePdfName?: string | null;
   onDataChanged?: () => void;
 };
 
@@ -107,6 +110,8 @@ export function QuoteContentEditorBlock({
   nombrePax,
   dateDepart,
   dateRetour,
+  programmePdfUrl,
+  programmePdfName,
   onDataChanged,
 }: Props) {
   const [heroUrl, setHeroUrl] = useState<string | null>(initialHeroUrl);
