@@ -148,7 +148,11 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
     if (j.error) toast.error(`Jours : ${j.error}`);
     if (l.error) toast.error(`Lignes : ${l.error}`);
     if (!j.error && !l.error) {
-      toast.success(`${j.count} jour(s) et ${l.count} ligne(s) importés.`);
+      const skippedParts: string[] = [];
+      if (j.skipped > 0) skippedParts.push(`${j.skipped} jour(s) doublon ignoré(s)`);
+      if (l.skipped > 0) skippedParts.push(`${l.skipped} ligne(s) doublon ignorée(s)`);
+      const suffix = skippedParts.length > 0 ? ` — ${skippedParts.join(", ")}` : "";
+      toast.success(`${j.count} jour(s) et ${l.count} ligne(s) importés${suffix}.`);
       setOpen(false);
       reset();
       onImported?.();
