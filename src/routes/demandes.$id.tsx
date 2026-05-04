@@ -218,6 +218,7 @@ function DemandeDetail() {
 
   return (
     <div className="space-y-6">
+      <EditLockBanner lock={editLock} />
       <PageHeader
         title={demande.nom_client}
         description={`Demande créée le ${formatDate(demande.created_at)} · canal ${DEMANDE_CANAL_LABELS[demande.canal]}`}
