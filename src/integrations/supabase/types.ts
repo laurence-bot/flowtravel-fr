@@ -753,6 +753,9 @@ export type Database = {
           description: string | null
           gallery_credits: Json
           gallery_urls: Json
+          hotel_nom: string | null
+          hotel_photo_url: string | null
+          hotel_url: string | null
           id: string
           image_credit: string | null
           image_url: string | null
@@ -769,6 +772,9 @@ export type Database = {
           description?: string | null
           gallery_credits?: Json
           gallery_urls?: Json
+          hotel_nom?: string | null
+          hotel_photo_url?: string | null
+          hotel_url?: string | null
           id?: string
           image_credit?: string | null
           image_url?: string | null
@@ -785,6 +791,9 @@ export type Database = {
           description?: string | null
           gallery_credits?: Json
           gallery_urls?: Json
+          hotel_nom?: string | null
+          hotel_photo_url?: string | null
+          hotel_url?: string | null
           id?: string
           image_credit?: string | null
           image_url?: string | null
@@ -927,6 +936,8 @@ export type Database = {
           prix_vente_ht: number
           prix_vente_ttc: number
           prix_vente_usd: number | null
+          programme_pdf_name: string | null
+          programme_pdf_url: string | null
           raison_perte: string | null
           regime_tva: Database["public"]["Enums"]["cotation_regime_tva"]
           statut: Database["public"]["Enums"]["cotation_statut"]
@@ -936,6 +947,7 @@ export type Database = {
           titre: string
           updated_at: string
           user_id: string
+          version_label: string | null
           version_number: number
         }
         Insert: {
@@ -964,6 +976,8 @@ export type Database = {
           prix_vente_ht?: number
           prix_vente_ttc?: number
           prix_vente_usd?: number | null
+          programme_pdf_name?: string | null
+          programme_pdf_url?: string | null
           raison_perte?: string | null
           regime_tva?: Database["public"]["Enums"]["cotation_regime_tva"]
           statut?: Database["public"]["Enums"]["cotation_statut"]
@@ -973,6 +987,7 @@ export type Database = {
           titre: string
           updated_at?: string
           user_id: string
+          version_label?: string | null
           version_number?: number
         }
         Update: {
@@ -1001,6 +1016,8 @@ export type Database = {
           prix_vente_ht?: number
           prix_vente_ttc?: number
           prix_vente_usd?: number | null
+          programme_pdf_name?: string | null
+          programme_pdf_url?: string | null
           raison_perte?: string | null
           regime_tva?: Database["public"]["Enums"]["cotation_regime_tva"]
           statut?: Database["public"]["Enums"]["cotation_statut"]
@@ -1010,6 +1027,7 @@ export type Database = {
           titre?: string
           updated_at?: string
           user_id?: string
+          version_label?: string | null
           version_number?: number
         }
         Relationships: []
