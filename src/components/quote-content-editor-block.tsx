@@ -475,7 +475,7 @@ export function QuoteContentEditorBlock({
           const d = new Date(dDep);
           d.setDate(dDep.getDate() + idx);
           return {
-            user_id: kept[0]?.user_id ?? jours[0]?.user_id,
+            user_id: jours[0]?.user_id ?? userId,
             cotation_id: cotationId,
             ordre: idx + 1,
             titre: `Jour ${idx + 1}`,
