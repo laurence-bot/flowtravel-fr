@@ -193,6 +193,35 @@ function CotationsPage() {
     refetch();
   };
 
+  const handleDelete = async (c: Cotation) => {
+    if (!user) return;
+    if (c.dossier_id) {
+      toast.error("Impossible : cette cotation a déjà été transformée en dossier.");
+      return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = supabase as any;
+    // Supprime les dépendances (RLS = own)
+    await sb.from("cotation_lignes_fournisseurs").delete().eq("cotation_id", c.id);
+    await sb.from("cotation_jours").delete().eq("cotation_id", c.id);
+    await sb.from("flight_options").delete().eq("cotation_id", c.id);
+    await sb.from("quote_public_links").delete().eq("cotation_id", c.id);
+    const { error } = await sb.from("cotations").delete().eq("id", c.id);
+    if (error) {
+      toast.error(error.message ?? "Suppression impossible.");
+      return;
+    }
+    await logAudit({
+      userId: user.id,
+      entity: "cotation",
+      entityId: c.id,
+      action: "delete",
+      description: `Cotation supprimée : ${c.titre}`,
+    });
+    toast.success("Cotation supprimée.");
+    refetch();
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
