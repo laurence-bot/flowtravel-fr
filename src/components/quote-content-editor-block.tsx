@@ -342,8 +342,73 @@ export function QuoteContentEditorBlock({
     }
   };
 
-  /** Resynchronise les dates de la cotation + des jours sur les vols, sans toucher aux contenus. */
-  const resyncDatesFromFlights = async () => {
+  /** Nettoyage de masse : retire les doublons évidents sans toucher au PDF source. */
+  const cleanDuplicates = async () => {
+    setCleanLoading(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const [{ data: joursData }, { data: lignesData }] = await Promise.all([
+        (supabase as any)
+          .from("cotation_jours")
+          .select("id, ordre, titre, description, date_jour, created_at, image_url, gallery_urls, lieu, hotel_nom")
+          .eq("cotation_id", cotationId)
+          .order("created_at", { ascending: true }),
+        (supabase as any)
+          .from("cotation_lignes_fournisseurs")
+          .select("id, prestation, montant_devise, devise, nom_fournisseur, created_at")
+          .eq("cotation_id", cotationId)
+          .order("created_at", { ascending: true }),
+      ]);
+
+      const existing = ((joursData ?? []) as SyncJour[]).sort((a, b) => a.ordre - b.ordre);
+      const plan = buildJourSyncPlan({
+        existing,
+        generatedFromFlights: [],
+        fallbackStart: dateDepart ?? null,
+        fallbackEnd: dateRetour ?? null,
+      });
+      const jourIds = plan.deleteIds;
+      let removedJours = 0;
+      if (jourIds.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase as any).from("cotation_jours").delete().in("id", jourIds);
+        if (error) throw error;
+        removedJours = jourIds.length;
+      }
+
+      const seenLines = new Set<string>();
+      const lineIds: string[] = [];
+      for (const l of (lignesData ?? []) as Array<{
+        id: string; prestation: string | null; montant_devise: number | null; devise: string | null; nom_fournisseur: string | null;
+      }>) {
+        const key = duplicateLineKey(l);
+        if (seenLines.has(key)) lineIds.push(l.id);
+        else seenLines.add(key);
+      }
+      let removedLines = 0;
+      if (lineIds.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase as any)
+          .from("cotation_lignes_fournisseurs")
+          .delete()
+          .in("id", lineIds);
+        if (error) throw error;
+        removedLines = lineIds.length;
+      }
+
+      if (removedJours === 0 && removedLines === 0) toast.success("Aucun doublon évident détecté.");
+      else toast.success(`${removedJours} jour(s) doublon et ${removedLines} ligne(s) doublon supprimé(s).`);
+      await loadJours();
+    } catch (e) {
+      console.error("[clean duplicates] erreur:", e);
+      toast.error(e instanceof Error ? e.message : "Erreur pendant le nettoyage.");
+    } finally {
+      setCleanLoading(false);
+    }
+  };
+
+  /** Synchronise PDF + vols : les vols bornent les dates, le PDF garde les textes. */
+  const resyncProgramAndFlights = async () => {
     setResyncLoading(true);
     try {
       const [volsRes, linkRes] = await Promise.all([
@@ -361,141 +426,75 @@ export function QuoteContentEditorBlock({
           .maybeSingle(),
       ]);
       const vols = (volsRes.data ?? []) as FlightOptionLite[];
-      if (vols.length === 0) {
-        toast.error("Aucun vol renseigné.");
-        return;
-      }
       const chosenId = (linkRes.data?.chosen_flight_option_id ?? null) as string | null;
       const refVol = pickReferenceFlight(vols, chosenId);
-      if (!refVol) {
-        toast.error("Vol de référence introuvable.");
-        return;
+      let segments: FlightSegmentLite[] = [];
+      let generated = [] as ReturnType<typeof buildItineraryFromFlights>;
+      let newDepart = dateDepart ?? null;
+      let newRetour = dateRetour ?? null;
+
+      if (refVol) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: segs } = await (supabase as any)
+          .from("flight_segments")
+          .select("*")
+          .eq("flight_option_id", refVol.id)
+          .order("ordre", { ascending: true });
+        segments = (segs ?? []) as FlightSegmentLite[];
+        const sorted = [...segments].sort((a, b) => a.ordre - b.ordre);
+        newDepart = sorted[0]?.date_depart ?? refVol.date_depart ?? newDepart;
+        newRetour = sorted[sorted.length - 1]?.date_arrivee ?? refVol.date_retour ?? newRetour;
+        generated = buildItineraryFromFlights(refVol, segments, newDepart, newRetour);
+        if (newDepart && newRetour) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { error: cotErr } = await (supabase as any)
+            .from("cotations")
+            .update({ date_depart: newDepart, date_retour: newRetour })
+            .eq("id", cotationId);
+          if (cotErr) throw cotErr;
+        }
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: segs } = await (supabase as any)
-        .from("flight_segments")
-        .select("*")
-        .eq("flight_option_id", refVol.id)
-        .order("ordre", { ascending: true });
-      const segments = (segs ?? []) as FlightSegmentLite[];
 
-      // Date arrivée à destination = date_arrivee du dernier segment aller
-      // Heuristique : on prend date_depart = 1er segment, date_retour = dernier segment
-      const sorted = [...segments].sort((a, b) => a.ordre - b.ordre);
-      const newDepart = sorted[0]?.date_depart ?? refVol.date_depart ?? null;
-      const newRetour =
-        sorted[sorted.length - 1]?.date_arrivee ?? refVol.date_retour ?? null;
-
-      if (!newDepart || !newRetour) {
-        toast.error("Dates de vol incomplètes.");
-        return;
-      }
-
-      // 1. Mettre à jour la cotation
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: cotErr } = await (supabase as any)
-        .from("cotations")
-        .update({ date_depart: newDepart, date_retour: newRetour })
-        .eq("id", cotationId);
-      if (cotErr) throw cotErr;
-
-      // 2. Calculer le nombre exact de jours attendus
-      const dDep = new Date(newDepart);
-      const dRet = new Date(newRetour);
-      const targetCount = Math.max(
-        1,
-        Math.round((dRet.getTime() - dDep.getTime()) / 86400000) + 1,
-      );
-
-      // 2.0 Dédupliquer d'abord les jours (même titre+description, ou même ordre)
-      // On garde le plus ancien (premier created_at) pour chaque clé.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: allJoursData } = await (supabase as any)
         .from("cotation_jours")
         .select("id, ordre, titre, description, date_jour, created_at, image_url, gallery_urls, lieu, hotel_nom")
         .eq("cotation_id", cotationId)
-        .order("created_at", { ascending: true });
-      const allJours = (allJoursData ?? []) as Array<{
-        id: string; ordre: number; titre: string | null;
-        description: string | null; date_jour: string | null;
-        image_url: string | null; gallery_urls: unknown;
-        lieu: string | null; hotel_nom: string | null;
-      }>;
-      const seenJourKeys = new Set<string>();
-      const dupJourIds: string[] = [];
-      for (const j of allJours) {
-        // Clé : titre + description (normalisés). Évite les "Jour 1 / Jour 1" ou re-générations en double.
-        const key = `${(j.titre ?? "").trim().toLowerCase()}|${(j.description ?? "").trim().toLowerCase().slice(0, 200)}`;
-        if (seenJourKeys.has(key) && key !== "|") {
-          dupJourIds.push(j.id);
-        } else {
-          seenJourKeys.add(key);
-        }
-      }
-      let removedDupJours = 0;
-      if (dupJourIds.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: ddErr } = await (supabase as any)
-          .from("cotation_jours")
-          .delete()
-          .in("id", dupJourIds);
-        if (!ddErr) removedDupJours = dupJourIds.length;
-      }
+        .order("ordre", { ascending: true });
+      const plan = buildJourSyncPlan({
+        existing: (allJoursData ?? []) as SyncJour[],
+        generatedFromFlights: generated,
+        fallbackStart: newDepart,
+        fallbackEnd: newRetour,
+      });
 
-      // Recharger après dédup
-      const remainingJours = allJours.filter((j) => !dupJourIds.includes(j.id));
-      const sortedJours = [...remainingJours].sort((a, b) => a.ordre - b.ordre);
-
-      // 2a. Supprimer les jours en trop (ceux au-delà de targetCount)
-      const toDelete = sortedJours.slice(targetCount);
-      if (toDelete.length > 0) {
+      if (plan.deleteIds.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: delErr } = await (supabase as any)
-          .from("cotation_jours")
-          .delete()
-          .in("id", toDelete.map((j) => j.id));
+        const { error: delErr } = await (supabase as any).from("cotation_jours").delete().in("id", plan.deleteIds);
         if (delErr) throw delErr;
       }
 
-      // 2b. Réaligner les date_jour + ordre des jours conservés
-      const kept = sortedJours.slice(0, targetCount);
-      const updates = kept.map((j, i) => {
-        const d = new Date(dDep);
-        d.setDate(dDep.getDate() + i);
-        const newDateJour = d.toISOString().slice(0, 10);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (supabase as any)
-          .from("cotation_jours")
-          .update({ date_jour: newDateJour, ordre: i + 1 })
-          .eq("id", j.id);
-      });
-      const results = await Promise.all(updates);
+      const results = await Promise.all(
+        plan.updates.map((u) =>
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (supabase as any).from("cotation_jours").update(u.patch).eq("id", u.id),
+        ),
+      );
       const failed = results.find((r) => r.error);
       if (failed) throw failed.error;
 
-      // 2c. Créer les jours manquants si targetCount > kept.length
-      if (kept.length < targetCount) {
-        const missing = targetCount - kept.length;
-        const newRows = Array.from({ length: missing }, (_, k) => {
-          const idx = kept.length + k;
-          const d = new Date(dDep);
-          d.setDate(dDep.getDate() + idx);
-          return {
-            user_id: jours[0]?.user_id ?? userId,
-            cotation_id: cotationId,
-            ordre: idx + 1,
-            titre: `Jour ${idx + 1}`,
-            date_jour: d.toISOString().slice(0, 10),
-          };
-        });
+      if (plan.inserts.length > 0) {
+        const newRows = plan.inserts.map((row) => ({
+          user_id: jours[0]?.user_id ?? userId,
+          cotation_id: cotationId,
+          ...row,
+        }));
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: insErr } = await (supabase as any)
-          .from("cotation_jours")
-          .insert(newRows);
+        const { error: insErr } = await (supabase as any).from("cotation_jours").insert(newRows);
         if (insErr) throw insErr;
       }
 
-      // 3. Dédupliquer les lignes fournisseurs (même prestation + montant + devise)
+      // Dédupliquer aussi les lignes prix créées par imports répétés.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: lignesData } = await (supabase as any)
         .from("cotation_lignes_fournisseurs")
@@ -506,12 +505,12 @@ export function QuoteContentEditorBlock({
       const dupIds: string[] = [];
       for (const l of (lignesData ?? []) as Array<{
         id: string;
-        prestation: string;
-        montant_devise: number;
-        devise: string;
-        nom_fournisseur: string;
+        prestation: string | null;
+        montant_devise: number | null;
+        devise: string | null;
+        nom_fournisseur: string | null;
       }>) {
-        const key = `${(l.prestation ?? "").trim().toLowerCase()}|${l.montant_devise}|${l.devise}|${(l.nom_fournisseur ?? "").trim().toLowerCase()}`;
+        const key = duplicateLineKey(l);
         if (seen.has(key)) dupIds.push(l.id);
         else seen.add(key);
       }
@@ -527,14 +526,13 @@ export function QuoteContentEditorBlock({
       }
 
       const msgParts = [
-        `${targetCount} jour${targetCount > 1 ? "s" : ""} alignés`,
+        `${plan.targetCount} jour${plan.targetCount > 1 ? "s" : ""} synchronisé(s)`,
       ];
-      if (removedDupJours > 0) msgParts.push(`${removedDupJours} jour(s) doublon retiré(s)`);
-      if (toDelete.length > 0) msgParts.push(`${toDelete.length} en trop supprimé(s)`);
-      if (kept.length < targetCount)
-        msgParts.push(`${targetCount - kept.length} ajouté(s)`);
+      if (plan.deleteIds.length > 0) msgParts.push(`${plan.deleteIds.length} jour(s) doublon/en trop supprimé(s)`);
+      if (plan.inserts.length > 0) msgParts.push(`${plan.inserts.length} jour(s) ajouté(s)`);
       if (removedDups > 0) msgParts.push(`${removedDups} ligne(s) doublon retirée(s)`);
-      toast.success(`Resynchronisation OK — ${msgParts.join(", ")}.`);
+      if (plan.conflicts.length > 0) toast.warning(`Synchronisé avec alertes — ${plan.conflicts.join(" ")}`);
+      toast.success(`Synchronisation OK — ${msgParts.join(", ")}.`);
       await loadJours();
 
     } catch (e) {
