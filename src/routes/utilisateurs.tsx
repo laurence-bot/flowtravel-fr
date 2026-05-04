@@ -413,6 +413,37 @@ function UtilisateursPage() {
       <p className="text-xs text-muted-foreground mt-6">
         Les permissions sont également appliquées au niveau de la base de données (RLS) pour une sécurité maximale.
       </p>
+
+      <Dialog open={!!pwdResult} onOpenChange={(o) => !o && setPwdResult(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mot de passe temporaire</DialogTitle>
+            <DialogDescription>
+              Communiquez-le à <strong>{pwdResult?.email}</strong>. Ce mot de passe ne sera plus affiché.
+              Conseillez à l'utilisateur de le changer après connexion.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2 p-3 rounded-md bg-muted font-mono text-sm break-all">
+            <span className="flex-1">{pwdResult?.password}</span>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => {
+                if (pwdResult?.password) {
+                  navigator.clipboard.writeText(pwdResult.password);
+                  toast.success("Copié");
+                }
+              }}
+              aria-label="Copier"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setPwdResult(null)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
