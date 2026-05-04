@@ -199,8 +199,12 @@ export function buildJourSyncPlan(params: {
 
     used.add(selected.id);
     selectedByTarget.push(selected);
-    const keepExistingTitle = selected.titre?.trim() && !isPlaceholderTitle(selected.titre);
-    const titre = target.isFlightDay ? target.titre : keepExistingTitle ? selected.titre : target.titre || `Jour ${ordre}`;
+    const keepExistingTitle = !!selected.titre?.trim() && !isPlaceholderTitle(selected.titre);
+    const titre = target.isFlightDay
+      ? target.titre
+      : keepExistingTitle
+        ? selected.titre ?? target.titre ?? `Jour ${ordre}`
+        : target.titre || `Jour ${ordre}`;
     const description = target.isFlightDay
       ? joinUnique([target.description, selected.description])
       : joinUnique([selected.description, target.description]);
