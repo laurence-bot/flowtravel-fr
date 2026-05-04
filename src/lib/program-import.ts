@@ -351,16 +351,14 @@ export async function insertJours(
   return { count: rows.length, skipped };
 }
 
-/** Insère les lignes fournisseurs sélectionnées en évitant les doublons existants
- *  (même prestation normalisée + montant + devise + fournisseur). */
-export async function insertLignes(
-  userId: string,
+export type DuplicateStrategy = "ignore" | "replace" | "add_anyway";
+
+/** Détecte combien de lignes seraient considérées comme doublon avant insertion. */
+export async function previewLignesDuplicates(
   cotationId: string,
   lignes: ExtractedLigne[],
-  startOrdre: number,
-): Promise<{ count: number; skipped: number; error?: string }> {
-  if (lignes.length === 0) return { count: 0, skipped: 0 };
-
+): Promise<{ duplicates: number; total: number }> {
+  if (lignes.length === 0) return { duplicates: 0, total: 0 };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: existingData } = await (supabase as any)
     .from("cotation_lignes_fournisseurs")
@@ -370,12 +368,9 @@ export async function insertLignes(
     prestation: string | null; montant_devise: number | null;
     devise: string | null; nom_fournisseur: string | null;
   }>;
-  const existingKeys = new Set(
-    existing.map((e) => duplicateLineKey(e)),
-  );
-
-  const toInsert: ExtractedLigne[] = [];
-  const batchKeys = new Set<string>();
+  const existingKeys = new Set(existing.map((e) => duplicateLineKey(e)));
+  let dup = 0;
+  const seen = new Set<string>();
   for (const l of lignes) {
     const k = duplicateLineKey({
       prestation: l.prestation,
@@ -383,15 +378,76 @@ export async function insertLignes(
       devise: l.devise,
       nom_fournisseur: l.nom_fournisseur || "Fournisseur",
     });
-    if (existingKeys.has(k) || batchKeys.has(k)) continue;
+    if (existingKeys.has(k) || seen.has(k)) dup++;
+    seen.add(k);
+  }
+  return { duplicates: dup, total: lignes.length };
+}
+
+/** Insère les lignes fournisseurs sélectionnées en évitant les doublons existants
+ *  (même prestation normalisée + montant + devise + fournisseur). */
+export async function insertLignes(
+  userId: string,
+  cotationId: string,
+  lignes: ExtractedLigne[],
+  startOrdre: number,
+  strategy: DuplicateStrategy = "ignore",
+): Promise<{ count: number; skipped: number; replaced: number; error?: string }> {
+  if (lignes.length === 0) return { count: 0, skipped: 0, replaced: 0 };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: existingData } = await (supabase as any)
+    .from("cotation_lignes_fournisseurs")
+    .select("id, prestation, montant_devise, devise, nom_fournisseur")
+    .eq("cotation_id", cotationId);
+  const existing = (existingData ?? []) as Array<{
+    id: string; prestation: string | null; montant_devise: number | null;
+    devise: string | null; nom_fournisseur: string | null;
+  }>;
+  const existingMap = new Map<string, string>(); // key -> existing id
+  for (const e of existing) existingMap.set(duplicateLineKey(e), e.id);
+
+  const toInsert: ExtractedLigne[] = [];
+  const batchKeys = new Set<string>();
+  const replaceIds: string[] = [];
+  let skipped = 0;
+
+  for (const l of lignes) {
+    const k = duplicateLineKey({
+      prestation: l.prestation,
+      montant_devise: l.montant_devise,
+      devise: l.devise,
+      nom_fournisseur: l.nom_fournisseur || "Fournisseur",
+    });
+    const isDup = existingMap.has(k) || batchKeys.has(k);
+    if (isDup) {
+      if (strategy === "ignore") {
+        skipped++;
+        continue;
+      }
+      if (strategy === "replace" && existingMap.has(k)) {
+        replaceIds.push(existingMap.get(k)!);
+      }
+      // "add_anyway" laisse passer sans rien faire
+    }
     toInsert.push(l);
     batchKeys.add(k);
   }
-  const skipped = lignes.length - toInsert.length;
-  if (toInsert.length === 0) return { count: 0, skipped };
+
+  let replaced = 0;
+  if (replaceIds.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: delErr } = await (supabase as any)
+      .from("cotation_lignes_fournisseurs")
+      .delete()
+      .in("id", replaceIds);
+    if (!delErr) replaced = replaceIds.length;
+  }
+
+  if (toInsert.length === 0) return { count: 0, skipped, replaced };
 
   const rows = toInsert.map((l, i) => {
-    const taux = l.devise === "EUR" ? 1 : 1; // l'agent ajustera ; FX par défaut
+    const taux = l.devise === "EUR" ? 1 : 1;
     return {
       user_id: userId,
       cotation_id: cotationId,
@@ -418,6 +474,7 @@ export async function insertLignes(
   const { error } = await (supabase as any)
     .from("cotation_lignes_fournisseurs")
     .insert(rows);
-  if (error) return { count: 0, skipped, error: error.message };
-  return { count: rows.length, skipped };
+  if (error) return { count: 0, skipped, replaced, error: error.message };
+  return { count: rows.length, skipped, replaced };
 }
+

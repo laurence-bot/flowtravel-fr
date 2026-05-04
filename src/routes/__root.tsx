@@ -4,6 +4,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { RoleProvider } from "@/hooks/use-role";
 import { AgencySettingsProvider } from "@/hooks/use-agency-settings";
 import { Toaster } from "@/components/ui/sonner";
+import { DuplicateConfirmDialog } from "@/lib/duplicate-confirm";
 import { installGlobalErrorLogger } from "@/lib/error-logger";
 
 import appCss from "../styles.css?url";
@@ -89,6 +90,7 @@ function RootComponent() {
       <RoleProvider>
         <AgencySettingsProvider>
           <Outlet />
+          <DuplicateConfirmDialog />
           <Toaster richColors position="top-right" />
         </AgencySettingsProvider>
       </RoleProvider>
