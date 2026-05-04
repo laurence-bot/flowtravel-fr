@@ -744,7 +744,7 @@ export function QuoteContentEditorBlock({
                 size="sm"
                 variant="outline"
                 onClick={() => void resyncProgramAndFlights()}
-                disabled={resyncLoading || (!hasFlights && jours.length === 0)}
+                disabled={resyncLoading || (!hasFlights && jours.length === 0 && !programmePdfUrl)}
                 title="Synchronise le programme PDF avec les dates de vol et alerte en cas d'écart"
               >
                 {resyncLoading ? (
@@ -758,7 +758,7 @@ export function QuoteContentEditorBlock({
                 size="sm"
                 variant="outline"
                 onClick={() => void cleanDuplicates()}
-                disabled={cleanLoading || jours.length === 0}
+                disabled={cleanLoading}
                 title="Supprime en masse les doublons de jours et de lignes prix"
               >
                 {cleanLoading ? (
