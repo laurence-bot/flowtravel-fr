@@ -296,7 +296,6 @@ Deno.serve(async (req) => {
             { role: "system", content: systemPrompt },
             { role: "user", content: userContent },
           ],
-          ],
           tools: [tool],
           tool_choice: {
             type: "function",
