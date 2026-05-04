@@ -231,18 +231,52 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // type: "contrat_fournisseur" | "couverture_fx" | "programme_fournisseur"
-    // text?: string  (texte extrait côté client pour PDF)
-    // images?: string[]  (data URLs base64 — pour scans/photos)
-    const { type, text, images } = await req.json();
+    // Accepte :
+    // - { type, text }                    : texte déjà extrait
+    // - { type, images: [dataUrl,...] }   : images (vision)
+    // - { type, pdfBase64 }               : PDF brut base64 → extraction texte côté serveur via unpdf
+    const { type, text: textIn, images, pdfBase64 } = await req.json();
+    let text: string | undefined = typeof textIn === "string" ? textIn : undefined;
+
+    if (!type) {
+      return new Response(
+        JSON.stringify({ error: "type requis" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    if (!text && pdfBase64 && typeof pdfBase64 === "string") {
+      try {
+        const bin = Uint8Array.from(atob(pdfBase64), (c) => c.charCodeAt(0));
+        if (bin.byteLength > 20 * 1024 * 1024) {
+          return new Response(
+            JSON.stringify({ error: "PDF trop volumineux (max 20 Mo)." }),
+            { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        const { extractText, getDocumentProxy } = await import("https://esm.sh/unpdf@0.12.1");
+        const pdf = await getDocumentProxy(bin);
+        const { text: extracted } = await extractText(pdf, { mergePages: true });
+        text = (Array.isArray(extracted) ? extracted.join("\n") : String(extracted || "")).slice(0, 60000);
+        console.log("[extract-pdf] unpdf extracted", { chars: text.length, pages: pdf.numPages });
+      } catch (e) {
+        console.error("[extract-pdf] unpdf failed", e);
+        return new Response(
+          JSON.stringify({ error: "Lecture PDF impossible côté serveur. Essayez un PDF non protégé / non scanné, ou envoyez une image." }),
+          { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
     console.log("[extract-pdf] received", {
       type,
-      textLen: typeof text === "string" ? text.length : 0,
+      textLen: text ? text.length : 0,
       imagesCount: Array.isArray(images) ? images.length : 0,
     });
-    if (!type || (!text && (!images || images.length === 0))) {
+
+    if (!text && (!images || images.length === 0)) {
       return new Response(
-        JSON.stringify({ error: "type et (text ou images) requis" }),
+        JSON.stringify({ error: "text, images ou pdfBase64 requis" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
