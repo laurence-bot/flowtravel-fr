@@ -45,7 +45,18 @@ import {
   type CotationLigne,
   type CotationStatut,
 } from "@/lib/cotations";
-import { FileText, Plus, ChevronRight } from "lucide-react";
+import { FileText, Plus, ChevronRight, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cotations")({
@@ -179,6 +190,35 @@ function CotationsPage() {
     setOpen(false);
     setForm({ titre: "", client_id: "", destination: "", nombre_pax: "1" });
     toast.success("Cotation créée.");
+    refetch();
+  };
+
+  const handleDelete = async (c: Cotation) => {
+    if (!user) return;
+    if (c.dossier_id) {
+      toast.error("Impossible : cette cotation a déjà été transformée en dossier.");
+      return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = supabase as any;
+    // Supprime les dépendances (RLS = own)
+    await sb.from("cotation_lignes_fournisseurs").delete().eq("cotation_id", c.id);
+    await sb.from("cotation_jours").delete().eq("cotation_id", c.id);
+    await sb.from("flight_options").delete().eq("cotation_id", c.id);
+    await sb.from("quote_public_links").delete().eq("cotation_id", c.id);
+    const { error } = await sb.from("cotations").delete().eq("id", c.id);
+    if (error) {
+      toast.error(error.message ?? "Suppression impossible.");
+      return;
+    }
+    await logAudit({
+      userId: user.id,
+      entity: "cotation",
+      entityId: c.id,
+      action: "delete",
+      description: `Cotation supprimée : ${c.titre}`,
+    });
+    toast.success("Cotation supprimée.");
     refetch();
   };
 
@@ -379,11 +419,39 @@ function CotationsPage() {
                       v{c.version_number}
                     </TableCell>
                     <TableCell>
-                      <Button asChild variant="ghost" size="sm">
-                        <Link to="/cotations/$id" params={{ id: c.id }}>
-                          <ChevronRight className="h-4 w-4" />
-                        </Link>
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        {canWrite && !c.dossier_id && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Supprimer cette cotation ?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  « {c.titre} » sera définitivement supprimée, ainsi que ses lignes fournisseurs, jours d'itinéraire et options de vol. Cette action est irréversible.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={() => handleDelete(c)}
+                                >
+                                  Supprimer
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                        <Button asChild variant="ghost" size="sm">
+                          <Link to="/cotations/$id" params={{ id: c.id }}>
+                            <ChevronRight className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
