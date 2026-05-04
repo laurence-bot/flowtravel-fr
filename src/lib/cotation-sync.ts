@@ -176,13 +176,30 @@ export function buildJourSyncPlan(params: {
     conflicts.push(`${orderedExisting.length - targets.length} jour(s) en trop détecté(s) par rapport aux vols.`);
   }
 
+  // Compute alignment offset: match PDF "Jour N" titles to the correct target.
+  // If flight targets exist and existing PDF days are numbered Jour 1..N, anchor
+  // PDF's "Jour 1" to the first non-flight target (real arrival day in destination).
+  // This avoids attaching destination text to a flight/transit day.
+  let pdfDayOffset = 0;
+  if (params.generatedFromFlights.length > 0) {
+    const firstNonFlightIdx = targets.findIndex((t) => !t.isFlightDay);
+    if (firstNonFlightIdx > 0) pdfDayOffset = firstNonFlightIdx;
+  }
+
   for (let i = 0; i < targets.length; i++) {
     const target = targets[i];
     const ordre = i + 1;
+    // PDF "Jour N" maps to target index (pdfDayOffset + N - 1)
+    const expectedPdfDayNumber = i - pdfDayOffset + 1;
     const candidates = orderedExisting.filter((j) => {
       if (used.has(j.id)) return false;
       const n = extractDayNumber(j.titre);
-      return j.date_jour === target.date_jour || n === ordre || j.ordre === ordre;
+      // Date match is strongest, then PDF day number with offset, then raw ordre as last resort
+      if (j.date_jour && j.date_jour === target.date_jour) return true;
+      if (n != null && n === expectedPdfDayNumber) return true;
+      // Fallback only when there are no titled-day candidates at all (avoid mis-grabbing)
+      if (n == null && j.ordre === ordre && !target.isFlightDay) return true;
+      return false;
     });
     const selected = [...candidates].sort((a, b) => dayContentScore(b) - dayContentScore(a))[0];
 
