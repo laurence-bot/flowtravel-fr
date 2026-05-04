@@ -68,6 +68,7 @@ function UtilisateursPage() {
   const [inviteName, setInviteName] = useState("");
   const [inviteRole, setInviteRole] = useState<AppRole>("agent");
   const [inviting, setInviting] = useState(false);
+  const [pwdResult, setPwdResult] = useState<{ email: string; password: string } | null>(null);
 
 
   const refresh = async () => {
