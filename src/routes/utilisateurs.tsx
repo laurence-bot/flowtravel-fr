@@ -164,6 +164,26 @@ function UtilisateursPage() {
     setSavingId(null);
   };
 
+  const resetPassword = async (p: ProfileRow) => {
+    setSavingId(p.user_id);
+    try {
+      const res: any = await setUserPassword({ data: { user_id: p.user_id } });
+      setPwdResult({ email: res.email ?? p.email, password: res.password });
+      await logAudit({
+        userId: user?.id,
+        entity: "compte",
+        action: "update",
+        entityId: p.user_id,
+        description: `Mot de passe réinitialisé : ${p.email}`,
+      });
+      toast.success("Mot de passe généré");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Échec de la réinitialisation");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   const removeUser = async (p: ProfileRow) => {
     if (p.user_id === user?.id) {
       toast.error("Vous ne pouvez pas supprimer votre propre compte.");
