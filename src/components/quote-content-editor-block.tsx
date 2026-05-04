@@ -393,25 +393,106 @@ export function QuoteContentEditorBlock({
         .eq("id", cotationId);
       if (cotErr) throw cotErr;
 
-      // 2. Réaligner les date_jour des jours existants (en gardant ordre + contenu)
+      // 2. Calculer le nombre exact de jours attendus
+      const dDep = new Date(newDepart);
+      const dRet = new Date(newRetour);
+      const targetCount = Math.max(
+        1,
+        Math.round((dRet.getTime() - dDep.getTime()) / 86400000) + 1,
+      );
+
       const sortedJours = [...jours].sort((a, b) => a.ordre - b.ordre);
-      const baseDate = new Date(newDepart);
-      const updates = sortedJours.map((j, i) => {
-        const d = new Date(baseDate);
-        d.setDate(baseDate.getDate() + i);
+
+      // 2a. Supprimer les jours en trop (ceux au-delà de targetCount)
+      const toDelete = sortedJours.slice(targetCount);
+      if (toDelete.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: delErr } = await (supabase as any)
+          .from("cotation_jours")
+          .delete()
+          .in("id", toDelete.map((j) => j.id));
+        if (delErr) throw delErr;
+      }
+
+      // 2b. Réaligner les date_jour + ordre des jours conservés
+      const kept = sortedJours.slice(0, targetCount);
+      const updates = kept.map((j, i) => {
+        const d = new Date(dDep);
+        d.setDate(dDep.getDate() + i);
         const newDateJour = d.toISOString().slice(0, 10);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return (supabase as any)
           .from("cotation_jours")
-          .update({ date_jour: newDateJour })
+          .update({ date_jour: newDateJour, ordre: i + 1 })
           .eq("id", j.id);
       });
       const results = await Promise.all(updates);
       const failed = results.find((r) => r.error);
       if (failed) throw failed.error;
 
-      toast.success("Dates resynchronisées sur les vols.");
+      // 2c. Créer les jours manquants si targetCount > kept.length
+      if (kept.length < targetCount) {
+        const missing = targetCount - kept.length;
+        const newRows = Array.from({ length: missing }, (_, k) => {
+          const idx = kept.length + k;
+          const d = new Date(dDep);
+          d.setDate(dDep.getDate() + idx);
+          return {
+            user_id: kept[0]?.user_id ?? jours[0]?.user_id,
+            cotation_id: cotationId,
+            ordre: idx + 1,
+            titre: `Jour ${idx + 1}`,
+            date_jour: d.toISOString().slice(0, 10),
+          };
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: insErr } = await (supabase as any)
+          .from("cotation_jours")
+          .insert(newRows);
+        if (insErr) throw insErr;
+      }
+
+      // 3. Dédupliquer les lignes fournisseurs (même prestation + montant + devise)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: lignesData } = await (supabase as any)
+        .from("cotation_lignes_fournisseurs")
+        .select("id, prestation, montant_devise, devise, nom_fournisseur, created_at")
+        .eq("cotation_id", cotationId)
+        .order("created_at", { ascending: true });
+      const seen = new Set<string>();
+      const dupIds: string[] = [];
+      for (const l of (lignesData ?? []) as Array<{
+        id: string;
+        prestation: string;
+        montant_devise: number;
+        devise: string;
+        nom_fournisseur: string;
+      }>) {
+        const key = `${(l.prestation ?? "").trim().toLowerCase()}|${l.montant_devise}|${l.devise}|${(l.nom_fournisseur ?? "").trim().toLowerCase()}`;
+        if (seen.has(key)) dupIds.push(l.id);
+        else seen.add(key);
+      }
+      let removedDups = 0;
+      if (dupIds.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: dupErr } = await (supabase as any)
+          .from("cotation_lignes_fournisseurs")
+          .delete()
+          .in("id", dupIds);
+        if (dupErr) throw dupErr;
+        removedDups = dupIds.length;
+      }
+
+      const msgParts = [
+        `${targetCount} jour${targetCount > 1 ? "s" : ""} alignés`,
+      ];
+      if (toDelete.length > 0) msgParts.push(`${toDelete.length} en trop supprimé(s)`);
+      if (kept.length < targetCount)
+        msgParts.push(`${targetCount - kept.length} ajouté(s)`);
+      if (removedDups > 0) msgParts.push(`${removedDups} ligne(s) doublon retirée(s)`);
+      toast.success(`Resynchronisation OK — ${msgParts.join(", ")}.`);
       await loadJours();
+
     } catch (e) {
       console.error("[resync dates] erreur:", e);
       toast.error(e instanceof Error ? e.message : "Erreur de resynchronisation.");
