@@ -42,7 +42,9 @@ function DemandeDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { canWrite } = usePageWriteAccess();
+  const { canWrite: canWriteRole } = usePageWriteAccess();
+  const editLock = useEditLock("demande", id);
+  const canWrite = canWriteRole && (editLock.isAlone || editLock.canEdit);
   const { agents } = useAgents();
   const { data: contacts, loading: contactsLoading, refetch: refetchContacts } = useTable<Contact>("contacts");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
