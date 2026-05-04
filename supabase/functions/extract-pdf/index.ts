@@ -231,10 +231,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { type, text } = await req.json();
-    if (!type || !text) {
+    // type: "contrat_fournisseur" | "couverture_fx" | "programme_fournisseur"
+    // text?: string  (texte extrait côté client pour PDF)
+    // images?: string[]  (data URLs base64 — pour scans/photos)
+    const { type, text, images } = await req.json();
+    if (!type || (!text && (!images || images.length === 0))) {
       return new Response(
-        JSON.stringify({ error: "type et text requis" }),
+        JSON.stringify({ error: "type et (text ou images) requis" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -247,14 +250,32 @@ Deno.serve(async (req) => {
       );
     }
 
-    const tool = type === "couverture_fx" ? FX_TOOL : SUPPLIER_TOOL;
+    const tool =
+      type === "couverture_fx"
+        ? FX_TOOL
+        : type === "programme_fournisseur"
+        ? PROGRAM_TOOL
+        : SUPPLIER_TOOL;
     const systemPrompt =
       type === "couverture_fx"
         ? "Tu es un assistant comptable spécialisé en couvertures de change Ebury. Extrais les informations du contrat fourni. Si une information est absente, ne l'invente pas. Évalue ta confiance honnêtement."
+        : type === "programme_fournisseur"
+        ? "Tu es un assistant pour une agence de voyages haut de gamme. Tu analyses des programmes / propositions de fournisseurs (DMC, réceptifs, hôtels). Tu extrais : (1) tous les jours du programme dans l'ordre, (2) toutes les prestations chiffrées avec leur prix et devise. Pour chaque jour, tu RÉÉCRIS la description dans un ton premium, sensoriel, fluide et naturel — MAIS sans changer le sens, sans inventer, sans retirer aucune information factuelle (hôtels, transferts, horaires, services, repas, durées). Tu corriges l'orthographe et la grammaire. Pas d'émojis, pas de superlatifs creux. Si une donnée manque, ne l'invente pas."
         : "Tu es un assistant comptable spécialisé en factures fournisseurs d'agences de voyage. Extrais les informations du contrat fourni. Si une information est absente, ne l'invente pas. Évalue ta confiance honnêtement.";
 
-    // Tronquer le texte pour rester dans la fenêtre de contexte
-    const truncated = text.slice(0, 30000);
+    // Construit le message user : texte ou images (vision)
+    let userContent: unknown;
+    if (images && Array.isArray(images) && images.length > 0) {
+      userContent = [
+        { type: "text", text: "Voici le document fournisseur (images). Extrais les informations demandées." },
+        ...images.slice(0, 8).map((url: string) => ({
+          type: "image_url",
+          image_url: { url },
+        })),
+      ];
+    } else {
+      userContent = String(text).slice(0, 60000);
+    }
 
     const aiRes = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -265,10 +286,13 @@ Deno.serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model:
+            type === "programme_fournisseur"
+              ? "google/gemini-2.5-pro"
+              : "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: truncated },
+            { role: "user", content: userContent },
           ],
           tools: [tool],
           tool_choice: {
