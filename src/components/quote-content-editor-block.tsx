@@ -1180,3 +1180,131 @@ function AiRefineDialog({
     </Dialog>
   );
 }
+
+/* ============================================================
+ *  Bloc Hôtel d'un jour
+ *   - Nom + URL site officiel + URL photo
+ *   - Boutons "Rechercher sur Google" (site officiel + images)
+ *   - Aperçu photo + lien externe
+ * ============================================================ */
+function HotelBlock({
+  jour,
+  canWrite,
+  onUpdate,
+}: {
+  jour: CotationJour;
+  canWrite: boolean;
+  userId: string;
+  cotationId: string;
+  onUpdate: (patch: Partial<CotationJour>) => void;
+}) {
+  const [nom, setNom] = useState(jour.hotel_nom ?? "");
+  const [url, setUrl] = useState(jour.hotel_url ?? "");
+  const [photo, setPhoto] = useState(jour.hotel_photo_url ?? "");
+
+  useEffect(() => {
+    setNom(jour.hotel_nom ?? "");
+    setUrl(jour.hotel_url ?? "");
+    setPhoto(jour.hotel_photo_url ?? "");
+  }, [jour.id, jour.hotel_nom, jour.hotel_url, jour.hotel_photo_url]);
+
+  const queryBase = [nom, jour.lieu].filter(Boolean).join(" ");
+  const googleSiteUrl = nom
+    ? `https://www.google.com/search?q=${encodeURIComponent(queryBase + " site officiel")}&btnI=1`
+    : null;
+  const googleImagesUrl = nom
+    ? `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(queryBase + " hotel")}`
+    : null;
+
+  return (
+    <div className="border-t mt-3 pt-3 space-y-2">
+      <Label className="text-xs flex items-center gap-1">
+        🏨 Hôtel de la nuit (optionnel)
+      </Label>
+      <div className="grid sm:grid-cols-[1fr_auto] gap-2">
+        <Input
+          value={nom}
+          onChange={(e) => setNom(e.target.value)}
+          onBlur={() => nom !== (jour.hotel_nom ?? "") && onUpdate({ hotel_nom: nom || null })}
+          placeholder="Nom de l'hôtel (ex: Riad Yasmine)"
+          disabled={!canWrite}
+          className="h-8 text-sm"
+        />
+        <div className="flex gap-1">
+          {googleSiteUrl && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              asChild
+              className="h-8"
+              title="Aller sur le site officiel via Google"
+            >
+              <a href={googleSiteUrl} target="_blank" rel="noopener noreferrer">
+                Site Google
+              </a>
+            </Button>
+          )}
+          {googleImagesUrl && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              asChild
+              className="h-8"
+              title="Chercher une photo de l'hôtel"
+            >
+              <a href={googleImagesUrl} target="_blank" rel="noopener noreferrer">
+                Photos Google
+              </a>
+            </Button>
+          )}
+        </div>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-2">
+        <Input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onBlur={() => url !== (jour.hotel_url ?? "") && onUpdate({ hotel_url: url || null })}
+          placeholder="https://hotel-officiel.com"
+          disabled={!canWrite}
+          className="h-8 text-sm"
+        />
+        <Input
+          value={photo}
+          onChange={(e) => setPhoto(e.target.value)}
+          onBlur={() =>
+            photo !== (jour.hotel_photo_url ?? "") && onUpdate({ hotel_photo_url: photo || null })
+          }
+          placeholder="URL photo (clic-droit > copier l'image)"
+          disabled={!canWrite}
+          className="h-8 text-sm"
+        />
+      </div>
+      {(photo || url) && (
+        <div className="flex items-center gap-3 pt-1">
+          {photo && (
+            <a
+              href={url || photo}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-24 h-16 rounded overflow-hidden border bg-muted shrink-0"
+            >
+              <img src={photo} alt={nom || "Hôtel"} className="w-full h-full object-cover" />
+            </a>
+          )}
+          {url && (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-[color:var(--gold)] hover:underline truncate"
+            >
+              {url}
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
