@@ -63,6 +63,16 @@ const devise = (v: unknown): DeviseCode => {
   return VALID_DEVISES.has(code as DeviseCode) ? (code as DeviseCode) : "EUR";
 };
 
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
 /** Convertit un fichier image en data URL base64. */
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -106,7 +116,11 @@ export async function extractProgramFromFile(
     if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
       let text = "";
       try {
-        text = await extractTextFromPdf(file);
+        text = await withTimeout(
+          extractTextFromPdf(file),
+          25000,
+          "La lecture du PDF prend trop de temps. Essayez avec un PDF plus léger ou une image.",
+        );
       } catch (e) {
         console.warn("[program-import] extractTextFromPdf failed:", e);
       }
@@ -115,7 +129,11 @@ export async function extractProgramFromFile(
       } else {
         // PDF scanné / sans texte → on rasterise en images
         console.info("[program-import] PDF sans texte exploitable, rasterisation en images.");
-        const images = await pdfToImages(file);
+        const images = await withTimeout(
+          pdfToImages(file),
+          30000,
+          "La conversion du PDF scanné prend trop de temps. Essayez avec une image JPG/PNG ou un PDF plus léger.",
+        );
         if (images.length === 0) {
           return { result: null, error: "Impossible de lire le PDF." };
         }
@@ -141,7 +159,11 @@ export async function extractProgramFromFile(
     images: payload.images?.length,
   });
 
-  const { data, error } = await supabase.functions.invoke("extract-pdf", { body: payload });
+  const { data, error } = await withTimeout(
+    supabase.functions.invoke("extract-pdf", { body: payload }),
+    65000,
+    "L'analyse IA dépasse le délai maximum. Essayez avec un document plus court ou séparé en plusieurs parties.",
+  );
   if (error) {
     console.error("[program-import] invoke error:", error);
     return { result: null, error: error.message };
