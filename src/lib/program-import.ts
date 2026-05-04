@@ -4,7 +4,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { DEVISES, type DeviseCode } from "@/lib/fx";
-import { extractTextFromPdf } from "@/lib/pdf-import";
 
 export type Confiance = "faible" | "moyenne" | "elevee";
 
@@ -73,6 +72,53 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
   });
 }
 
+type ProgramPayload = { type: "programme_fournisseur"; text?: string; images?: string[] };
+type ProgressCallback = (message: string) => void;
+
+async function loadPdf(file: File) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdfjs: any = await import("pdfjs-dist");
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+  const buf = await file.arrayBuffer();
+  return withTimeout(
+    pdfjs.getDocument({ data: buf }).promise,
+    20000,
+    "Impossible d'ouvrir le PDF automatiquement. Essayez de l'exporter à nouveau en PDF standard.",
+  );
+}
+
+/** Extrait le texte page par page, en petits blocs, pour éviter de bloquer sur les gros PDF. */
+async function extractPdfTextChunks(file: File): Promise<string[]> {
+  const pdf = await loadPdf(file);
+  const maxPages = Math.min(pdf.numPages, 45);
+  const chunkLimit = 9000;
+  const maxChunks = 7;
+  const chunks: string[] = [];
+  let current = "";
+
+  for (let i = 1; i <= maxPages && chunks.length < maxChunks; i++) {
+    const page = await withTimeout(pdf.getPage(i), 12000, `Lecture impossible de la page ${i}.`);
+    const content = await withTimeout(
+      page.getTextContent(),
+      12000,
+      `Extraction texte trop longue sur la page ${i}.`,
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pageText = content.items.map((it: any) => it.str ?? "").join(" ").trim();
+    if (!pageText) continue;
+    const block = `\n\n--- Page ${i} ---\n${pageText.slice(0, 5000)}`;
+    if (current && current.length + block.length > chunkLimit) {
+      chunks.push(current);
+      current = block;
+    } else {
+      current += block;
+    }
+  }
+
+  if (current.trim() && chunks.length < maxChunks) chunks.push(current);
+  return chunks.filter((chunk) => chunk.trim().length >= 40);
+}
+
 /** Convertit un fichier image en data URL base64. */
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -83,27 +129,123 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-/** Rasterise les premières pages d'un PDF en images JPEG légères — fallback OCR. */
-async function pdfToImages(file: File, maxPages = 4): Promise<string[]> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfjs: any = await import("pdfjs-dist");
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
-  const buf = await file.arrayBuffer();
-  const pdf = await pdfjs.getDocument({ data: buf }).promise;
+/** Rasterise les premières pages d'un PDF en images JPEG légères, par petits lots — fallback OCR. */
+async function pdfToImageBatches(file: File, maxPages = 10, pagesPerBatch = 2): Promise<string[][]> {
+  const pdf = await loadPdf(file);
   const pages = Math.min(pdf.numPages, maxPages);
-  const out: string[] = [];
+  const batches: string[][] = [];
+  let current: string[] = [];
   for (let i = 1; i <= pages; i++) {
     const page = await pdf.getPage(i);
-    const viewport = page.getViewport({ scale: 1.15 });
+    const viewport = page.getViewport({ scale: 0.95 });
     const canvas = document.createElement("canvas");
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
+    canvas.width = Math.floor(viewport.width);
+    canvas.height = Math.floor(viewport.height);
     const ctx = canvas.getContext("2d");
     if (!ctx) continue;
     await page.render({ canvasContext: ctx, viewport }).promise;
-    out.push(canvas.toDataURL("image/jpeg", 0.72));
+    current.push(canvas.toDataURL("image/jpeg", 0.62));
+    if (current.length >= pagesPerBatch) {
+      batches.push(current);
+      current = [];
+    }
   }
-  return out;
+  if (current.length) batches.push(current);
+  return batches;
+}
+
+function normalizeExtractedProgram(raw: Record<string, unknown>, confiance: Confiance): ExtractedProgram {
+  const joursRaw = Array.isArray(raw.jours) ? (raw.jours as Array<Record<string, unknown>>) : [];
+  const lignesRaw = Array.isArray(raw.lignes) ? (raw.lignes as Array<Record<string, unknown>>) : [];
+
+  const jours: ExtractedJour[] = joursRaw
+    .map((j, i) => ({
+      ordre: Number(j.ordre) || i + 1,
+      titre: String(j.titre || `Jour ${i + 1}`).trim(),
+      lieu: j.lieu ? String(j.lieu).trim() : undefined,
+      date_jour: isoDate(j.date_jour),
+      description: j.description ? String(j.description).trim() : undefined,
+    }))
+    .filter((j) => j.titre)
+    .sort((a, b) => a.ordre - b.ordre);
+
+  const lignes: ExtractedLigne[] = lignesRaw
+    .map((l) => ({
+      prestation: String(l.prestation || "").trim(),
+      nom_fournisseur: l.nom_fournisseur
+        ? String(l.nom_fournisseur).trim()
+        : (raw.fournisseur_nom as string | undefined)?.trim(),
+      quantite: num(l.quantite) ?? 1,
+      mode_tarifaire:
+        l.mode_tarifaire === "par_personne" ? ("par_personne" as const) : ("global" as const),
+      devise: devise(l.devise),
+      montant_devise: num(l.montant_devise) ?? 0,
+      jour_ordre: num(l.jour_ordre),
+      date_prestation: isoDate(l.date_prestation),
+    }))
+    .filter((l) => l.prestation && l.montant_devise > 0);
+
+  return {
+    fournisseur_nom: (raw.fournisseur_nom as string) || undefined,
+    destination: (raw.destination as string) || undefined,
+    nombre_pax: num(raw.nombre_pax),
+    date_depart: isoDate(raw.date_depart),
+    jours,
+    lignes,
+    confiance,
+  };
+}
+
+function mergePrograms(parts: ExtractedProgram[]): ExtractedProgram | null {
+  if (parts.length === 0) return null;
+  const jourKeys = new Set<string>();
+  const ligneKeys = new Set<string>();
+  const jours: ExtractedJour[] = [];
+  const lignes: ExtractedLigne[] = [];
+
+  for (const part of parts) {
+    for (const j of part.jours) {
+      const key = `${j.date_jour ?? ""}|${j.titre.toLowerCase()}|${(j.description ?? "").slice(0, 80).toLowerCase()}`;
+      if (jourKeys.has(key)) continue;
+      jourKeys.add(key);
+      jours.push({ ...j, ordre: jours.length + 1 });
+    }
+    for (const l of part.lignes) {
+      const key = `${l.prestation.toLowerCase()}|${l.montant_devise}|${l.devise}|${l.jour_ordre ?? ""}`;
+      if (ligneKeys.has(key)) continue;
+      ligneKeys.add(key);
+      lignes.push(l);
+    }
+  }
+
+  const rank: Record<Confiance, number> = { faible: 0, moyenne: 1, elevee: 2 };
+  const confiance = parts.reduce<Confiance>((lowest, part) =>
+    rank[part.confiance] < rank[lowest] ? part.confiance : lowest,
+  "elevee");
+
+  return {
+    fournisseur_nom: parts.find((p) => p.fournisseur_nom)?.fournisseur_nom,
+    destination: parts.find((p) => p.destination)?.destination,
+    nombre_pax: parts.find((p) => p.nombre_pax)?.nombre_pax,
+    date_depart: parts.find((p) => p.date_depart)?.date_depart,
+    jours,
+    lignes,
+    confiance,
+  };
+}
+
+async function analyzeProgramPayload(payload: ProgramPayload): Promise<{ result: ExtractedProgram | null; error?: string }> {
+  const { data, error } = await withTimeout(
+    supabase.functions.invoke("extract-pdf", { body: payload }),
+    70000,
+    "Une partie du document est trop longue à analyser automatiquement.",
+  );
+  if (error) return { result: null, error: error.message };
+  if (data?.error) return { result: null, error: data.error };
+
+  const raw = (data?.data ?? {}) as Record<string, unknown>;
+  const confiance = (data?.confiance as Confiance) ?? "moyenne";
+  return { result: normalizeExtractedProgram(raw, confiance) };
 }
 
 /** Extrait un programme depuis un fichier (PDF ou image). */
