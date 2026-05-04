@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { ImagePicker } from "@/components/image-picker";
 import { generateDayText } from "@/server/quote-day-text.functions";
+import { generateQuoteIntro } from "@/server/quote-intro.functions";
 import type { CotationJour } from "@/lib/quote-public";
 import {
   ImageIcon,
@@ -76,7 +77,11 @@ type Props = {
   initialStorytelling: string | null;
   initialInclus?: string | null;
   initialNonInclus?: string | null;
+  titre?: string | null;
   destination?: string | null;
+  paysDestination?: string | null;
+  typeVoyage?: string | null;
+  nombrePax?: number | null;
   dateDepart?: string | null;
   dateRetour?: string | null;
 };
@@ -89,7 +94,11 @@ export function QuoteContentEditorBlock({
   initialStorytelling,
   initialInclus,
   initialNonInclus,
+  titre,
   destination,
+  paysDestination,
+  typeVoyage,
+  nombrePax,
   dateDepart,
   dateRetour,
 }: Props) {
@@ -103,6 +112,45 @@ export function QuoteContentEditorBlock({
   const [regenOpen, setRegenOpen] = useState(false);
   const [regenLoading, setRegenLoading] = useState(false);
   const [hasFlights, setHasFlights] = useState(false);
+  const [genIntroLoading, setGenIntroLoading] = useState(false);
+  const callGenerateIntro = useServerFn(generateQuoteIntro);
+
+  const handleGenerateIntro = async () => {
+    setGenIntroLoading(true);
+    try {
+      const res = await callGenerateIntro({
+        data: {
+          titre: titre ?? null,
+          destination: destination ?? null,
+          paysDestination: paysDestination ?? null,
+          typeVoyage: typeVoyage ?? null,
+          nombrePax: nombrePax ?? null,
+          dateDepart: dateDepart ?? null,
+          dateRetour: dateRetour ?? null,
+          jours: jours.map((j) => ({
+            ordre: j.ordre,
+            titre: j.titre,
+            lieu: j.lieu,
+            description: j.description,
+          })),
+        },
+      });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      setStorytelling(res.text);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from("cotations")
+        .update({ storytelling_intro: res.text })
+        .eq("id", cotationId);
+      if (error) toast.error(error.message);
+      else toast.success("Introduction générée.");
+    } finally {
+      setGenIntroLoading(false);
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -399,7 +447,30 @@ export function QuoteContentEditorBlock({
 
       {/* STORYTELLING */}
       <div className="space-y-2">
-        <Label htmlFor="storytelling">Introduction narrative (optionnel)</Label>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <Label htmlFor="storytelling">Introduction narrative (optionnel)</Label>
+          {canWrite && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleGenerateIntro}
+              disabled={genIntroLoading || jours.length === 0}
+              title={
+                jours.length === 0
+                  ? "Rédigez d'abord le programme jour par jour"
+                  : "Générer une phrase d'accroche à partir de votre programme"
+              }
+            >
+              {genIntroLoading ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-1" />
+              )}
+              Générer avec l'IA
+            </Button>
+          )}
+        </div>
         <Textarea
           id="storytelling"
           value={storytelling}

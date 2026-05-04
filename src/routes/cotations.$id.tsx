@@ -573,7 +573,11 @@ function CotationDetailPage() {
           initialStorytelling={cot.storytelling_intro ?? null}
           initialInclus={cot.inclus_text ?? null}
           initialNonInclus={cot.non_inclus_text ?? null}
+          titre={cot.titre ?? null}
           destination={cot.destination ?? null}
+          paysDestination={cot.pays_destination ?? null}
+          typeVoyage={(cot as { type_voyage?: string | null }).type_voyage ?? null}
+          nombrePax={cot.nombre_pax ?? null}
           dateDepart={cot.date_depart ?? null}
           dateRetour={cot.date_retour ?? null}
         />
