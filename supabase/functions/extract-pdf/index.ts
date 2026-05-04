@@ -291,13 +291,11 @@ Deno.serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model:
-            type === "programme_fournisseur"
-              ? "google/gemini-2.5-pro"
-              : "google/gemini-2.5-flash",
+          model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userContent },
+          ],
           ],
           tools: [tool],
           tool_choice: {
