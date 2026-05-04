@@ -38,6 +38,11 @@ import {
   type FlightSegmentLite,
 } from "@/lib/itinerary-from-flights";
 import {
+  buildJourSyncPlan,
+  duplicateLineKey,
+  type SyncJour,
+} from "@/lib/cotation-sync";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -112,6 +117,7 @@ export function QuoteContentEditorBlock({
   const [regenOpen, setRegenOpen] = useState(false);
   const [regenLoading, setRegenLoading] = useState(false);
   const [resyncLoading, setResyncLoading] = useState(false);
+  const [cleanLoading, setCleanLoading] = useState(false);
   const [hasFlights, setHasFlights] = useState(false);
   const [genIntroLoading, setGenIntroLoading] = useState(false);
   const callGenerateIntro = useServerFn(generateQuoteIntro);
