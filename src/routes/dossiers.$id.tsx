@@ -28,6 +28,8 @@ import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 import { DossierTasksBlock } from "@/components/dossier-tasks-block";
 import { triggerBulletinAfterAcompte } from "@/server/bulletin-trigger.functions";
+import { useEditLock } from "@/hooks/use-edit-lock";
+import { EditLockBanner } from "@/components/edit-lock-banner";
 
 export const Route = createFileRoute("/dossiers/$id")({
   component: () => (
@@ -41,6 +43,7 @@ function DossierDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const editLock = useEditLock("dossier", id);
   const [dossier, setDossier] = useState<Dossier | null>(null);
   const [notFound, setNotFound] = useState(false);
   const { data: contacts } = useTable<Contact>("contacts");
@@ -159,6 +162,7 @@ function DossierDetail() {
 
   return (
     <div className="space-y-8">
+      <EditLockBanner lock={editLock} />
       <Link to="/dossiers" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
         <ArrowLeft className="h-4 w-4" />
         Retour aux dossiers

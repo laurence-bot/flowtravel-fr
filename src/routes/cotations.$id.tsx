@@ -33,6 +33,8 @@ import { useTable, type Contact, type Paiement } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { usePageWriteAccess } from "@/hooks/use-page-write-access";
+import { useEditLock } from "@/hooks/use-edit-lock";
+import { EditLockBanner } from "@/components/edit-lock-banner";
 import { useAgents, agentLabel } from "@/hooks/use-agents";
 import { formatEUR } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
@@ -119,7 +121,9 @@ const ligneSchema = z.object({
 function CotationDetailPage() {
   const { id } = Route.useParams();
   const { user } = useAuth();
-  const { canWrite } = usePageWriteAccess();
+  const { canWrite: canWriteRole } = usePageWriteAccess();
+  const editLock = useEditLock("cotation", id);
+  const canWrite = canWriteRole && (editLock.isAlone || editLock.canEdit);
   const { agents } = useAgents();
   const navigate = useNavigate();
   const { settings: agencySettings } = useAgencySettings();
@@ -585,6 +589,7 @@ function CotationDetailPage() {
 
   return (
     <div className="space-y-6">
+      <EditLockBanner lock={editLock} />
       <div>
         <Button asChild variant="ghost" size="sm" className="-ml-2 mb-2">
           <Link to="/cotations">

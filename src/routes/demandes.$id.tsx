@@ -16,6 +16,8 @@ import { useTable, type Contact } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { usePageWriteAccess } from "@/hooks/use-page-write-access";
+import { useEditLock } from "@/hooks/use-edit-lock";
+import { EditLockBanner } from "@/components/edit-lock-banner";
 import { useAgents, agentLabel } from "@/hooks/use-agents";
 import { formatEUR, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
@@ -40,7 +42,9 @@ function DemandeDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { canWrite } = usePageWriteAccess();
+  const { canWrite: canWriteRole } = usePageWriteAccess();
+  const editLock = useEditLock("demande", id);
+  const canWrite = canWriteRole && (editLock.isAlone || editLock.canEdit);
   const { agents } = useAgents();
   const { data: contacts, loading: contactsLoading, refetch: refetchContacts } = useTable<Contact>("contacts");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -214,6 +218,7 @@ function DemandeDetail() {
 
   return (
     <div className="space-y-6">
+      <EditLockBanner lock={editLock} />
       <PageHeader
         title={demande.nom_client}
         description={`Demande créée le ${formatDate(demande.created_at)} · canal ${DEMANDE_CANAL_LABELS[demande.canal]}`}
