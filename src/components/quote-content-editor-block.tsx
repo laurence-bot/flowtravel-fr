@@ -111,6 +111,7 @@ export function QuoteContentEditorBlock({
   const [loading, setLoading] = useState(true);
   const [regenOpen, setRegenOpen] = useState(false);
   const [regenLoading, setRegenLoading] = useState(false);
+  const [resyncLoading, setResyncLoading] = useState(false);
   const [hasFlights, setHasFlights] = useState(false);
   const [genIntroLoading, setGenIntroLoading] = useState(false);
   const callGenerateIntro = useServerFn(generateQuoteIntro);
@@ -335,6 +336,90 @@ export function QuoteContentEditorBlock({
     }
   };
 
+  /** Resynchronise les dates de la cotation + des jours sur les vols, sans toucher aux contenus. */
+  const resyncDatesFromFlights = async () => {
+    setResyncLoading(true);
+    try {
+      const [volsRes, linkRes] = await Promise.all([
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from("flight_options")
+          .select("*")
+          .eq("cotation_id", cotationId)
+          .order("created_at", { ascending: true }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from("quote_public_links")
+          .select("chosen_flight_option_id")
+          .eq("cotation_id", cotationId)
+          .maybeSingle(),
+      ]);
+      const vols = (volsRes.data ?? []) as FlightOptionLite[];
+      if (vols.length === 0) {
+        toast.error("Aucun vol renseigné.");
+        return;
+      }
+      const chosenId = (linkRes.data?.chosen_flight_option_id ?? null) as string | null;
+      const refVol = pickReferenceFlight(vols, chosenId);
+      if (!refVol) {
+        toast.error("Vol de référence introuvable.");
+        return;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: segs } = await (supabase as any)
+        .from("flight_segments")
+        .select("*")
+        .eq("flight_option_id", refVol.id)
+        .order("ordre", { ascending: true });
+      const segments = (segs ?? []) as FlightSegmentLite[];
+
+      // Date arrivée à destination = date_arrivee du dernier segment aller
+      // Heuristique : on prend date_depart = 1er segment, date_retour = dernier segment
+      const sorted = [...segments].sort((a, b) => a.ordre - b.ordre);
+      const newDepart = sorted[0]?.date_depart ?? refVol.date_depart ?? null;
+      const newRetour =
+        sorted[sorted.length - 1]?.date_arrivee ?? refVol.date_retour ?? null;
+
+      if (!newDepart || !newRetour) {
+        toast.error("Dates de vol incomplètes.");
+        return;
+      }
+
+      // 1. Mettre à jour la cotation
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: cotErr } = await (supabase as any)
+        .from("cotations")
+        .update({ date_depart: newDepart, date_retour: newRetour })
+        .eq("id", cotationId);
+      if (cotErr) throw cotErr;
+
+      // 2. Réaligner les date_jour des jours existants (en gardant ordre + contenu)
+      const sortedJours = [...jours].sort((a, b) => a.ordre - b.ordre);
+      const baseDate = new Date(newDepart);
+      const updates = sortedJours.map((j, i) => {
+        const d = new Date(baseDate);
+        d.setDate(baseDate.getDate() + i);
+        const newDateJour = d.toISOString().slice(0, 10);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (supabase as any)
+          .from("cotation_jours")
+          .update({ date_jour: newDateJour })
+          .eq("id", j.id);
+      });
+      const results = await Promise.all(updates);
+      const failed = results.find((r) => r.error);
+      if (failed) throw failed.error;
+
+      toast.success("Dates resynchronisées sur les vols.");
+      await loadJours();
+    } catch (e) {
+      console.error("[resync dates] erreur:", e);
+      toast.error(e instanceof Error ? e.message : "Erreur de resynchronisation.");
+    } finally {
+      setResyncLoading(false);
+    }
+  };
+
   const runRegenerate = async () => {
     setRegenOpen(false);
     setRegenLoading(true);
@@ -490,6 +575,20 @@ export function QuoteContentEditorBlock({
           <Label>Itinéraire jour par jour ({jours.length})</Label>
           {canWrite && (
             <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => void resyncDatesFromFlights()}
+                disabled={resyncLoading || !hasFlights}
+                title="Aligne les dates de la cotation et des jours sur les vols"
+              >
+                {resyncLoading ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                )}
+                Resynchroniser dates
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
@@ -939,6 +1038,15 @@ function JourEditor({
                 )}
               </div>
             </div>
+
+            {/* HOTEL */}
+            <HotelBlock
+              jour={jour}
+              canWrite={canWrite}
+              userId={userId}
+              cotationId={cotationId}
+              onUpdate={onUpdate}
+            />
           </div>
         </div>
       )}
@@ -1070,5 +1178,133 @@ function AiRefineDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/* ============================================================
+ *  Bloc Hôtel d'un jour
+ *   - Nom + URL site officiel + URL photo
+ *   - Boutons "Rechercher sur Google" (site officiel + images)
+ *   - Aperçu photo + lien externe
+ * ============================================================ */
+function HotelBlock({
+  jour,
+  canWrite,
+  onUpdate,
+}: {
+  jour: CotationJour;
+  canWrite: boolean;
+  userId: string;
+  cotationId: string;
+  onUpdate: (patch: Partial<CotationJour>) => void;
+}) {
+  const [nom, setNom] = useState(jour.hotel_nom ?? "");
+  const [url, setUrl] = useState(jour.hotel_url ?? "");
+  const [photo, setPhoto] = useState(jour.hotel_photo_url ?? "");
+
+  useEffect(() => {
+    setNom(jour.hotel_nom ?? "");
+    setUrl(jour.hotel_url ?? "");
+    setPhoto(jour.hotel_photo_url ?? "");
+  }, [jour.id, jour.hotel_nom, jour.hotel_url, jour.hotel_photo_url]);
+
+  const queryBase = [nom, jour.lieu].filter(Boolean).join(" ");
+  const googleSiteUrl = nom
+    ? `https://www.google.com/search?q=${encodeURIComponent(queryBase + " site officiel")}&btnI=1`
+    : null;
+  const googleImagesUrl = nom
+    ? `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(queryBase + " hotel")}`
+    : null;
+
+  return (
+    <div className="border-t mt-3 pt-3 space-y-2">
+      <Label className="text-xs flex items-center gap-1">
+        🏨 Hôtel de la nuit (optionnel)
+      </Label>
+      <div className="grid sm:grid-cols-[1fr_auto] gap-2">
+        <Input
+          value={nom}
+          onChange={(e) => setNom(e.target.value)}
+          onBlur={() => nom !== (jour.hotel_nom ?? "") && onUpdate({ hotel_nom: nom || null })}
+          placeholder="Nom de l'hôtel (ex: Riad Yasmine)"
+          disabled={!canWrite}
+          className="h-8 text-sm"
+        />
+        <div className="flex gap-1">
+          {googleSiteUrl && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              asChild
+              className="h-8"
+              title="Aller sur le site officiel via Google"
+            >
+              <a href={googleSiteUrl} target="_blank" rel="noopener noreferrer">
+                Site Google
+              </a>
+            </Button>
+          )}
+          {googleImagesUrl && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              asChild
+              className="h-8"
+              title="Chercher une photo de l'hôtel"
+            >
+              <a href={googleImagesUrl} target="_blank" rel="noopener noreferrer">
+                Photos Google
+              </a>
+            </Button>
+          )}
+        </div>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-2">
+        <Input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onBlur={() => url !== (jour.hotel_url ?? "") && onUpdate({ hotel_url: url || null })}
+          placeholder="https://hotel-officiel.com"
+          disabled={!canWrite}
+          className="h-8 text-sm"
+        />
+        <Input
+          value={photo}
+          onChange={(e) => setPhoto(e.target.value)}
+          onBlur={() =>
+            photo !== (jour.hotel_photo_url ?? "") && onUpdate({ hotel_photo_url: photo || null })
+          }
+          placeholder="URL photo (clic-droit > copier l'image)"
+          disabled={!canWrite}
+          className="h-8 text-sm"
+        />
+      </div>
+      {(photo || url) && (
+        <div className="flex items-center gap-3 pt-1">
+          {photo && (
+            <a
+              href={url || photo}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-24 h-16 rounded overflow-hidden border bg-muted shrink-0"
+            >
+              <img src={photo} alt={nom || "Hôtel"} className="w-full h-full object-cover" />
+            </a>
+          )}
+          {url && (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-[color:var(--gold)] hover:underline truncate"
+            >
+              {url}
+            </a>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
