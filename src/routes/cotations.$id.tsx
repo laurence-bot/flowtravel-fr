@@ -694,6 +694,10 @@ function CotationDetailPage() {
           nombrePax={cot.nombre_pax ?? null}
           dateDepart={cot.date_depart ?? null}
           dateRetour={cot.date_retour ?? null}
+          onDataChanged={() => {
+            refetchCot();
+            refetchLignes();
+          }}
         />
       )}
 
