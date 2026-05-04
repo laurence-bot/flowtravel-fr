@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { ImagePicker } from "@/components/image-picker";
 import { generateDayText } from "@/server/quote-day-text.functions";
+import { generateQuoteIntro } from "@/server/quote-intro.functions";
 import type { CotationJour } from "@/lib/quote-public";
 import {
   ImageIcon,
@@ -76,7 +77,11 @@ type Props = {
   initialStorytelling: string | null;
   initialInclus?: string | null;
   initialNonInclus?: string | null;
+  titre?: string | null;
   destination?: string | null;
+  paysDestination?: string | null;
+  typeVoyage?: string | null;
+  nombrePax?: number | null;
   dateDepart?: string | null;
   dateRetour?: string | null;
 };
@@ -89,7 +94,11 @@ export function QuoteContentEditorBlock({
   initialStorytelling,
   initialInclus,
   initialNonInclus,
+  titre,
   destination,
+  paysDestination,
+  typeVoyage,
+  nombrePax,
   dateDepart,
   dateRetour,
 }: Props) {
