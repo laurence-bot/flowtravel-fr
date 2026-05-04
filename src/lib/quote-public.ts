@@ -28,6 +28,9 @@ export type CotationJour = {
   image_credit: string | null;
   gallery_urls: string[];
   gallery_credits: string[];
+  hotel_nom: string | null;
+  hotel_url: string | null;
+  hotel_photo_url: string | null;
   created_at: string;
   updated_at: string;
 };
