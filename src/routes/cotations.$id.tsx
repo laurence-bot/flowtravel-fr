@@ -197,6 +197,7 @@ function CotationDetailPage() {
   // URL signée du PDF fournisseur (générée à la demande)
   const [pdfSignedUrl, setPdfSignedUrl] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfDeleting, setPdfDeleting] = useState(false);
 
   if (cotationsLoading || contactsLoading || paiementsLoading) {
     return <div className="text-muted-foreground text-sm">Chargement de la cotation…</div>;
@@ -565,6 +566,28 @@ function CotationDetailPage() {
     }
   };
 
+  const deleteProgrammePdf = async () => {
+    if (!cot.programme_pdf_url) return;
+    if (!confirm("Supprimer le PDF importé de cette cotation ? Les jours et lignes déjà importés restent modifiables.")) return;
+    setPdfDeleting(true);
+    try {
+      const { error: storageError } = await supabase.storage
+        .from("pdf-imports")
+        .remove([cot.programme_pdf_url]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from("cotations")
+        .update({ programme_pdf_url: null, programme_pdf_name: null })
+        .eq("id", cot.id);
+      if (error) return toast.error(error.message);
+      if (storageError) toast.warning("PDF détaché de la cotation, mais le fichier source n'a pas pu être supprimé du stockage.");
+      else toast.success("PDF importé supprimé.");
+      refetchCot();
+    } finally {
+      setPdfDeleting(false);
+    }
+  };
+
   const transformer = async () => {
     if (!user) return;
     if (cot.statut !== "validee")
@@ -671,6 +694,12 @@ function CotationDetailPage() {
           nombrePax={cot.nombre_pax ?? null}
           dateDepart={cot.date_depart ?? null}
           dateRetour={cot.date_retour ?? null}
+          programmePdfUrl={cot.programme_pdf_url ?? null}
+          programmePdfName={cot.programme_pdf_name ?? null}
+          onDataChanged={() => {
+            refetchCot();
+            refetchLignes();
+          }}
         />
       )}
 
@@ -1081,10 +1110,24 @@ function CotationDetailPage() {
               </div>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={openProgrammePdf} disabled={pdfLoading}>
-            <ExternalLink className="h-4 w-4 mr-2" />
-            {pdfLoading ? "Ouverture…" : "Ouvrir le PDF"}
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button variant="outline" size="sm" onClick={openProgrammePdf} disabled={pdfLoading}>
+              <ExternalLink className="h-4 w-4 mr-2" />
+              {pdfLoading ? "Ouverture…" : "Ouvrir le PDF"}
+            </Button>
+            {canWrite && !isLocked && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={deleteProgrammePdf}
+                disabled={pdfDeleting}
+                className="text-destructive hover:text-destructive border-destructive/40"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {pdfDeleting ? "Suppression…" : "Supprimer"}
+              </Button>
+            )}
+          </div>
         </Card>
       )}
 
