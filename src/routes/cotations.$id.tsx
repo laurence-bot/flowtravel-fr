@@ -39,6 +39,8 @@ import { useAgents, agentLabel } from "@/hooks/use-agents";
 import { formatEUR } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { logAudit } from "@/lib/audit";
+import { tenterAjoutFournisseur } from "@/lib/dedup";
+import { askDuplicate } from "@/lib/duplicate-confirm";
 import {
   engageReservationsForCotation,
   reactivateReleasedReservationsForCotation,
@@ -314,6 +316,33 @@ function CotationDetailPage() {
       parsed.data.pct_solde;
     if (Math.abs(totalPct - 100) > 0.01) {
       return toast.error("La somme des % doit faire 100%.");
+    }
+    // ---- Anti-doublons fournisseurs ----
+    const dedup = tenterAjoutFournisseur(
+      {
+        fournisseur: parsed.data.nom_fournisseur,
+        libelle: parsed.data.prestation || "",
+        montant: parsed.data.montant_devise,
+        devise: parsed.data.devise,
+      },
+      lignesCot.map((l: any) => ({
+        id: l.id,
+        fournisseur: l.nom_fournisseur ?? "",
+        libelle: l.prestation ?? "",
+        montant: Number(l.montant_devise) || 0,
+        devise: l.devise ?? "",
+      })),
+    );
+    let replaceId: string | null = null;
+    if (dedup.action !== "OK") {
+      const choice = await askDuplicate({ message: dedup.message ?? "Doublon détecté" });
+      if (choice === "ANNULER" || choice === "IGNORER") {
+        toast.message("Ligne non ajoutée (doublon).");
+        return;
+      }
+      if (choice === "REMPLACER" && dedup.ligneExistante?.id) {
+        replaceId = dedup.ligneExistante.id;
+      }
     }
     setSubmittingLigne(true);
     const montantEur = parsed.data.montant_devise * parsed.data.taux_change_vers_eur;
