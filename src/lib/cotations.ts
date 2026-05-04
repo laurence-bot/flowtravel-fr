@@ -48,6 +48,9 @@ export type Cotation = {
   storytelling_intro: string | null;
   inclus_text: string | null;
   non_inclus_text: string | null;
+  version_label: string | null;
+  programme_pdf_url: string | null;
+  programme_pdf_name: string | null;
   created_at: string;
   updated_at: string;
 };
