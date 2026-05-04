@@ -33,6 +33,8 @@ import { EmptyState } from "@/components/empty-state";
 import { Plus, Shield, ShieldAlert, ShieldCheck, TrendingUp, TrendingDown } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
+import { tenterAjoutCouverture } from "@/lib/dedup";
+import { askDuplicate } from "@/lib/duplicate-confirm";
 
 export const Route = createFileRoute("/couvertures-fx")({
   component: () => (
@@ -75,7 +77,7 @@ function CouverturesFXPage() {
       <PageHeader
         title="Couvertures FX"
         description="Pilotez vos couvertures de change Ebury et leur utilisation par devise"
-        action={<NewCoverageDialog userId={user?.id} onDone={refetch} />}
+        action={<NewCoverageDialog userId={user?.id} existing={coverages} onDone={refetch} />}
       />
 
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -282,7 +284,7 @@ function KPI({
   );
 }
 
-function NewCoverageDialog({ userId, onDone }: { userId?: string; onDone: () => void }) {
+function NewCoverageDialog({ userId, existing, onDone }: { userId?: string; existing: FxCoverage[]; onDone: () => void }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     reference: "",
@@ -310,7 +312,35 @@ function NewCoverageDialog({ userId, onDone }: { userId?: string; onDone: () => 
       toast.error(parsed.error.issues[0]?.message ?? "Champs invalides");
       return;
     }
+    // ---- Anti-doublons couvertures ----
+    const dedup = tenterAjoutCouverture(
+      {
+        fournisseur: parsed.data.reference ?? "",
+        montantDevise: parsed.data.montant_devise,
+        devise: parsed.data.devise,
+      },
+      existing.map((c) => ({
+        id: c.id,
+        fournisseur: c.reference ?? "",
+        montantDevise: Number(c.montant_devise) || 0,
+        devise: c.devise,
+      })),
+    );
+    let replaceId: string | null = null;
+    if (dedup.action !== "OK") {
+      const choice = await askDuplicate({ message: dedup.message ?? "Doublon détecté" });
+      if (choice === "ANNULER" || choice === "IGNORER") {
+        toast.message("Couverture non ajoutée (doublon).");
+        return;
+      }
+      if (choice === "REMPLACER" && dedup.ligneExistante?.id) {
+        replaceId = dedup.ligneExistante.id;
+      }
+    }
     setSaving(true);
+    if (replaceId) {
+      await supabase.from("fx_coverages").delete().eq("id", replaceId);
+    }
     const { data, error } = await supabase.from("fx_coverages").insert({
       user_id: userId,
       reference: parsed.data.reference ?? null,
