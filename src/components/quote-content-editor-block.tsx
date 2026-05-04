@@ -401,7 +401,44 @@ export function QuoteContentEditorBlock({
         Math.round((dRet.getTime() - dDep.getTime()) / 86400000) + 1,
       );
 
-      const sortedJours = [...jours].sort((a, b) => a.ordre - b.ordre);
+      // 2.0 Dédupliquer d'abord les jours (même titre+description, ou même ordre)
+      // On garde le plus ancien (premier created_at) pour chaque clé.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: allJoursData } = await (supabase as any)
+        .from("cotation_jours")
+        .select("id, ordre, titre, description, date_jour, created_at, image_url, gallery_urls, lieu, hotel_nom")
+        .eq("cotation_id", cotationId)
+        .order("created_at", { ascending: true });
+      const allJours = (allJoursData ?? []) as Array<{
+        id: string; ordre: number; titre: string | null;
+        description: string | null; date_jour: string | null;
+        image_url: string | null; gallery_urls: unknown;
+        lieu: string | null; hotel_nom: string | null;
+      }>;
+      const seenJourKeys = new Set<string>();
+      const dupJourIds: string[] = [];
+      for (const j of allJours) {
+        // Clé : titre + description (normalisés). Évite les "Jour 1 / Jour 1" ou re-générations en double.
+        const key = `${(j.titre ?? "").trim().toLowerCase()}|${(j.description ?? "").trim().toLowerCase().slice(0, 200)}`;
+        if (seenJourKeys.has(key) && key !== "|") {
+          dupJourIds.push(j.id);
+        } else {
+          seenJourKeys.add(key);
+        }
+      }
+      let removedDupJours = 0;
+      if (dupJourIds.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: ddErr } = await (supabase as any)
+          .from("cotation_jours")
+          .delete()
+          .in("id", dupJourIds);
+        if (!ddErr) removedDupJours = dupJourIds.length;
+      }
+
+      // Recharger après dédup
+      const remainingJours = allJours.filter((j) => !dupJourIds.includes(j.id));
+      const sortedJours = [...remainingJours].sort((a, b) => a.ordre - b.ordre);
 
       // 2a. Supprimer les jours en trop (ceux au-delà de targetCount)
       const toDelete = sortedJours.slice(targetCount);
