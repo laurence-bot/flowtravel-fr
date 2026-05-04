@@ -235,6 +235,11 @@ Deno.serve(async (req) => {
     // text?: string  (texte extrait côté client pour PDF)
     // images?: string[]  (data URLs base64 — pour scans/photos)
     const { type, text, images } = await req.json();
+    console.log("[extract-pdf] received", {
+      type,
+      textLen: typeof text === "string" ? text.length : 0,
+      imagesCount: Array.isArray(images) ? images.length : 0,
+    });
     if (!type || (!text && (!images || images.length === 0))) {
       return new Response(
         JSON.stringify({ error: "type et (text ou images) requis" }),
@@ -286,10 +291,7 @@ Deno.serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model:
-            type === "programme_fournisseur"
-              ? "google/gemini-2.5-pro"
-              : "google/gemini-2.5-flash",
+          model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userContent },

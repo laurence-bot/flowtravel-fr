@@ -73,29 +73,83 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+/** Rasterise les premières pages d'un PDF en images PNG (data URLs) — fallback OCR. */
+async function pdfToImages(file: File, maxPages = 6): Promise<string[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdfjs: any = await import("pdfjs-dist");
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjs.getDocument({ data: buf }).promise;
+  const pages = Math.min(pdf.numPages, maxPages);
+  const out: string[] = [];
+  for (let i = 1; i <= pages; i++) {
+    const page = await pdf.getPage(i);
+    const viewport = page.getViewport({ scale: 1.6 });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) continue;
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    out.push(canvas.toDataURL("image/jpeg", 0.85));
+  }
+  return out;
+}
+
 /** Extrait un programme depuis un fichier (PDF ou image). */
 export async function extractProgramFromFile(
   file: File,
 ): Promise<{ result: ExtractedProgram | null; error?: string }> {
   let payload: { type: "programme_fournisseur"; text?: string; images?: string[] };
 
-  if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
-    const text = await extractTextFromPdf(file);
-    if (!text || text.length < 20) {
-      // PDF probablement scanné : on l'envoie comme image (1ère page seulement n'est pas trivial → on tente texte vide → fallback)
-      return { result: null, error: "PDF illisible (peut-être scanné). Essayez en image." };
+  try {
+    if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
+      let text = "";
+      try {
+        text = await extractTextFromPdf(file);
+      } catch (e) {
+        console.warn("[program-import] extractTextFromPdf failed:", e);
+      }
+      if (text && text.length >= 40) {
+        payload = { type: "programme_fournisseur", text };
+      } else {
+        // PDF scanné / sans texte → on rasterise en images
+        console.info("[program-import] PDF sans texte exploitable, rasterisation en images.");
+        const images = await pdfToImages(file);
+        if (images.length === 0) {
+          return { result: null, error: "Impossible de lire le PDF." };
+        }
+        payload = { type: "programme_fournisseur", images };
+      }
+    } else if (file.type.startsWith("image/")) {
+      const url = await fileToDataUrl(file);
+      payload = { type: "programme_fournisseur", images: [url] };
+    } else {
+      return { result: null, error: "Format non supporté. Utilisez PDF ou image (JPG/PNG)." };
     }
-    payload = { type: "programme_fournisseur", text };
-  } else if (file.type.startsWith("image/")) {
-    const url = await fileToDataUrl(file);
-    payload = { type: "programme_fournisseur", images: [url] };
-  } else {
-    return { result: null, error: "Format non supporté. Utilisez PDF ou image (JPG/PNG)." };
+  } catch (e) {
+    console.error("[program-import] preparation error:", e);
+    return {
+      result: null,
+      error: e instanceof Error ? e.message : "Erreur de préparation du fichier",
+    };
   }
 
+  console.info("[program-import] envoi à extract-pdf", {
+    hasText: !!payload.text,
+    textLen: payload.text?.length,
+    images: payload.images?.length,
+  });
+
   const { data, error } = await supabase.functions.invoke("extract-pdf", { body: payload });
-  if (error) return { result: null, error: error.message };
-  if (data?.error) return { result: null, error: data.error };
+  if (error) {
+    console.error("[program-import] invoke error:", error);
+    return { result: null, error: error.message };
+  }
+  if (data?.error) {
+    console.error("[program-import] data error:", data.error);
+    return { result: null, error: data.error };
+  }
 
   const raw = (data?.data ?? {}) as Record<string, unknown>;
   const joursRaw = Array.isArray(raw.jours) ? (raw.jours as Array<Record<string, unknown>>) : [];

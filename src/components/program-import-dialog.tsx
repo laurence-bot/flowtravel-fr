@@ -49,18 +49,24 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
   const handleAnalyze = async () => {
     if (!file) return;
     setLoading(true);
-    const { result: r, error } = await extractProgramFromFile(file);
-    setLoading(false);
-    if (error || !r) {
-      toast.error(error ?? "Extraction échouée");
-      return;
+    try {
+      const { result: r, error } = await extractProgramFromFile(file);
+      if (error || !r) {
+        toast.error(error ?? "Extraction échouée");
+        return;
+      }
+      setResult(r);
+      setSelJours(new Set(r.jours.map((_, i) => i)));
+      setSelLignes(new Set(r.lignes.map((_, i) => i)));
+      toast.success(
+        `Extraction terminée : ${r.jours.length} jour(s), ${r.lignes.length} ligne(s) — confiance ${r.confiance}.`,
+      );
+    } catch (e) {
+      console.error("[program-import-dialog] analyse:", e);
+      toast.error(e instanceof Error ? e.message : "Erreur inattendue pendant l'analyse");
+    } finally {
+      setLoading(false);
     }
-    setResult(r);
-    setSelJours(new Set(r.jours.map((_, i) => i)));
-    setSelLignes(new Set(r.lignes.map((_, i) => i)));
-    toast.success(
-      `Extraction terminée : ${r.jours.length} jour(s), ${r.lignes.length} ligne(s) — confiance ${r.confiance}.`,
-    );
   };
 
   const toggleJour = (i: number) => {
