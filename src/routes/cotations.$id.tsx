@@ -119,7 +119,9 @@ const ligneSchema = z.object({
 function CotationDetailPage() {
   const { id } = Route.useParams();
   const { user } = useAuth();
-  const { canWrite } = usePageWriteAccess();
+  const { canWrite: canWriteRole } = usePageWriteAccess();
+  const editLock = useEditLock("cotation", id);
+  const canWrite = canWriteRole && editLock.canEdit !== false ? (editLock.users.length <= 1 ? canWriteRole : editLock.canEdit && canWriteRole) : false;
   const { agents } = useAgents();
   const navigate = useNavigate();
   const { settings: agencySettings } = useAgencySettings();
