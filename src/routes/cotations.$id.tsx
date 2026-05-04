@@ -121,7 +121,7 @@ function CotationDetailPage() {
   const { user } = useAuth();
   const { canWrite: canWriteRole } = usePageWriteAccess();
   const editLock = useEditLock("cotation", id);
-  const canWrite = canWriteRole && editLock.canEdit !== false ? (editLock.users.length <= 1 ? canWriteRole : editLock.canEdit && canWriteRole) : false;
+  const canWrite = canWriteRole && (editLock.isAlone || editLock.canEdit);
   const { agents } = useAgents();
   const navigate = useNavigate();
   const { settings: agencySettings } = useAgencySettings();
