@@ -248,6 +248,17 @@ async function analyzeProgramPayload(payload: ProgramPayload): Promise<{ result:
   return { result: normalizeExtractedProgram(raw, confiance) };
 }
 
+async function fileToBase64(file: File): Promise<string> {
+  const buf = await file.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
+  }
+  return btoa(binary);
+}
+
 /** Extrait un programme depuis un fichier (PDF ou image). */
 export async function extractProgramFromFile(
   file: File,
@@ -255,34 +266,20 @@ export async function extractProgramFromFile(
 ): Promise<{ result: ExtractedProgram | null; error?: string }> {
   try {
     if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
-      onProgress?.("Lecture du PDF page par page…");
-      const textChunks = await extractPdfTextChunks(file);
-      const parts: ExtractedProgram[] = [];
-
-      if (textChunks.length > 0) {
-        for (let i = 0; i < textChunks.length; i++) {
-          onProgress?.(`Analyse du texte ${i + 1}/${textChunks.length}…`);
-          const analyzed = await analyzeProgramPayload({
-            type: "programme_fournisseur",
-            text: textChunks[i],
-          });
-          if (analyzed.result) parts.push(analyzed.result);
-        }
-        return { result: mergePrograms(parts), error: parts.length ? undefined : "Aucune donnée exploitable détectée dans le PDF." };
+      if (file.size > 20 * 1024 * 1024) {
+        return { result: null, error: "PDF trop volumineux (max 20 Mo)." };
       }
-
-      onProgress?.("PDF scanné détecté : analyse visuelle par lots…");
-      const batches = await pdfToImageBatches(file);
-      if (batches.length === 0) return { result: null, error: "Impossible de lire le PDF scanné." };
-      for (let i = 0; i < batches.length; i++) {
-        onProgress?.(`Analyse des pages scannées ${i + 1}/${batches.length}…`);
-        const analyzed = await analyzeProgramPayload({
-          type: "programme_fournisseur",
-          images: batches[i],
-        });
-        if (analyzed.result) parts.push(analyzed.result);
+      onProgress?.("Envoi du PDF au moteur d'analyse…");
+      const pdfBase64 = await fileToBase64(file);
+      onProgress?.("Lecture et analyse en cours…");
+      const analyzed = await analyzeProgramPayload({
+        type: "programme_fournisseur",
+        pdfBase64,
+      } as ProgramPayload);
+      if (!analyzed.result && !analyzed.error) {
+        return { result: null, error: "Aucune donnée exploitable détectée dans le PDF." };
       }
-      return { result: mergePrograms(parts), error: parts.length ? undefined : "Aucune donnée exploitable détectée dans le PDF scanné." };
+      return analyzed;
     } else if (file.type.startsWith("image/")) {
       onProgress?.("Analyse de l'image…");
       const url = await fileToDataUrl(file);
