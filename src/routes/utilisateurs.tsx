@@ -345,6 +345,36 @@ function UtilisateursPage() {
                                 variant="ghost"
                                 size="icon"
                                 disabled={savingId === p.user_id}
+                                aria-label="Réinitialiser le mot de passe"
+                                title="Réinitialiser le mot de passe"
+                              >
+                                <KeyRound className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Définir un nouveau mot de passe ?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Un mot de passe temporaire sera généré pour <strong>{p.email}</strong>.
+                                  Il s'affichera une seule fois — copiez-le pour le transmettre à l'utilisateur.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => resetPassword(p)}>
+                                  Générer
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                        {!isMe && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                disabled={savingId === p.user_id}
                                 aria-label="Supprimer l'utilisateur"
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
