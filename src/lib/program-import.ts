@@ -72,7 +72,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
   });
 }
 
-type ProgramPayload = { type: "programme_fournisseur"; text?: string; images?: string[] };
+type ProgramPayload = { type: "programme_fournisseur"; text?: string; images?: string[]; pdfBase64?: string };
 type ProgressCallback = (message: string) => void;
 
 async function loadPdf(file: File): Promise<any> {
