@@ -75,7 +75,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
 type ProgramPayload = { type: "programme_fournisseur"; text?: string; images?: string[] };
 type ProgressCallback = (message: string) => void;
 
-async function loadPdf(file: File) {
+async function loadPdf(file: File): Promise<any> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfjs: any = await import("pdfjs-dist");
   pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
@@ -97,8 +97,8 @@ async function extractPdfTextChunks(file: File): Promise<string[]> {
   let current = "";
 
   for (let i = 1; i <= maxPages && chunks.length < maxChunks; i++) {
-    const page = await withTimeout(pdf.getPage(i), 12000, `Lecture impossible de la page ${i}.`);
-    const content = await withTimeout(
+    const page: any = await withTimeout(pdf.getPage(i), 12000, `Lecture impossible de la page ${i}.`);
+    const content: any = await withTimeout(
       page.getTextContent(),
       12000,
       `Extraction texte trop longue sur la page ${i}.`,
