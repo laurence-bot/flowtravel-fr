@@ -197,6 +197,7 @@ function CotationDetailPage() {
   // URL signée du PDF fournisseur (générée à la demande)
   const [pdfSignedUrl, setPdfSignedUrl] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfDeleting, setPdfDeleting] = useState(false);
 
   if (cotationsLoading || contactsLoading || paiementsLoading) {
     return <div className="text-muted-foreground text-sm">Chargement de la cotation…</div>;
@@ -562,6 +563,28 @@ function CotationDetailPage() {
       window.open(data.signedUrl, "_blank", "noopener,noreferrer");
     } finally {
       setPdfLoading(false);
+    }
+  };
+
+  const deleteProgrammePdf = async () => {
+    if (!cot.programme_pdf_url) return;
+    if (!confirm("Supprimer le PDF importé de cette cotation ? Les jours et lignes déjà importés restent modifiables.")) return;
+    setPdfDeleting(true);
+    try {
+      const { error: storageError } = await supabase.storage
+        .from("pdf-imports")
+        .remove([cot.programme_pdf_url]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from("cotations")
+        .update({ programme_pdf_url: null, programme_pdf_name: null })
+        .eq("id", cot.id);
+      if (error) return toast.error(error.message);
+      if (storageError) toast.warning("PDF détaché de la cotation, mais le fichier source n'a pas pu être supprimé du stockage.");
+      else toast.success("PDF importé supprimé.");
+      refetchCot();
+    } finally {
+      setPdfDeleting(false);
     }
   };
 
