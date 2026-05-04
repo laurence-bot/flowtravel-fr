@@ -177,6 +177,23 @@ function CotationDetailPage() {
   const [perteOpen, setPerteOpen] = useState(false);
   const [raisonPerte, setRaisonPerte] = useState("");
 
+  // Dialog suppression
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  // Dialog nouvelle version
+  const [duplicateOpen, setDuplicateOpen] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+  const [dupForm, setDupForm] = useState({
+    versionLabel: "",
+    newDateDepart: "",
+    newDateRetour: "",
+  });
+
+  // URL signée du PDF fournisseur (générée à la demande)
+  const [pdfSignedUrl, setPdfSignedUrl] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+
   if (cotationsLoading || contactsLoading || paiementsLoading) {
     return <div className="text-muted-foreground text-sm">Chargement de la cotation…</div>;
   }
