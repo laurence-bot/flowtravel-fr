@@ -49,6 +49,7 @@ import {
   computeCotationFinance,
   computeAcompteClient,
   duplicateCotation,
+  deleteCotation,
   ligneCoutEur,
   // transformerCotationEnDossier remplacé par RPC Postgres atomique
   type Cotation,
@@ -71,6 +72,8 @@ import {
   Sparkles,
   RotateCcw,
   Users as UsersIcon,
+  FileText,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { CotationOptionsBlock } from "@/components/cotation-options-block";
