@@ -251,39 +251,42 @@ async function analyzeProgramPayload(payload: ProgramPayload): Promise<{ result:
 /** Extrait un programme depuis un fichier (PDF ou image). */
 export async function extractProgramFromFile(
   file: File,
+  onProgress?: ProgressCallback,
 ): Promise<{ result: ExtractedProgram | null; error?: string }> {
-  let payload: { type: "programme_fournisseur"; text?: string; images?: string[] };
-
   try {
     if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
-      let text = "";
-      try {
-        text = await withTimeout(
-          extractTextFromPdf(file),
-          25000,
-          "La lecture du PDF prend trop de temps. Essayez avec un PDF plus léger ou une image.",
-        );
-      } catch (e) {
-        console.warn("[program-import] extractTextFromPdf failed:", e);
-      }
-      if (text && text.length >= 40) {
-        payload = { type: "programme_fournisseur", text: text.slice(0, 30000) };
-      } else {
-        // PDF scanné / sans texte → on rasterise en images
-        console.info("[program-import] PDF sans texte exploitable, rasterisation en images.");
-        const images = await withTimeout(
-          pdfToImages(file),
-          30000,
-          "La conversion du PDF scanné prend trop de temps. Essayez avec une image JPG/PNG ou un PDF plus léger.",
-        );
-        if (images.length === 0) {
-          return { result: null, error: "Impossible de lire le PDF." };
+      onProgress?.("Lecture du PDF page par page…");
+      const textChunks = await extractPdfTextChunks(file);
+      const parts: ExtractedProgram[] = [];
+
+      if (textChunks.length > 0) {
+        for (let i = 0; i < textChunks.length; i++) {
+          onProgress?.(`Analyse du texte ${i + 1}/${textChunks.length}…`);
+          const analyzed = await analyzeProgramPayload({
+            type: "programme_fournisseur",
+            text: textChunks[i],
+          });
+          if (analyzed.result) parts.push(analyzed.result);
         }
-        payload = { type: "programme_fournisseur", images };
+        return { result: mergePrograms(parts), error: parts.length ? undefined : "Aucune donnée exploitable détectée dans le PDF." };
       }
+
+      onProgress?.("PDF scanné détecté : analyse visuelle par lots…");
+      const batches = await pdfToImageBatches(file);
+      if (batches.length === 0) return { result: null, error: "Impossible de lire le PDF scanné." };
+      for (let i = 0; i < batches.length; i++) {
+        onProgress?.(`Analyse des pages scannées ${i + 1}/${batches.length}…`);
+        const analyzed = await analyzeProgramPayload({
+          type: "programme_fournisseur",
+          images: batches[i],
+        });
+        if (analyzed.result) parts.push(analyzed.result);
+      }
+      return { result: mergePrograms(parts), error: parts.length ? undefined : "Aucune donnée exploitable détectée dans le PDF scanné." };
     } else if (file.type.startsWith("image/")) {
+      onProgress?.("Analyse de l'image…");
       const url = await fileToDataUrl(file);
-      payload = { type: "programme_fournisseur", images: [url] };
+      return analyzeProgramPayload({ type: "programme_fournisseur", images: [url] });
     } else {
       return { result: null, error: "Format non supporté. Utilisez PDF ou image (JPG/PNG)." };
     }
@@ -294,68 +297,6 @@ export async function extractProgramFromFile(
       error: e instanceof Error ? e.message : "Erreur de préparation du fichier",
     };
   }
-
-  console.info("[program-import] envoi à extract-pdf", {
-    hasText: !!payload.text,
-    textLen: payload.text?.length,
-    images: payload.images?.length,
-  });
-
-  const { data, error } = await withTimeout(
-    supabase.functions.invoke("extract-pdf", { body: payload }),
-    65000,
-    "L'analyse IA dépasse le délai maximum. Essayez avec un document plus court ou séparé en plusieurs parties.",
-  );
-  if (error) {
-    console.error("[program-import] invoke error:", error);
-    return { result: null, error: error.message };
-  }
-  if (data?.error) {
-    console.error("[program-import] data error:", data.error);
-    return { result: null, error: data.error };
-  }
-
-  const raw = (data?.data ?? {}) as Record<string, unknown>;
-  const joursRaw = Array.isArray(raw.jours) ? (raw.jours as Array<Record<string, unknown>>) : [];
-  const lignesRaw = Array.isArray(raw.lignes) ? (raw.lignes as Array<Record<string, unknown>>) : [];
-
-  const jours: ExtractedJour[] = joursRaw
-    .map((j, i) => ({
-      ordre: Number(j.ordre) || i + 1,
-      titre: String(j.titre || `Jour ${i + 1}`).trim(),
-      lieu: j.lieu ? String(j.lieu).trim() : undefined,
-      date_jour: isoDate(j.date_jour),
-      description: j.description ? String(j.description).trim() : undefined,
-    }))
-    .sort((a, b) => a.ordre - b.ordre);
-
-  const lignes: ExtractedLigne[] = lignesRaw
-    .map((l) => ({
-      prestation: String(l.prestation || "").trim(),
-      nom_fournisseur: l.nom_fournisseur
-        ? String(l.nom_fournisseur).trim()
-        : (raw.fournisseur_nom as string | undefined)?.trim(),
-      quantite: num(l.quantite) ?? 1,
-      mode_tarifaire:
-        l.mode_tarifaire === "par_personne" ? ("par_personne" as const) : ("global" as const),
-      devise: devise(l.devise),
-      montant_devise: num(l.montant_devise) ?? 0,
-      jour_ordre: num(l.jour_ordre),
-      date_prestation: isoDate(l.date_prestation),
-    }))
-    .filter((l) => l.prestation && l.montant_devise > 0);
-
-  return {
-    result: {
-      fournisseur_nom: (raw.fournisseur_nom as string) || undefined,
-      destination: (raw.destination as string) || undefined,
-      nombre_pax: num(raw.nombre_pax),
-      date_depart: isoDate(raw.date_depart),
-      jours,
-      lignes,
-      confiance: (data?.confiance as Confiance) ?? "moyenne",
-    },
-  };
 }
 
 /** Insère les jours sélectionnés dans cotation_jours (en append à la fin). */
