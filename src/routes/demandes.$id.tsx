@@ -221,6 +221,7 @@ function DemandeDetail() {
       <EditLockBanner lock={editLock} />
       <PageHeader
         title={demande.nom_client}
+        numero={(demande as { numero?: string | null }).numero ?? null}
         description={`Demande créée le ${formatDate(demande.created_at)} · canal ${DEMANDE_CANAL_LABELS[demande.canal]}`}
         action={
           <div className="flex items-center gap-2">
