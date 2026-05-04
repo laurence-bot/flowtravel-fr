@@ -523,6 +523,7 @@ export function QuoteContentEditorBlock({
       const msgParts = [
         `${targetCount} jour${targetCount > 1 ? "s" : ""} alignés`,
       ];
+      if (removedDupJours > 0) msgParts.push(`${removedDupJours} jour(s) doublon retiré(s)`);
       if (toDelete.length > 0) msgParts.push(`${toDelete.length} en trop supprimé(s)`);
       if (kept.length < targetCount)
         msgParts.push(`${targetCount - kept.length} ajouté(s)`);
