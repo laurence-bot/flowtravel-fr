@@ -83,8 +83,8 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-/** Rasterise les premières pages d'un PDF en images PNG (data URLs) — fallback OCR. */
-async function pdfToImages(file: File, maxPages = 6): Promise<string[]> {
+/** Rasterise les premières pages d'un PDF en images JPEG légères — fallback OCR. */
+async function pdfToImages(file: File, maxPages = 4): Promise<string[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfjs: any = await import("pdfjs-dist");
   pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
@@ -94,14 +94,14 @@ async function pdfToImages(file: File, maxPages = 6): Promise<string[]> {
   const out: string[] = [];
   for (let i = 1; i <= pages; i++) {
     const page = await pdf.getPage(i);
-    const viewport = page.getViewport({ scale: 1.6 });
+    const viewport = page.getViewport({ scale: 1.15 });
     const canvas = document.createElement("canvas");
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     const ctx = canvas.getContext("2d");
     if (!ctx) continue;
     await page.render({ canvasContext: ctx, viewport }).promise;
-    out.push(canvas.toDataURL("image/jpeg", 0.85));
+    out.push(canvas.toDataURL("image/jpeg", 0.72));
   }
   return out;
 }
@@ -125,7 +125,7 @@ export async function extractProgramFromFile(
         console.warn("[program-import] extractTextFromPdf failed:", e);
       }
       if (text && text.length >= 40) {
-        payload = { type: "programme_fournisseur", text };
+        payload = { type: "programme_fournisseur", text: text.slice(0, 30000) };
       } else {
         // PDF scanné / sans texte → on rasterise en images
         console.info("[program-import] PDF sans texte exploitable, rasterisation en images.");
