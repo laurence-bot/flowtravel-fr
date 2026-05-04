@@ -112,6 +112,45 @@ export function QuoteContentEditorBlock({
   const [regenOpen, setRegenOpen] = useState(false);
   const [regenLoading, setRegenLoading] = useState(false);
   const [hasFlights, setHasFlights] = useState(false);
+  const [genIntroLoading, setGenIntroLoading] = useState(false);
+  const callGenerateIntro = useServerFn(generateQuoteIntro);
+
+  const handleGenerateIntro = async () => {
+    setGenIntroLoading(true);
+    try {
+      const res = await callGenerateIntro({
+        data: {
+          titre: titre ?? null,
+          destination: destination ?? null,
+          paysDestination: paysDestination ?? null,
+          typeVoyage: typeVoyage ?? null,
+          nombrePax: nombrePax ?? null,
+          dateDepart: dateDepart ?? null,
+          dateRetour: dateRetour ?? null,
+          jours: jours.map((j) => ({
+            ordre: j.ordre,
+            titre: j.titre,
+            lieu: j.lieu,
+            description: j.description,
+          })),
+        },
+      });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      setStorytelling(res.text);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from("cotations")
+        .update({ storytelling_intro: res.text })
+        .eq("id", cotationId);
+      if (error) toast.error(error.message);
+      else toast.success("Introduction générée.");
+    } finally {
+      setGenIntroLoading(false);
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
