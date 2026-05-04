@@ -447,7 +447,30 @@ export function QuoteContentEditorBlock({
 
       {/* STORYTELLING */}
       <div className="space-y-2">
-        <Label htmlFor="storytelling">Introduction narrative (optionnel)</Label>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <Label htmlFor="storytelling">Introduction narrative (optionnel)</Label>
+          {canWrite && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleGenerateIntro}
+              disabled={genIntroLoading || jours.length === 0}
+              title={
+                jours.length === 0
+                  ? "Rédigez d'abord le programme jour par jour"
+                  : "Générer une phrase d'accroche à partir de votre programme"
+              }
+            >
+              {genIntroLoading ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-1" />
+              )}
+              Générer avec l'IA
+            </Button>
+          )}
+        </div>
         <Textarea
           id="storytelling"
           value={storytelling}
