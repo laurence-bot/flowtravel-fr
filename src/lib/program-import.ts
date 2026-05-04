@@ -63,6 +63,16 @@ const devise = (v: unknown): DeviseCode => {
   return VALID_DEVISES.has(code as DeviseCode) ? (code as DeviseCode) : "EUR";
 };
 
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
 /** Convertit un fichier image en data URL base64. */
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -73,8 +83,8 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-/** Rasterise les premières pages d'un PDF en images PNG (data URLs) — fallback OCR. */
-async function pdfToImages(file: File, maxPages = 6): Promise<string[]> {
+/** Rasterise les premières pages d'un PDF en images JPEG légères — fallback OCR. */
+async function pdfToImages(file: File, maxPages = 4): Promise<string[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfjs: any = await import("pdfjs-dist");
   pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
@@ -84,14 +94,14 @@ async function pdfToImages(file: File, maxPages = 6): Promise<string[]> {
   const out: string[] = [];
   for (let i = 1; i <= pages; i++) {
     const page = await pdf.getPage(i);
-    const viewport = page.getViewport({ scale: 1.6 });
+    const viewport = page.getViewport({ scale: 1.15 });
     const canvas = document.createElement("canvas");
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     const ctx = canvas.getContext("2d");
     if (!ctx) continue;
     await page.render({ canvasContext: ctx, viewport }).promise;
-    out.push(canvas.toDataURL("image/jpeg", 0.85));
+    out.push(canvas.toDataURL("image/jpeg", 0.72));
   }
   return out;
 }
@@ -106,16 +116,24 @@ export async function extractProgramFromFile(
     if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
       let text = "";
       try {
-        text = await extractTextFromPdf(file);
+        text = await withTimeout(
+          extractTextFromPdf(file),
+          25000,
+          "La lecture du PDF prend trop de temps. Essayez avec un PDF plus léger ou une image.",
+        );
       } catch (e) {
         console.warn("[program-import] extractTextFromPdf failed:", e);
       }
       if (text && text.length >= 40) {
-        payload = { type: "programme_fournisseur", text };
+        payload = { type: "programme_fournisseur", text: text.slice(0, 30000) };
       } else {
         // PDF scanné / sans texte → on rasterise en images
         console.info("[program-import] PDF sans texte exploitable, rasterisation en images.");
-        const images = await pdfToImages(file);
+        const images = await withTimeout(
+          pdfToImages(file),
+          30000,
+          "La conversion du PDF scanné prend trop de temps. Essayez avec une image JPG/PNG ou un PDF plus léger.",
+        );
         if (images.length === 0) {
           return { result: null, error: "Impossible de lire le PDF." };
         }
@@ -141,7 +159,11 @@ export async function extractProgramFromFile(
     images: payload.images?.length,
   });
 
-  const { data, error } = await supabase.functions.invoke("extract-pdf", { body: payload });
+  const { data, error } = await withTimeout(
+    supabase.functions.invoke("extract-pdf", { body: payload }),
+    65000,
+    "L'analyse IA dépasse le délai maximum. Essayez avec un document plus court ou séparé en plusieurs parties.",
+  );
   if (error) {
     console.error("[program-import] invoke error:", error);
     return { result: null, error: error.message };
