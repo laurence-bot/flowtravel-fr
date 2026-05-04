@@ -41,7 +41,11 @@ const VALID_DEVISES = new Set(DEVISES.map((d) => d.code));
 
 const num = (v: unknown): number | undefined => {
   if (v == null || v === "") return undefined;
-  const n = Number(String(v).replace(/[^0-9.,-]/g, "").replace(",", "."));
+  const n = Number(
+    String(v)
+      .replace(/[^0-9.,-]/g, "")
+      .replace(",", "."),
+  );
   return Number.isFinite(n) ? n : undefined;
 };
 
@@ -105,7 +109,10 @@ async function extractPdfTextChunks(file: File): Promise<string[]> {
       `Extraction texte trop longue sur la page ${i}.`,
     );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pageText = content.items.map((it: any) => it.str ?? "").join(" ").trim();
+    const pageText = content.items
+      .map((it: any) => it.str ?? "")
+      .join(" ")
+      .trim();
     if (!pageText) continue;
     const block = `\n\n--- Page ${i} ---\n${pageText.slice(0, 5000)}`;
     if (current && current.length + block.length > chunkLimit) {
@@ -177,8 +184,7 @@ function normalizeExtractedProgram(raw: Record<string, unknown>, confiance: Conf
         ? String(l.nom_fournisseur).trim()
         : (raw.fournisseur_nom as string | undefined)?.trim(),
       quantite: num(l.quantite) ?? 1,
-      mode_tarifaire:
-        l.mode_tarifaire === "par_personne" ? ("par_personne" as const) : ("global" as const),
+      mode_tarifaire: l.mode_tarifaire === "par_personne" ? ("par_personne" as const) : ("global" as const),
       devise: devise(l.devise),
       montant_devise: num(l.montant_devise) ?? 0,
       jour_ordre: num(l.jour_ordre),
@@ -220,9 +226,10 @@ function mergePrograms(parts: ExtractedProgram[]): ExtractedProgram | null {
   }
 
   const rank: Record<Confiance, number> = { faible: 0, moyenne: 1, elevee: 2 };
-  const confiance = parts.reduce<Confiance>((lowest, part) =>
-    rank[part.confiance] < rank[lowest] ? part.confiance : lowest,
-  "elevee");
+  const confiance = parts.reduce<Confiance>(
+    (lowest, part) => (rank[part.confiance] < rank[lowest] ? part.confiance : lowest),
+    "elevee",
+  );
 
   return {
     fournisseur_nom: parts.find((p) => p.fournisseur_nom)?.fournisseur_nom,
@@ -235,7 +242,9 @@ function mergePrograms(parts: ExtractedProgram[]): ExtractedProgram | null {
   };
 }
 
-async function analyzeProgramPayload(payload: ProgramPayload): Promise<{ result: ExtractedProgram | null; error?: string }> {
+async function analyzeProgramPayload(
+  payload: ProgramPayload,
+): Promise<{ result: ExtractedProgram | null; error?: string }> {
   const { data, error } = await withTimeout(
     supabase.functions.invoke("extract-pdf", { body: payload }),
     70000,
@@ -314,12 +323,12 @@ export async function insertJours(
     .select("titre, description, date_jour")
     .eq("cotation_id", cotationId);
   const existing = (existingData ?? []) as Array<{
-    titre: string | null; description: string | null; date_jour: string | null;
+    titre: string | null;
+    description: string | null;
+    date_jour: string | null;
   }>;
   const dateKeys = new Set(existing.filter((e) => e.date_jour).map((e) => e.date_jour as string));
-  const titleDescKeys = new Set(
-    existing.map((e) => `${normKey(e.titre)}|${normKey(e.description).slice(0, 200)}`),
-  );
+  const titleDescKeys = new Set(existing.map((e) => `${normKey(e.titre)}|${normKey(e.description).slice(0, 200)}`));
 
   const toInsert: ExtractedJour[] = [];
   const batchKeys = new Set<string>();
@@ -365,8 +374,10 @@ export async function previewLignesDuplicates(
     .select("prestation, montant_devise, devise, nom_fournisseur")
     .eq("cotation_id", cotationId);
   const existing = (existingData ?? []) as Array<{
-    prestation: string | null; montant_devise: number | null;
-    devise: string | null; nom_fournisseur: string | null;
+    prestation: string | null;
+    montant_devise: number | null;
+    devise: string | null;
+    nom_fournisseur: string | null;
   }>;
   const existingKeys = new Set(existing.map((e) => duplicateLineKey(e)));
   let dup = 0;
@@ -401,8 +412,11 @@ export async function insertLignes(
     .select("id, prestation, montant_devise, devise, nom_fournisseur")
     .eq("cotation_id", cotationId);
   const existing = (existingData ?? []) as Array<{
-    id: string; prestation: string | null; montant_devise: number | null;
-    devise: string | null; nom_fournisseur: string | null;
+    id: string;
+    prestation: string | null;
+    montant_devise: number | null;
+    devise: string | null;
+    nom_fournisseur: string | null;
   }>;
   const existingMap = new Map<string, string>(); // key -> existing id
   for (const e of existing) existingMap.set(duplicateLineKey(e), e.id);
@@ -471,10 +485,7 @@ export async function insertLignes(
     };
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any)
-    .from("cotation_lignes_fournisseurs")
-    .insert(rows);
+  const { error } = await (supabase as any).from("cotation_lignes_fournisseurs").insert(rows);
   if (error) return { count: 0, skipped, replaced, error: error.message };
   return { count: rows.length, skipped, replaced };
 }
-
