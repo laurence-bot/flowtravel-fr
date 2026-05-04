@@ -82,10 +82,10 @@ export function isEmptyPlaceholderDay(j: SyncJour): boolean {
 }
 
 function addDays(date: string, offset: number): string | null {
-  const d = new Date(`${date}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return null;
-  d.setDate(d.getDate() + offset);
-  return d.toISOString().slice(0, 10);
+  const m = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const t = Date.UTC(+m[1], +m[2] - 1, +m[3]) + offset * 86400000;
+  return new Date(t).toISOString().slice(0, 10);
 }
 
 function buildFallbackTargets(start: string | null | undefined, end: string | null | undefined, minimumCount: number): GeneratedDay[] {
