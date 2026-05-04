@@ -419,11 +419,39 @@ function CotationsPage() {
                       v{c.version_number}
                     </TableCell>
                     <TableCell>
-                      <Button asChild variant="ghost" size="sm">
-                        <Link to="/cotations/$id" params={{ id: c.id }}>
-                          <ChevronRight className="h-4 w-4" />
-                        </Link>
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        {canWrite && !c.dossier_id && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Supprimer cette cotation ?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  « {c.titre} » sera définitivement supprimée, ainsi que ses lignes fournisseurs, jours d'itinéraire et options de vol. Cette action est irréversible.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={() => handleDelete(c)}
+                                >
+                                  Supprimer
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                        <Button asChild variant="ghost" size="sm">
+                          <Link to="/cotations/$id" params={{ id: c.id }}>
+                            <ChevronRight className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
