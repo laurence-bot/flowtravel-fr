@@ -48,12 +48,40 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
     setSelLignes(new Set());
   };
 
+  /** Upload le PDF dans le bucket pdf-imports et sauvegarde l'URL sur la cotation. */
+  const uploadPdfToStorage = async (pdfFile: File): Promise<void> => {
+    if (pdfFile.type !== "application/pdf" && !/\.pdf$/i.test(pdfFile.name)) return;
+    try {
+      const ext = pdfFile.name.split(".").pop() || "pdf";
+      const safeName = pdfFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${userId}/${cotationId}/${Date.now()}-${safeName}`;
+      const { error: upErr } = await supabase.storage
+        .from("pdf-imports")
+        .upload(path, pdfFile, { contentType: "application/pdf", upsert: false });
+      if (upErr) {
+        console.warn("[program-import] upload PDF échoué:", upErr.message);
+        return;
+      }
+      // Bucket privé : on stocke le path, signé à la demande pour l'ouverture
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
+        .from("cotations")
+        .update({ programme_pdf_url: path, programme_pdf_name: pdfFile.name })
+        .eq("id", cotationId);
+    } catch (e) {
+      console.warn("[program-import] upload PDF exception:", e);
+    }
+  };
+
   const handleAnalyze = async () => {
     if (!file) return;
     setLoading(true);
     setProgressLabel("Préparation du document…");
     try {
+      // Upload du PDF en parallèle (non-bloquant pour l'analyse)
+      const uploadPromise = uploadPdfToStorage(file);
       const { result: r, error } = await extractProgramFromFile(file, setProgressLabel);
+      await uploadPromise;
       if (error || !r) {
         toast.error(error ?? "Extraction échouée");
         return;

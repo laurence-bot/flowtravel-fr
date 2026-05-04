@@ -48,6 +48,9 @@ export type Cotation = {
   storytelling_intro: string | null;
   inclus_text: string | null;
   non_inclus_text: string | null;
+  version_label: string | null;
+  programme_pdf_url: string | null;
+  programme_pdf_name: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -226,11 +229,27 @@ export function ligneEcheances(ligne: CotationLigne) {
   return items.filter((it) => it.pct > 0);
 }
 
-/** Crée une nouvelle version d'une cotation par duplication. */
+/** Décale une date ISO (YYYY-MM-DD) de N jours. Retourne null si entrée nulle. */
+function shiftDate(date: string | null | undefined, deltaDays: number): string | null {
+  if (!date) return null;
+  const d = new Date(date + "T12:00:00Z");
+  if (Number.isNaN(d.getTime())) return null;
+  d.setUTCDate(d.getUTCDate() + deltaDays);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Crée une nouvelle version d'une cotation par duplication.
+ *  Options : version_label (libellé personnalisé) et nouvelles dates de voyage
+ *  (les jours et lignes sont automatiquement décalés du même nombre de jours). */
 export async function duplicateCotation(
   userId: string,
   source: Cotation,
   lignes: CotationLigne[],
+  options?: {
+    versionLabel?: string | null;
+    newDateDepart?: string | null;
+    newDateRetour?: string | null;
+  },
 ): Promise<{ id: string; version_number: number } | null> {
   // Récupérer le max version_number du group
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -241,6 +260,18 @@ export async function duplicateCotation(
   const nextVersion =
     Math.max(0, ...(existing ?? []).map((r: { version_number: number }) => r.version_number)) + 1;
 
+  // Calcul du décalage de dates si nouvelles dates fournies
+  let dayShift = 0;
+  const newDepart = options?.newDateDepart || source.date_depart;
+  const newRetour = options?.newDateRetour || source.date_retour;
+  if (options?.newDateDepart && source.date_depart) {
+    const oldD = new Date(source.date_depart + "T12:00:00Z").getTime();
+    const newD = new Date(options.newDateDepart + "T12:00:00Z").getTime();
+    if (Number.isFinite(oldD) && Number.isFinite(newD)) {
+      dayShift = Math.round((newD - oldD) / 86400000);
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: created, error } = await (supabase as any)
     .from("cotations")
@@ -249,13 +280,14 @@ export async function duplicateCotation(
       client_id: source.client_id,
       group_id: source.group_id,
       version_number: nextVersion,
+      version_label: options?.versionLabel?.trim() || null,
       titre: source.titre,
       destination: source.destination,
       pays_destination: source.pays_destination,
       tags_destination: source.tags_destination,
       langue: source.langue,
-      date_depart: source.date_depart,
-      date_retour: source.date_retour,
+      date_depart: newDepart,
+      date_retour: newRetour,
       nombre_pax: source.nombre_pax,
       nombre_chambres: source.nombre_chambres,
       prix_vente_ht: source.prix_vente_ht,
@@ -265,11 +297,18 @@ export async function duplicateCotation(
       taux_tva_marge: source.taux_tva_marge,
       statut: "brouillon",
       notes: source.notes,
+      hero_image_url: source.hero_image_url,
+      storytelling_intro: source.storytelling_intro,
+      inclus_text: source.inclus_text,
+      non_inclus_text: source.non_inclus_text,
+      programme_pdf_url: source.programme_pdf_url,
+      programme_pdf_name: source.programme_pdf_name,
     })
     .select()
     .single();
   if (error || !created) return null;
 
+  // Dupliquer les lignes prix avec décalage des dates
   const lignesSrc = lignes.filter((l) => l.cotation_id === source.id);
   if (lignesSrc.length > 0) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -281,7 +320,7 @@ export async function duplicateCotation(
         nom_fournisseur: l.nom_fournisseur,
         payeur: l.payeur,
         prestation: l.prestation,
-        date_prestation: l.date_prestation,
+        date_prestation: shiftDate(l.date_prestation, dayShift),
         mode_tarifaire: l.mode_tarifaire,
         quantite: l.quantite,
         devise: l.devise,
@@ -294,16 +333,96 @@ export async function duplicateCotation(
         pct_acompte_2: l.pct_acompte_2,
         pct_acompte_3: l.pct_acompte_3,
         pct_solde: l.pct_solde,
-        date_acompte_1: l.date_acompte_1,
-        date_acompte_2: l.date_acompte_2,
-        date_acompte_3: l.date_acompte_3,
-        date_solde: l.date_solde,
+        date_acompte_1: shiftDate(l.date_acompte_1, dayShift),
+        date_acompte_2: shiftDate(l.date_acompte_2, dayShift),
+        date_acompte_3: shiftDate(l.date_acompte_3, dayShift),
+        date_solde: shiftDate(l.date_solde, dayShift),
         notes: l.notes,
         ordre: l.ordre,
       })),
     );
   }
+
+  // Dupliquer les jours (étapes) avec décalage des dates
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: joursSrc } = await (supabase as any)
+    .from("cotation_jours")
+    .select("*")
+    .eq("cotation_id", source.id)
+    .order("ordre", { ascending: true });
+  if (joursSrc && joursSrc.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from("cotation_jours").insert(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      joursSrc.map((j: any) => ({
+        user_id: userId,
+        cotation_id: created.id,
+        ordre: j.ordre,
+        titre: j.titre,
+        lieu: j.lieu,
+        date_jour: shiftDate(j.date_jour, dayShift),
+        description: j.description,
+        image_url: j.image_url,
+        image_credit: j.image_credit,
+        gallery_urls: j.gallery_urls,
+        gallery_credits: j.gallery_credits,
+        hotel_nom: j.hotel_nom,
+        hotel_url: j.hotel_url,
+        hotel_photo_url: j.hotel_photo_url,
+      })),
+    );
+  }
+
   return { id: created.id, version_number: nextVersion };
+}
+
+/** Supprime une cotation et toutes ses données liées (étapes, lignes, vols, options, liens publics).
+ *  Bloqué si la cotation a déjà été transformée en dossier. */
+export async function deleteCotation(
+  cotationId: string,
+  options: { hasDossier: boolean },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (options.hasDossier) {
+    return {
+      ok: false,
+      error: "Impossible de supprimer : cette cotation a déjà été transformée en dossier.",
+    };
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any;
+
+  // Récupérer les flight_options pour supprimer leurs segments
+  const { data: flightOpts } = await sb
+    .from("flight_options")
+    .select("id")
+    .eq("cotation_id", cotationId);
+  const flightIds = (flightOpts ?? []).map((f: { id: string }) => f.id);
+  if (flightIds.length > 0) {
+    await sb.from("flight_segments").delete().in("flight_option_id", flightIds);
+  }
+
+  // Suppression en parallèle des dépendances
+  await Promise.all([
+    sb.from("cotation_jours").delete().eq("cotation_id", cotationId),
+    sb.from("cotation_lignes_fournisseurs").delete().eq("cotation_id", cotationId),
+    sb.from("flight_options").delete().eq("cotation_id", cotationId),
+    sb.from("fournisseur_options").delete().eq("cotation_id", cotationId),
+    sb.from("quote_public_links").delete().eq("cotation_id", cotationId),
+    sb.from("fx_coverage_reservations").delete().eq("cotation_id", cotationId),
+    sb.from("mariage_contributions").delete().eq("cotation_id", cotationId),
+  ]);
+
+  // Bulletins/factures/carnets : on détache plutôt que supprimer (ils peuvent exister indépendamment)
+  await Promise.all([
+    sb.from("bulletins").update({ cotation_id: null }).eq("cotation_id", cotationId),
+    sb.from("factures_clients").update({ cotation_id: null }).eq("cotation_id", cotationId),
+    sb.from("carnets").update({ cotation_id: null }).eq("cotation_id", cotationId),
+    sb.from("agent_notifications").update({ cotation_id: null }).eq("cotation_id", cotationId),
+  ]);
+
+  const { error } = await sb.from("cotations").delete().eq("id", cotationId);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
 }
 
 /** Transforme une cotation validée en dossier + factures + échéances. */

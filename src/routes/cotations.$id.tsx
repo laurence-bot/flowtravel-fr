@@ -49,6 +49,7 @@ import {
   computeCotationFinance,
   computeAcompteClient,
   duplicateCotation,
+  deleteCotation,
   ligneCoutEur,
   // transformerCotationEnDossier remplacé par RPC Postgres atomique
   type Cotation,
@@ -71,6 +72,8 @@ import {
   Sparkles,
   RotateCcw,
   Users as UsersIcon,
+  FileText,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { CotationOptionsBlock } from "@/components/cotation-options-block";
@@ -173,6 +176,23 @@ function CotationDetailPage() {
   // Dialog perte
   const [perteOpen, setPerteOpen] = useState(false);
   const [raisonPerte, setRaisonPerte] = useState("");
+
+  // Dialog suppression
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  // Dialog nouvelle version
+  const [duplicateOpen, setDuplicateOpen] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+  const [dupForm, setDupForm] = useState({
+    versionLabel: "",
+    newDateDepart: "",
+    newDateRetour: "",
+  });
+
+  // URL signée du PDF fournisseur (générée à la demande)
+  const [pdfSignedUrl, setPdfSignedUrl] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   if (cotationsLoading || contactsLoading || paiementsLoading) {
     return <div className="text-muted-foreground text-sm">Chargement de la cotation…</div>;
@@ -474,19 +494,71 @@ function CotationDetailPage() {
     refetchCot();
   };
 
-  const nouvelleVersion = async () => {
+  const openDuplicateDialog = () => {
+    setDupForm({
+      versionLabel: "",
+      newDateDepart: cot.date_depart ?? "",
+      newDateRetour: cot.date_retour ?? "",
+    });
+    setDuplicateOpen(true);
+  };
+
+  const confirmDuplicate = async () => {
     if (!user) return;
-    const res = await duplicateCotation(user.id, cot, lignes);
+    setDuplicating(true);
+    const res = await duplicateCotation(user.id, cot, lignes, {
+      versionLabel: dupForm.versionLabel || null,
+      newDateDepart: dupForm.newDateDepart || null,
+      newDateRetour: dupForm.newDateRetour || null,
+    });
+    setDuplicating(false);
     if (!res) return toast.error("Duplication impossible.");
     await logAudit({
       userId: user.id,
       entity: "cotation",
       entityId: res.id,
       action: "create",
-      description: `Nouvelle version v${res.version_number} de ${cot.titre}`,
+      description: `Nouvelle version v${res.version_number}${dupForm.versionLabel ? ` (${dupForm.versionLabel})` : ""} de ${cot.titre}`,
     });
     toast.success(`Version v${res.version_number} créée.`);
+    setDuplicateOpen(false);
     navigate({ to: "/cotations/$id", params: { id: res.id } });
+  };
+
+  const confirmDelete = async () => {
+    if (!user) return;
+    setDeleting(true);
+    const res = await deleteCotation(cot.id, { hasDossier: !!cot.dossier_id });
+    setDeleting(false);
+    if (!res.ok) return toast.error(res.error);
+    await logAudit({
+      userId: user.id,
+      entity: "cotation",
+      entityId: cot.id,
+      action: "delete",
+      description: `Cotation supprimée : ${cot.titre}`,
+    });
+    toast.success("Cotation supprimée.");
+    setDeleteOpen(false);
+    navigate({ to: "/cotations" });
+  };
+
+  const openProgrammePdf = async () => {
+    if (!cot.programme_pdf_url) return;
+    setPdfLoading(true);
+    try {
+      const { data, error } = await supabase.storage
+        .from("pdf-imports")
+        .createSignedUrl(cot.programme_pdf_url, 300);
+      if (error || !data?.signedUrl) {
+        toast.error("Impossible d'ouvrir le document.");
+        return;
+      }
+      setPdfSignedUrl(data.signedUrl);
+      window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   const transformer = async () => {
@@ -522,7 +594,7 @@ function CotationDetailPage() {
         </Button>
         <PageHeader
           title={cot.titre}
-          description={`Version ${cot.version_number}${client ? ` · ${client.nom}` : ""}${cot.destination ? ` · ${cot.destination}` : ""}`}
+          description={`Version ${cot.version_number}${cot.version_label ? ` — ${cot.version_label}` : ""}${client ? ` · ${client.nom}` : ""}${cot.destination ? ` · ${cot.destination}` : ""}`}
           action={
             <div className="flex flex-wrap items-center gap-2">
               {user && (
@@ -732,7 +804,7 @@ function CotationDetailPage() {
               <ArrowRight className="h-4 w-4 mr-2" /> Transformer en dossier
             </Button>
           )}
-          <Button onClick={nouvelleVersion} variant="outline">
+          <Button onClick={openDuplicateDialog} variant="outline">
             <Copy className="h-4 w-4 mr-2" /> Nouvelle version
           </Button>
           <Button
@@ -741,6 +813,13 @@ function CotationDetailPage() {
             className="text-destructive hover:text-destructive"
           >
             <XCircle className="h-4 w-4 mr-2" /> Marquer comme perdue
+          </Button>
+          <Button
+            onClick={() => setDeleteOpen(true)}
+            variant="outline"
+            className="text-destructive hover:text-destructive border-destructive/40"
+          >
+            <Trash2 className="h-4 w-4 mr-2" /> Supprimer
           </Button>
         </Card>
       )}
@@ -1338,6 +1417,93 @@ function CotationDetailPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog suppression */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer cette cotation&nbsp;?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Cette action est <strong>irréversible</strong>. Toutes les étapes,
+              lignes prix fournisseurs, options de vols et liens publics liés
+              seront supprimés.
+            </p>
+            {cot.dossier_id && (
+              <p className="text-sm text-destructive">
+                Cette cotation a déjà été transformée en dossier — la suppression est bloquée.
+              </p>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>Annuler</Button>
+              <Button variant="destructive" onClick={confirmDelete} disabled={deleting || !!cot.dossier_id}>
+                {deleting ? "Suppression…" : "Supprimer définitivement"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog nouvelle version */}
+      <Dialog open={duplicateOpen} onOpenChange={setDuplicateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nouvelle version de la cotation</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Field label="Nom de la version (optionnel)">
+              <Input
+                value={dupForm.versionLabel}
+                onChange={(e) => setDupForm({ ...dupForm, versionLabel: e.target.value })}
+                placeholder="ex. Premium, Court séjour, Sans vols…"
+              />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Date de départ">
+                <Input type="date" value={dupForm.newDateDepart}
+                  onChange={(e) => setDupForm({ ...dupForm, newDateDepart: e.target.value })} />
+              </Field>
+              <Field label="Date de retour">
+                <Input type="date" value={dupForm.newDateRetour}
+                  onChange={(e) => setDupForm({ ...dupForm, newDateRetour: e.target.value })} />
+              </Field>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Si tu changes la date de départ, les dates des étapes, prestations
+              et échéances fournisseurs seront décalées automatiquement du même
+              nombre de jours.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDuplicateOpen(false)} disabled={duplicating}>Annuler</Button>
+              <Button onClick={confirmDuplicate} disabled={duplicating}>
+                {duplicating ? "Création…" : "Créer la version"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Document fournisseur importé */}
+      {cot.programme_pdf_url && (
+        <Card className="p-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+            <div className="min-w-0">
+              <div className="text-sm font-medium truncate">
+                {cot.programme_pdf_name ?? "Document fournisseur importé"}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Source utilisée pour l'import automatique des étapes et lignes prix.
+              </div>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={openProgrammePdf} disabled={pdfLoading}>
+            <ExternalLink className="h-4 w-4 mr-2" />
+            {pdfLoading ? "Ouverture…" : "Ouvrir le PDF"}
+          </Button>
+        </Card>
+      )}
 
       {/* Versions */}
       {(() => {
