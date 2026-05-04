@@ -1061,6 +1061,27 @@ function CotationDetailPage() {
         )}
       </Card>
 
+      {/* Document fournisseur importé (PDF source) */}
+      {cot.programme_pdf_url && (
+        <Card className="p-4 flex items-center justify-between gap-3 border-primary/30 bg-primary/5">
+          <div className="flex items-center gap-3 min-w-0">
+            <FileText className="h-5 w-5 text-primary shrink-0" />
+            <div className="min-w-0">
+              <div className="text-sm font-medium truncate">
+                📎 {cot.programme_pdf_name ?? "Document fournisseur importé"}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Source utilisée pour l'import automatique des étapes et lignes prix.
+              </div>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={openProgrammePdf} disabled={pdfLoading}>
+            <ExternalLink className="h-4 w-4 mr-2" />
+            {pdfLoading ? "Ouverture…" : "Ouvrir le PDF"}
+          </Button>
+        </Card>
+      )}
+
       {/* Lignes fournisseurs */}
       <Card className="overflow-hidden">
         <div className="p-4 flex items-center justify-between">
