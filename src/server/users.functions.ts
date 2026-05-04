@@ -118,3 +118,61 @@ export const deleteUser = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+const SetPasswordSchema = z.object({
+  user_id: z.string().uuid(),
+  password: z.string().min(8).max(72).optional(),
+});
+
+function generatePassword() {
+  // 12 chars, lettres/chiffres + symbole
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  let out = "";
+  const buf = new Uint32Array(10);
+  crypto.getRandomValues(buf);
+  for (let i = 0; i < 10; i++) out += chars[buf[i] % chars.length];
+  return out + "Aa1!";
+}
+
+export const setUserPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => SetPasswordSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabase: userClient, userId } = context;
+
+    const { data: roleRow } = await userClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "administrateur")
+      .maybeSingle();
+    if (!roleRow) {
+      throw new Response("Forbidden: administrateur required", { status: 403 });
+    }
+
+    const { data: caller } = await userClient
+      .from("user_profiles")
+      .select("agence_id, is_super_admin")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const { data: target } = await supabaseAdmin
+      .from("user_profiles")
+      .select("agence_id, email")
+      .eq("user_id", data.user_id)
+      .maybeSingle();
+    if (!target) throw new Response("Utilisateur introuvable", { status: 404 });
+
+    if (!caller?.is_super_admin && caller?.agence_id !== target.agence_id) {
+      throw new Response("Forbidden: agence différente", { status: 403 });
+    }
+
+    const newPassword = data.password ?? generatePassword();
+
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.user_id, {
+      password: newPassword,
+      email_confirm: true,
+    });
+    if (error) throw new Response(error.message, { status: 400 });
+
+    return { ok: true, email: target.email, password: newPassword };
+  });

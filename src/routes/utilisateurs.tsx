@@ -18,10 +18,10 @@ import { ROLE_LABELS, ROLE_DESCRIPTIONS, type AppRole, isAdmin } from "@/lib/per
 import { logAudit } from "@/lib/audit";
 import { RequireAuth } from "@/components/require-auth";
 import { toast } from "sonner";
-import { ShieldAlert, Users, UserPlus, Trash2 } from "lucide-react";
+import { ShieldAlert, Users, UserPlus, Trash2, KeyRound, Copy } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { inviteUser, deleteUser } from "@/server/users.functions";
+import { inviteUser, deleteUser, setUserPassword } from "@/server/users.functions";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -68,6 +68,7 @@ function UtilisateursPage() {
   const [inviteName, setInviteName] = useState("");
   const [inviteRole, setInviteRole] = useState<AppRole>("agent");
   const [inviting, setInviting] = useState(false);
+  const [pwdResult, setPwdResult] = useState<{ email: string; password: string } | null>(null);
 
 
   const refresh = async () => {
@@ -161,6 +162,26 @@ function UtilisateursPage() {
     });
     toast.success(newActif ? "Utilisateur activé" : "Utilisateur désactivé");
     setSavingId(null);
+  };
+
+  const resetPassword = async (p: ProfileRow) => {
+    setSavingId(p.user_id);
+    try {
+      const res: any = await setUserPassword({ data: { user_id: p.user_id } });
+      setPwdResult({ email: res.email ?? p.email, password: res.password });
+      await logAudit({
+        userId: user?.id,
+        entity: "compte",
+        action: "update",
+        entityId: p.user_id,
+        description: `Mot de passe réinitialisé : ${p.email}`,
+      });
+      toast.success("Mot de passe généré");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Échec de la réinitialisation");
+    } finally {
+      setSavingId(null);
+    }
   };
 
   const removeUser = async (p: ProfileRow) => {
@@ -324,6 +345,36 @@ function UtilisateursPage() {
                                 variant="ghost"
                                 size="icon"
                                 disabled={savingId === p.user_id}
+                                aria-label="Réinitialiser le mot de passe"
+                                title="Réinitialiser le mot de passe"
+                              >
+                                <KeyRound className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Définir un nouveau mot de passe ?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Un mot de passe temporaire sera généré pour <strong>{p.email}</strong>.
+                                  Il s'affichera une seule fois — copiez-le pour le transmettre à l'utilisateur.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => resetPassword(p)}>
+                                  Générer
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                        {!isMe && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                disabled={savingId === p.user_id}
                                 aria-label="Supprimer l'utilisateur"
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -362,6 +413,37 @@ function UtilisateursPage() {
       <p className="text-xs text-muted-foreground mt-6">
         Les permissions sont également appliquées au niveau de la base de données (RLS) pour une sécurité maximale.
       </p>
+
+      <Dialog open={!!pwdResult} onOpenChange={(o) => !o && setPwdResult(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mot de passe temporaire</DialogTitle>
+            <DialogDescription>
+              Communiquez-le à <strong>{pwdResult?.email}</strong>. Ce mot de passe ne sera plus affiché.
+              Conseillez à l'utilisateur de le changer après connexion.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2 p-3 rounded-md bg-muted font-mono text-sm break-all">
+            <span className="flex-1">{pwdResult?.password}</span>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => {
+                if (pwdResult?.password) {
+                  navigator.clipboard.writeText(pwdResult.password);
+                  toast.success("Copié");
+                }
+              }}
+              aria-label="Copier"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setPwdResult(null)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
