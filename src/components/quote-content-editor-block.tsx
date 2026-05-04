@@ -89,6 +89,7 @@ type Props = {
   nombrePax?: number | null;
   dateDepart?: string | null;
   dateRetour?: string | null;
+  onDataChanged?: () => void;
 };
 
 export function QuoteContentEditorBlock({
@@ -106,6 +107,7 @@ export function QuoteContentEditorBlock({
   nombrePax,
   dateDepart,
   dateRetour,
+  onDataChanged,
 }: Props) {
   const [heroUrl, setHeroUrl] = useState<string | null>(initialHeroUrl);
   const [storytelling, setStorytelling] = useState(initialStorytelling ?? "");
@@ -399,6 +401,7 @@ export function QuoteContentEditorBlock({
       if (removedJours === 0 && removedLines === 0) toast.success("Aucun doublon évident détecté.");
       else toast.success(`${removedJours} jour(s) doublon et ${removedLines} ligne(s) doublon supprimé(s).`);
       await loadJours();
+      onDataChanged?.();
     } catch (e) {
       console.error("[clean duplicates] erreur:", e);
       toast.error(e instanceof Error ? e.message : "Erreur pendant le nettoyage.");
@@ -534,6 +537,7 @@ export function QuoteContentEditorBlock({
       if (plan.conflicts.length > 0) toast.warning(`Synchronisé avec alertes — ${plan.conflicts.join(" ")}`);
       toast.success(`Synchronisation OK — ${msgParts.join(", ")}.`);
       await loadJours();
+      onDataChanged?.();
 
     } catch (e) {
       console.error("[resync dates] erreur:", e);
