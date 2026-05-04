@@ -19,8 +19,10 @@ import {
   extractProgramFromFile,
   insertJours,
   insertLignes,
+  previewLignesDuplicates,
   type ExtractedProgram,
 } from "@/lib/program-import";
+import { askDuplicate } from "@/lib/duplicate-confirm";
 import { supabase } from "@/integrations/supabase/client";
 
 type Props = {
@@ -139,9 +141,28 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
     const jours = result.jours.filter((_, i) => selJours.has(i));
     const lignes = result.lignes.filter((_, i) => selLignes.has(i));
 
+    // Détecte d'éventuels doublons côté lignes fournisseurs et demande la stratégie.
+    let strategy: "ignore" | "replace" | "add_anyway" = "ignore";
+    if (lignes.length > 0) {
+      const { duplicates } = await previewLignesDuplicates(cotationId, lignes);
+      if (duplicates > 0) {
+        const choice = await askDuplicate({
+          title: "Doublons détectés à l'import",
+          message: `⚠️ ${duplicates} ligne(s) fournisseur sur ${lignes.length} existent déjà dans cette cotation.\n\nQue souhaitez-vous faire ?`,
+        });
+        if (choice === "ANNULER") {
+          setImporting(false);
+          return;
+        }
+        if (choice === "REMPLACER") strategy = "replace";
+        else if (choice === "AJOUTER_QUAND_MEME") strategy = "add_anyway";
+        else strategy = "ignore";
+      }
+    }
+
     const [j, l] = await Promise.all([
       insertJours(userId, cotationId, jours, startJour),
-      insertLignes(userId, cotationId, lignes, startLigne),
+      insertLignes(userId, cotationId, lignes, startLigne, strategy),
     ]);
     setImporting(false);
 
@@ -151,6 +172,7 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
       const skippedParts: string[] = [];
       if (j.skipped > 0) skippedParts.push(`${j.skipped} jour(s) doublon ignoré(s)`);
       if (l.skipped > 0) skippedParts.push(`${l.skipped} ligne(s) doublon ignorée(s)`);
+      if (l.replaced > 0) skippedParts.push(`${l.replaced} ligne(s) remplacée(s)`);
       const suffix = skippedParts.length > 0 ? ` — ${skippedParts.join(", ")}` : "";
       toast.success(`${j.count} jour(s) et ${l.count} ligne(s) importés${suffix}.`);
       setOpen(false);
