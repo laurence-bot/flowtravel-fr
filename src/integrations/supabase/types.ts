@@ -441,6 +441,7 @@ export type Database = {
           expires_at: string
           id: string
           last_relance_at: string | null
+          numero: string | null
           signataire_email: string | null
           signataire_nom: string | null
           signature_data: string | null
@@ -464,6 +465,7 @@ export type Database = {
           expires_at?: string
           id?: string
           last_relance_at?: string | null
+          numero?: string | null
           signataire_email?: string | null
           signataire_nom?: string | null
           signature_data?: string | null
@@ -487,6 +489,7 @@ export type Database = {
           expires_at?: string
           id?: string
           last_relance_at?: string | null
+          numero?: string | null
           signataire_email?: string | null
           signataire_nom?: string | null
           signature_data?: string | null
@@ -717,6 +720,7 @@ export type Database = {
           id: string
           nom: string
           notes: string | null
+          numero: string | null
           pays: string | null
           site_web: string | null
           telephone: string | null
@@ -735,6 +739,7 @@ export type Database = {
           id?: string
           nom: string
           notes?: string | null
+          numero?: string | null
           pays?: string | null
           site_web?: string | null
           telephone?: string | null
@@ -753,6 +758,7 @@ export type Database = {
           id?: string
           nom?: string
           notes?: string | null
+          numero?: string | null
           pays?: string | null
           site_web?: string | null
           telephone?: string | null
@@ -957,6 +963,7 @@ export type Database = {
           nombre_pax: number
           non_inclus_text: string | null
           notes: string | null
+          numero: string | null
           pays_destination: string | null
           prix_vente_ht: number
           prix_vente_ttc: number
@@ -998,6 +1005,7 @@ export type Database = {
           nombre_pax?: number
           non_inclus_text?: string | null
           notes?: string | null
+          numero?: string | null
           pays_destination?: string | null
           prix_vente_ht?: number
           prix_vente_ttc?: number
@@ -1039,6 +1047,7 @@ export type Database = {
           nombre_pax?: number
           non_inclus_text?: string | null
           notes?: string | null
+          numero?: string | null
           pays_destination?: string | null
           prix_vente_ht?: number
           prix_vente_ttc?: number
@@ -1077,6 +1086,7 @@ export type Database = {
           nom_client: string
           nombre_pax: number
           notes: string | null
+          numero: string | null
           pays_destination: string | null
           raison_perte: string | null
           statut: Database["public"]["Enums"]["demande_statut"]
@@ -1101,6 +1111,7 @@ export type Database = {
           nom_client: string
           nombre_pax?: number
           notes?: string | null
+          numero?: string | null
           pays_destination?: string | null
           raison_perte?: string | null
           statut?: Database["public"]["Enums"]["demande_statut"]
@@ -1125,6 +1136,7 @@ export type Database = {
           nom_client?: string
           nombre_pax?: number
           notes?: string | null
+          numero?: string | null
           pays_destination?: string | null
           raison_perte?: string | null
           statut?: Database["public"]["Enums"]["demande_statut"]
@@ -1405,6 +1417,7 @@ export type Database = {
           cout_total: number
           created_at: string
           id: string
+          numero: string | null
           pays_destination: string | null
           prix_vente: number
           statut: Database["public"]["Enums"]["dossier_statut"]
@@ -1420,6 +1433,7 @@ export type Database = {
           cout_total?: number
           created_at?: string
           id?: string
+          numero?: string | null
           pays_destination?: string | null
           prix_vente?: number
           statut?: Database["public"]["Enums"]["dossier_statut"]
@@ -1435,6 +1449,7 @@ export type Database = {
           cout_total?: number
           created_at?: string
           id?: string
+          numero?: string | null
           pays_destination?: string | null
           prix_vente?: number
           statut?: Database["public"]["Enums"]["dossier_statut"]
@@ -2880,6 +2895,27 @@ export type Database = {
         }
         Relationships: []
       }
+      numero_compteurs: {
+        Row: {
+          agence_id: string
+          derniere_valeur: number
+          type_doc: string
+          updated_at: string
+        }
+        Insert: {
+          agence_id: string
+          derniere_valeur?: number
+          type_doc: string
+          updated_at?: string
+        }
+        Update: {
+          agence_id?: string
+          derniere_valeur?: number
+          type_doc?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       paiements: {
         Row: {
           agence_id: string | null
@@ -3300,6 +3336,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      agence_prefix: { Args: { _agence_id: string }; Returns: string }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -3331,6 +3368,10 @@ export type Database = {
           source_queue: string
         }
         Returns: number
+      }
+      next_numero: {
+        Args: { _agence_id: string; _type: string }
+        Returns: string
       }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
@@ -3456,7 +3497,12 @@ export type Database = {
       echeance_statut: "a_payer" | "paye" | "en_retard" | "annule"
       echeance_type: "acompte_1" | "acompte_2" | "acompte_3" | "solde" | "autre"
       facture_client_statut: "brouillon" | "emise" | "payee" | "annulee"
-      facture_client_type: "acompte_1" | "acompte_2" | "solde" | "globale"
+      facture_client_type:
+        | "acompte_1"
+        | "acompte_2"
+        | "solde"
+        | "globale"
+        | "avoir"
       flight_option_statut: "en_option" | "confirmee" | "expiree" | "annulee"
       fournisseur_option_statut:
         | "a_demander"
@@ -3779,7 +3825,13 @@ export const Constants = {
       echeance_statut: ["a_payer", "paye", "en_retard", "annule"],
       echeance_type: ["acompte_1", "acompte_2", "acompte_3", "solde", "autre"],
       facture_client_statut: ["brouillon", "emise", "payee", "annulee"],
-      facture_client_type: ["acompte_1", "acompte_2", "solde", "globale"],
+      facture_client_type: [
+        "acompte_1",
+        "acompte_2",
+        "solde",
+        "globale",
+        "avoir",
+      ],
       flight_option_statut: ["en_option", "confirmee", "expiree", "annulee"],
       fournisseur_option_statut: [
         "a_demander",

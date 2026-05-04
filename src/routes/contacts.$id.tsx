@@ -741,6 +741,7 @@ function ContactHeaderAndInfo({
       </Button>
       <PageHeader
         title={contact.nom}
+        numero={(contact as { numero?: string | null }).numero ?? null}
         description={isClient ? "Fiche client" : "Fiche fournisseur"}
         action={
           <div className="flex items-center gap-2">

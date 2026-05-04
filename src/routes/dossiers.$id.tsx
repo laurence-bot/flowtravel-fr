@@ -170,6 +170,11 @@ function DossierDetail() {
 
       <header className="flex flex-wrap items-start justify-between gap-4 pb-6 border-b border-border">
         <div>
+          {(dossier as { numero?: string | null }).numero && (
+            <div className="text-xs font-mono text-muted-foreground tracking-wide mb-1">
+              N° {(dossier as { numero?: string | null }).numero}
+            </div>
+          )}
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="font-display text-3xl md:text-4xl text-foreground">{dossier.titre}</h1>
             <StatutBadge statut={dossier.statut} />
