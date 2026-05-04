@@ -283,6 +283,7 @@ export type Database = {
       }
       agent_notifications: {
         Row: {
+          agence_id: string | null
           bulletin_id: string | null
           cotation_id: string | null
           created_at: string
@@ -296,6 +297,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           bulletin_id?: string | null
           cotation_id?: string | null
           created_at?: string
@@ -309,6 +311,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           bulletin_id?: string | null
           cotation_id?: string | null
           created_at?: string
@@ -361,6 +364,7 @@ export type Database = {
       }
       bank_transactions: {
         Row: {
+          agence_id: string | null
           compte_id: string
           contrepartie: string | null
           created_at: string
@@ -381,6 +385,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           compte_id: string
           contrepartie?: string | null
           created_at?: string
@@ -401,6 +406,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           compte_id?: string
           contrepartie?: string | null
           created_at?: string
@@ -424,6 +430,7 @@ export type Database = {
       }
       bulletins: {
         Row: {
+          agence_id: string | null
           agent_id: string | null
           client_id: string | null
           conditions_acceptees: boolean
@@ -446,6 +453,7 @@ export type Database = {
           voyageurs: Json
         }
         Insert: {
+          agence_id?: string | null
           agent_id?: string | null
           client_id?: string | null
           conditions_acceptees?: boolean
@@ -468,6 +476,7 @@ export type Database = {
           voyageurs?: Json
         }
         Update: {
+          agence_id?: string | null
           agent_id?: string | null
           client_id?: string | null
           conditions_acceptees?: boolean
@@ -493,6 +502,7 @@ export type Database = {
       }
       carnets: {
         Row: {
+          agence_id: string | null
           agent_id: string | null
           client_id: string | null
           contacts_urgence: Json
@@ -516,6 +526,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           agent_id?: string | null
           client_id?: string | null
           contacts_urgence?: Json
@@ -539,6 +550,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           agent_id?: string | null
           client_id?: string | null
           contacts_urgence?: Json
@@ -655,6 +667,7 @@ export type Database = {
       comptes: {
         Row: {
           actif: boolean
+          agence_id: string | null
           banque: Database["public"]["Enums"]["compte_banque"]
           categorie: Database["public"]["Enums"]["compte_categorie"]
           created_at: string
@@ -667,6 +680,7 @@ export type Database = {
         }
         Insert: {
           actif?: boolean
+          agence_id?: string | null
           banque: Database["public"]["Enums"]["compte_banque"]
           categorie: Database["public"]["Enums"]["compte_categorie"]
           created_at?: string
@@ -679,6 +693,7 @@ export type Database = {
         }
         Update: {
           actif?: boolean
+          agence_id?: string | null
           banque?: Database["public"]["Enums"]["compte_banque"]
           categorie?: Database["public"]["Enums"]["compte_categorie"]
           created_at?: string
@@ -694,6 +709,7 @@ export type Database = {
       contacts: {
         Row: {
           adresse: string | null
+          agence_id: string | null
           code_postal: string | null
           contact_principal: string | null
           created_at: string
@@ -711,6 +727,7 @@ export type Database = {
         }
         Insert: {
           adresse?: string | null
+          agence_id?: string | null
           code_postal?: string | null
           contact_principal?: string | null
           created_at?: string
@@ -728,6 +745,7 @@ export type Database = {
         }
         Update: {
           adresse?: string | null
+          agence_id?: string | null
           code_postal?: string | null
           contact_principal?: string | null
           created_at?: string
@@ -747,6 +765,7 @@ export type Database = {
       }
       cotation_jours: {
         Row: {
+          agence_id: string | null
           cotation_id: string
           created_at: string
           date_jour: string | null
@@ -766,6 +785,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           cotation_id: string
           created_at?: string
           date_jour?: string | null
@@ -785,6 +805,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           cotation_id?: string
           created_at?: string
           date_jour?: string | null
@@ -807,6 +828,7 @@ export type Database = {
       }
       cotation_lignes_fournisseurs: {
         Row: {
+          agence_id: string | null
           condition_id: string | null
           cotation_id: string
           couverture_id: string | null
@@ -838,6 +860,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           condition_id?: string | null
           cotation_id: string
           couverture_id?: string | null
@@ -869,6 +892,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           condition_id?: string | null
           cotation_id?: string
           couverture_id?: string | null
@@ -911,6 +935,7 @@ export type Database = {
       }
       cotations: {
         Row: {
+          agence_id: string | null
           agent_id: string | null
           client_id: string | null
           created_at: string
@@ -951,6 +976,7 @@ export type Database = {
           version_number: number
         }
         Insert: {
+          agence_id?: string | null
           agent_id?: string | null
           client_id?: string | null
           created_at?: string
@@ -991,6 +1017,7 @@ export type Database = {
           version_number?: number
         }
         Update: {
+          agence_id?: string | null
           agent_id?: string | null
           client_id?: string | null
           created_at?: string
@@ -1034,6 +1061,7 @@ export type Database = {
       }
       demandes: {
         Row: {
+          agence_id: string | null
           agent_id: string | null
           budget: number | null
           canal: Database["public"]["Enums"]["demande_canal"]
@@ -1057,6 +1085,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           agent_id?: string | null
           budget?: number | null
           canal?: Database["public"]["Enums"]["demande_canal"]
@@ -1080,6 +1109,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           agent_id?: string | null
           budget?: number | null
           canal?: Database["public"]["Enums"]["demande_canal"]
@@ -1315,6 +1345,7 @@ export type Database = {
       }
       dossier_tasks: {
         Row: {
+          agence_id: string | null
           completed_at: string | null
           created_at: string
           date_echeance: string | null
@@ -1331,6 +1362,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           completed_at?: string | null
           created_at?: string
           date_echeance?: string | null
@@ -1347,6 +1379,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           completed_at?: string | null
           created_at?: string
           date_echeance?: string | null
@@ -1366,6 +1399,7 @@ export type Database = {
       }
       dossiers: {
         Row: {
+          agence_id: string | null
           agent_id: string | null
           client_id: string | null
           cout_total: number
@@ -1380,6 +1414,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           agent_id?: string | null
           client_id?: string | null
           cout_total?: number
@@ -1394,6 +1429,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           agent_id?: string | null
           client_id?: string | null
           cout_total?: number
@@ -1551,6 +1587,7 @@ export type Database = {
       }
       facture_echeances: {
         Row: {
+          agence_id: string | null
           coverage_id: string | null
           created_at: string
           date_echeance: string | null
@@ -1570,6 +1607,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           coverage_id?: string | null
           created_at?: string
           date_echeance?: string | null
@@ -1589,6 +1627,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           coverage_id?: string | null
           created_at?: string
           date_echeance?: string | null
@@ -1633,6 +1672,7 @@ export type Database = {
       }
       factures_clients: {
         Row: {
+          agence_id: string | null
           agent_id: string | null
           bulletin_id: string | null
           client_id: string | null
@@ -1658,6 +1698,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           agent_id?: string | null
           bulletin_id?: string | null
           client_id?: string | null
@@ -1683,6 +1724,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           agent_id?: string | null
           bulletin_id?: string | null
           client_id?: string | null
@@ -1719,6 +1761,7 @@ export type Database = {
       }
       factures_fournisseurs: {
         Row: {
+          agence_id: string | null
           coverage_id: string | null
           created_at: string
           date_echeance: string | null
@@ -1736,6 +1779,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           coverage_id?: string | null
           created_at?: string
           date_echeance?: string | null
@@ -1753,6 +1797,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           coverage_id?: string | null
           created_at?: string
           date_echeance?: string | null
@@ -1795,6 +1840,7 @@ export type Database = {
       }
       flight_options: {
         Row: {
+          agence_id: string | null
           compagnie: string
           cotation_id: string
           created_at: string
@@ -1815,6 +1861,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           compagnie: string
           cotation_id: string
           created_at?: string
@@ -1835,6 +1882,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           compagnie?: string
           cotation_id?: string
           created_at?: string
@@ -1860,6 +1908,7 @@ export type Database = {
         Row: {
           aeroport_arrivee: string
           aeroport_depart: string
+          agence_id: string | null
           compagnie: string | null
           created_at: string
           date_arrivee: string | null
@@ -1878,6 +1927,7 @@ export type Database = {
         Insert: {
           aeroport_arrivee: string
           aeroport_depart: string
+          agence_id?: string | null
           compagnie?: string | null
           created_at?: string
           date_arrivee?: string | null
@@ -1896,6 +1946,7 @@ export type Database = {
         Update: {
           aeroport_arrivee?: string
           aeroport_depart?: string
+          agence_id?: string | null
           compagnie?: string | null
           created_at?: string
           date_arrivee?: string | null
@@ -1926,6 +1977,7 @@ export type Database = {
           acompte_1_a_reservation: boolean
           acompte_2_a_reservation: boolean
           acompte_3_a_reservation: boolean
+          agence_id: string | null
           conditions_annulation: Json
           created_at: string
           delai_acompte_1_jours: number | null
@@ -1950,6 +2002,7 @@ export type Database = {
           acompte_1_a_reservation?: boolean
           acompte_2_a_reservation?: boolean
           acompte_3_a_reservation?: boolean
+          agence_id?: string | null
           conditions_annulation?: Json
           created_at?: string
           delai_acompte_1_jours?: number | null
@@ -1974,6 +2027,7 @@ export type Database = {
           acompte_1_a_reservation?: boolean
           acompte_2_a_reservation?: boolean
           acompte_3_a_reservation?: boolean
+          agence_id?: string | null
           conditions_annulation?: Json
           created_at?: string
           delai_acompte_1_jours?: number | null
@@ -1998,6 +2052,7 @@ export type Database = {
       }
       fournisseur_options: {
         Row: {
+          agence_id: string | null
           cotation_id: string
           created_at: string
           deadline_option_date: string | null
@@ -2014,6 +2069,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           cotation_id: string
           created_at?: string
           deadline_option_date?: string | null
@@ -2030,6 +2086,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           cotation_id?: string
           created_at?: string
           deadline_option_date?: string | null
@@ -2049,6 +2106,7 @@ export type Database = {
       }
       fx_coverage_reservations: {
         Row: {
+          agence_id: string | null
           cotation_id: string | null
           coverage_id: string
           created_at: string
@@ -2063,6 +2121,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           cotation_id?: string | null
           coverage_id: string
           created_at?: string
@@ -2077,6 +2136,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           cotation_id?: string | null
           coverage_id?: string
           created_at?: string
@@ -2123,6 +2183,7 @@ export type Database = {
       }
       fx_coverages: {
         Row: {
+          agence_id: string | null
           created_at: string
           date_echeance: string
           date_ouverture: string
@@ -2137,6 +2198,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           created_at?: string
           date_echeance: string
           date_ouverture?: string
@@ -2151,6 +2213,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           created_at?: string
           date_echeance?: string
           date_ouverture?: string
@@ -2756,6 +2819,7 @@ export type Database = {
       }
       mariage_contributions: {
         Row: {
+          agence_id: string | null
           cotation_id: string
           created_at: string
           date_paiement: string | null
@@ -2775,6 +2839,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           cotation_id: string
           created_at?: string
           date_paiement?: string | null
@@ -2794,6 +2859,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           cotation_id?: string
           created_at?: string
           date_paiement?: string | null
@@ -2816,6 +2882,7 @@ export type Database = {
       }
       paiements: {
         Row: {
+          agence_id: string | null
           bank_transaction_id: string | null
           compte_id: string | null
           coverage_id: string | null
@@ -2837,6 +2904,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           bank_transaction_id?: string | null
           compte_id?: string | null
           coverage_id?: string | null
@@ -2858,6 +2926,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           bank_transaction_id?: string | null
           compte_id?: string | null
           coverage_id?: string | null
@@ -2956,6 +3025,7 @@ export type Database = {
       quote_public_links: {
         Row: {
           accepted_at: string | null
+          agence_id: string | null
           callback_requested_at: string | null
           chosen_flight_option_id: string | null
           cotation_id: string
@@ -2974,6 +3044,7 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          agence_id?: string | null
           callback_requested_at?: string | null
           chosen_flight_option_id?: string | null
           cotation_id: string
@@ -2992,6 +3063,7 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          agence_id?: string | null
           callback_requested_at?: string | null
           chosen_flight_option_id?: string | null
           cotation_id?: string
@@ -3012,6 +3084,7 @@ export type Database = {
       }
       rapprochements: {
         Row: {
+          agence_id: string | null
           bank_transaction_id: string
           created_at: string
           id: string
@@ -3023,6 +3096,7 @@ export type Database = {
           validated_at: string | null
         }
         Insert: {
+          agence_id?: string | null
           bank_transaction_id: string
           created_at?: string
           id?: string
@@ -3034,6 +3108,7 @@ export type Database = {
           validated_at?: string | null
         }
         Update: {
+          agence_id?: string | null
           bank_transaction_id?: string
           created_at?: string
           id?: string
@@ -3111,6 +3186,7 @@ export type Database = {
       }
       transferts: {
         Row: {
+          agence_id: string | null
           compte_destination_id: string
           compte_source_id: string
           created_at: string
@@ -3121,6 +3197,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agence_id?: string | null
           compte_destination_id: string
           compte_source_id: string
           created_at?: string
@@ -3131,6 +3208,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agence_id?: string | null
           compte_destination_id?: string
           compte_source_id?: string
           created_at?: string
