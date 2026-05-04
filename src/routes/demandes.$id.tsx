@@ -102,6 +102,22 @@ function DemandeDetail() {
     refetch();
   };
 
+  const remettreEnCoursSiCotationSupprimee = async () => {
+    if (!user) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: linked, error: linkedError } = await (supabase as any)
+      .from("cotations")
+      .select("id")
+      .eq("demande_id", demande.id)
+      .limit(1);
+    if (linkedError) return toast.error(linkedError.message);
+    if ((linked ?? []).length > 0) {
+      toast.error("Une cotation existe encore pour cette demande.");
+      return;
+    }
+    await updateStatut("en_cours");
+  };
+
   const saveNotes = async () => {
     if (!user) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -333,6 +349,18 @@ function DemandeDetail() {
           </div>
         )}
       </Card>
+
+      {canWrite && demande.statut === "transformee_en_cotation" && (
+        <Card className="p-5 space-y-3 border-orange-500/30 bg-orange-500/5">
+          <h3 className="font-display text-lg">Statut bloqué</h3>
+          <p className="text-sm text-muted-foreground">
+            Si la cotation liée a été supprimée, cette action remet la demande en cours.
+          </p>
+          <Button variant="outline" size="sm" onClick={remettreEnCoursSiCotationSupprimee}>
+            <RefreshCw className="h-4 w-4 mr-2" />Remettre en cours
+          </Button>
+        </Card>
+      )}
 
       {/* Actions */}
       {canWrite && demande.statut !== "transformee_en_cotation" && (
