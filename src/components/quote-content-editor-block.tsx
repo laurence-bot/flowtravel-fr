@@ -502,6 +502,37 @@ export function QuoteContentEditorBlock({
         if (insErr) throw insErr;
       }
 
+      let importedPdfJours = 0;
+      let skippedPdfJours = 0;
+      let importedPdfLines = 0;
+      let skippedPdfLines = 0;
+      if (programmePdfUrl) {
+        const { data: signed } = await supabase.storage.from("pdf-imports").createSignedUrl(programmePdfUrl, 120);
+        if (signed?.signedUrl) {
+          const blob = await fetch(signed.signedUrl).then((r) => {
+            if (!r.ok) throw new Error("PDF importé inaccessible.");
+            return r.blob();
+          });
+          const file = new File([blob], programmePdfName ?? "programme.pdf", { type: "application/pdf" });
+          const extracted = await extractProgramFromFile(file);
+          if (extracted.result) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const [{ data: joursMax }, { data: lignesMax }] = await Promise.all([
+              (supabase as any).from("cotation_jours").select("ordre").eq("cotation_id", cotationId).order("ordre", { ascending: false }).limit(1),
+              (supabase as any).from("cotation_lignes_fournisseurs").select("ordre").eq("cotation_id", cotationId).order("ordre", { ascending: false }).limit(1),
+            ]);
+            const j = await insertJours(userId, cotationId, extracted.result.jours, ((joursMax?.[0]?.ordre as number) ?? 0) + 1);
+            const l = await insertLignes(userId, cotationId, extracted.result.lignes, ((lignesMax?.[0]?.ordre as number) ?? 0) + 1);
+            if (j.error) throw new Error(j.error);
+            if (l.error) throw new Error(l.error);
+            importedPdfJours = j.count;
+            skippedPdfJours = j.skipped;
+            importedPdfLines = l.count;
+            skippedPdfLines = l.skipped;
+          }
+        }
+      }
+
       // Dédupliquer aussi les lignes prix créées par imports répétés.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: lignesData } = await (supabase as any)
@@ -538,6 +569,8 @@ export function QuoteContentEditorBlock({
       ];
       if (plan.deleteIds.length > 0) msgParts.push(`${plan.deleteIds.length} jour(s) doublon/en trop supprimé(s)`);
       if (plan.inserts.length > 0) msgParts.push(`${plan.inserts.length} jour(s) ajouté(s)`);
+      if (importedPdfJours > 0 || importedPdfLines > 0) msgParts.push(`${importedPdfJours} jour(s) PDF et ${importedPdfLines} ligne(s) PDF importé(s)`);
+      if (skippedPdfJours > 0 || skippedPdfLines > 0) msgParts.push(`${skippedPdfJours + skippedPdfLines} doublon(s) PDF ignoré(s)`);
       if (removedDups > 0) msgParts.push(`${removedDups} ligne(s) doublon retirée(s)`);
       if (plan.conflicts.length > 0) toast.warning(`Synchronisé avec alertes — ${plan.conflicts.join(" ")}`);
       toast.success(`Synchronisation OK — ${msgParts.join(", ")}.`);
