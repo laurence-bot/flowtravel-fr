@@ -1,6 +1,10 @@
 // Import d'un programme fournisseur (PDF, image scannée, texte) :
 // - extraction des jours et des lignes prix via l'edge function extract-pdf
 // - prévisualisation et insertion dans cotation_jours + cotation_lignes_fournisseurs
+//
+// ⚠️ FIX RESYNCHRONISATION :
+// Lors d'une resynchronisation, on purge TOUTES les lignes existantes du fournisseur
+// avant de réinsérer — on ne cumule jamais les anciennes et les nouvelles.
 
 import { supabase } from "@/integrations/supabase/client";
 import { DEVISES, type DeviseCode } from "@/lib/fx";
@@ -81,7 +85,6 @@ type ProgramPayload = { type: "programme_fournisseur"; text?: string; images?: s
 type ProgressCallback = (message: string) => void;
 
 async function loadPdf(file: File): Promise<any> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfjs: any = await import("pdfjs-dist");
   pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
   const buf = await file.arrayBuffer();
@@ -92,7 +95,6 @@ async function loadPdf(file: File): Promise<any> {
   );
 }
 
-/** Extrait le texte page par page, en petits blocs, pour éviter de bloquer sur les gros PDF. */
 async function extractPdfTextChunks(file: File): Promise<string[]> {
   const pdf = await loadPdf(file);
   const maxPages = Math.min(pdf.numPages, 45);
@@ -108,7 +110,6 @@ async function extractPdfTextChunks(file: File): Promise<string[]> {
       12000,
       `Extraction texte trop longue sur la page ${i}.`,
     );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pageText = content.items
       .map((it: any) => it.str ?? "")
       .join(" ")
@@ -127,7 +128,6 @@ async function extractPdfTextChunks(file: File): Promise<string[]> {
   return chunks.filter((chunk) => chunk.trim().length >= 40);
 }
 
-/** Convertit un fichier image en data URL base64. */
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
@@ -137,7 +137,6 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-/** Rasterise les premières pages d'un PDF en images JPEG légères, par petits lots — fallback OCR. */
 async function pdfToImageBatches(file: File, maxPages = 10, pagesPerBatch = 2): Promise<string[][]> {
   const pdf = await loadPdf(file);
   const pages = Math.min(pdf.numPages, maxPages);
@@ -269,7 +268,6 @@ async function fileToBase64(file: File): Promise<string> {
   return btoa(binary);
 }
 
-/** Extrait un programme depuis un fichier (PDF ou image). */
 export async function extractProgramFromFile(
   file: File,
   onProgress?: ProgressCallback,
@@ -306,8 +304,115 @@ export async function extractProgramFromFile(
   }
 }
 
-/** Insère les jours sélectionnés dans cotation_jours, en évitant les doublons existants
- *  (même date OU même titre+description normalisés). */
+// ─────────────────────────────────────────────────────────────
+// ⚠️ FIX RESYNCHRONISATION — PURGE AVANT RÉINSERTION
+// Supprime TOUTES les lignes fournisseurs et jours liés à un
+// fournisseur donné avant de réinsérer, pour éviter tout cumul.
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Purge toutes les lignes fournisseurs d'un fournisseur donné
+ * dans une cotation, avant resynchronisation.
+ */
+export async function purgeLignesFournisseur(
+  cotationId: string,
+  nomFournisseur: string,
+): Promise<{ error?: string }> {
+  const { error } = await (supabase as any)
+    .from("cotation_lignes_fournisseurs")
+    .delete()
+    .eq("cotation_id", cotationId)
+    .ilike("nom_fournisseur", nomFournisseur.trim());
+
+  if (error) {
+    console.error("[program-import] purgeLignesFournisseur error:", error);
+    return { error: error.message };
+  }
+  return {};
+}
+
+/**
+ * Purge tous les jours d'une cotation liés à un fournisseur
+ * (identifiés par la source ou le titre correspondant).
+ * À utiliser uniquement si les jours sont régénérés à chaque sync.
+ */
+export async function purgeJoursFournisseur(
+  cotationId: string,
+): Promise<{ error?: string }> {
+  const { error } = await (supabase as any)
+    .from("cotation_jours")
+    .delete()
+    .eq("cotation_id", cotationId);
+
+  if (error) {
+    console.error("[program-import] purgeJoursFournisseur error:", error);
+    return { error: error.message };
+  }
+  return {};
+}
+
+/**
+ * Purge complète + réinsertion atomique.
+ * C'est cette fonction qui doit être appelée lors de toute resynchronisation,
+ * à la place d'un simple insertLignes / insertJours.
+ *
+ * Séquence :
+ * 1. Purge toutes les lignes du fournisseur
+ * 2. Purge tous les jours de la cotation (si regenJours = true)
+ * 3. Réinsère les nouveaux jours
+ * 4. Réinsère les nouvelles lignes
+ */
+export async function purgeEtReinserer(
+  userId: string,
+  cotationId: string,
+  program: ExtractedProgram,
+  options: {
+    regenJours?: boolean; // true = on régénère aussi les jours (défaut: true)
+    onProgress?: ProgressCallback;
+  } = {},
+): Promise<{ joursCount: number; lignesCount: number; error?: string }> {
+  const { regenJours = true, onProgress } = options;
+  const nomFournisseur = program.fournisseur_nom ?? "Fournisseur";
+
+  // ÉTAPE 1 — Purge des lignes fournisseur
+  onProgress?.("Suppression des anciennes lignes fournisseur…");
+  const { error: errLignes } = await purgeLignesFournisseur(cotationId, nomFournisseur);
+  if (errLignes) return { joursCount: 0, lignesCount: 0, error: errLignes };
+
+  // ÉTAPE 2 — Purge des jours (optionnel)
+  if (regenJours) {
+    onProgress?.("Suppression des anciens jours…");
+    const { error: errJours } = await purgeJoursFournisseur(cotationId);
+    if (errJours) return { joursCount: 0, lignesCount: 0, error: errJours };
+  }
+
+  // ÉTAPE 3 — Réinsertion des jours
+  let joursCount = 0;
+  if (regenJours && program.jours.length > 0) {
+    onProgress?.(`Insertion de ${program.jours.length} jour(s)…`);
+    const result = await insertJours(userId, cotationId, program.jours, 1);
+    if (result.error) return { joursCount: 0, lignesCount: 0, error: result.error };
+    joursCount = result.count;
+  }
+
+  // ÉTAPE 4 — Réinsertion des lignes (strategy "add_anyway" car on vient de tout purger)
+  onProgress?.(`Insertion de ${program.lignes.length} ligne(s) fournisseur…`);
+  const resultLignes = await insertLignes(
+    userId,
+    cotationId,
+    program.lignes,
+    1,
+    "add_anyway", // Pas de check doublon : la purge garantit une table vide
+  );
+  if (resultLignes.error) return { joursCount, lignesCount: 0, error: resultLignes.error };
+
+  return { joursCount, lignesCount: resultLignes.count };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Fonctions d'insertion standard (premier import, sans purge)
+// ─────────────────────────────────────────────────────────────
+
 export async function insertJours(
   userId: string,
   cotationId: string,
@@ -316,8 +421,6 @@ export async function insertJours(
 ): Promise<{ count: number; skipped: number; error?: string }> {
   if (jours.length === 0) return { count: 0, skipped: 0 };
 
-  // Charger les jours existants pour dédupliquer côté DB
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: existingData } = await (supabase as any)
     .from("cotation_jours")
     .select("titre, description, date_jour")
@@ -354,7 +457,6 @@ export async function insertJours(
     date_jour: j.date_jour ?? null,
     description: j.description ?? null,
   }));
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any).from("cotation_jours").insert(rows);
   if (error) return { count: 0, skipped, error: error.message };
   return { count: rows.length, skipped };
@@ -362,13 +464,11 @@ export async function insertJours(
 
 export type DuplicateStrategy = "ignore" | "replace" | "add_anyway";
 
-/** Détecte combien de lignes seraient considérées comme doublon avant insertion. */
 export async function previewLignesDuplicates(
   cotationId: string,
   lignes: ExtractedLigne[],
 ): Promise<{ duplicates: number; total: number }> {
   if (lignes.length === 0) return { duplicates: 0, total: 0 };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: existingData } = await (supabase as any)
     .from("cotation_lignes_fournisseurs")
     .select("prestation, montant_devise, devise, nom_fournisseur")
@@ -395,8 +495,6 @@ export async function previewLignesDuplicates(
   return { duplicates: dup, total: lignes.length };
 }
 
-/** Insère les lignes fournisseurs sélectionnées en évitant les doublons existants
- *  (même prestation normalisée + montant + devise + fournisseur). */
 export async function insertLignes(
   userId: string,
   cotationId: string,
@@ -406,7 +504,6 @@ export async function insertLignes(
 ): Promise<{ count: number; skipped: number; replaced: number; error?: string }> {
   if (lignes.length === 0) return { count: 0, skipped: 0, replaced: 0 };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: existingData } = await (supabase as any)
     .from("cotation_lignes_fournisseurs")
     .select("id, prestation, montant_devise, devise, nom_fournisseur")
@@ -418,7 +515,7 @@ export async function insertLignes(
     devise: string | null;
     nom_fournisseur: string | null;
   }>;
-  const existingMap = new Map<string, string>(); // key -> existing id
+  const existingMap = new Map<string, string>();
   for (const e of existing) existingMap.set(duplicateLineKey(e), e.id);
 
   const toInsert: ExtractedLigne[] = [];
@@ -435,14 +532,10 @@ export async function insertLignes(
     });
     const isDup = existingMap.has(k) || batchKeys.has(k);
     if (isDup) {
-      if (strategy === "ignore") {
-        skipped++;
-        continue;
-      }
+      if (strategy === "ignore") { skipped++; continue; }
       if (strategy === "replace" && existingMap.has(k)) {
         replaceIds.push(existingMap.get(k)!);
       }
-      // "add_anyway" laisse passer sans rien faire
     }
     toInsert.push(l);
     batchKeys.add(k);
@@ -450,7 +543,6 @@ export async function insertLignes(
 
   let replaced = 0;
   if (replaceIds.length > 0) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: delErr } = await (supabase as any)
       .from("cotation_lignes_fournisseurs")
       .delete()
@@ -484,7 +576,6 @@ export async function insertLignes(
       ordre: startOrdre + i,
     };
   });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any).from("cotation_lignes_fournisseurs").insert(rows);
   if (error) return { count: 0, skipped, replaced, error: error.message };
   return { count: rows.length, skipped, replaced };

@@ -47,7 +47,7 @@ function heureLocale(heure: string): number {
 
 export function analyserConnexionVol(
   volArrivee: VolPoint,
-  volDepart: VolPoint,
+  volDepart: VolPoint
 ): ResultatConnexion {
   const minutesArrivee = toMinutes(volArrivee.dateArrivee, volArrivee.heureArrivee);
   const minutesDepart = toMinutes(volDepart.dateDepart, volDepart.heureDepart);
@@ -124,3 +124,25 @@ export function genererJoursDedies(resultats: ResultatConnexion[]) {
       nonInclus: r.nonInclus,
     }));
 }
+
+// ─────────────────────────────────────────────
+// TESTS INTÉGRÉS — vérifiables en console
+// ─────────────────────────────────────────────
+// Cas réel LAUNAY :
+//
+// Istanbul : arrivée 30/08 23:15 → départ 31/08 01:45 = 2.5h → ESCALE ✅
+// Jakarta  : arrivée 31/08 17:35 → départ 01/09 07:50 = 14.3h, après 17h, lendemain → NUIT_ENTIERE ✅
+//
+// function testerLogique() {
+//   const istanbul = analyserConnexionVol(
+//     { ville: "Istanbul", codeIATA: "IST", dateArrivee: "2026-08-30", heureArrivee: "23:15", dateDepart: "2026-08-30", heureDepart: "23:15" },
+//     { ville: "Jakarta",  codeIATA: "CGK", dateArrivee: "2026-08-31", heureArrivee: "17:35", dateDepart: "2026-08-31", heureDepart: "01:45" }
+//   );
+//   console.assert(istanbul.type === "ESCALE", "Istanbul doit être ESCALE");
+//
+//   const jakarta = analyserConnexionVol(
+//     { ville: "Jakarta",    codeIATA: "CGK", dateArrivee: "2026-08-31", heureArrivee: "17:35", dateDepart: "2026-08-31", heureDepart: "17:35" },
+//     { ville: "Yogyakarta", codeIATA: "YIA", dateArrivee: "2026-09-01", heureArrivee: "09:10", dateDepart: "2026-09-01", heureDepart: "07:50" }
+//   );
+//   console.assert(jakarta.type === "NUIT_ENTIERE", "Jakarta doit être NUIT_ENTIERE");
+// }
