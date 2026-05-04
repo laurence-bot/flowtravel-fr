@@ -589,7 +589,7 @@ function CotationDetailPage() {
 
   return (
     <div className="space-y-6">
-      <EditLockBanner resource="cotation" resourceId={id} />
+      <EditLockBanner lock={editLock} />
       <div>
         <Button asChild variant="ghost" size="sm" className="-ml-2 mb-2">
           <Link to="/cotations">
