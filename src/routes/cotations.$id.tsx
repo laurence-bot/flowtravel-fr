@@ -494,19 +494,71 @@ function CotationDetailPage() {
     refetchCot();
   };
 
-  const nouvelleVersion = async () => {
+  const openDuplicateDialog = () => {
+    setDupForm({
+      versionLabel: "",
+      newDateDepart: cot.date_depart ?? "",
+      newDateRetour: cot.date_retour ?? "",
+    });
+    setDuplicateOpen(true);
+  };
+
+  const confirmDuplicate = async () => {
     if (!user) return;
-    const res = await duplicateCotation(user.id, cot, lignes);
+    setDuplicating(true);
+    const res = await duplicateCotation(user.id, cot, lignes, {
+      versionLabel: dupForm.versionLabel || null,
+      newDateDepart: dupForm.newDateDepart || null,
+      newDateRetour: dupForm.newDateRetour || null,
+    });
+    setDuplicating(false);
     if (!res) return toast.error("Duplication impossible.");
     await logAudit({
       userId: user.id,
       entity: "cotation",
       entityId: res.id,
       action: "create",
-      description: `Nouvelle version v${res.version_number} de ${cot.titre}`,
+      description: `Nouvelle version v${res.version_number}${dupForm.versionLabel ? ` (${dupForm.versionLabel})` : ""} de ${cot.titre}`,
     });
     toast.success(`Version v${res.version_number} créée.`);
+    setDuplicateOpen(false);
     navigate({ to: "/cotations/$id", params: { id: res.id } });
+  };
+
+  const confirmDelete = async () => {
+    if (!user) return;
+    setDeleting(true);
+    const res = await deleteCotation(cot.id, { hasDossier: !!cot.dossier_id });
+    setDeleting(false);
+    if (!res.ok) return toast.error(res.error);
+    await logAudit({
+      userId: user.id,
+      entity: "cotation",
+      entityId: cot.id,
+      action: "delete",
+      description: `Cotation supprimée : ${cot.titre}`,
+    });
+    toast.success("Cotation supprimée.");
+    setDeleteOpen(false);
+    navigate({ to: "/cotations" });
+  };
+
+  const openProgrammePdf = async () => {
+    if (!cot.programme_pdf_url) return;
+    setPdfLoading(true);
+    try {
+      const { data, error } = await supabase.storage
+        .from("pdf-imports")
+        .createSignedUrl(cot.programme_pdf_url, 300);
+      if (error || !data?.signedUrl) {
+        toast.error("Impossible d'ouvrir le document.");
+        return;
+      }
+      setPdfSignedUrl(data.signedUrl);
+      window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   const transformer = async () => {
