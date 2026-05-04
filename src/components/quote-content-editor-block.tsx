@@ -1038,6 +1038,15 @@ function JourEditor({
                 )}
               </div>
             </div>
+
+            {/* HOTEL */}
+            <HotelBlock
+              jour={jour}
+              canWrite={canWrite}
+              userId={userId}
+              cotationId={cotationId}
+              onUpdate={onUpdate}
+            />
           </div>
         </div>
       )}
