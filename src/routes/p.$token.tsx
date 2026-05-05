@@ -625,10 +625,10 @@ function PublicQuotePage() {
                         À prévoir
                       </h3>
                       <ul className="space-y-2">
-                        {cotation.non_inclus_text
+                        {(cotation.non_inclus_text as string)
                           .split("\n")
-                          .filter((l) => l.trim())
-                          .map((line, i) => (
+                          .filter((l: string) => l.trim())
+                          .map((line: string, i: number) => (
                             <li key={i} className="flex items-start gap-2 text-sm text-stone-500">
                               <span className="mt-0.5 shrink-0 text-stone-400 text-base leading-none">○</span>
                               <span>{line.replace(/^[•\-–]\s*/, "")}</span>
