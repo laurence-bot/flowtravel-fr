@@ -40,6 +40,7 @@ import {
 import {
   buildJourSyncPlan,
   duplicateLineKey,
+  normKey,
   type SyncJour,
 } from "@/lib/cotation-sync";
 import { extractProgramFromFile, insertJours, insertLignes, purgeEtReinserer } from "@/lib/program-import";
