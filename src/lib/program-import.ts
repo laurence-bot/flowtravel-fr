@@ -18,6 +18,7 @@ export type ExtractedJour = {
   lieu?: string;
   date_jour?: string;
   description?: string;
+  hotel_nom?: string;
 };
 
 export type ExtractedLigne = {
