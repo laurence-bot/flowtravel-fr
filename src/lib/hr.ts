@@ -480,3 +480,116 @@ export function alertesFinDeMois(compteurs: CompteurHeures[], employees: Employe
     }))
     .filter(x => x.employee);
 }
+
+// =========== Documents RH ===========
+
+export type DocCategorie =
+  | "contrat" | "avenant" | "deplacement" | "formation"
+  | "evaluation" | "disciplinaire" | "medical" | "administratif" | "autre";
+
+export const DOC_CATEGORIE_LABELS: Record<DocCategorie, string> = {
+  contrat:        "Contrat de travail",
+  avenant:        "Avenant",
+  deplacement:    "Note de déplacement",
+  formation:      "Formation",
+  evaluation:     "Évaluation",
+  disciplinaire:  "Document disciplinaire",
+  medical:        "Document médical",
+  administratif:  "Administratif",
+  autre:          "Autre",
+};
+
+export const DOC_CATEGORIE_ICONS: Record<DocCategorie, string> = {
+  contrat:       "📄",
+  avenant:       "📝",
+  deplacement:   "✈️",
+  formation:     "🎓",
+  evaluation:    "⭐",
+  disciplinaire: "⚠️",
+  medical:       "🏥",
+  administratif: "📋",
+  autre:         "📁",
+};
+
+export type HrDocument = {
+  id: string;
+  employee_id: string;
+  agence_id: string | null;
+  categorie: DocCategorie;
+  titre: string;
+  description: string | null;
+  pdf_url: string | null;
+  date_document: string | null;
+  necessite_signature: boolean;
+  statut: "brouillon" | "a_signer" | "signe" | "archive";
+  token: string;
+  signed_at: string | null;
+  signataire_nom: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function listHrDocuments(employeeId?: string, categorie?: DocCategorie): Promise<HrDocument[]> {
+  let q = supabase
+    .from("hr_documents" as any)
+    .select("*")
+    .order("date_document", { ascending: false });
+  if (employeeId) q = q.eq("employee_id", employeeId);
+  if (categorie)  q = q.eq("categorie", categorie);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as unknown as HrDocument[];
+}
+
+export async function createHrDocument(input: {
+  employee_id: string;
+  categorie: DocCategorie;
+  titre: string;
+  description?: string;
+  date_document?: string;
+  necessite_signature?: boolean;
+}): Promise<HrDocument> {
+  const agence_id = await getMyAgenceId();
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from("hr_documents" as any)
+    .insert({
+      employee_id:        input.employee_id,
+      agence_id,
+      categorie:          input.categorie,
+      titre:              input.titre,
+      description:        input.description ?? null,
+      date_document:      input.date_document ?? null,
+      necessite_signature: input.necessite_signature ?? false,
+      statut:             "brouillon",
+      created_by:         user?.id ?? null,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as unknown as HrDocument;
+}
+
+export async function updateHrDocument(id: string, patch: Partial<HrDocument>): Promise<void> {
+  const { error } = await supabase
+    .from("hr_documents" as any)
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteHrDocument(id: string): Promise<void> {
+  const { error } = await supabase.from("hr_documents" as any).delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function uploadHrDocumentPdf(file: File, docId: string): Promise<string> {
+  const path = `hr-docs/${docId}/document.pdf`;
+  const { error } = await supabase.storage
+    .from("hr-documents")
+    .upload(path, file, { upsert: true, contentType: "application/pdf" });
+  if (error) throw new Error(`Upload échoué : ${error.message}`);
+  const { data } = supabase.storage.from("hr-documents").getPublicUrl(path);
+  return data.publicUrl;
+}
