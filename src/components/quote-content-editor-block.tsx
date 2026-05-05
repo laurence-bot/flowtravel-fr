@@ -522,6 +522,28 @@ export function QuoteContentEditorBlock({
       setEnrichPhotosLoading(false);
     }
   };
+
+  const [detectInclusionsLoading, setDetectInclusionsLoading] = useState(false);
+  const detectAllInclusions = async () => {
+    setDetectInclusionsLoading(true);
+    let count = 0;
+    try {
+      for (const jour of jours) {
+        const detected = detectInclusions({
+          titre: jour.titre,
+          description: jour.description,
+          jourDate: jour.date_jour,
+        });
+        if (Object.keys(detected).length > 0) {
+          await updateJour(jour.id, { inclusions: detected });
+          count++;
+        }
+      }
+      toast.success(`Inclusions détectées sur ${count} jour(s).`);
+    } finally {
+      setDetectInclusionsLoading(false);
+    }
+  };
   const resyncProgramAndFlights = async () => {
     setResyncLoading(true);
     try {
