@@ -220,6 +220,7 @@ async function searchGoogleImages(
 async function searchUnsplashSingle(
   query: string,
   key: string,
+  excludeIds: Set<string> = new Set(),
 ): Promise<{
   id: string; url: string; full: string; thumb: string;
   alt: string; author: string; credit: string;
