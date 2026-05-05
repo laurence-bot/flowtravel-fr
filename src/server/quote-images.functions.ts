@@ -127,3 +127,98 @@ export const generateAiImage = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Erreur réseau IA." };
     }
   });
+
+/**
+ * Suggère automatiquement la meilleure photo Unsplash pour un jour d'itinéraire.
+ * Construit une query premium depuis le titre + lieu + destination.
+ * Retourne la première photo (la plus pertinente).
+ */
+export const suggestDayPhoto = createServerFn({ method: "POST" })
+  .inputValidator((d: { titre: string; lieu?: string | null; destination?: string | null }) =>
+    z.object({
+      titre: z.string().min(1).max(300),
+      lieu: z.string().max(100).nullable().optional(),
+      destination: z.string().max(100).nullable().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const key = process.env.UNSPLASH_ACCESS_KEY;
+    if (!key) {
+      return { ok: false as const, error: "Clé Unsplash non configurée." };
+    }
+
+    const lieu = data.lieu?.trim() || data.destination?.trim() || "";
+    const titreCleaned = data.titre
+      .replace(/^(jour\s*\d+\s*[—\-–]?\s*)/i, "")
+      .replace(/^(vol\s+(aller|retour|vers)\s*)/i, "")
+      .replace(/^(arrivée\s+à\s*)/i, "")
+      .replace(/^(envol\s+vers\s*)/i, "")
+      .trim();
+
+    const queryParts = [lieu, titreCleaned].filter(Boolean).join(" ").slice(0, 100);
+    const query = queryParts
+      ? `${queryParts} travel photography`
+      : `${lieu || data.destination || "travel"} landscape`;
+
+    const url = new URL("https://api.unsplash.com/search/photos");
+    url.searchParams.set("query", query);
+    url.searchParams.set("page", "1");
+    url.searchParams.set("per_page", "6");
+    url.searchParams.set("orientation", "landscape");
+    url.searchParams.set("content_filter", "high");
+    url.searchParams.set("order_by", "relevant");
+
+    try {
+      const res = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Client-ID ${key}`,
+          "Accept-Version": "v1",
+        },
+      });
+      if (!res.ok) {
+        return { ok: false as const, error: `Unsplash ${res.status}` };
+      }
+      const json = (await res.json()) as {
+        results: Array<{
+          id: string;
+          width: number;
+          height: number;
+          likes: number;
+          urls: { regular: string; small: string; full: string };
+          alt_description: string | null;
+          user: { name: string; links: { html: string } };
+          links: { html: string };
+        }>;
+      };
+      if (!json.results || json.results.length === 0) {
+        return { ok: false as const, error: "Aucune photo trouvée." };
+      }
+
+      const scored = json.results
+        .filter((r) => r.width > r.height)
+        .map((r) => ({
+          ...r,
+          score: r.likes * 1.5 + (r.alt_description ? 10 : 0),
+        }))
+        .sort((a, b) => b.score - a.score);
+
+      const best = scored[0] ?? json.results[0];
+
+      return {
+        ok: true as const,
+        photo: {
+          id: best.id,
+          url: best.urls.regular,
+          full: best.urls.full,
+          thumb: best.urls.small,
+          alt: best.alt_description ?? "",
+          author: best.user.name,
+          authorUrl: best.user.links.html,
+          credit: `Photo : ${best.user.name} / Unsplash`,
+        },
+      };
+    } catch (e) {
+      console.error("suggestDayPhoto error", e);
+      return { ok: false as const, error: "Erreur réseau Unsplash." };
+    }
+  });
