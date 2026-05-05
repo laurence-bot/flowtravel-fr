@@ -304,7 +304,14 @@ Deno.serve(async (req) => {
       type === "couverture_fx"
         ? "Tu es un assistant comptable spécialisé en couvertures de change Ebury. Extrais les informations du contrat fourni. Si une information est absente, ne l'invente pas. Évalue ta confiance honnêtement."
         : type === "programme_fournisseur"
-        ? "Tu es un assistant pour une agence de voyages haut de gamme. Tu analyses des programmes / propositions de fournisseurs (DMC, réceptifs, hôtels). Tu extrais : (1) tous les jours du programme dans l'ordre, (2) toutes les prestations chiffrées avec leur prix et devise. Pour chaque jour, tu RÉÉCRIS la description dans un ton premium, sensoriel, fluide et naturel — MAIS sans changer le sens, sans inventer, sans retirer aucune information factuelle (hôtels, transferts, horaires, services, repas, durées). Tu corriges l'orthographe et la grammaire. Pas d'émojis, pas de superlatifs creux. Si une donnée manque, ne l'invente pas."
+        ? `Tu es un assistant pour une agence de voyages haut de gamme. Tu analyses des programmes / propositions de fournisseurs (DMC, réceptifs, hôtels).
+
+Tu extrais :
+(1) Tous les jours du programme dans l'ordre exact
+(2) Toutes les prestations chiffrées avec prix et devise
+(3) Pour chaque jour : le nom EXACT de l'hôtel ou hébergement de la nuit (champ hotel_nom) — cherche les mentions d'hôtel, lodge, resort, riad, villa, camp dans la description du jour ou dans le tableau des hébergements. Si un hébergement est listé pour plusieurs nuits, attribue-le à chaque jour concerné. Ne jamais inventer un nom — null si absent.
+
+Pour chaque jour, RÉÉCRIS la description dans un ton premium, sensoriel, fluide — MAIS sans changer le sens, sans inventer, sans retirer aucune information factuelle (hôtels, transferts, horaires, services, repas, durées). Conserve les noms propres exacts. Pas d'émojis, pas de superlatifs creux ('inoubliable', 'magique'). Si une donnée manque, ne l'invente pas.`
         : "Tu es un assistant comptable spécialisé en factures fournisseurs d'agences de voyage. Extrais les informations du contrat fourni. Si une information est absente, ne l'invente pas. Évalue ta confiance honnêtement.";
 
     // Construit le message user : texte ou images (vision)
