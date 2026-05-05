@@ -496,11 +496,15 @@ export function QuoteContentEditorBlock({
   };
 
   const enrichHotels = async () => {
-    const joursAvecHotel = jours.filter(
-      (j) => j.hotel_nom && j.hotel_nom.trim().length > 0 && !j.hotel_url,
-    );
+    const joursAvecHotel = jours.filter((j) => {
+      if (j.hotel_url) return false;
+      if (j.hotel_nom?.trim()) return true;
+      const desc = (j.description ?? "") + " " + (j.titre ?? "");
+      return /\b(hotel|hôtel|lodge|resort|riad|villa|THE\s+\w+\s+HOTEL|HOTEL\s+\w+)\b/i.test(desc);
+    });
+
     if (joursAvecHotel.length === 0) {
-      toast.info("Aucun hôtel à enrichir (déjà renseigné ou aucun hôtel détecté).");
+      toast.info("Aucun hôtel à enrichir. Saisissez le nom de l'hôtel dans chaque jour pour déclencher l'enrichissement.");
       return;
     }
     setEnrichLoading(true);
@@ -509,8 +513,18 @@ export function QuoteContentEditorBlock({
     try {
       for (const jour of joursAvecHotel) {
         try {
+          let hotelNom = jour.hotel_nom?.trim();
+          if (!hotelNom) {
+            const desc = (jour.description ?? "") + " " + (jour.titre ?? "");
+            const match = desc.match(
+              /\b(THE\s+[\w\s]+HOTEL|[\w\s]+HOTEL|HOTEL\s+[\w\s]+|[\w\s]+ Lodge|[\w\s]+ Resort|[\w\s]+ Riad)\b/i,
+            );
+            hotelNom = match?.[1]?.trim();
+          }
+          if (!hotelNom) { failed++; continue; }
+
           const { data, error } = await supabase.functions.invoke("enrich-hotel", {
-            body: { hotel_nom: jour.hotel_nom, lieu: jour.lieu ?? destination ?? null },
+            body: { hotel_nom: hotelNom, lieu: jour.lieu ?? destination ?? null },
           });
           if (error || !data) { failed++; continue; }
 
@@ -528,9 +542,9 @@ export function QuoteContentEditorBlock({
           failed++;
         }
       }
-      if (enriched > 0) toast.success(`${enriched} hôtel(s) enrichi(s) avec succès.`);
-      if (failed > 0) toast.warning(`${failed} hôtel(s) non trouvé(s) — vérifiez manuellement.`);
-      if (enriched === 0 && failed === 0) toast.info("Aucune information nouvelle trouvée.");
+      if (enriched > 0) toast.success(`${enriched} hôtel(s) enrichi(s).`);
+      if (failed > 0) toast.warning(`${failed} hôtel(s) non trouvé(s) — saisissez le nom manuellement dans le champ hôtel du jour.`);
+      if (enriched === 0 && failed === 0) toast.info("Aucun hôtel détecté. Saisissez les noms manuellement.");
     } finally {
       setEnrichLoading(false);
     }
@@ -548,6 +562,9 @@ export function QuoteContentEditorBlock({
     setEnrichPhotosLoading(true);
     let done = 0;
     let failed = 0;
+
+    const sessionUsedUrls = new Set<string>([...usedPhotoUrls]);
+
     try {
       for (const jour of joursWithout) {
         try {
@@ -555,36 +572,43 @@ export function QuoteContentEditorBlock({
             data: {
               titre: jour.titre,
               lieu: jour.lieu ?? null,
+              description: jour.description ?? null,
               destination: destination ?? null,
+              excludeIds: [...sessionUsedUrls],
             },
           });
-          if (!r.ok) {
+          if (!r.ok) { failed++; continue; }
+
+          if (sessionUsedUrls.has(r.photo.url) || sessionUsedUrls.has(r.photo.full)) {
+            console.log(`[enrichPhotos] doublon ignoré pour ${jour.titre}`);
             failed++;
             continue;
           }
+
           const res = await fetch(r.photo.full);
           const blob = await res.blob();
           const path = `${userId}/${cotationId}/jour-${jour.id}-${Date.now()}.jpg`;
           const { error: upErr } = await supabase.storage
             .from("quote-images")
             .upload(path, blob, { cacheControl: "3600", upsert: false, contentType: "image/jpeg" });
-          if (upErr) {
-            failed++;
-            continue;
-          }
+          if (upErr) { failed++; continue; }
+
           const { data: pubData } = supabase.storage.from("quote-images").getPublicUrl(path);
+
+          sessionUsedUrls.add(pubData.publicUrl);
+          sessionUsedUrls.add(r.photo.url);
+          sessionUsedUrls.add(r.photo.full);
+
           await updateJour(jour.id, {
             image_url: pubData.publicUrl,
             image_credit: r.photo.credit,
           });
           done++;
-          await new Promise((res2) => setTimeout(res2, 600));
-        } catch {
-          failed++;
-        }
+          await new Promise((res2) => setTimeout(res2, 800));
+        } catch { failed++; }
       }
       if (done > 0) toast.success(`${done} photo(s) ajoutée(s) automatiquement.`);
-      if (failed > 0) toast.warning(`${failed} jour(s) sans photo trouvée.`);
+      if (failed > 0) toast.warning(`${failed} jour(s) sans photo unique trouvée.`);
     } finally {
       setEnrichPhotosLoading(false);
     }
@@ -961,7 +985,7 @@ export function QuoteContentEditorBlock({
                 size="sm"
                 variant="outline"
                 onClick={() => void enrichHotels()}
-                disabled={enrichLoading || jours.every((j) => !j.hotel_nom || !!j.hotel_url)}
+                disabled={enrichLoading}
                 title="Recherche automatiquement le site officiel et une photo pour chaque hôtel détecté dans le programme"
               >
                 {enrichLoading ? (
