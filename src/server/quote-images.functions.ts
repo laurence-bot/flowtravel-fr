@@ -174,10 +174,10 @@ function buildUnsplashQueries(lieux: string[], destination: string | null): stri
 
 async function searchGoogleImages(
   query: string,
-): Promise<{ url: string; credit: string } | null> {
+): Promise<Array<{ url: string; credit: string; displayLink: string }>> {
   const apiKey = process.env.GOOGLE_CUSTOM_SEARCH_KEY;
   const cx = process.env.GOOGLE_CUSTOM_SEARCH_CX;
-  if (!apiKey || !cx) return null;
+  if (!apiKey || !cx) return [];
 
   try {
     const url = new URL("https://www.googleapis.com/customsearch/v1");
@@ -193,7 +193,7 @@ async function searchGoogleImages(
     url.searchParams.set("rights", "cc_publicdomain|cc_attribute|cc_sharealike");
 
     const res = await fetch(url.toString());
-    if (!res.ok) return null;
+    if (!res.ok) return [];
 
     const json = (await res.json()) as {
       items?: Array<{
@@ -203,17 +203,15 @@ async function searchGoogleImages(
       }>;
     };
 
-    const best = json.items?.find(
-      (item) => !item.image || (item.image.width > item.image.height),
-    );
-
-    if (!best?.link) return null;
-    return {
-      url: best.link,
-      credit: `Photo : ${best.displayLink}`,
-    };
+    return (json.items ?? [])
+      .filter((item) => !item.image || item.image.width > item.image.height)
+      .map((item) => ({
+        url: item.link,
+        credit: `Photo : ${item.displayLink}`,
+        displayLink: item.displayLink,
+      }));
   } catch {
-    return null;
+    return [];
   }
 }
 
@@ -453,26 +451,72 @@ export const suggestDayPhoto = createServerFn({ method: "POST" })
 
     console.log("[suggestDayPhoto] Unsplash sans résultat, tentative Google...");
     const fallbackQuery = lieux[0] ?? data.destination ?? data.titre;
-    const googlePhoto = await searchGoogleImages(fallbackQuery);
+    const googleCandidates = await searchGoogleImages(fallbackQuery);
 
-    if (googlePhoto) {
-      return {
-        ok: true as const,
-        photo: {
-          id: `google-${Date.now()}`,
-          url: googlePhoto.url,
-          full: googlePhoto.url,
-          thumb: googlePhoto.url,
-          alt: fallbackQuery,
-          author: googlePhoto.credit,
-          credit: googlePhoto.credit,
-        },
-        source: "google" as const,
-      };
+    if (googleCandidates.length > 0) {
+      let bestGooglePhoto: {
+        url: string; credit: string; displayLink: string; score: number; reason: string;
+      } | null = null;
+      let bestGoogleScore = 0;
+
+      for (const candidate of googleCandidates.slice(0, 3)) {
+        try {
+          const headRes = await fetch(candidate.url, { method: "HEAD" });
+          if (!headRes.ok) continue;
+          const contentType = headRes.headers.get("content-type") ?? "";
+          if (!contentType.startsWith("image/")) continue;
+        } catch {
+          continue;
+        }
+
+        const verification = await verifyPhotoRelevance({
+          photoUrl: candidate.url,
+          lieu: verificationContext.lieu,
+          titre: verificationContext.titre,
+          destination: verificationContext.destination,
+        });
+
+        console.log(
+          `[verify-google] "${candidate.displayLink}" → score ${verification.score} — ${verification.reason}`,
+        );
+
+        if (verification.score > bestGoogleScore) {
+          bestGoogleScore = verification.score;
+          bestGooglePhoto = {
+            ...candidate,
+            score: verification.score,
+            reason: verification.reason,
+          };
+        }
+
+        if (verification.score >= 9) break;
+      }
+
+      if (bestGooglePhoto && bestGoogleScore >= 5) {
+        console.log(
+          `[suggestDayPhoto] Google accepté (score ${bestGoogleScore}): ${bestGooglePhoto.displayLink}`,
+        );
+        return {
+          ok: true as const,
+          photo: {
+            id: `google-${Date.now()}`,
+            url: bestGooglePhoto.url,
+            full: bestGooglePhoto.url,
+            thumb: bestGooglePhoto.url,
+            alt: fallbackQuery,
+            author: bestGooglePhoto.credit,
+            credit: bestGooglePhoto.credit,
+            relevanceScore: bestGoogleScore,
+          },
+          source: "google" as const,
+        };
+      }
+
+      console.log(`[suggestDayPhoto] Google : aucune photo pertinente (meilleur score: ${bestGoogleScore})`);
     }
 
     return {
       ok: false as const,
-      error: `Aucune photo trouvée pour "${lieux[0] ?? data.titre}". Essayez l'onglet Unsplash pour une recherche manuelle.`,
+      error: `Aucune photo pertinente trouvée pour "${lieux[0] ?? data.titre}". Essayez l'onglet Unsplash pour une recherche manuelle.`,
     };
   });
