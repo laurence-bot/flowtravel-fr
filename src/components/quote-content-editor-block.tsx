@@ -31,6 +31,7 @@ import {
   X,
   Plane,
   RefreshCw,
+  Search,
 } from "lucide-react";
 import {
   buildItineraryFromFlights,
@@ -1257,6 +1258,26 @@ function JourEditor({
                       title="Affiner avec des détails"
                     >
                       <Wand2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-xs"
+                      onClick={runSuggestPhoto}
+                      disabled={suggestingPhoto || !!jour.image_url}
+                      title={
+                        jour.image_url
+                          ? "Une photo existe déjà — supprimez-la d'abord pour en suggérer une autre"
+                          : "Cherche automatiquement la meilleure photo Unsplash pour ce jour"
+                      }
+                    >
+                      {suggestingPhoto ? (
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      ) : (
+                        <Search className="h-3 w-3 mr-1 text-[color:var(--gold)]" />
+                      )}
+                      {suggestingPhoto ? "Recherche…" : "Suggérer photo"}
                     </Button>
                   </div>
                 )}
