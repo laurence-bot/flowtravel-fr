@@ -226,14 +226,22 @@ export function buildJourSyncPlan(params: {
 
     used.add(selected.id);
     selectedByTarget.push(selected);
-    const keepExistingTitle = !!selected.titre?.trim() && !isPlaceholderTitle(selected.titre);
+    const keepExistingTitle =
+      !!selected.titre?.trim() &&
+      (!isPlaceholderTitle(selected.titre) ||
+        selected.titre.toLowerCase().includes("vol domestique"));
     // Jour d'arrivée = isFlightDay mais on garde le contenu PDF si présent
     const isArrivalDay = target.isFlightDay && /arriv/i.test(target.titre ?? "");
-    const titre = target.isFlightDay && !isArrivalDay
+    const targetMentionsVolDom =
+      !!target.titre &&
+      (/vol\s+domestique/i.test(target.titre) || /vol\s+int[eé]rieur/i.test(target.titre));
+    const titre = targetMentionsVolDom
       ? target.titre
-      : keepExistingTitle
-        ? selected.titre ?? target.titre ?? `Jour ${ordre}`
-        : target.titre || `Jour ${ordre}`;
+      : target.isFlightDay && !isArrivalDay
+        ? target.titre
+        : keepExistingTitle
+          ? selected.titre ?? target.titre ?? `Jour ${ordre}`
+          : target.titre || `Jour ${ordre}`;
     const description = target.isFlightDay && !isArrivalDay
       ? joinUnique([target.description, selected.description])
       : joinUnique([selected.description, target.description]);

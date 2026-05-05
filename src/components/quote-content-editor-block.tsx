@@ -1286,7 +1286,26 @@ function JourEditor({
 
   // Détection auto au montage si aucune inclusion existante
   useEffect(() => {
-    if (jour.inclusions && Object.keys(jour.inclusions).length > 0) return;
+    if (jour.inclusions && Object.keys(jour.inclusions).length > 0) {
+      // Si vol domestique détecté et titre ne le mentionne pas → enrichit le titre
+      if (
+        jour.inclusions.vol_domestique === true &&
+        !jour.titre.toLowerCase().includes("vol") &&
+        canWrite
+      ) {
+        const titreParts = jour.titre.split(/\s*[-–—]\s*/);
+        if (titreParts.length >= 2) {
+          const newTitre = titreParts
+            .map((part, idx) => (idx === 1 ? `${part} (vol domestique)` : part))
+            .join(" - ");
+          if (newTitre !== jour.titre) {
+            setTitre(newTitre);
+            onUpdate({ titre: newTitre });
+          }
+        }
+      }
+      return;
+    }
     const detected = detectInclusions({
       titre: jour.titre,
       description: jour.description,
