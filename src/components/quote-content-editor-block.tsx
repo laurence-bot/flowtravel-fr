@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { ImagePicker } from "@/components/image-picker";
 import { generateDayText } from "@/server/quote-day-text.functions";
+import { suggestDayPhoto } from "@/server/quote-images.functions";
 import { generateQuoteIntro } from "@/server/quote-intro.functions";
 import type { CotationJour } from "@/lib/quote-public";
 import {
