@@ -217,13 +217,100 @@ async function searchGoogleImages(
   }
 }
 
+/**
+ * Vérifie via Gemini vision que la photo correspond bien au lieu/contexte demandé.
+ */
+async function verifyPhotoRelevance(params: {
+  photoUrl: string;
+  lieu: string;
+  titre: string;
+  destination: string | null;
+}): Promise<{ relevant: boolean; score: number; reason: string }> {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) return { relevant: true, score: 5, reason: "Vérification non disponible" };
+
+  const { photoUrl, lieu, titre, destination } = params;
+
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content: `Tu es un expert en photographie de voyage. Tu évalues si une photo correspond bien à un lieu ou contexte de voyage donné.
+Réponds UNIQUEMENT en JSON valide sans markdown :
+{
+  "score": <0-10>,
+  "relevant": <true|false>,
+  "reason": "<explication courte en français>"
+}
+Score 8-10 = photo parfaitement pertinente (le bon lieu, bonne ambiance, haute qualité)
+Score 5-7 = acceptable mais imprécise (région correcte mais pas exactement le lieu)
+Score 0-4 = non pertinente (mauvais lieu, mauvaise ambiance, photo générique)
+relevant = true si score >= 6`,
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Évalue si cette photo correspond à : "${titre}"${lieu ? ` (lieu: ${lieu})` : ""}${destination ? ` — destination: ${destination}` : ""}.
+Est-ce que la photo montre bien ce lieu ou cette ambiance de voyage ?`,
+              },
+              {
+                type: "image_url",
+                image_url: { url: photoUrl },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+
+    if (!res.ok) return { relevant: true, score: 5, reason: "Erreur vérification" };
+
+    const json = await res.json() as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const content = json.choices?.[0]?.message?.content ?? "";
+
+    const clean = content.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
+    const match = clean.match(/\{[\s\S]*\}/);
+    if (!match) return { relevant: true, score: 5, reason: "Parse error" };
+
+    const result = JSON.parse(match[0]) as {
+      score?: number;
+      relevant?: boolean;
+      reason?: string;
+    };
+
+    const score = Number(result.score ?? 5);
+    return {
+      score,
+      relevant: result.relevant !== false && score >= 6,
+      reason: result.reason ?? "",
+    };
+  } catch (e) {
+    console.error("[verifyPhotoRelevance] error:", e);
+    return { relevant: true, score: 5, reason: "Erreur de vérification" };
+  }
+}
+
 async function searchUnsplashSingle(
   query: string,
   key: string,
   excludeIds: Set<string> = new Set(),
+  verificationContext?: { titre: string; lieu: string; destination: string | null },
 ): Promise<{
   id: string; url: string; full: string; thumb: string;
   alt: string; author: string; credit: string;
+  relevanceScore?: number;
 } | null> {
   const url = new URL("https://api.unsplash.com/search/photos");
   url.searchParams.set("query", query);
@@ -250,27 +337,66 @@ async function searchUnsplashSingle(
 
     if (!json.results?.length) return null;
 
-    const scored = json.results
+    const candidates = json.results
       .filter((r) => r.width > r.height)
       .filter((r) => !excludeIds.has(r.id))
-      .map((r) => ({
-        ...r,
-        score: r.likes * 1.5 + (r.alt_description ? 10 : 0),
-      }))
-      .sort((a, b) => b.score - a.score);
+      .sort((a, b) => b.likes - a.likes)
+      .slice(0, 3);
 
-    const best = scored[0] ?? json.results[0];
-    if (!best) return null;
+    if (candidates.length === 0) return null;
 
-    return {
-      id: best.id,
-      url: best.urls.regular,
-      full: best.urls.full,
-      thumb: best.urls.small,
-      alt: best.alt_description ?? "",
-      author: best.user.name,
-      credit: `Photo : ${best.user.name} / Unsplash`,
-    };
+    if (!verificationContext) {
+      const best = candidates[0];
+      return {
+        id: best.id,
+        url: best.urls.regular,
+        full: best.urls.full,
+        thumb: best.urls.small,
+        alt: best.alt_description ?? "",
+        author: best.user.name,
+        credit: `Photo : ${best.user.name} / Unsplash`,
+      };
+    }
+
+    let bestPhoto: {
+      id: string; url: string; full: string; thumb: string;
+      alt: string; author: string; credit: string; relevanceScore: number;
+    } | null = null;
+    let bestScore = 0;
+
+    for (const candidate of candidates) {
+      const verification = await verifyPhotoRelevance({
+        photoUrl: candidate.urls.regular,
+        lieu: verificationContext.lieu,
+        titre: verificationContext.titre,
+        destination: verificationContext.destination,
+      });
+
+      console.log(
+        `[verify] "${candidate.alt_description}" → score ${verification.score} — ${verification.reason}`,
+      );
+
+      if (verification.score > bestScore) {
+        bestScore = verification.score;
+        bestPhoto = {
+          id: candidate.id,
+          url: candidate.urls.regular,
+          full: candidate.urls.full,
+          thumb: candidate.urls.small,
+          alt: candidate.alt_description ?? "",
+          author: candidate.user.name,
+          credit: `Photo : ${candidate.user.name} / Unsplash`,
+          relevanceScore: verification.score,
+        };
+      }
+
+      if (verification.score >= 9) break;
+    }
+
+    if (bestPhoto && bestScore >= 6) return bestPhoto;
+
+    console.log(`[verify] Aucune photo pertinente pour query "${query}" (meilleur score: ${bestScore})`);
+    return null;
   } catch {
     return null;
   }
@@ -309,11 +435,17 @@ export const suggestDayPhoto = createServerFn({ method: "POST" })
 
     console.log("[suggestDayPhoto] queries Unsplash:", queries);
 
+    const verificationContext = {
+      titre: data.titre,
+      lieu: lieux[0] ?? data.lieu ?? "",
+      destination: data.destination ?? null,
+    };
+
     if (unsplashKey) {
       for (const query of queries) {
-        const photo = await searchUnsplashSingle(query, unsplashKey, excludeIds);
+        const photo = await searchUnsplashSingle(query, unsplashKey, excludeIds, verificationContext);
         if (photo) {
-          console.log(`[suggestDayPhoto] Unsplash trouvé avec query: "${query}"`);
+          console.log(`[suggestDayPhoto] photo acceptée (score ${photo.relevanceScore}) avec query: "${query}"`);
           return { ok: true as const, photo, source: "unsplash" as const };
         }
       }
