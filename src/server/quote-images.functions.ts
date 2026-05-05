@@ -6,10 +6,11 @@ import { z } from "zod";
  * Nécessite la variable d'env UNSPLASH_ACCESS_KEY.
  */
 export const searchUnsplash = createServerFn({ method: "POST" })
-  .inputValidator((d: { query: string; page?: number }) =>
+  .inputValidator((d: { query: string; page?: number; color?: string }) =>
     z.object({
       query: z.string().min(1).max(200),
       page: z.number().int().min(1).max(20).optional(),
+      color: z.string().max(40).optional(),
     }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -23,6 +24,8 @@ export const searchUnsplash = createServerFn({ method: "POST" })
     url.searchParams.set("per_page", "12");
     url.searchParams.set("orientation", "landscape");
     url.searchParams.set("content_filter", "high");
+    url.searchParams.set("order_by", "relevant");
+    url.searchParams.set("color", data.color ?? "");
 
     try {
       const res = await fetch(url.toString(), {
