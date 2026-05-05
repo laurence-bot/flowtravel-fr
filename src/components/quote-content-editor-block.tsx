@@ -1295,6 +1295,13 @@ function JourEditor({
         )}
       </div>
 
+      {/* PASTILLES INCLUSIONS (visibles tout le temps) */}
+      {Object.keys(inclusions).length > 0 && (
+        <div className="px-3 pb-3 -mt-1">
+          <InclusionPills inclusions={inclusions} variant="compact" />
+        </div>
+      )}
+
       {/* CONTENT */}
       {open && (
         <div className="p-4 pt-0 grid md:grid-cols-[220px_1fr] gap-4 border-t">
