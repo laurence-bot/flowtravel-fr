@@ -921,6 +921,20 @@ export function QuoteContentEditorBlock({
               <Button
                 size="sm"
                 variant="outline"
+                onClick={() => void detectAllInclusions()}
+                disabled={detectInclusionsLoading || jours.length === 0}
+                title="Détecte automatiquement les inclusions depuis le texte de chaque jour"
+              >
+                {detectInclusionsLoading ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <ListChecks className="h-4 w-4 mr-1" />
+                )}
+                Détecter inclusions
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={handleRegenClick}
                 disabled={regenLoading || !hasFlights}
                 title={
