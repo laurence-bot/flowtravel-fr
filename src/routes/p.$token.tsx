@@ -610,7 +610,7 @@ function PublicQuotePage() {
                         {(cotation.inclus_text as string)
                           .split("\n")
                           .filter((l: string) => l.trim())
-                          .map((line, i) => (
+                          .map((line: string, i: number) => (
                             <li key={i} className="flex items-start gap-2 text-sm text-stone-700">
                               <span className="brand-signature mt-0.5 shrink-0 text-base leading-none">✓</span>
                               <span>{line.replace(/^[•\-–]\s*/, "")}</span>
