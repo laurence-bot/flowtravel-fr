@@ -164,7 +164,7 @@ function CouverturesFXPage() {
                 <TableHead className="text-right">Disponible</TableHead>
                 <TableHead>Échéance</TableHead>
                 <TableHead>Statut</TableHead>
-              </TableRow>
+                <TableHead className="text-right">Actions</TableHead>
             </TableHeader>
             <TableBody>
               {coverages.map((c) => {
