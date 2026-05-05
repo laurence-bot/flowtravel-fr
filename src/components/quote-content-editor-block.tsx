@@ -554,16 +554,32 @@ export function QuoteContentEditorBlock({
   const suggestPhotoFn = useServerFn(suggestDayPhoto);
 
   const enrichPhotos = async () => {
-    const joursWithout = jours.filter((j) => !j.image_url);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: freshJours } = await (supabase as any)
+      .from("cotation_jours")
+      .select("id, titre, lieu, description, image_url")
+      .eq("cotation_id", cotationId)
+      .order("ordre", { ascending: true });
+
+    const joursWithout = ((freshJours ?? []) as Array<{
+      id: string; titre: string; lieu: string | null;
+      description: string | null; image_url: string | null;
+    }>).filter((j) => !j.image_url);
+
     if (joursWithout.length === 0) {
       toast.info("Tous les jours ont déjà une photo.");
       return;
     }
+
     setEnrichPhotosLoading(true);
     let done = 0;
     let failed = 0;
 
-    const sessionUsedUrls = new Set<string>([...usedPhotoUrls]);
+    const sessionUsedUrls = new Set<string>(
+      ((freshJours ?? []) as Array<{ image_url: string | null }>)
+        .map((j) => j.image_url)
+        .filter(Boolean) as string[]
+    );
 
     try {
       for (const jour of joursWithout) {
@@ -580,7 +596,6 @@ export function QuoteContentEditorBlock({
           if (!r.ok) { failed++; continue; }
 
           if (sessionUsedUrls.has(r.photo.url) || sessionUsedUrls.has(r.photo.full)) {
-            console.log(`[enrichPhotos] doublon ignoré pour ${jour.titre}`);
             failed++;
             continue;
           }
@@ -607,10 +622,11 @@ export function QuoteContentEditorBlock({
           await new Promise((res2) => setTimeout(res2, 800));
         } catch { failed++; }
       }
-      if (done > 0) toast.success(`${done} photo(s) ajoutée(s) automatiquement.`);
-      if (failed > 0) toast.warning(`${failed} jour(s) sans photo unique trouvée.`);
+      if (done > 0) toast.success(`${done} photo(s) ajoutée(s).`);
+      if (failed > 0) toast.warning(`${failed} jour(s) sans photo unique — essayez l'onglet Unsplash manuellement.`);
     } finally {
       setEnrichPhotosLoading(false);
+      await loadJours();
     }
   };
 
