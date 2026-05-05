@@ -174,10 +174,10 @@ function buildUnsplashQueries(lieux: string[], destination: string | null): stri
 
 async function searchGoogleImages(
   query: string,
-): Promise<{ url: string; credit: string } | null> {
+): Promise<Array<{ url: string; credit: string; displayLink: string }>> {
   const apiKey = process.env.GOOGLE_CUSTOM_SEARCH_KEY;
   const cx = process.env.GOOGLE_CUSTOM_SEARCH_CX;
-  if (!apiKey || !cx) return null;
+  if (!apiKey || !cx) return [];
 
   try {
     const url = new URL("https://www.googleapis.com/customsearch/v1");
@@ -193,7 +193,7 @@ async function searchGoogleImages(
     url.searchParams.set("rights", "cc_publicdomain|cc_attribute|cc_sharealike");
 
     const res = await fetch(url.toString());
-    if (!res.ok) return null;
+    if (!res.ok) return [];
 
     const json = (await res.json()) as {
       items?: Array<{
@@ -203,17 +203,15 @@ async function searchGoogleImages(
       }>;
     };
 
-    const best = json.items?.find(
-      (item) => !item.image || (item.image.width > item.image.height),
-    );
-
-    if (!best?.link) return null;
-    return {
-      url: best.link,
-      credit: `Photo : ${best.displayLink}`,
-    };
+    return (json.items ?? [])
+      .filter((item) => !item.image || item.image.width > item.image.height)
+      .map((item) => ({
+        url: item.link,
+        credit: `Photo : ${item.displayLink}`,
+        displayLink: item.displayLink,
+      }));
   } catch {
-    return null;
+    return [];
   }
 }
 
