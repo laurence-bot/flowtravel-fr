@@ -126,6 +126,7 @@ export function QuoteContentEditorBlock({
   const [regenLoading, setRegenLoading] = useState(false);
   const [resyncLoading, setResyncLoading] = useState(false);
   const [cleanLoading, setCleanLoading] = useState(false);
+  const [enrichLoading, setEnrichLoading] = useState(false);
   const [hasFlights, setHasFlights] = useState(false);
   const [genIntroLoading, setGenIntroLoading] = useState(false);
   const callGenerateIntro = useServerFn(generateQuoteIntro);
