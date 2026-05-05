@@ -87,7 +87,33 @@ function fmtH(h: number): string {
   return `${sign}${hh}h${mm > 0 ? mm : ""}`;
 }
 
+const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+const JS_DAY_TO_IDX: Record<number, number> = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 0: 6 };
+
+type JourConfig = {
+  actif: boolean;
+  heure_debut: string;
+  heure_fin: string;
+  pause_minutes: string;
+};
+
+type WeekConfig = { [jour: number]: JourConfig };
+
+const DEFAULT_JOUR: JourConfig = {
+  actif: true,
+  heure_debut: "09:00",
+  heure_fin: "17:30",
+  pause_minutes: "30",
+};
+
+const EMPTY_WEEK: WeekConfig = Object.fromEntries(
+  [0, 1, 2, 3, 4, 5, 6].map(i => [i, { ...DEFAULT_JOUR, actif: i < 5 }])
+) as WeekConfig;
+
+type FormMode = "simple" | "semaine_type";
+
 type FormState = {
+  mode: FormMode;
   employee_id: string;
   date_debut: string;
   type: PlanningType;
@@ -96,9 +122,14 @@ type FormState = {
   pause_minutes: string;
   note: string;
   repeat: string;
+  semaine_a: WeekConfig;
+  semaine_b: WeekConfig;
+  utilise_semaine_b: boolean;
+  mois_cible: string;
 };
 
 const EMPTY_FORM: FormState = {
+  mode: "simple",
   employee_id: "",
   date_debut: new Date().toISOString().slice(0, 10),
   type: "travail",
@@ -107,7 +138,109 @@ const EMPTY_FORM: FormState = {
   pause_minutes: "30",
   note: "",
   repeat: "none",
+  semaine_a: { ...EMPTY_WEEK },
+  semaine_b: { ...EMPTY_WEEK },
+  utilise_semaine_b: false,
+  mois_cible: new Date().toISOString().slice(0, 7),
 };
+
+function generateEntriesFromWeekConfig(
+  employeeId: string,
+  month: string,
+  semaineA: WeekConfig,
+  semaineB: WeekConfig,
+  utiliseSemaineB: boolean,
+  type: PlanningType,
+): Array<{
+  employee_id: string; date_jour: string; type: PlanningType;
+  heure_debut: string | null; heure_fin: string | null; note: string | null;
+}> {
+  const days = daysInMonth(month);
+  const entries: Array<{
+    employee_id: string; date_jour: string; type: PlanningType;
+    heure_debut: string | null; heure_fin: string | null; note: string | null;
+  }> = [];
+  days.forEach(dateStr => {
+    const date = new Date(dateStr);
+    const jourIdx = JS_DAY_TO_IDX[date.getDay()];
+    const isoWeek = getISOWeek(date);
+    const isSemaineA = isoWeek % 2 === 1;
+    const config = utiliseSemaineB
+      ? (isSemaineA ? semaineA[jourIdx] : semaineB[jourIdx])
+      : semaineA[jourIdx];
+    if (!config?.actif) return;
+    entries.push({
+      employee_id: employeeId,
+      date_jour: dateStr,
+      type,
+      heure_debut: config.heure_debut || null,
+      heure_fin: config.heure_fin || null,
+      note: null,
+    });
+  });
+  return entries;
+}
+
+function WeekGrid({
+  label, config, onChange,
+}: {
+  label: string;
+  config: WeekConfig;
+  onChange: (cfg: WeekConfig) => void;
+}) {
+  const update = (jourIdx: number, patch: Partial<JourConfig>) => {
+    onChange({ ...config, [jourIdx]: { ...config[jourIdx], ...patch } });
+  };
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium">{label}</Label>
+      <div className="rounded-lg border overflow-hidden">
+        {[0, 1, 2, 3, 4, 5, 6].map(i => {
+          const jour = config[i];
+          return (
+            <div key={i} className={`flex items-center gap-3 px-3 py-2 border-b last:border-b-0 transition-colors ${
+              jour.actif ? "bg-background" : "bg-muted/30"
+            }`}>
+              <label className="flex items-center gap-2 w-24 cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  checked={jour.actif}
+                  onChange={e => update(i, { actif: e.target.checked })}
+                  className="rounded"
+                />
+                <span className={`text-sm font-medium ${!jour.actif ? "text-muted-foreground" : ""}`}>
+                  {JOURS[i]}
+                </span>
+              </label>
+              {jour.actif ? (
+                <div className="flex items-center gap-2 flex-1">
+                  <Input type="time" value={jour.heure_debut}
+                    onChange={e => update(i, { heure_debut: e.target.value })}
+                    className="h-7 text-xs w-24" />
+                  <span className="text-muted-foreground text-xs">→</span>
+                  <Input type="time" value={jour.heure_fin}
+                    onChange={e => update(i, { heure_fin: e.target.value })}
+                    className="h-7 text-xs w-24" />
+                  <Select value={jour.pause_minutes} onValueChange={v => update(i, { pause_minutes: v })}>
+                    <SelectTrigger className="h-7 text-xs w-24"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Pas de pause</SelectItem>
+                      <SelectItem value="30">30 min</SelectItem>
+                      <SelectItem value="45">45 min</SelectItem>
+                      <SelectItem value="60">1h</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <span className="text-xs text-muted-foreground italic">Repos</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function PlanningPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
