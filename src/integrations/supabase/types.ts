@@ -2461,6 +2461,71 @@ export type Database = {
           },
         ]
       }
+      hr_documents: {
+        Row: {
+          agence_id: string | null
+          categorie: string
+          created_at: string | null
+          created_by: string | null
+          date_document: string | null
+          description: string | null
+          employee_id: string | null
+          id: string
+          necessite_signature: boolean | null
+          pdf_url: string | null
+          signataire_nom: string | null
+          signed_at: string | null
+          statut: string
+          titre: string
+          token: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agence_id?: string | null
+          categorie: string
+          created_at?: string | null
+          created_by?: string | null
+          date_document?: string | null
+          description?: string | null
+          employee_id?: string | null
+          id?: string
+          necessite_signature?: boolean | null
+          pdf_url?: string | null
+          signataire_nom?: string | null
+          signed_at?: string | null
+          statut?: string
+          titre: string
+          token?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agence_id?: string | null
+          categorie?: string
+          created_at?: string | null
+          created_by?: string | null
+          date_document?: string | null
+          description?: string | null
+          employee_id?: string | null
+          id?: string
+          necessite_signature?: boolean | null
+          pdf_url?: string | null
+          signataire_nom?: string | null
+          signed_at?: string | null
+          statut?: string
+          titre?: string
+          token?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hr_employees: {
         Row: {
           actif: boolean
