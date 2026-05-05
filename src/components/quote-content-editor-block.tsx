@@ -1477,6 +1477,36 @@ function JourEditor({
               cotationId={cotationId}
               onUpdate={onUpdate}
             />
+
+            {/* INCLUSIONS */}
+            <div className="space-y-2 pt-2 border-t">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Inclusions du jour</Label>
+                {canWrite && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => {
+                      const detected = detectInclusions({
+                        titre: titre,
+                        description: description,
+                        jourDate: date || null,
+                      });
+                      saveInclusions(detected);
+                      toast.success("Inclusions re-détectées depuis le texte.");
+                    }}
+                  >
+                    ↺ Re-détecter
+                  </Button>
+                )}
+              </div>
+              <InclusionToggles
+                inclusions={inclusions}
+                onChange={canWrite ? saveInclusions : () => {}}
+              />
+            </div>
           </div>
         </div>
       )}
