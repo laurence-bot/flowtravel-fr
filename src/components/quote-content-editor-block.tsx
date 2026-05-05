@@ -126,6 +126,7 @@ export function QuoteContentEditorBlock({
   const [regenLoading, setRegenLoading] = useState(false);
   const [resyncLoading, setResyncLoading] = useState(false);
   const [cleanLoading, setCleanLoading] = useState(false);
+  const [enrichLoading, setEnrichLoading] = useState(false);
   const [hasFlights, setHasFlights] = useState(false);
   const [genIntroLoading, setGenIntroLoading] = useState(false);
   const callGenerateIntro = useServerFn(generateQuoteIntro);
@@ -418,6 +419,47 @@ export function QuoteContentEditorBlock({
       toast.error(e instanceof Error ? e.message : "Erreur pendant le nettoyage.");
     } finally {
       setCleanLoading(false);
+    }
+  };
+
+  const enrichHotels = async () => {
+    const joursAvecHotel = jours.filter(
+      (j) => j.hotel_nom && j.hotel_nom.trim().length > 0 && !j.hotel_url,
+    );
+    if (joursAvecHotel.length === 0) {
+      toast.info("Aucun hôtel à enrichir (déjà renseigné ou aucun hôtel détecté).");
+      return;
+    }
+    setEnrichLoading(true);
+    let enriched = 0;
+    let failed = 0;
+    try {
+      for (const jour of joursAvecHotel) {
+        try {
+          const { data, error } = await supabase.functions.invoke("enrich-hotel", {
+            body: { hotel_nom: jour.hotel_nom, lieu: jour.lieu ?? destination ?? null },
+          });
+          if (error || !data) { failed++; continue; }
+
+          const patch: Partial<CotationJour> = {};
+          if (data.hotel_nom_confirme) patch.hotel_nom = data.hotel_nom_confirme;
+          if (data.hotel_url) patch.hotel_url = data.hotel_url;
+          if (data.hotel_photo_url) patch.hotel_photo_url = data.hotel_photo_url;
+
+          if (Object.keys(patch).length > 0) {
+            await updateJour(jour.id, patch);
+            enriched++;
+          }
+          await new Promise((r) => setTimeout(r, 800));
+        } catch {
+          failed++;
+        }
+      }
+      if (enriched > 0) toast.success(`${enriched} hôtel(s) enrichi(s) avec succès.`);
+      if (failed > 0) toast.warning(`${failed} hôtel(s) non trouvé(s) — vérifiez manuellement.`);
+      if (enriched === 0 && failed === 0) toast.info("Aucune information nouvelle trouvée.");
+    } finally {
+      setEnrichLoading(false);
     }
   };
 
