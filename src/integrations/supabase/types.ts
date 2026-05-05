@@ -784,6 +784,7 @@ export type Database = {
           id: string
           image_credit: string | null
           image_url: string | null
+          inclusions: Json | null
           lieu: string | null
           ordre: number
           titre: string
@@ -804,6 +805,7 @@ export type Database = {
           id?: string
           image_credit?: string | null
           image_url?: string | null
+          inclusions?: Json | null
           lieu?: string | null
           ordre?: number
           titre: string
@@ -824,6 +826,7 @@ export type Database = {
           id?: string
           image_credit?: string | null
           image_url?: string | null
+          inclusions?: Json | null
           lieu?: string | null
           ordre?: number
           titre?: string
