@@ -6,7 +6,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 const InviteSchema = z.object({
   email: z.string().email("Email invalide"),
   full_name: z.string().trim().min(1, "Nom requis").max(120),
-  role: z.enum(["administrateur", "agent"]),
+  role: z.enum(["super_admin", "administrateur", "agent", "gestion", "comptable", "lecture_seule"]),
 });
 
 export const inviteUser = createServerFn({ method: "POST" })
@@ -15,14 +15,13 @@ export const inviteUser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase: userClient, userId } = context;
 
-    // Verify caller is administrateur
-    const { data: roleRow } = await userClient
+    // Verify caller is administrateur or super_admin
+    const { data: roleRows } = await userClient
       .from("user_roles")
       .select("role")
-      .eq("user_id", userId)
-      .eq("role", "administrateur")
-      .maybeSingle();
-    if (!roleRow) {
+      .eq("user_id", userId);
+    const callerRoles = (roleRows ?? []).map((r) => r.role as string);
+    if (!callerRoles.includes("administrateur") && !callerRoles.includes("super_admin")) {
       throw new Response("Forbidden: administrateur required", { status: 403 });
     }
 

@@ -31,11 +31,14 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       supabase.from("user_profiles").select("actif").eq("user_id", user.id).maybeSingle(),
     ]);
     const roles = (roleRows ?? []).map((row) => row.role as string);
-    const resolvedRole: AppRole | null = roles.includes("administrateur")
-      ? "administrateur"
-      : roles.includes("agent")
-        ? "agent"
-        : null;
+    const resolvedRole: AppRole | null =
+      roles.includes("super_admin")    ? "super_admin"    :
+      roles.includes("administrateur") ? "administrateur" :
+      roles.includes("agent")          ? "agent"          :
+      roles.includes("gestion")        ? "gestion"        :
+      roles.includes("comptable")      ? "comptable"      :
+      roles.includes("lecture_seule")  ? "lecture_seule"  :
+      null;
     setRole(resolvedRole);
     setActif(profile?.actif ?? true);
     setLoading(false);

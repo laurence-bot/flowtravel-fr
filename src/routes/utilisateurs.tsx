@@ -52,8 +52,12 @@ type ProfileRow = {
 type RoleRow = { user_id: string; role: AppRole };
 
 const ROLE_TONE: Record<AppRole, string> = {
+  super_admin: "bg-[color:var(--gold)]/25 text-[color:var(--gold)] border-[color:var(--gold)]/40",
   administrateur: "bg-[color:var(--gold)]/15 text-[color:var(--gold)] border-[color:var(--gold)]/30",
   agent: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
+  gestion: "bg-sky-500/10 text-sky-700 border-sky-500/30",
+  comptable: "bg-amber-500/10 text-amber-700 border-amber-500/30",
+  lecture_seule: "bg-muted text-muted-foreground border-border",
 };
 
 function UtilisateursPage() {
@@ -73,14 +77,41 @@ function UtilisateursPage() {
 
   const refresh = async () => {
     setLoading(true);
+
+    const { data: myProfile } = await supabase
+      .from("user_profiles")
+      .select("is_super_admin, agence_id")
+      .eq("user_id", user?.id ?? "")
+      .maybeSingle();
+
+    const isSuperAdminUser = !!myProfile?.is_super_admin;
+    const myAgenceId = myProfile?.agence_id ?? null;
+
+    let profilesQuery = supabase
+      .from("user_profiles")
+      .select("*")
+      .order("created_at", { ascending: true });
+
+    if (!isSuperAdminUser && myAgenceId) {
+      profilesQuery = profilesQuery.eq("agence_id", myAgenceId);
+    } else if (!isSuperAdminUser && !myAgenceId) {
+      profilesQuery = profilesQuery.eq("user_id", user?.id ?? "");
+    }
+
     const [{ data: profs }, { data: rolesData }] = await Promise.all([
-      supabase.from("user_profiles").select("*").order("created_at", { ascending: true }),
+      profilesQuery,
       supabase.from("user_roles").select("user_id, role"),
     ]);
+
     setProfiles((profs ?? []) as ProfileRow[]);
     const map: Record<string, AppRole> = {};
     (rolesData as RoleRow[] | null)?.forEach((r) => { map[r.user_id] = r.role; });
-    setRoles(map);
+    const profileIds = new Set((profs ?? []).map((p: any) => p.user_id));
+    const filteredMap: Record<string, AppRole> = {};
+    Object.entries(map).forEach(([uid, r]) => {
+      if (profileIds.has(uid)) filteredMap[uid] = r;
+    });
+    setRoles(filteredMap);
     setLoading(false);
   };
 
