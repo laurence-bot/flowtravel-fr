@@ -603,22 +603,38 @@ function PublicQuotePage() {
                 <div className="grid md:grid-cols-2 gap-8">
                   {cotation.inclus_text && (
                     <div>
-                      <h3 className="brand-heading text-xl brand-signature mb-3 flex items-center gap-2">
+                      <h3 className="brand-heading text-xl brand-signature mb-4 flex items-center gap-2">
                         <Sparkles className="h-4 w-4" /> Inclus
                       </h3>
-                      <div className="text-sm text-stone-700 whitespace-pre-line leading-relaxed">
-                        {cotation.inclus_text}
-                      </div>
+                      <ul className="space-y-2">
+                        {cotation.inclus_text
+                          .split("\n")
+                          .filter((l) => l.trim())
+                          .map((line, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-stone-700">
+                              <span className="brand-signature mt-0.5 shrink-0 text-base leading-none">✓</span>
+                              <span>{line.replace(/^[•\-–]\s*/, "")}</span>
+                            </li>
+                          ))}
+                      </ul>
                     </div>
                   )}
                   {cotation.non_inclus_text && (
                     <div>
-                      <h3 className="brand-heading text-xl text-stone-500 mb-3">
-                        Non inclus
+                      <h3 className="brand-heading text-xl text-stone-500 mb-4">
+                        À prévoir
                       </h3>
-                      <div className="text-sm text-stone-600 whitespace-pre-line leading-relaxed">
-                        {cotation.non_inclus_text}
-                      </div>
+                      <ul className="space-y-2">
+                        {cotation.non_inclus_text
+                          .split("\n")
+                          .filter((l) => l.trim())
+                          .map((line, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-stone-500">
+                              <span className="mt-0.5 shrink-0 text-stone-400 text-base leading-none">○</span>
+                              <span>{line.replace(/^[•\-–]\s*/, "")}</span>
+                            </li>
+                          ))}
+                      </ul>
                     </div>
                   )}
                 </div>
