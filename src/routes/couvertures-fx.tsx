@@ -165,6 +165,7 @@ function CouverturesFXPage() {
                 <TableHead>Échéance</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
             </TableHeader>
             <TableBody>
               {coverages.map((c) => {
