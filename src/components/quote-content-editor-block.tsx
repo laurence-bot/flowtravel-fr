@@ -17,7 +17,11 @@ import { ImagePicker } from "@/components/image-picker";
 import { generateDayText } from "@/server/quote-day-text.functions";
 import { suggestDayPhoto } from "@/server/quote-images.functions";
 import { generateQuoteIntro } from "@/server/quote-intro.functions";
-import type { CotationJour } from "@/lib/quote-public";
+import type { CotationJour, Inclusions } from "@/lib/quote-public";
+import { detectInclusions } from "@/lib/detect-inclusions";
+import { InclusionPills } from "@/components/cotation/InclusionPills";
+import { InclusionToggles } from "@/components/cotation/InclusionToggles";
+import { ListChecks } from "lucide-react";
 import {
   ImageIcon,
   Plus,
@@ -518,6 +522,28 @@ export function QuoteContentEditorBlock({
       setEnrichPhotosLoading(false);
     }
   };
+
+  const [detectInclusionsLoading, setDetectInclusionsLoading] = useState(false);
+  const detectAllInclusions = async () => {
+    setDetectInclusionsLoading(true);
+    let count = 0;
+    try {
+      for (const jour of jours) {
+        const detected = detectInclusions({
+          titre: jour.titre,
+          description: jour.description,
+          jourDate: jour.date_jour,
+        });
+        if (Object.keys(detected).length > 0) {
+          await updateJour(jour.id, { inclusions: detected });
+          count++;
+        }
+      }
+      toast.success(`Inclusions détectées sur ${count} jour(s).`);
+    } finally {
+      setDetectInclusionsLoading(false);
+    }
+  };
   const resyncProgramAndFlights = async () => {
     setResyncLoading(true);
     try {
@@ -895,6 +921,20 @@ export function QuoteContentEditorBlock({
               <Button
                 size="sm"
                 variant="outline"
+                onClick={() => void detectAllInclusions()}
+                disabled={detectInclusionsLoading || jours.length === 0}
+                title="Détecte automatiquement les inclusions depuis le texte de chaque jour"
+              >
+                {detectInclusionsLoading ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <ListChecks className="h-4 w-4 mr-1" />
+                )}
+                Détecter inclusions
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={handleRegenClick}
                 disabled={regenLoading || !hasFlights}
                 title={
@@ -1098,6 +1138,27 @@ function JourEditor({
   const [description, setDescription] = useState(jour.description ?? "");
   const [date, setDate] = useState(jour.date_jour ?? "");
   const [open, setOpen] = useState(false);
+  const [inclusions, setInclusions] = useState<Inclusions>(jour.inclusions ?? {});
+
+  // Détection auto au montage si aucune inclusion existante
+  useEffect(() => {
+    if (jour.inclusions && Object.keys(jour.inclusions).length > 0) return;
+    const detected = detectInclusions({
+      titre: jour.titre,
+      description: jour.description,
+      jourDate: jour.date_jour,
+    });
+    if (Object.keys(detected).length > 0) {
+      setInclusions(detected);
+      onUpdate({ inclusions: detected });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jour.id]);
+
+  const saveInclusions = (updated: Inclusions) => {
+    setInclusions(updated);
+    onUpdate({ inclusions: updated });
+  };
   const [aiOpen, setAiOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const generate = useServerFn(generateDayText);
@@ -1233,6 +1294,13 @@ function JourEditor({
           </>
         )}
       </div>
+
+      {/* PASTILLES INCLUSIONS (visibles tout le temps) */}
+      {Object.keys(inclusions).length > 0 && (
+        <div className="px-3 pb-3 -mt-1">
+          <InclusionPills inclusions={inclusions} variant="compact" />
+        </div>
+      )}
 
       {/* CONTENT */}
       {open && (
@@ -1409,6 +1477,36 @@ function JourEditor({
               cotationId={cotationId}
               onUpdate={onUpdate}
             />
+
+            {/* INCLUSIONS */}
+            <div className="space-y-2 pt-2 border-t">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Inclusions du jour</Label>
+                {canWrite && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => {
+                      const detected = detectInclusions({
+                        titre: titre,
+                        description: description,
+                        jourDate: date || null,
+                      });
+                      saveInclusions(detected);
+                      toast.success("Inclusions re-détectées depuis le texte.");
+                    }}
+                  >
+                    ↺ Re-détecter
+                  </Button>
+                )}
+              </div>
+              <InclusionToggles
+                inclusions={inclusions}
+                onChange={canWrite ? saveInclusions : () => {}}
+              />
+            </div>
           </div>
         </div>
       )}

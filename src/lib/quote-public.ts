@@ -15,6 +15,21 @@ export type QuotePublicLink = {
   updated_at: string;
 };
 
+export type InclusionKey =
+  | "vol_international"
+  | "vol_domestique"
+  | "hebergement"
+  | "petit_dejeuner"
+  | "dejeuner"
+  | "diner"
+  | "guide"
+  | "transfert"
+  | "location_voiture"
+  | "excursion"
+  | "entrees";
+
+export type Inclusions = Partial<Record<InclusionKey, boolean>>;
+
 export type CotationJour = {
   id: string;
   user_id: string;
@@ -31,6 +46,7 @@ export type CotationJour = {
   hotel_nom: string | null;
   hotel_url: string | null;
   hotel_photo_url: string | null;
+  inclusions: Inclusions | null;
   created_at: string;
   updated_at: string;
 };
