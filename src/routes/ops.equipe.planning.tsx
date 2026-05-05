@@ -647,7 +647,7 @@ function PlanningPage() {
 
       {/* Modal ajout entrée planning */}
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(EMPTY_FORM); }}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {selectedCell
@@ -655,11 +655,12 @@ function PlanningPage() {
                 : "Ajouter au planning"}
             </DialogTitle>
           </DialogHeader>
-          <div className="grid gap-3">
+
+          <div className="grid gap-4">
             {!selectedCell && (
-              <div>
+              <div className="space-y-1.5">
                 <Label>Employé</Label>
-                <Select value={form.employee_id} onValueChange={(v) => setForm({ ...form, employee_id: v })}>
+                <Select value={form.employee_id} onValueChange={v => setForm({ ...form, employee_id: v })}>
                   <SelectTrigger><SelectValue placeholder="Choisir…" /></SelectTrigger>
                   <SelectContent>
                     {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}
@@ -668,76 +669,160 @@ function PlanningPage() {
               </div>
             )}
 
-            <div>
-              <Label>Type</Label>
-              <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v as PlanningType })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(Object.entries(PLANNING_TYPE_LABELS) as [PlanningType, string][]).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Date de début</Label>
-              <Input type="date" value={form.date_debut} onChange={(e) => setForm({ ...form, date_debut: e.target.value })} />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Arrivée</Label>
-                <Input type="time" value={form.heure_debut} onChange={(e) => setForm({ ...form, heure_debut: e.target.value })} />
+            <div className="space-y-1.5">
+              <Label>Mode de saisie</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, mode: "simple" })}
+                  className={`px-3 py-2 rounded-lg border text-sm text-left transition-colors ${
+                    form.mode === "simple"
+                      ? "border-primary bg-primary/5 font-medium"
+                      : "border-border text-muted-foreground hover:border-primary/50"
+                  }`}
+                >
+                  <div className="font-medium">Entrée simple</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">Un jour ou avec répétition basique</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, mode: "semaine_type" })}
+                  className={`px-3 py-2 rounded-lg border text-sm text-left transition-colors ${
+                    form.mode === "semaine_type"
+                      ? "border-primary bg-primary/5 font-medium"
+                      : "border-border text-muted-foreground hover:border-primary/50"
+                  }`}
+                >
+                  <div className="font-medium">Planning type</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">Semaine A / B avec jours personnalisés</div>
+                </button>
               </div>
-              <div>
-                <Label>Départ</Label>
-                <Input type="time" value={form.heure_fin} onChange={(e) => setForm({ ...form, heure_fin: e.target.value })} />
-              </div>
             </div>
 
-            <div>
-              <Label>Pause déjeuner (minutes)</Label>
-              <Select value={form.pause_minutes} onValueChange={(v) => setForm({ ...form, pause_minutes: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">Pas de pause</SelectItem>
-                  <SelectItem value="30">30 min</SelectItem>
-                  <SelectItem value="45">45 min</SelectItem>
-                  <SelectItem value="60">1 heure</SelectItem>
-                  <SelectItem value="90">1h30</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {form.mode === "simple" && (
+              <>
+                <div className="space-y-1.5">
+                  <Label>Type</Label>
+                  <Select value={form.type} onValueChange={v => setForm({ ...form, type: v as PlanningType })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(Object.entries(PLANNING_TYPE_LABELS) as [PlanningType, string][]).map(([k, v]) => (
+                        <SelectItem key={k} value={k}>{v}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Date de début</Label>
+                  <Input type="date" value={form.date_debut}
+                    onChange={e => setForm({ ...form, date_debut: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Arrivée</Label>
+                    <Input type="time" value={form.heure_debut}
+                      onChange={e => setForm({ ...form, heure_debut: e.target.value })} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Départ</Label>
+                    <Input type="time" value={form.heure_fin}
+                      onChange={e => setForm({ ...form, heure_fin: e.target.value })} />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Pause déjeuner</Label>
+                  <Select value={form.pause_minutes} onValueChange={v => setForm({ ...form, pause_minutes: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Pas de pause</SelectItem>
+                      <SelectItem value="30">30 min</SelectItem>
+                      <SelectItem value="45">45 min</SelectItem>
+                      <SelectItem value="60">1 heure</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Répétition</Label>
+                  <Select value={form.repeat} onValueChange={v => setForm({ ...form, repeat: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {REPEAT_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  {form.repeat === "week2" && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      1 {DAY_FULL[new Date(form.date_debut).getDay()]} sur 2, à partir du {form.date_debut}
+                    </p>
+                  )}
+                  {form.repeat === "week" && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Chaque {DAY_FULL[new Date(form.date_debut).getDay()]} du mois {month}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Note <span className="text-xs text-muted-foreground">(optionnel)</span></Label>
+                  <Input value={form.note} onChange={e => setForm({ ...form, note: e.target.value })}
+                    placeholder="ex : Formation Paris, RDV client…" />
+                </div>
+              </>
+            )}
 
-            <div>
-              <Label>Répétition</Label>
-              <Select value={form.repeat} onValueChange={(v) => setForm({ ...form, repeat: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {REPEAT_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              {form.repeat === "week2" && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  1 {DAY_FULL[new Date(form.date_debut).getDay()]} sur 2, à partir du {form.date_debut}
-                </p>
-              )}
-              {form.repeat === "week" && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Chaque {DAY_FULL[new Date(form.date_debut).getDay()]} du mois {month}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label>Note (optionnel)</Label>
-              <Textarea rows={2} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="ex : Formation Paris, RDV client…" />
-            </div>
+            {form.mode === "semaine_type" && (
+              <>
+                <div className="space-y-1.5">
+                  <Label>Mois à remplir</Label>
+                  <Input type="month" value={form.mois_cible}
+                    onChange={e => setForm({ ...form, mois_cible: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Type d'activité</Label>
+                  <Select value={form.type} onValueChange={v => setForm({ ...form, type: v as PlanningType })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(Object.entries(PLANNING_TYPE_LABELS) as [PlanningType, string][]).map(([k, v]) => (
+                        <SelectItem key={k} value={k}>{v}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border hover:bg-muted/30 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={form.utilise_semaine_b}
+                    onChange={e => setForm({ ...form, utilise_semaine_b: e.target.checked })}
+                    className="rounded"
+                  />
+                  <div>
+                    <div className="text-sm font-medium">Activer semaine B (alternance)</div>
+                    <div className="text-xs text-muted-foreground">
+                      Semaines impaires = A · Semaines paires = B
+                    </div>
+                  </div>
+                </label>
+                <WeekGrid
+                  label={form.utilise_semaine_b ? "Semaine A (semaines impaires)" : "Jours travaillés"}
+                  config={form.semaine_a}
+                  onChange={cfg => setForm({ ...form, semaine_a: cfg })}
+                />
+                {form.utilise_semaine_b && (
+                  <WeekGrid
+                    label="Semaine B (semaines paires)"
+                    config={form.semaine_b}
+                    onChange={cfg => setForm({ ...form, semaine_b: cfg })}
+                  />
+                )}
+              </>
+            )}
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setOpen(false); setForm(EMPTY_FORM); }}>Annuler</Button>
-            <Button onClick={save} disabled={saving}>{saving ? "Enregistrement…" : "Enregistrer"}</Button>
+            <Button variant="outline" onClick={() => { setOpen(false); setForm(EMPTY_FORM); }}>
+              Annuler
+            </Button>
+            <Button onClick={save} disabled={saving}>
+              {saving ? "Enregistrement…" : "Enregistrer"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
