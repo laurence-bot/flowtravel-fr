@@ -77,14 +77,41 @@ function UtilisateursPage() {
 
   const refresh = async () => {
     setLoading(true);
+
+    const { data: myProfile } = await supabase
+      .from("user_profiles")
+      .select("is_super_admin, agence_id")
+      .eq("user_id", user?.id ?? "")
+      .maybeSingle();
+
+    const isSuperAdminUser = !!myProfile?.is_super_admin;
+    const myAgenceId = myProfile?.agence_id ?? null;
+
+    let profilesQuery = supabase
+      .from("user_profiles")
+      .select("*")
+      .order("created_at", { ascending: true });
+
+    if (!isSuperAdminUser && myAgenceId) {
+      profilesQuery = profilesQuery.eq("agence_id", myAgenceId);
+    } else if (!isSuperAdminUser && !myAgenceId) {
+      profilesQuery = profilesQuery.eq("user_id", user?.id ?? "");
+    }
+
     const [{ data: profs }, { data: rolesData }] = await Promise.all([
-      supabase.from("user_profiles").select("*").order("created_at", { ascending: true }),
+      profilesQuery,
       supabase.from("user_roles").select("user_id, role"),
     ]);
+
     setProfiles((profs ?? []) as ProfileRow[]);
     const map: Record<string, AppRole> = {};
     (rolesData as RoleRow[] | null)?.forEach((r) => { map[r.user_id] = r.role; });
-    setRoles(map);
+    const profileIds = new Set((profs ?? []).map((p: any) => p.user_id));
+    const filteredMap: Record<string, AppRole> = {};
+    Object.entries(map).forEach(([uid, r]) => {
+      if (profileIds.has(uid)) filteredMap[uid] = r;
+    });
+    setRoles(filteredMap);
     setLoading(false);
   };
 
