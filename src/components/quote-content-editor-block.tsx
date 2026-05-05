@@ -31,6 +31,7 @@ import {
   X,
   Plane,
   RefreshCw,
+  Search,
 } from "lucide-react";
 import {
   buildItineraryFromFlights,
