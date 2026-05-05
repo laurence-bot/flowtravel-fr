@@ -116,6 +116,7 @@ type FormState = {
   mode: FormMode;
   employee_id: string;
   date_debut: string;
+  date_fin: string;
   type: PlanningType;
   heure_debut: string;
   heure_fin: string;
@@ -132,6 +133,7 @@ const EMPTY_FORM: FormState = {
   mode: "simple",
   employee_id: "",
   date_debut: new Date().toISOString().slice(0, 10),
+  date_fin: "",
   type: "travail",
   heure_debut: "09:00",
   heure_fin: "17:30",
@@ -314,7 +316,14 @@ function PlanningPage() {
         toast.success(`${toCreate.length} entrée(s) générée(s) pour ${form.mois_cible}`);
       } else {
         if (!form.date_debut) { toast.error("Date requise"); setSaving(false); return; }
-        const dates = expandDates(form.date_debut, form.repeat, month);
+        let dates: string[];
+        if ((form.type === "deplacement" || form.type === "formation") && form.date_fin && form.date_fin >= form.date_debut) {
+          dates = daysInMonth(month)
+            .filter(d => d >= form.date_debut && d <= form.date_fin && !isWeekend(d));
+          if (!dates.length) dates = [form.date_debut];
+        } else {
+          dates = expandDates(form.date_debut, form.repeat, month);
+        }
         await Promise.all(dates.map(date =>
           upsertPlanning({
             employee_id: empId,
@@ -712,11 +721,36 @@ function PlanningPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Date de début</Label>
-                  <Input type="date" value={form.date_debut}
-                    onChange={e => setForm({ ...form, date_debut: e.target.value })} />
-                </div>
+                {(form.type === "deplacement" || form.type === "formation") ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label>Date de début</Label>
+                      <Input
+                        type="date"
+                        value={form.date_debut}
+                        onChange={e => setForm({ ...form, date_debut: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Date de fin</Label>
+                      <Input
+                        type="date"
+                        value={form.date_fin}
+                        onChange={e => setForm({ ...form, date_fin: e.target.value })}
+                        min={form.date_debut}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Label>Date</Label>
+                    <Input
+                      type="date"
+                      value={form.date_debut}
+                      onChange={e => setForm({ ...form, date_debut: e.target.value })}
+                    />
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label>Arrivée</Label>
