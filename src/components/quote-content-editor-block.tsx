@@ -1138,6 +1138,27 @@ function JourEditor({
   const [description, setDescription] = useState(jour.description ?? "");
   const [date, setDate] = useState(jour.date_jour ?? "");
   const [open, setOpen] = useState(false);
+  const [inclusions, setInclusions] = useState<Inclusions>(jour.inclusions ?? {});
+
+  // Détection auto au montage si aucune inclusion existante
+  useEffect(() => {
+    if (jour.inclusions && Object.keys(jour.inclusions).length > 0) return;
+    const detected = detectInclusions({
+      titre: jour.titre,
+      description: jour.description,
+      jourDate: jour.date_jour,
+    });
+    if (Object.keys(detected).length > 0) {
+      setInclusions(detected);
+      onUpdate({ inclusions: detected });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jour.id]);
+
+  const saveInclusions = (updated: Inclusions) => {
+    setInclusions(updated);
+    onUpdate({ inclusions: updated });
+  };
   const [aiOpen, setAiOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const generate = useServerFn(generateDayText);
