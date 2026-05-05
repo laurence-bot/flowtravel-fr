@@ -1177,6 +1177,7 @@ function SortableJour(props: {
   cotationId: string;
   canWrite: boolean;
   destination: string | null;
+  usedPhotoUrls: Set<string>;
   onUpdate: (patch: Partial<CotationJour>) => void;
   onDelete: () => void;
 }) {
