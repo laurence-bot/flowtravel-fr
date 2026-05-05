@@ -1,17 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Trash2, Copy } from "lucide-react";
+import { ArrowLeft, Trash2, Copy, AlertTriangle, Check, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/page-header";
 import {
   listEmployees, listPlanning, upsertPlanning, deletePlanning,
-  PLANNING_TYPE_LABELS, type Employee, type PlanningEntry, type PlanningType,
+  calcHeuresRealisees, upsertCompteur, listCompteurs, listRecupDemandes,
+  createRecupDemande, approuverRecupDemande, refuserRecupDemande,
+  alertesFinDeMois,
+  PLANNING_TYPE_LABELS,
+  type Employee, type PlanningEntry, type PlanningType,
+  type CompteurHeures, type RecupDemande,
 } from "@/lib/hr";
 import { toast } from "sonner";
 
@@ -27,52 +33,67 @@ const TYPE_COLORS: Record<PlanningType, string> = {
 };
 
 const DAY_LABELS = ["D", "L", "M", "M", "J", "V", "S"];
+const DAY_FULL = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 
 const REPEAT_OPTIONS = [
-  { value: "none",  label: "Aucune répétition" },
-  { value: "week",  label: "Chaque semaine" },
-  { value: "month", label: "Tout le mois (jours ouvrés)" },
+  { value: "none",        label: "Aucune répétition" },
+  { value: "week",        label: "Chaque semaine (même jour)" },
+  { value: "week2",       label: "1 semaine sur 2" },
+  { value: "month_ouvre", label: "Tous les jours ouvrés du mois" },
 ];
 
-function addDays(dateStr: string, n: number): string {
-  const d = new Date(dateStr);
-  d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
-}
-
-function isWeekend(dateStr: string): boolean {
-  const day = new Date(dateStr).getDay();
-  return day === 0 || day === 6;
-}
+function isWeekend(d: string) { const day = new Date(d).getDay(); return day === 0 || day === 6; }
+function addDays(d: string, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); }
 
 function daysInMonth(month: string): string[] {
   const d = new Date(`${month}-01`);
-  const end = new Date(d);
-  end.setMonth(end.getMonth() + 1);
+  const end = new Date(d); end.setMonth(end.getMonth() + 1);
   const out: string[] = [];
   for (let x = new Date(d); x < end; x.setDate(x.getDate() + 1))
     out.push(x.toISOString().slice(0, 10));
   return out;
 }
 
-function expandDates(dateDebut: string, _dateFin: string, repeat: string, month: string): string[] {
-  if (repeat === "none") return [dateDebut];
+function getISOWeek(d: Date): number {
+  const tmp = new Date(d);
+  tmp.setHours(0, 0, 0, 0);
+  tmp.setDate(tmp.getDate() + 3 - ((tmp.getDay() + 6) % 7));
+  const week1 = new Date(tmp.getFullYear(), 0, 4);
+  return 1 + Math.round(((tmp.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+}
+
+function expandDates(dateDebut: string, repeat: string, month: string): string[] {
   const monthDays = daysInMonth(month);
-  if (repeat === "month") return monthDays.filter(d => !isWeekend(d));
+  if (repeat === "none") return [dateDebut];
+  if (repeat === "month_ouvre") return monthDays.filter(d => !isWeekend(d));
   if (repeat === "week") {
     const targetDay = new Date(dateDebut).getDay();
     return monthDays.filter(d => new Date(d).getDay() === targetDay);
   }
+  if (repeat === "week2") {
+    const targetDay = new Date(dateDebut).getDay();
+    const matching = monthDays.filter(d => new Date(d).getDay() === targetDay);
+    const startWeek = getISOWeek(new Date(dateDebut));
+    return matching.filter(d => (getISOWeek(new Date(d)) - startWeek) % 2 === 0);
+  }
   return [dateDebut];
+}
+
+function fmtH(h: number): string {
+  const sign = h < 0 ? "-" : "+";
+  const abs = Math.abs(h);
+  const hh = Math.floor(abs);
+  const mm = Math.round((abs - hh) * 60);
+  return `${sign}${hh}h${mm > 0 ? mm : ""}`;
 }
 
 type FormState = {
   employee_id: string;
   date_debut: string;
-  date_fin: string;
   type: PlanningType;
   heure_debut: string;
   heure_fin: string;
+  pause_minutes: string;
   note: string;
   repeat: string;
 };
@@ -80,10 +101,10 @@ type FormState = {
 const EMPTY_FORM: FormState = {
   employee_id: "",
   date_debut: new Date().toISOString().slice(0, 10),
-  date_fin: "",
   type: "travail",
   heure_debut: "09:00",
-  heure_fin: "18:00",
+  heure_fin: "17:30",
+  pause_minutes: "30",
   note: "",
   repeat: "none",
 };
@@ -91,17 +112,41 @@ const EMPTY_FORM: FormState = {
 function PlanningPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [entries, setEntries] = useState<PlanningEntry[]>([]);
+  const [compteurs, setCompteurs] = useState<CompteurHeures[]>([]);
+  const [recups, setRecups] = useState<RecupDemande[]>([]);
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{ emp: Employee; date: string } | null>(null);
+  const [tab, setTab] = useState("planning");
+
+  const [recupOpen, setRecupOpen] = useState(false);
+  const [recupForm, setRecupForm] = useState({
+    employee_id: "", type: "heures" as RecupDemande["type"],
+    heures_demandees: "7", date_souhaitee: "", motif: "",
+  });
 
   const load = async () => {
-    const emps = await listEmployees();
-    setEmployees(emps.filter(e => e.actif));
     const days = daysInMonth(month);
-    setEntries(await listPlanning(days[0], days[days.length - 1]));
+    const [emps, plan, comps, recs] = await Promise.all([
+      listEmployees(),
+      listPlanning(days[0], days[days.length - 1]),
+      listCompteurs(month),
+      listRecupDemandes(month),
+    ]);
+    const actifs = emps.filter(e => e.actif);
+    setEmployees(actifs);
+    setEntries(plan);
+    setRecups(recs);
+
+    await Promise.all(actifs.map(async emp => {
+      const empEntries = plan.filter(e => e.employee_id === emp.id);
+      const realisees = calcHeuresRealisees(empEntries);
+      const contractuelles = 35 * (days.filter(d => !isWeekend(d)).length / 5);
+      await upsertCompteur(emp.id, month, realisees, Math.round(contractuelles * 100) / 100);
+    }));
+    setCompteurs(await listCompteurs(month));
   };
 
   useEffect(() => { load().catch(e => toast.error(e.message)); }, [month]);
@@ -122,10 +167,10 @@ function PlanningPage() {
 
   const save = async () => {
     if (!form.employee_id) { toast.error("Employé requis"); return; }
-    if (!form.date_debut) { toast.error("Date de début requise"); return; }
+    if (!form.date_debut) { toast.error("Date requise"); return; }
     setSaving(true);
     try {
-      const dates = expandDates(form.date_debut, form.date_fin, form.repeat, month);
+      const dates = expandDates(form.date_debut, form.repeat, month);
       await Promise.all(dates.map(date =>
         upsertPlanning({
           employee_id: form.employee_id,
@@ -140,11 +185,7 @@ function PlanningPage() {
       setOpen(false);
       setForm(EMPTY_FORM);
       load();
-    } catch (e: any) {
-      toast.error(e.message);
-    } finally {
-      setSaving(false);
-    }
+    } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
 
   const del = async (id: string) => {
@@ -152,15 +193,14 @@ function PlanningPage() {
     catch (e: any) { toast.error(e.message); }
   };
 
-  const copyWeek = async (sourceMonday: string) => {
-    const mon = new Date(sourceMonday);
-    const sun = new Date(sourceMonday);
-    sun.setDate(sun.getDate() + 6);
+  const copyWeek = async (monday: string) => {
+    const mon = new Date(monday);
+    const sun = new Date(monday); sun.setDate(sun.getDate() + 6);
     const weekEntries = entries.filter(e => {
       const d = new Date(e.date_jour);
       return d >= mon && d <= sun;
     });
-    if (weekEntries.length === 0) { toast.error("Aucune entrée cette semaine"); return; }
+    if (!weekEntries.length) { toast.error("Aucune entrée cette semaine"); return; }
     try {
       await Promise.all(weekEntries.map(e =>
         upsertPlanning({
@@ -177,16 +217,34 @@ function PlanningPage() {
     } catch (e: any) { toast.error(e.message); }
   };
 
-  // Group days into weeks for the header
+  const saveRecup = async () => {
+    if (!recupForm.employee_id || !recupForm.heures_demandees) { toast.error("Champs requis"); return; }
+    try {
+      await createRecupDemande({
+        employee_id: recupForm.employee_id,
+        mois: month,
+        type: recupForm.type,
+        heures_demandees: Number(recupForm.heures_demandees),
+        date_souhaitee: recupForm.date_souhaitee || undefined,
+        motif: recupForm.motif || undefined,
+      });
+      toast.success("Demande créée");
+      setRecupOpen(false);
+      load();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  const alertes = alertesFinDeMois(compteurs, employees);
+  const empById = (id: string) => employees.find(e => e.id === id);
+
   const weeks: string[][] = [];
-  let currentWeek: string[] = [];
+  let cur: string[] = [];
   days.forEach(d => {
-    currentWeek.push(d);
-    if (new Date(d).getDay() === 0 || d === days[days.length - 1]) {
-      weeks.push(currentWeek);
-      currentWeek = [];
-    }
+    cur.push(d);
+    if (new Date(d).getDay() === 0 || d === days[days.length - 1]) { weeks.push(cur); cur = []; }
   });
+
+  const pendingCount = recups.filter(r => r.statut === "demande").length;
 
   return (
     <div className="space-y-6">
@@ -196,118 +254,262 @@ function PlanningPage() {
 
       <PageHeader
         title="Planning"
-        description="Vue mensuelle de l'équipe"
+        description="Vue mensuelle, compteurs d'heures et récupérations"
         action={
           <div className="flex items-center gap-2">
             <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-44" />
+            <Button variant="outline" onClick={() => setRecupOpen(true)}>Récupération</Button>
             <Button onClick={() => openAdd()}>+ Ajouter</Button>
           </div>
         }
       />
 
-      {/* Légende */}
-      <div className="flex flex-wrap gap-2 text-xs">
-        {(Object.entries(PLANNING_TYPE_LABELS) as [PlanningType, string][]).map(([k, v]) => (
-          <span key={k} className={`px-2 py-1 rounded border ${TYPE_COLORS[k]}`}>{v}</span>
-        ))}
-      </div>
+      {alertes.length > 0 && (
+        <Card className="p-4 border-amber-300 bg-amber-50">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-medium text-amber-900">Alerte fin de mois — heures à poser</h3>
+              <p className="text-sm text-amber-800 mt-1">
+                Ces employés ont des heures supplémentaires non posées. Elles seront perdues à la fin du mois sauf demande exceptionnelle.
+              </p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {alertes.map(({ employee, solde }) => (
+                  <span key={employee.id} className="px-2 py-1 bg-white border border-amber-300 rounded text-sm">
+                    {employee.prenom} {employee.nom} · {fmtH(solde)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
 
-      {/* Calendrier */}
-      <Card className="p-0 overflow-auto">
-        <table className="w-full text-xs border-collapse">
-          <thead>
-            {/* Ligne semaines avec bouton copie */}
-            <tr className="bg-muted/40 border-b">
-              <th className="text-left px-2 py-1 sticky left-0 bg-muted/40 z-10">Semaine</th>
-              {weeks.map((week, wi) => {
-                const monday = week.find(d => new Date(d).getDay() === 1) ?? week[0];
-                return (
-                  <th key={wi} colSpan={week.length} className="text-center text-muted-foreground font-normal px-2 py-1 border-l">
-                    <button
-                      onClick={() => copyWeek(monday)}
-                      className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
-                      title="Copier cette semaine sur la suivante"
-                    >
-                      <Copy className="h-3 w-3" />
-                      S{wi + 1}
-                    </button>
-                  </th>
-                );
-              })}
-            </tr>
-            {/* Ligne jours */}
-            <tr className="bg-muted/20 border-b">
-              <th className="text-left px-2 py-2 sticky left-0 bg-muted/20 z-10">Employé</th>
-              {days.map(d => {
-                const dt = new Date(d);
-                const wk = isWeekend(d);
-                return (
-                  <th key={d} className={`px-1 py-1 font-normal min-w-[44px] ${wk ? "bg-muted/40 text-muted-foreground" : ""}`}>
-                    <div className="text-sm font-medium">{dt.getDate()}</div>
-                    <div className="text-[10px] uppercase">{DAY_LABELS[dt.getDay()]}</div>
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
-          <tbody>
-            {employees.length === 0 && (
-              <tr>
-                <td colSpan={days.length + 1} className="text-center p-10 text-muted-foreground">
-                  Aucun employé actif
-                </td>
-              </tr>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList>
+          <TabsTrigger value="planning">Calendrier</TabsTrigger>
+          <TabsTrigger value="compteurs">Compteurs d'heures</TabsTrigger>
+          <TabsTrigger value="recups">
+            Demandes de récupération
+            {pendingCount > 0 && (
+              <span className="ml-2 px-1.5 py-0.5 text-xs bg-amber-500 text-white rounded">{pendingCount}</span>
             )}
-            {employees.map(emp => (
-              <tr key={emp.id} className="border-b">
-                <td className="px-2 py-2 sticky left-0 bg-background z-10 font-medium whitespace-nowrap">
-                  {emp.prenom} {emp.nom}
-                </td>
-                {days.map(d => {
-                  const cells = cellFor(emp.id, d);
-                  const wk = isWeekend(d);
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="planning" className="space-y-4">
+          <div className="flex flex-wrap gap-2 text-xs">
+            {(Object.entries(PLANNING_TYPE_LABELS) as [PlanningType, string][]).map(([k, v]) => (
+              <span key={k} className={`px-2 py-1 rounded border ${TYPE_COLORS[k]}`}>{v}</span>
+            ))}
+          </div>
+
+          <Card className="p-0 overflow-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-muted/40 border-b">
+                  <th className="text-left px-2 py-1 sticky left-0 bg-muted/40 z-10">Sem.</th>
+                  {weeks.map((week, wi) => {
+                    const monday = week.find(d => new Date(d).getDay() === 1) ?? week[0];
+                    return (
+                      <th key={wi} colSpan={week.length} className="text-center font-normal px-2 py-1 border-l">
+                        <button onClick={() => copyWeek(monday)} title="Copier sur semaine suivante" className="inline-flex items-center gap-1 hover:text-foreground text-muted-foreground">
+                          <Copy className="h-3 w-3" /> S{wi + 1}
+                        </button>
+                      </th>
+                    );
+                  })}
+                  <th className="px-2 py-1 border-l">Heures mois</th>
+                </tr>
+                <tr className="bg-muted/20 border-b">
+                  <th className="text-left px-2 py-2 sticky left-0 bg-muted/20 z-10">Employé</th>
+                  {days.map(d => {
+                    const dt = new Date(d);
+                    const wk = isWeekend(d);
+                    return (
+                      <th key={d} className={`px-1 py-1 font-normal min-w-[44px] ${wk ? "bg-muted/40 text-muted-foreground" : ""}`}>
+                        <div className="text-sm font-medium">{dt.getDate()}</div>
+                        <div className="text-[10px] uppercase">{DAY_LABELS[dt.getDay()]}</div>
+                      </th>
+                    );
+                  })}
+                  <th className="px-2 py-1 border-l text-right">Solde</th>
+                </tr>
+              </thead>
+              <tbody>
+                {employees.length === 0 && (
+                  <tr><td colSpan={days.length + 2} className="text-center p-10 text-muted-foreground">Aucun employé actif</td></tr>
+                )}
+                {employees.map(emp => {
+                  const compteur = compteurs.find(c => c.employee_id === emp.id);
+                  const solde = compteur?.solde ?? 0;
                   return (
-                    <td
-                      key={d}
-                      onClick={() => openAdd(emp, d)}
-                      className={`align-top p-1 border-l cursor-pointer hover:bg-muted/30 ${wk ? "bg-muted/20" : ""}`}
-                    >
-                      {cells.map(c => (
-                        <div key={c.id} className={`mb-0.5 px-1 py-0.5 rounded border ${TYPE_COLORS[c.type]}`}>
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="text-[10px] font-medium">{PLANNING_TYPE_LABELS[c.type].slice(0, 3)}</span>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); del(c.id); }}
-                              className="opacity-40 hover:opacity-100"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                          </div>
-                          {c.heure_debut && (
-                            <div className="text-[9px]">{c.heure_debut}–{c.heure_fin}</div>
-                          )}
-                        </div>
-                      ))}
-                    </td>
+                    <tr key={emp.id} className="border-b">
+                      <td className="px-2 py-2 sticky left-0 bg-background z-10 font-medium whitespace-nowrap">
+                        {emp.prenom} {emp.nom}
+                      </td>
+                      {days.map(d => {
+                        const cells = cellFor(emp.id, d);
+                        const wk = isWeekend(d);
+                        return (
+                          <td key={d} onClick={() => openAdd(emp, d)} className={`align-top p-1 border-l cursor-pointer hover:bg-muted/30 ${wk ? "bg-muted/20" : ""}`}>
+                            {cells.map(c => (
+                              <div key={c.id} className={`mb-0.5 px-1 py-0.5 rounded border ${TYPE_COLORS[c.type]}`}>
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="text-[10px] font-medium">{PLANNING_TYPE_LABELS[c.type].slice(0, 3)}</span>
+                                  <button onClick={(e) => { e.stopPropagation(); del(c.id); }} className="opacity-40 hover:opacity-100">
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                </div>
+                                {c.heure_debut && (
+                                  <div className="text-[9px]">{c.heure_debut}–{c.heure_fin}</div>
+                                )}
+                              </div>
+                            ))}
+                          </td>
+                        );
+                      })}
+                      <td className="px-2 py-2 border-l text-right font-medium">
+                        {compteur ? (
+                          <span className={solde > 0 ? "text-green-600" : solde < 0 ? "text-red-500" : "text-muted-foreground"}>
+                            {fmtH(solde)}
+                          </span>
+                        ) : "—"}
+                      </td>
+                    </tr>
                   );
                 })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
+              </tbody>
+            </table>
+          </Card>
+        </TabsContent>
 
-      {/* Modal ajout */}
+        <TabsContent value="compteurs">
+          <Card className="p-0 overflow-auto">
+            {compteurs.length === 0 ? (
+              <p className="p-10 text-center text-muted-foreground">Aucune donnée pour ce mois</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="bg-muted/30 border-b">
+                  <tr>
+                    <th className="text-left px-3 py-2">Employé</th>
+                    <th className="text-right px-3 py-2">Contractuelles</th>
+                    <th className="text-right px-3 py-2">Réalisées</th>
+                    <th className="text-right px-3 py-2">Report</th>
+                    <th className="text-right px-3 py-2">Solde</th>
+                    <th className="px-3 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {compteurs.map(c => {
+                    const emp = empById(c.employee_id);
+                    if (!emp) return null;
+                    return (
+                      <tr key={c.id} className="border-b">
+                        <td className="px-3 py-2 font-medium">{emp.prenom} {emp.nom}</td>
+                        <td className="px-3 py-2 text-right">{c.heures_contractuelles}h</td>
+                        <td className="px-3 py-2 text-right">{c.heures_realisees}h</td>
+                        <td className="px-3 py-2 text-right">{c.heures_report > 0 ? `+${c.heures_report}h` : "—"}</td>
+                        <td className="px-3 py-2 text-right">
+                          <span className={`font-medium ${c.solde > 0 ? "text-green-600" : c.solde < 0 ? "text-red-500" : "text-muted-foreground"}`}>
+                            {fmtH(c.solde)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {c.solde > 0 && (
+                            <Button size="sm" variant="outline" onClick={() => {
+                              setRecupForm({ employee_id: emp.id, type: "heures", heures_demandees: String(c.solde), date_souhaitee: "", motif: "" });
+                              setRecupOpen(true);
+                            }}>
+                              Poser récup
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="recups">
+          <Card className="p-0 overflow-auto">
+            {recups.length === 0 ? (
+              <p className="p-10 text-center text-muted-foreground">Aucune demande ce mois</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="bg-muted/30 border-b">
+                  <tr>
+                    <th className="text-left px-3 py-2">Employé</th>
+                    <th className="text-left px-3 py-2">Type</th>
+                    <th className="text-right px-3 py-2">Heures</th>
+                    <th className="text-left px-3 py-2">Date souhaitée</th>
+                    <th className="text-left px-3 py-2">Motif</th>
+                    <th className="text-left px-3 py-2">Statut</th>
+                    <th className="px-3 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recups.map(r => {
+                    const emp = empById(r.employee_id);
+                    return (
+                      <tr key={r.id} className="border-b">
+                        <td className="px-3 py-2">{emp ? `${emp.prenom} ${emp.nom}` : "—"}</td>
+                        <td className="px-3 py-2">
+                          {r.type === "journee" ? "Journée entière" : r.type === "heures" ? "Heures" : "Report exceptionnel"}
+                        </td>
+                        <td className="px-3 py-2 text-right">{r.heures_demandees}h</td>
+                        <td className="px-3 py-2">{r.date_souhaitee ?? "—"}</td>
+                        <td className="px-3 py-2">{r.motif ?? "—"}</td>
+                        <td className="px-3 py-2">
+                          <span className={`px-2 py-0.5 rounded text-xs ${
+                            r.statut === "approuvee" ? "bg-green-100 text-green-800" :
+                            r.statut === "refusee" ? "bg-red-100 text-red-800" :
+                            "bg-amber-100 text-amber-800"
+                          }`}>
+                            {r.statut === "approuvee" ? "Approuvée" : r.statut === "refusee" ? "Refusée" : "En attente"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2">
+                          {r.statut === "demande" && (
+                            <div className="flex gap-1 justify-end">
+                              <Button size="sm" variant="outline" onClick={async () => {
+                                try { await approuverRecupDemande(r.id); toast.success("Approuvée"); load(); }
+                                catch (e: any) { toast.error(e.message); }
+                              }}>
+                                <Check className="h-3 w-3" />
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={async () => {
+                                try { await refuserRecupDemande(r.id); toast.success("Refusée"); load(); }
+                                catch (e: any) { toast.error(e.message); }
+                              }}>
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Modal ajout entrée planning */}
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(EMPTY_FORM); }}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>
               {selectedCell
-                ? `Planning — ${selectedCell.emp.prenom} · ${selectedCell.date}`
+                ? `${selectedCell.emp.prenom} · ${DAY_FULL[new Date(selectedCell.date).getDay()]} ${selectedCell.date}`
                 : "Ajouter au planning"}
             </DialogTitle>
           </DialogHeader>
-
           <div className="grid gap-3">
             {!selectedCell && (
               <div>
@@ -315,9 +517,7 @@ function PlanningPage() {
                 <Select value={form.employee_id} onValueChange={(v) => setForm({ ...form, employee_id: v })}>
                   <SelectTrigger><SelectValue placeholder="Choisir…" /></SelectTrigger>
                   <SelectContent>
-                    {employees.map(e => (
-                      <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>
-                    ))}
+                    {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -335,30 +535,34 @@ function PlanningPage() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Date de début</Label>
-                <Input type="date" value={form.date_debut}
-                  onChange={(e) => setForm({ ...form, date_debut: e.target.value })} />
-              </div>
-              <div>
-                <Label>Date de fin (optionnel)</Label>
-                <Input type="date" value={form.date_fin}
-                  onChange={(e) => setForm({ ...form, date_fin: e.target.value })} />
-              </div>
+            <div>
+              <Label>Date de début</Label>
+              <Input type="date" value={form.date_debut} onChange={(e) => setForm({ ...form, date_debut: e.target.value })} />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Heure début</Label>
-                <Input type="time" value={form.heure_debut}
-                  onChange={(e) => setForm({ ...form, heure_debut: e.target.value })} />
+                <Label>Arrivée</Label>
+                <Input type="time" value={form.heure_debut} onChange={(e) => setForm({ ...form, heure_debut: e.target.value })} />
               </div>
               <div>
-                <Label>Heure fin</Label>
-                <Input type="time" value={form.heure_fin}
-                  onChange={(e) => setForm({ ...form, heure_fin: e.target.value })} />
+                <Label>Départ</Label>
+                <Input type="time" value={form.heure_fin} onChange={(e) => setForm({ ...form, heure_fin: e.target.value })} />
               </div>
+            </div>
+
+            <div>
+              <Label>Pause déjeuner (minutes)</Label>
+              <Select value={form.pause_minutes} onValueChange={(v) => setForm({ ...form, pause_minutes: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Pas de pause</SelectItem>
+                  <SelectItem value="30">30 min</SelectItem>
+                  <SelectItem value="45">45 min</SelectItem>
+                  <SelectItem value="60">1 heure</SelectItem>
+                  <SelectItem value="90">1h30</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -366,38 +570,82 @@ function PlanningPage() {
               <Select value={form.repeat} onValueChange={(v) => setForm({ ...form, repeat: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {REPEAT_OPTIONS.map(o => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                  ))}
+                  {REPEAT_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                 </SelectContent>
               </Select>
-              {form.repeat === "week" && (
+              {form.repeat === "week2" && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Répète chaque {DAY_LABELS[new Date(form.date_debut).getDay()]} du mois en cours
+                  1 {DAY_FULL[new Date(form.date_debut).getDay()]} sur 2, à partir du {form.date_debut}
                 </p>
               )}
-              {form.repeat === "month" && (
+              {form.repeat === "week" && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Applique à tous les jours ouvrés du mois ({month})
+                  Chaque {DAY_FULL[new Date(form.date_debut).getDay()]} du mois {month}
                 </p>
               )}
             </div>
 
             <div>
               <Label>Note (optionnel)</Label>
-              <Textarea rows={2} value={form.note}
-                onChange={(e) => setForm({ ...form, note: e.target.value })}
-                placeholder="ex : Formation Paris, RDV client Lyon…" />
+              <Textarea rows={2} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="ex : Formation Paris, RDV client…" />
             </div>
           </div>
-
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setOpen(false); setForm(EMPTY_FORM); }}>
-              Annuler
-            </Button>
-            <Button onClick={save} disabled={saving}>
-              {saving ? "Enregistrement…" : "Enregistrer"}
-            </Button>
+            <Button variant="outline" onClick={() => { setOpen(false); setForm(EMPTY_FORM); }}>Annuler</Button>
+            <Button onClick={save} disabled={saving}>{saving ? "Enregistrement…" : "Enregistrer"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal récupération */}
+      <Dialog open={recupOpen} onOpenChange={setRecupOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Demande de récupération</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div>
+              <Label>Employé</Label>
+              <Select value={recupForm.employee_id} onValueChange={(v) => setRecupForm({ ...recupForm, employee_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Choisir…" /></SelectTrigger>
+                <SelectContent>
+                  {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Type</Label>
+              <Select value={recupForm.type} onValueChange={(v) => setRecupForm({ ...recupForm, type: v as RecupDemande["type"] })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="heures">Poser des heures</SelectItem>
+                  <SelectItem value="journee">Journée entière (7h)</SelectItem>
+                  <SelectItem value="report_exceptionnel">Report exceptionnel mois suivant</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Heures à récupérer</Label>
+                <Input type="number" step="0.5" value={recupForm.heures_demandees}
+                  onChange={(e) => setRecupForm({ ...recupForm, heures_demandees: e.target.value })} />
+              </div>
+              <div>
+                <Label>Date souhaitée</Label>
+                <Input type="date" value={recupForm.date_souhaitee}
+                  onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <Label>Motif (optionnel)</Label>
+              <Textarea rows={2} value={recupForm.motif}
+                onChange={(e) => setRecupForm({ ...recupForm, motif: e.target.value })}
+                placeholder="ex : Semaine chargée, urgence client…" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRecupOpen(false)}>Annuler</Button>
+            <Button onClick={saveRecup}>Enregistrer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

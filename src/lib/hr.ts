@@ -324,3 +324,159 @@ export async function deleteJobDescription(id: string): Promise<void> {
   const { error } = await supabase.from("hr_job_descriptions").delete().eq("id", id);
   if (error) throw error;
 }
+
+// =========== Compteur d'heures ===========
+
+export type CompteurHeures = {
+  id: string;
+  employee_id: string;
+  agence_id: string | null;
+  mois: string;
+  heures_contractuelles: number;
+  heures_realisees: number;
+  heures_report: number;
+  solde: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RecupDemande = {
+  id: string;
+  employee_id: string;
+  agence_id: string | null;
+  mois: string;
+  type: "journee" | "heures" | "report_exceptionnel";
+  heures_demandees: number;
+  date_souhaitee: string | null;
+  motif: string | null;
+  statut: "demande" | "approuvee" | "refusee";
+  traite_par: string | null;
+  traite_at: string | null;
+  created_at: string;
+};
+
+export function calcHeuresRealisees(entries: PlanningEntry[]): number {
+  let total = 0;
+  for (const e of entries) {
+    if (e.type !== "travail" && e.type !== "teletravail" && e.type !== "deplacement") continue;
+    if (!e.heure_debut || !e.heure_fin) continue;
+    const [dh, dm] = e.heure_debut.split(":").map(Number);
+    const [fh, fm] = e.heure_fin.split(":").map(Number);
+    const dureeMin = (fh * 60 + fm) - (dh * 60 + dm);
+    const pauseMin = (e as any).pause_minutes ?? 30;
+    const netMin = Math.max(0, dureeMin - pauseMin);
+    total += netMin / 60;
+  }
+  return Math.round(total * 100) / 100;
+}
+
+export async function getCompteur(employeeId: string, mois: string): Promise<CompteurHeures | null> {
+  const { data } = await supabase
+    .from("hr_compteur_heures" as any)
+    .select("*")
+    .eq("employee_id", employeeId)
+    .eq("mois", mois)
+    .maybeSingle();
+  if (!data) return null;
+  const d: any = data;
+  return { ...d, solde: d.heures_realisees - d.heures_contractuelles + d.heures_report } as CompteurHeures;
+}
+
+export async function upsertCompteur(
+  employeeId: string,
+  mois: string,
+  heuresRealisees: number,
+  heuresContractuelles: number,
+): Promise<void> {
+  const agence_id = await getMyAgenceId();
+  const { error } = await supabase
+    .from("hr_compteur_heures" as any)
+    .upsert({
+      employee_id: employeeId,
+      agence_id,
+      mois,
+      heures_realisees: heuresRealisees,
+      heures_contractuelles: heuresContractuelles,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "employee_id,mois" });
+  if (error) throw error;
+}
+
+export async function listCompteurs(mois: string): Promise<CompteurHeures[]> {
+  const { data, error } = await supabase
+    .from("hr_compteur_heures" as any)
+    .select("*")
+    .eq("mois", mois);
+  if (error) throw error;
+  return ((data ?? []) as any[]).map(d => ({
+    ...d,
+    solde: d.heures_realisees - d.heures_contractuelles + d.heures_report,
+  }));
+}
+
+export async function listRecupDemandes(mois?: string): Promise<RecupDemande[]> {
+  let q = supabase.from("hr_recup_demandes" as any).select("*").order("created_at", { ascending: false });
+  if (mois) q = q.eq("mois", mois);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as unknown as RecupDemande[];
+}
+
+export async function createRecupDemande(input: {
+  employee_id: string;
+  mois: string;
+  type: RecupDemande["type"];
+  heures_demandees: number;
+  date_souhaitee?: string;
+  motif?: string;
+}): Promise<RecupDemande> {
+  const agence_id = await getMyAgenceId();
+  const { data, error } = await supabase
+    .from("hr_recup_demandes" as any)
+    .insert({
+      employee_id: input.employee_id,
+      agence_id,
+      mois: input.mois,
+      type: input.type,
+      heures_demandees: input.heures_demandees,
+      date_souhaitee: input.date_souhaitee ?? null,
+      motif: input.motif ?? null,
+      statut: "demande",
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as unknown as RecupDemande;
+}
+
+export async function approuverRecupDemande(id: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase
+    .from("hr_recup_demandes" as any)
+    .update({ statut: "approuvee", traite_par: user?.id ?? null, traite_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function refuserRecupDemande(id: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase
+    .from("hr_recup_demandes" as any)
+    .update({ statut: "refusee", traite_par: user?.id ?? null, traite_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export function alertesFinDeMois(compteurs: CompteurHeures[], employees: Employee[]): { employee: Employee; solde: number }[] {
+  const today = new Date();
+  const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const daysLeft = Math.ceil((endOfMonth.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  if (daysLeft > 5) return [];
+  return compteurs
+    .filter(c => c.solde > 0)
+    .map(c => ({
+      employee: employees.find(e => e.id === c.employee_id)!,
+      solde: c.solde,
+    }))
+    .filter(x => x.employee);
+}
