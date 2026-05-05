@@ -1272,19 +1272,43 @@ function JourEditor({
   const runSuggestPhoto = async () => {
     setSuggestingPhoto(true);
     try {
-      const r = await suggestPhoto({
-        data: {
-          titre: titre || jour.titre,
-          lieu: lieu || jour.lieu || null,
-          description: description || jour.description || null,
-          destination: destination || null,
-        },
-      });
-      if (!r.ok) {
-        toast.error(r.error);
+      // Tente jusqu'à 3 queries différentes pour éviter les doublons
+      const queries = [
+        { titre: titre || jour.titre, lieu: lieu || jour.lieu || null },
+        { titre: lieu || jour.lieu || jour.titre, lieu: null as string | null },
+        { titre: `${lieu || jour.lieu || ""} landscape`.trim(), lieu: null as string | null },
+      ];
+
+      let chosenPhoto: { id: string; url: string; full: string; thumb: string; alt: string; author: string; credit: string } | null = null;
+
+      for (const q of queries) {
+        const r = await suggestPhoto({
+          data: {
+            titre: q.titre,
+            lieu: q.lieu,
+            description: description || jour.description || null,
+            destination: destination || null,
+            excludeIds: [...usedPhotoUrls],
+          },
+        });
+        if (!r.ok) continue;
+
+        const isDuplicate =
+          usedPhotoUrls.has(r.photo.url) || usedPhotoUrls.has(r.photo.full);
+
+        if (!isDuplicate) {
+          chosenPhoto = r.photo;
+          break;
+        }
+        console.log(`[suggestPhoto] doublon détecté (${r.photo.id}), nouvelle tentative…`);
+      }
+
+      if (!chosenPhoto) {
+        toast.warning("Toutes les photos suggérées sont déjà utilisées — ouvrez l'onglet Unsplash pour choisir manuellement.");
         return;
       }
-      const res = await fetch(r.photo.full);
+
+      const res = await fetch(chosenPhoto.full);
       const blob = await res.blob();
       const path = `${jour.user_id}/${jour.cotation_id}/jour-${jour.id}-${Date.now()}.jpg`;
       const { error: upErr } = await supabase.storage
@@ -1297,9 +1321,9 @@ function JourEditor({
       const { data: pubData } = supabase.storage.from("quote-images").getPublicUrl(path);
       onUpdate({
         image_url: pubData.publicUrl,
-        image_credit: r.photo.credit,
+        image_credit: chosenPhoto.credit,
       });
-      toast.success(`Photo suggérée : ${r.photo.credit}`);
+      toast.success(`Photo ajoutée : ${chosenPhoto.credit}`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erreur lors de la suggestion.");
     } finally {
