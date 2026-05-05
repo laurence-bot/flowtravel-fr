@@ -220,6 +220,7 @@ async function searchGoogleImages(
 async function searchUnsplashSingle(
   query: string,
   key: string,
+  excludeIds: Set<string> = new Set(),
 ): Promise<{
   id: string; url: string; full: string; thumb: string;
   alt: string; author: string; credit: string;
@@ -251,6 +252,7 @@ async function searchUnsplashSingle(
 
     const scored = json.results
       .filter((r) => r.width > r.height)
+      .filter((r) => !excludeIds.has(r.id))
       .map((r) => ({
         ...r,
         score: r.likes * 1.5 + (r.alt_description ? 10 : 0),
@@ -280,16 +282,19 @@ export const suggestDayPhoto = createServerFn({ method: "POST" })
     lieu?: string | null;
     description?: string | null;
     destination?: string | null;
+    excludeIds?: string[];
   }) =>
     z.object({
       titre: z.string().min(1).max(300),
       lieu: z.string().max(100).nullable().optional(),
       description: z.string().max(2000).nullable().optional(),
       destination: z.string().max(100).nullable().optional(),
+      excludeIds: z.array(z.string()).max(50).optional(),
     }).parse(d),
   )
   .handler(async ({ data }) => {
     const unsplashKey = process.env.UNSPLASH_ACCESS_KEY;
+    const excludeIds = new Set(data.excludeIds ?? []);
 
     const lieux = extractLieux({
       titre: data.titre,
@@ -306,7 +311,7 @@ export const suggestDayPhoto = createServerFn({ method: "POST" })
 
     if (unsplashKey) {
       for (const query of queries) {
-        const photo = await searchUnsplashSingle(query, unsplashKey);
+        const photo = await searchUnsplashSingle(query, unsplashKey, excludeIds);
         if (photo) {
           console.log(`[suggestDayPhoto] Unsplash trouvé avec query: "${query}"`);
           return { ok: true as const, photo, source: "unsplash" as const };
