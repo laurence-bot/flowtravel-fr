@@ -173,6 +173,7 @@ function normalizeExtractedProgram(raw: Record<string, unknown>, confiance: Conf
       lieu: j.lieu ? String(j.lieu).trim() : undefined,
       date_jour: isoDate(j.date_jour),
       description: j.description ? String(j.description).trim() : undefined,
+      hotel_nom: j.hotel_nom ? String(j.hotel_nom).trim() : undefined,
     }))
     .filter((j) => j.titre)
     .sort((a, b) => a.ordre - b.ordre);
