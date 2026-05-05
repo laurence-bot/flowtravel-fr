@@ -464,6 +464,7 @@ export async function insertJours(
     lieu: j.lieu ?? null,
     date_jour: j.date_jour ?? null,
     description: j.description ?? null,
+    hotel_nom: j.hotel_nom ?? null,
   }));
   const { error } = await (supabase as any).from("cotation_jours").insert(rows);
   if (error) return { count: 0, skipped, error: error.message };
