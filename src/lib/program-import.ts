@@ -374,10 +374,16 @@ export async function purgeEtReinserer(
   const { regenJours = true, onProgress } = options;
   const nomFournisseur = program.fournisseur_nom ?? "Fournisseur";
 
-  // ÉTAPE 1 — Purge des lignes fournisseur
-  onProgress?.("Suppression des anciennes lignes fournisseur…");
-  const { error: errLignes } = await purgeLignesFournisseur(cotationId, nomFournisseur);
-  if (errLignes) return { joursCount: 0, lignesCount: 0, error: errLignes };
+  // ÉTAPE 1 — Purge de TOUTES les lignes fournisseur de la cotation (pas seulement ce fournisseur)
+  onProgress?.("Suppression de toutes les lignes fournisseur…");
+  const { error: errLignes } = await (supabase as any)
+    .from("cotation_lignes_fournisseurs")
+    .delete()
+    .eq("cotation_id", cotationId);
+  if (errLignes) {
+    console.error("[program-import] purge globale error:", errLignes);
+    return { joursCount: 0, lignesCount: 0, error: errLignes.message };
+  }
 
   // ÉTAPE 2 — Purge des jours (optionnel)
   if (regenJours) {
