@@ -133,3 +133,113 @@ export const INCLUSION_CONFIG: Record<InclusionKey, { label: string; icon: strin
   excursion:        { label: "Excursion",         icon: "map" },
   entrees:          { label: "Entrées",           icon: "ticket" },
 };
+
+// ─────────────────────────────────────────────
+// Génération globale inclus / à prévoir
+// ─────────────────────────────────────────────
+
+export type InclusionSummary = {
+  inclus: Array<{ label: string; count: number; total: number }>;
+  aPrevoir: Array<{ label: string }>;
+};
+
+export function generateInclusText(params: {
+  jours: Array<{
+    titre: string | null;
+    description: string | null;
+    date_jour: string | null;
+    inclusions: Inclusions | null;
+  }>;
+  nombrePax: number;
+  hasVolInternational: boolean;
+  hasVolDomestique: boolean;
+}): { inclus_text: string; non_inclus_text: string } {
+  const { jours, hasVolInternational, hasVolDomestique } = params;
+  const totalJours = jours.length;
+
+  const counts: Partial<Record<InclusionKey, number>> = {};
+  const excluded = new Set<InclusionKey>();
+
+  for (const jour of jours) {
+    const inc = jour.inclusions ?? {};
+    for (const [key, val] of Object.entries(inc) as Array<[InclusionKey, boolean]>) {
+      if (val === true) {
+        counts[key] = (counts[key] ?? 0) + 1;
+      } else if (val === false) {
+        excluded.add(key);
+      }
+    }
+  }
+
+  if (hasVolInternational) counts.vol_international = 1;
+  if (hasVolDomestique) counts.vol_domestique = 1;
+
+  const inclusLines: string[] = [];
+
+  if (counts.vol_international) inclusLines.push("• Vols internationaux aller-retour");
+  if (counts.vol_domestique) inclusLines.push("• Vol(s) domestique(s)");
+
+  if (counts.hebergement) {
+    const nuits = counts.hebergement;
+    inclusLines.push(`• Hébergement — ${nuits} nuit${nuits > 1 ? "s" : ""} en chambre double`);
+  }
+
+  if (counts.petit_dejeuner) {
+    const n = counts.petit_dejeuner;
+    inclusLines.push(`• ${n} petit${n > 1 ? "s" : ""}-déjeuner${n > 1 ? "s" : ""}`);
+  }
+  if (counts.dejeuner) {
+    const n = counts.dejeuner;
+    inclusLines.push(`• ${n} déjeuner${n > 1 ? "s" : ""}`);
+  }
+  if (counts.diner) {
+    const n = counts.diner;
+    inclusLines.push(`• ${n} dîner${n > 1 ? "s" : ""}`);
+  }
+
+  if (counts.guide) inclusLines.push("• Guide francophone");
+  if (counts.transfert) inclusLines.push("• Transferts privés");
+  if (counts.location_voiture) inclusLines.push("• Location de véhicule");
+  if (counts.excursion) {
+    const n = counts.excursion;
+    inclusLines.push(`• ${n} excursion${n > 1 ? "s" : ""} et visites guidées`);
+  }
+  if (counts.entrees) inclusLines.push("• Droits d'entrée sur les sites visités");
+
+  const aPrevoirLines: string[] = [];
+  aPrevoirLines.push("• Visa et formalités administratives");
+  aPrevoirLines.push("• Assurance voyage (recommandée)");
+  aPrevoirLines.push("• Pourboires et dépenses personnelles");
+
+  const repasManquants: string[] = [];
+  if (!counts.petit_dejeuner && !excluded.has("petit_dejeuner") && totalJours > 0) {
+    repasManquants.push("petits-déjeuners");
+  }
+  const dejManquants = totalJours - (counts.dejeuner ?? 0);
+  if (dejManquants > 0 && totalJours > 0) {
+    repasManquants.push(
+      dejManquants === totalJours
+        ? "déjeuners"
+        : `${dejManquants} déjeuner${dejManquants > 1 ? "s" : ""}`,
+    );
+  }
+  const dinerManquants = totalJours - (counts.diner ?? 0);
+  if (dinerManquants > 0 && totalJours > 0) {
+    repasManquants.push(
+      dinerManquants === totalJours
+        ? "dîners"
+        : `${dinerManquants} dîner${dinerManquants > 1 ? "s" : ""}`,
+    );
+  }
+  if (repasManquants.length > 0) {
+    aPrevoirLines.push(`• Repas non inclus : ${repasManquants.join(", ")}`);
+  }
+
+  aPrevoirLines.push("• Boissons (sauf mention contraire)");
+  if (!counts.excursion) aPrevoirLines.push("• Excursions et activités optionnelles");
+
+  return {
+    inclus_text: inclusLines.join("\n"),
+    non_inclus_text: aPrevoirLines.join("\n"),
+  };
+}
