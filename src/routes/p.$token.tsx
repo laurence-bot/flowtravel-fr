@@ -317,6 +317,11 @@ function PublicQuotePage() {
                         <h3 className="brand-heading text-2xl md:text-3xl font-light brand-primary mb-3">
                           {j.titre}
                         </h3>
+                        {j.inclusions && Object.keys(j.inclusions).length > 0 && (
+                          <div className="mb-4">
+                            <InclusionPills inclusions={j.inclusions} variant="client" />
+                          </div>
+                        )}
                         {j.description && (
                           <p className="text-stone-700 leading-relaxed whitespace-pre-line">
                             {j.description}
