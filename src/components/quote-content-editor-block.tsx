@@ -1062,6 +1062,7 @@ export function QuoteContentEditorBlock({
                     cotationId={cotationId}
                     canWrite={canWrite}
                     destination={destination ?? null}
+                    usedPhotoUrls={usedPhotoUrls}
                     onUpdate={(patch) => updateJour(j.id, patch)}
                     onDelete={() => deleteJour(j.id)}
                   />
