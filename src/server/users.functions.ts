@@ -15,14 +15,13 @@ export const inviteUser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase: userClient, userId } = context;
 
-    // Verify caller is administrateur
-    const { data: roleRow } = await userClient
+    // Verify caller is administrateur or super_admin
+    const { data: roleRows } = await userClient
       .from("user_roles")
       .select("role")
-      .eq("user_id", userId)
-      .eq("role", "administrateur")
-      .maybeSingle();
-    if (!roleRow) {
+      .eq("user_id", userId);
+    const callerRoles = (roleRows ?? []).map((r) => r.role as string);
+    if (!callerRoles.includes("administrateur") && !callerRoles.includes("super_admin")) {
       throw new Response("Forbidden: administrateur required", { status: 403 });
     }
 
