@@ -88,6 +88,7 @@ import { InlineFxCoveragePicker } from "@/components/inline-fx-coverage-picker";
 import { MargeCalculator } from "@/components/marge-calculator";
 import { useAgencySettings } from "@/hooks/use-agency-settings";
 import { ProgramImportDialog } from "@/components/program-import-dialog";
+import { useScrollRestore } from "@/hooks/use-scroll-restore";
 
 export const Route = createFileRoute("/cotations/$id")({
   component: () => (
@@ -130,6 +131,9 @@ function CotationDetailPage() {
   const navigate = useNavigate();
   const { settings: agencySettings } = useAgencySettings();
   const fxEnabled = !!agencySettings?.utilise_couvertures_fx;
+
+  // Restaure la position de scroll au retour sur la page
+  useScrollRestore(`cotation-${id}`);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: cotations, loading: cotationsLoading, refetch: refetchCot } = useTable<Cotation>("cotations" as any);
