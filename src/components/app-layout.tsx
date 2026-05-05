@@ -177,6 +177,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const filterItems = (items: NavItem[]) =>
     items.filter((item) => {
       if (item.superAdminOnly && !isSuperAdmin) return false;
+      // /ops/equipe (raccourci RH agence) caché au super_admin (a déjà la section OPS)
+      if (item.to === "/ops/equipe" && isSuperAdmin) return false;
       if (item.to === "/couvertures-fx" && !fxEnabled) return false;
       return canAccessRoute(role, item.to);
     });
@@ -192,7 +194,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     .map((g) => ({ ...g, items: filterItems(g.items) }))
     .filter((g) => g.items.length > 0);
 
-  const visibleMonEspaceNav = filterItems(navMonEspace);
+  const visibleMonEspaceNav = isSuperAdmin ? [] : filterItems(navMonEspace);
 
   const handleSignOut = async () => {
     await signOut();
