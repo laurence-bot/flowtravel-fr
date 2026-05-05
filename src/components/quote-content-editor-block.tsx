@@ -1034,6 +1034,45 @@ function JourEditor({
   const [aiOpen, setAiOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const generate = useServerFn(generateDayText);
+  const [suggestingPhoto, setSuggestingPhoto] = useState(false);
+  const suggestPhoto = useServerFn(suggestDayPhoto);
+
+  const runSuggestPhoto = async () => {
+    setSuggestingPhoto(true);
+    try {
+      const r = await suggestPhoto({
+        data: {
+          titre: titre || jour.titre,
+          lieu: lieu || jour.lieu || null,
+          destination: destination || null,
+        },
+      });
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      const res = await fetch(r.photo.full);
+      const blob = await res.blob();
+      const path = `${jour.user_id}/${jour.cotation_id}/jour-${jour.id}-${Date.now()}.jpg`;
+      const { error: upErr } = await supabase.storage
+        .from("quote-images")
+        .upload(path, blob, { cacheControl: "3600", upsert: false, contentType: "image/jpeg" });
+      if (upErr) {
+        toast.error(upErr.message);
+        return;
+      }
+      const { data: pubData } = supabase.storage.from("quote-images").getPublicUrl(path);
+      onUpdate({
+        image_url: pubData.publicUrl,
+        image_credit: r.photo.credit,
+      });
+      toast.success(`Photo suggérée : ${r.photo.credit}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erreur lors de la suggestion.");
+    } finally {
+      setSuggestingPhoto(false);
+    }
+  };
 
   // Synchroniser état local si la prop change (drag → re-render)
   useEffect(() => {
