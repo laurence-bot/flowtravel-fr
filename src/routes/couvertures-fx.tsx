@@ -202,6 +202,9 @@ function CouverturesFXPage() {
                     <TableCell>
                       <StatutBadge statut={c.statut} />
                     </TableCell>
+                    <TableCell className="text-right">
+                      <CoverageRowActions coverage={c} userId={user?.id} onDone={refetch} />
+                    </TableCell>
                   </TableRow>
                 );
               })}
