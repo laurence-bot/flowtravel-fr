@@ -813,6 +813,20 @@ export function QuoteContentEditorBlock({
               <Button
                 size="sm"
                 variant="outline"
+                onClick={() => void enrichHotels()}
+                disabled={enrichLoading || jours.every((j) => !j.hotel_nom || !!j.hotel_url)}
+                title="Recherche automatiquement le site officiel et une photo pour chaque hôtel détecté dans le programme"
+              >
+                {enrichLoading ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4 mr-1" />
+                )}
+                Enrichir hôtels
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={handleRegenClick}
                 disabled={regenLoading || !hasFlights}
                 title={
