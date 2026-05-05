@@ -607,9 +607,9 @@ function PublicQuotePage() {
                         <Sparkles className="h-4 w-4" /> Inclus
                       </h3>
                       <ul className="space-y-2">
-                        {cotation.inclus_text
+                        {(cotation.inclus_text as string)
                           .split("\n")
-                          .filter((l) => l.trim())
+                          .filter((l: string) => l.trim())
                           .map((line, i) => (
                             <li key={i} className="flex items-start gap-2 text-sm text-stone-700">
                               <span className="brand-signature mt-0.5 shrink-0 text-base leading-none">✓</span>
