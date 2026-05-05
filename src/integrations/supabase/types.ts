@@ -2333,6 +2333,50 @@ export type Database = {
           },
         ]
       }
+      hr_compteur_heures: {
+        Row: {
+          agence_id: string | null
+          created_at: string | null
+          employee_id: string | null
+          heures_contractuelles: number
+          heures_realisees: number
+          heures_report: number
+          id: string
+          mois: string
+          updated_at: string | null
+        }
+        Insert: {
+          agence_id?: string | null
+          created_at?: string | null
+          employee_id?: string | null
+          heures_contractuelles?: number
+          heures_realisees?: number
+          heures_report?: number
+          id?: string
+          mois: string
+          updated_at?: string | null
+        }
+        Update: {
+          agence_id?: string | null
+          created_at?: string | null
+          employee_id?: string | null
+          heures_contractuelles?: number
+          heures_realisees?: number
+          heures_report?: number
+          id?: string
+          mois?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_compteur_heures_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hr_contracts: {
         Row: {
           agence_id: string | null
@@ -2683,6 +2727,7 @@ export type Database = {
           heure_fin: string | null
           id: string
           note: string | null
+          pause_minutes: number | null
           type: Database["public"]["Enums"]["hr_planning_type"]
           updated_at: string
         }
@@ -2696,6 +2741,7 @@ export type Database = {
           heure_fin?: string | null
           id?: string
           note?: string | null
+          pause_minutes?: number | null
           type?: Database["public"]["Enums"]["hr_planning_type"]
           updated_at?: string
         }
@@ -2709,6 +2755,7 @@ export type Database = {
           heure_fin?: string | null
           id?: string
           note?: string | null
+          pause_minutes?: number | null
           type?: Database["public"]["Enums"]["hr_planning_type"]
           updated_at?: string
         }
@@ -2751,6 +2798,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      hr_recup_demandes: {
+        Row: {
+          agence_id: string | null
+          created_at: string | null
+          date_souhaitee: string | null
+          employee_id: string | null
+          heures_demandees: number
+          id: string
+          mois: string
+          motif: string | null
+          statut: string
+          traite_at: string | null
+          traite_par: string | null
+          type: string
+        }
+        Insert: {
+          agence_id?: string | null
+          created_at?: string | null
+          date_souhaitee?: string | null
+          employee_id?: string | null
+          heures_demandees: number
+          id?: string
+          mois: string
+          motif?: string | null
+          statut?: string
+          traite_at?: string | null
+          traite_par?: string | null
+          type: string
+        }
+        Update: {
+          agence_id?: string | null
+          created_at?: string | null
+          date_souhaitee?: string | null
+          employee_id?: string | null
+          heures_demandees?: number
+          id?: string
+          mois?: string
+          motif?: string | null
+          statut?: string
+          traite_at?: string | null
+          traite_par?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_recup_demandes_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hr_settings: {
         Row: {
