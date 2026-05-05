@@ -122,6 +122,7 @@ const navAgenceGroups: NavGroup[] = [
     icon: Settings,
     items: [
       { to: "/utilisateurs", label: "Utilisateurs", icon: UserCog },
+      { to: "/ops/equipe", label: "Mon équipe (RH)", icon: Users },
       { to: "/parametres-agence", label: "Paramètres agence", icon: Building2 },
       { to: "/coaching", label: "Coaching", icon: GraduationCap },
       { to: "/support", label: "Support FlowTravel", icon: MessageSquare },
