@@ -491,3 +491,163 @@ function NewCoverageDialog({ userId, existing, onDone }: { userId?: string; exis
     </Dialog>
   );
 }
+
+function CoverageRowActions({ coverage, userId, onDone }: { coverage: FxCoverage; userId?: string; onDone: () => void }) {
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [form, setForm] = useState({
+    reference: coverage.reference ?? "",
+    devise: coverage.devise as Exclude<DeviseCode, "EUR">,
+    montant_devise: String(coverage.montant_devise),
+    taux_change: String(coverage.taux_change),
+    date_ouverture: coverage.date_ouverture,
+    date_echeance: coverage.date_echeance,
+    notes: coverage.notes ?? "",
+    statut: coverage.statut as FxCoverageStatut,
+  });
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    const parsed = coverageSchema.safeParse({
+      reference: form.reference || undefined,
+      devise: form.devise,
+      montant_devise: Number(form.montant_devise),
+      taux_change: Number(form.taux_change),
+      date_ouverture: form.date_ouverture,
+      date_echeance: form.date_echeance,
+      notes: form.notes || undefined,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Champs invalides");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from("fx_coverages").update({
+      reference: parsed.data.reference ?? null,
+      devise: parsed.data.devise,
+      montant_devise: parsed.data.montant_devise,
+      taux_change: parsed.data.taux_change,
+      date_ouverture: parsed.data.date_ouverture,
+      date_echeance: parsed.data.date_echeance,
+      notes: parsed.data.notes ?? null,
+      statut: form.statut,
+    }).eq("id", coverage.id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    if (userId) {
+      await logAudit({ userId, entity: "fx_coverage", entityId: coverage.id, action: "update", description: `Couverture FX modifiée` });
+    }
+    toast.success("Couverture mise à jour");
+    setEditOpen(false);
+    onDone();
+  };
+
+  const remove = async () => {
+    setDeleting(true);
+    const { error } = await supabase.from("fx_coverages").delete().eq("id", coverage.id);
+    setDeleting(false);
+    if (error) { toast.error(error.message); return; }
+    if (userId) {
+      await logAudit({ userId, entity: "fx_coverage", entityId: coverage.id, action: "delete", description: `Couverture FX supprimée` });
+    }
+    toast.success("Couverture supprimée");
+    onDone();
+  };
+
+  const devisesEtrangeres = DEVISES.filter((d) => d.code !== "EUR");
+
+  return (
+    <div className="flex items-center justify-end gap-1">
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogTrigger asChild>
+          <Button size="icon" variant="ghost" className="h-8 w-8" title="Modifier">
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Modifier la couverture</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Référence</Label>
+              <Input value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Devise</Label>
+                <Select value={form.devise} onValueChange={(v) => setForm({ ...form, devise: v as Exclude<DeviseCode, "EUR"> })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {devisesEtrangeres.map((d) => (
+                      <SelectItem key={d.code} value={d.code}>{d.code} — {DEVISE_LABELS[d.code]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Montant en devise</Label>
+                <Input type="number" step="0.01" value={form.montant_devise} onChange={(e) => setForm({ ...form, montant_devise: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <Label>Taux vers EUR</Label>
+              <Input type="number" step="0.0001" value={form.taux_change} onChange={(e) => setForm({ ...form, taux_change: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Ouverture</Label>
+                <Input type="date" value={form.date_ouverture} onChange={(e) => setForm({ ...form, date_ouverture: e.target.value })} />
+              </div>
+              <div>
+                <Label>Échéance</Label>
+                <Input type="date" value={form.date_echeance} onChange={(e) => setForm({ ...form, date_echeance: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <Label>Statut</Label>
+              <Select value={form.statut} onValueChange={(v) => setForm({ ...form, statut: v as FxCoverageStatut })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(FX_STATUT_LABELS) as FxCoverageStatut[]).map((s) => (
+                    <SelectItem key={s} value={s}>{FX_STATUT_LABELS[s]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Notes</Label>
+              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setEditOpen(false)}>Annuler</Button>
+              <Button onClick={save} disabled={saving}>{saving ? "Enregistrement…" : "Enregistrer"}</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" title="Supprimer">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette couverture ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Action irréversible. Les réservations associées seront orphelines.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={remove} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? "Suppression…" : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
