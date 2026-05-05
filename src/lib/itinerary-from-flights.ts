@@ -313,6 +313,37 @@ export function buildItineraryFromFlights(
   enrichTransit(outbound);
   enrichTransit(inbound);
 
+  // Enrichissement des titres avec vols domestiques (segment intra-pays sur un jour réceptif)
+  const enrichVolsDomestiques = (segs: FlightSegmentLite[]) => {
+    for (const seg of segs) {
+      if (!seg.date_depart || !seg.numero_vol) continue;
+      const isDomestic =
+        seg.aeroport_depart.slice(0, 2) === seg.aeroport_arrivee.slice(0, 2);
+      if (!isDomestic) continue;
+
+      const target = days.find((d) => d.date_jour === seg.date_depart);
+      if (!target || target.isFlightDay) continue;
+
+      const villeDepart = iataToCity(seg.aeroport_depart);
+      const villeArrivee = iataToCity(seg.aeroport_arrivee);
+      const volRef = seg.numero_vol ? ` (${seg.compagnie ?? ""}${seg.numero_vol})` : "";
+
+      if (!target.titre.toLowerCase().includes("vol")) {
+        const titreActuel = target.titre;
+        if (titreActuel.toLowerCase().includes(villeDepart.toLowerCase())) {
+          target.titre = titreActuel.replace(
+            new RegExp(villeDepart, "i"),
+            `${villeDepart} - ${villeArrivee} (vol domestique)`,
+          );
+        } else {
+          target.titre = `${titreActuel} — Vol domestique${volRef}`;
+        }
+      }
+    }
+  };
+  enrichVolsDomestiques(outbound);
+  enrichVolsDomestiques(inbound);
+
   return days;
 }
 
