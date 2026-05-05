@@ -3398,6 +3398,7 @@ export type Database = {
         | "lecture_seule"
         | "comptable"
         | "agent"
+        | "super_admin"
       audit_action:
         | "create"
         | "update"
@@ -3716,6 +3717,7 @@ export const Constants = {
         "lecture_seule",
         "comptable",
         "agent",
+        "super_admin",
       ],
       audit_action: [
         "create",
