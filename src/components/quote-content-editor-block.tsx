@@ -465,7 +465,59 @@ export function QuoteContentEditorBlock({
     }
   };
 
-  /** Synchronise PDF + vols : les vols bornent les dates, le PDF garde les textes. */
+  const [enrichPhotosLoading, setEnrichPhotosLoading] = useState(false);
+  const suggestPhotoFn = useServerFn(suggestDayPhoto);
+
+  const enrichPhotos = async () => {
+    const joursWithout = jours.filter((j) => !j.image_url);
+    if (joursWithout.length === 0) {
+      toast.info("Tous les jours ont déjà une photo.");
+      return;
+    }
+    setEnrichPhotosLoading(true);
+    let done = 0;
+    let failed = 0;
+    try {
+      for (const jour of joursWithout) {
+        try {
+          const r = await suggestPhotoFn({
+            data: {
+              titre: jour.titre,
+              lieu: jour.lieu ?? null,
+              destination: destination ?? null,
+            },
+          });
+          if (!r.ok) {
+            failed++;
+            continue;
+          }
+          const res = await fetch(r.photo.full);
+          const blob = await res.blob();
+          const path = `${userId}/${cotationId}/jour-${jour.id}-${Date.now()}.jpg`;
+          const { error: upErr } = await supabase.storage
+            .from("quote-images")
+            .upload(path, blob, { cacheControl: "3600", upsert: false, contentType: "image/jpeg" });
+          if (upErr) {
+            failed++;
+            continue;
+          }
+          const { data: pubData } = supabase.storage.from("quote-images").getPublicUrl(path);
+          await updateJour(jour.id, {
+            image_url: pubData.publicUrl,
+            image_credit: r.photo.credit,
+          });
+          done++;
+          await new Promise((res2) => setTimeout(res2, 600));
+        } catch {
+          failed++;
+        }
+      }
+      if (done > 0) toast.success(`${done} photo(s) ajoutée(s) automatiquement.`);
+      if (failed > 0) toast.warning(`${failed} jour(s) sans photo trouvée.`);
+    } finally {
+      setEnrichPhotosLoading(false);
+    }
+  };
   const resyncProgramAndFlights = async () => {
     setResyncLoading(true);
     try {
