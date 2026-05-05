@@ -1266,6 +1266,7 @@ function JourEditor({
         data: {
           titre: titre || jour.titre,
           lieu: lieu || jour.lieu || null,
+          description: description || jour.description || null,
           destination: destination || null,
         },
       });
