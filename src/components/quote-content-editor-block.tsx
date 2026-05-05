@@ -40,6 +40,7 @@ import {
 import {
   buildJourSyncPlan,
   duplicateLineKey,
+  normKey,
   type SyncJour,
 } from "@/lib/cotation-sync";
 import { extractProgramFromFile, insertJours, insertLignes, purgeEtReinserer } from "@/lib/program-import";
@@ -367,14 +368,19 @@ export function QuoteContentEditorBlock({
           .order("created_at", { ascending: true }),
       ]);
 
-      const existing = ((joursData ?? []) as SyncJour[]).sort((a, b) => a.ordre - b.ordre);
-      const plan = buildJourSyncPlan({
-        existing,
-        generatedFromFlights: [],
-        fallbackStart: dateDepart ?? null,
-        fallbackEnd: dateRetour ?? null,
-      });
-      const jourIds = plan.deleteIds;
+      const seenJours = new Map<string, string>(); // key → id (on garde le premier)
+      const jourIds: string[] = [];
+      const sortedJours = [...((joursData ?? []) as SyncJour[])].sort(
+        (a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? "")
+      );
+      for (const j of sortedJours) {
+        const key = `${j.date_jour ?? ""}|${normKey(j.titre).slice(0, 80)}`;
+        if (seenJours.has(key)) {
+          jourIds.push(j.id);
+        } else {
+          seenJours.set(key, j.id);
+        }
+      }
       let removedJours = 0;
       if (jourIds.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
