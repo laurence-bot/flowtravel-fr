@@ -18,7 +18,7 @@ import { generateDayText } from "@/server/quote-day-text.functions";
 import { suggestDayPhoto } from "@/server/quote-images.functions";
 import { generateQuoteIntro } from "@/server/quote-intro.functions";
 import type { CotationJour, Inclusions } from "@/lib/quote-public";
-import { detectInclusions } from "@/lib/detect-inclusions";
+import { detectInclusions, generateInclusText } from "@/lib/detect-inclusions";
 import { InclusionPills } from "@/components/cotation/InclusionPills";
 import { InclusionToggles } from "@/components/cotation/InclusionToggles";
 import { ListChecks } from "lucide-react";
@@ -135,7 +135,68 @@ export function QuoteContentEditorBlock({
   const [enrichLoading, setEnrichLoading] = useState(false);
   const [hasFlights, setHasFlights] = useState(false);
   const [genIntroLoading, setGenIntroLoading] = useState(false);
+  const [genInclusLoading, setGenInclusLoading] = useState(false);
   const callGenerateIntro = useServerFn(generateQuoteIntro);
+
+  const generateInclus = async () => {
+    setGenInclusLoading(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const optsRes = await (supabase as any)
+        .from("flight_options")
+        .select("id")
+        .eq("cotation_id", cotationId);
+      const optionIds = ((optsRes.data ?? []) as Array<{ id: string }>).map((v) => v.id);
+
+      let segments: Array<{ aeroport_depart: string; aeroport_arrivee: string }> = [];
+      if (optionIds.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const segsRes = await (supabase as any)
+          .from("flight_segments")
+          .select("aeroport_depart, aeroport_arrivee")
+          .in("flight_option_id", optionIds);
+        segments = (segsRes.data ?? []) as typeof segments;
+      }
+
+      const hasVolInternational = segments.some(
+        (s) => s.aeroport_depart.slice(0, 2) !== s.aeroport_arrivee.slice(0, 2),
+      );
+      const hasVolDomestique = segments.some(
+        (s) => s.aeroport_depart.slice(0, 2) === s.aeroport_arrivee.slice(0, 2),
+      );
+
+      const { inclus_text, non_inclus_text } = generateInclusText({
+        jours: jours.map((j) => ({
+          titre: j.titre,
+          description: j.description,
+          date_jour: j.date_jour,
+          inclusions: j.inclusions ?? null,
+        })),
+        nombrePax: nombrePax ?? 2,
+        hasVolInternational,
+        hasVolDomestique,
+      });
+
+      setInclus(inclus_text);
+      setNonInclus(non_inclus_text);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from("cotations")
+        .update({
+          inclus_text: inclus_text || null,
+          non_inclus_text: non_inclus_text || null,
+        })
+        .eq("id", cotationId);
+
+      if (error) toast.error(error.message);
+      else toast.success("Inclusions générées depuis le programme.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erreur de génération.");
+    } finally {
+      setGenInclusLoading(false);
+    }
+  };
 
   const handleGenerateIntro = async () => {
     setGenIntroLoading(true);
@@ -1006,32 +1067,65 @@ export function QuoteContentEditorBlock({
       </div>
 
       {/* INCLUS / NON INCLUS */}
-      <div className="grid md:grid-cols-2 gap-4 pt-2 border-t">
-        <div className="space-y-2">
-          <Label htmlFor="inclus">Ce qui est inclus</Label>
-          <Textarea
-            id="inclus"
-            value={inclus}
-            onChange={(e) => setInclus(e.target.value)}
-            onBlur={saveInclus}
-            placeholder={"• Vols internationaux\n• Hébergement en chambre double\n• Transferts privés\n• Guide francophone…"}
-            rows={8}
-            disabled={!canWrite}
-            className="text-sm"
-          />
+      <div className="pt-2 border-t space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h3 className="text-sm font-semibold">Inclusions du voyage</h3>
+          {canWrite && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => void generateInclus()}
+              disabled={genInclusLoading || jours.length === 0}
+              title="Génère les inclusions depuis le programme jour par jour"
+            >
+              {genInclusLoading ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Wand2 className="h-4 w-4 mr-1" />
+              )}
+              Générer depuis le programme
+            </Button>
+          )}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="non-inclus">Ce qui n'est pas inclus</Label>
-          <Textarea
-            id="non-inclus"
-            value={nonInclus}
-            onChange={(e) => setNonInclus(e.target.value)}
-            onBlur={saveNonInclus}
-            placeholder={"• Visa et formalités\n• Assurance voyage\n• Pourboires\n• Dépenses personnelles…"}
-            rows={8}
-            disabled={!canWrite}
-            className="text-sm"
-          />
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="inclus" className="text-sm font-medium">
+              Ce qui est inclus
+            </Label>
+            <Textarea
+              id="inclus"
+              value={inclus}
+              onChange={(e) => setInclus(e.target.value)}
+              onBlur={saveInclus}
+              placeholder={"• Vols internationaux aller-retour\n• Hébergement en chambre double\n• Transferts privés\n• Guide francophone…"}
+              rows={10}
+              disabled={!canWrite}
+              className="text-sm font-mono"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Format libre — une ligne par item, commencez par • ou -
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="non-inclus" className="text-sm font-medium">
+              À prévoir / non inclus
+            </Label>
+            <Textarea
+              id="non-inclus"
+              value={nonInclus}
+              onChange={(e) => setNonInclus(e.target.value)}
+              onBlur={saveNonInclus}
+              placeholder={"• Visa et formalités administratives\n• Assurance voyage\n• Repas non mentionnés\n• Boissons\n• Pourboires\n• Dépenses personnelles…"}
+              rows={10}
+              disabled={!canWrite}
+              className="text-sm font-mono"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Renommé "À prévoir" sur la page client pour un ton plus positif.
+            </p>
+          </div>
         </div>
       </div>
 
