@@ -49,16 +49,18 @@ export const searchUnsplash = createServerFn({ method: "POST" })
       };
       return {
         ok: true as const,
-        results: json.results.map((r) => ({
-          id: r.id,
-          url: r.urls.regular,
-          thumb: r.urls.small,
-          full: r.urls.full,
-          alt: r.alt_description ?? "",
-          author: r.user.name,
-          authorUrl: r.user.links.html,
-          photoUrl: r.links.html,
-        })),
+        results: json.results
+          .filter((r) => r.alt_description && r.alt_description.length > 5)
+          .map((r) => ({
+            id: r.id,
+            url: r.urls.regular,
+            thumb: r.urls.small,
+            full: r.urls.full,
+            alt: r.alt_description ?? "",
+            author: r.user.name,
+            authorUrl: r.user.links.html,
+            photoUrl: r.links.html,
+          })),
         totalPages: json.total_pages,
       };
     } catch (e) {
