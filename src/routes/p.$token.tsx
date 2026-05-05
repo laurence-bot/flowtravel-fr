@@ -12,6 +12,7 @@ import { computeCotationFinance, ligneEcheances, computeAcompteClient } from "@/
 import { formatRoutingForClient, iataToCity } from "@/lib/iata";
 import { airlineName } from "@/lib/airlines";
 import { Check, Phone, MessageSquare, MapPin, Calendar, Users, Sparkles, Plane, Clock } from "lucide-react";
+import { InclusionPills } from "@/components/cotation/InclusionPills";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/p/$token")({
