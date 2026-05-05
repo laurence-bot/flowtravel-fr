@@ -132,6 +132,11 @@ const PROGRAM_TOOL = {
                 description:
                   "Description du jour reformulée dans un ton premium, sensoriel, fluide et naturel (français impeccable). INTERDIT : inventer une activité, un hébergement, un horaire, un service, un transfert, un repas qui n'est pas dans le document. INTERDIT : retirer une information factuelle. Conserve les noms propres exacts (hôtels, lieux, restaurants, prestataires). Pas d'émojis, pas de superlatifs creux ('inoubliable', 'magique').",
               },
+              hotel_nom: {
+                type: "string",
+                description:
+                  "Nom exact de l'hôtel / hébergement de la nuit pour ce jour, tel qu'écrit dans le document. Ne pas inventer. Null si non mentionné.",
+              },
             },
             required: ["ordre", "titre"],
             additionalProperties: false,
