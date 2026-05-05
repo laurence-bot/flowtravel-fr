@@ -30,7 +30,11 @@ import { computeCoverageUsage, computeFxPnl } from "@/lib/fx-pnl";
 import type { FactureEcheance, Paiement } from "@/hooks/use-data";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { Plus, Shield, ShieldAlert, ShieldCheck, TrendingUp, TrendingDown } from "lucide-react";
+import { Plus, Shield, ShieldAlert, ShieldCheck, TrendingUp, TrendingDown, Pencil, Trash2, Coins } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 import { tenterAjoutCouverture } from "@/lib/dedup";
