@@ -76,6 +76,19 @@ function CouverturesFXPage() {
   const anomalies = coverages.filter((c) => c.statut === "anomalie" || c.statut === "expiree").length;
   const fxPnl = computeFxPnl({ echeances, paiements, reservations });
 
+  const stockParDevise = coverages.reduce<Record<string, { total: number; disponible: number; engage: number; reserve: number; eur: number }>>((acc, c) => {
+    const { reserve, engage, disponible } = coverageBalance(c, reservations);
+    const k = c.devise;
+    if (!acc[k]) acc[k] = { total: 0, disponible: 0, engage: 0, reserve: 0, eur: 0 };
+    acc[k].total += Number(c.montant_devise);
+    acc[k].disponible += disponible;
+    acc[k].engage += engage;
+    acc[k].reserve += reserve;
+    acc[k].eur += Number(c.montant_devise) * Number(c.taux_change);
+    return acc;
+  }, {});
+  const stockEntries = Object.entries(stockParDevise).sort((a, b) => b[1].eur - a[1].eur);
+
   return (
     <div className="space-y-8">
       <PageHeader
@@ -90,6 +103,39 @@ function CouverturesFXPage() {
         <KPI label="Réservées" value={`${reservees}`} icon={ShieldCheck} hint="Affectées à des factures" />
         <KPI label="Alertes" value={`${anomalies}`} icon={ShieldAlert} hint="Expirées ou en anomalie" tone="alert" />
       </section>
+
+      {stockEntries.length > 0 && (
+        <Card className="border-border/60 overflow-hidden">
+          <div className="px-6 py-4 border-b border-border/60 flex items-center gap-2">
+            <Coins className="h-4 w-4 text-muted-foreground" />
+            <h2 className="font-display text-lg">Stock total par devise</h2>
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Devise</TableHead>
+                <TableHead className="text-right">Total couvert</TableHead>
+                <TableHead className="text-right">Engagé</TableHead>
+                <TableHead className="text-right">Réservé</TableHead>
+                <TableHead className="text-right">Disponible</TableHead>
+                <TableHead className="text-right">Équivalent EUR</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {stockEntries.map(([devise, s]) => (
+                <TableRow key={devise}>
+                  <TableCell><Badge variant="outline" className="font-mono">{devise}</Badge></TableCell>
+                  <TableCell className="text-right tabular-nums font-medium">{formatMoney(s.total, devise as DeviseCode)}</TableCell>
+                  <TableCell className="text-right tabular-nums text-destructive">{formatMoney(s.engage, devise as DeviseCode)}</TableCell>
+                  <TableCell className="text-right tabular-nums text-amber-600 dark:text-amber-400">{formatMoney(s.reserve, devise as DeviseCode)}</TableCell>
+                  <TableCell className="text-right tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">{formatMoney(s.disponible, devise as DeviseCode)}</TableCell>
+                  <TableCell className="text-right tabular-nums text-muted-foreground">{formatEUR(s.eur)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
 
       <Card className="border-border/60 overflow-hidden">
         <div className="px-6 py-4 border-b border-border/60">
