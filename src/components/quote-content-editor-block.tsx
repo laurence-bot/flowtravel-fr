@@ -881,6 +881,20 @@ export function QuoteContentEditorBlock({
               <Button
                 size="sm"
                 variant="outline"
+                onClick={() => void enrichPhotos()}
+                disabled={enrichPhotosLoading || jours.every((j) => !!j.image_url)}
+                title="Cherche automatiquement une photo Unsplash premium pour chaque jour sans photo"
+              >
+                {enrichPhotosLoading ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4 mr-1" />
+                )}
+                Enrichir photos
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={handleRegenClick}
                 disabled={regenLoading || !hasFlights}
                 title={
