@@ -161,7 +161,7 @@ function AbsencesPage() {
       <PageHeader
         title="Demandes de congés"
         description="Validation et saisie des absences"
-        actions={
+        action={
           <Button onClick={() => setOpen(true)}>
             <Plus className="h-4 w-4 mr-1" /> Saisir une absence
           </Button>
