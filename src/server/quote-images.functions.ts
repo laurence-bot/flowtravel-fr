@@ -252,6 +252,7 @@ async function searchUnsplashSingle(
 
     const scored = json.results
       .filter((r) => r.width > r.height)
+      .filter((r) => !excludeIds.has(r.id))
       .map((r) => ({
         ...r,
         score: r.likes * 1.5 + (r.alt_description ? 10 : 0),
