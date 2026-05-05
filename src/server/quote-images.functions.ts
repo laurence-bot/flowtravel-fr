@@ -435,11 +435,17 @@ export const suggestDayPhoto = createServerFn({ method: "POST" })
 
     console.log("[suggestDayPhoto] queries Unsplash:", queries);
 
+    const verificationContext = {
+      titre: data.titre,
+      lieu: lieux[0] ?? data.lieu ?? "",
+      destination: data.destination ?? null,
+    };
+
     if (unsplashKey) {
       for (const query of queries) {
-        const photo = await searchUnsplashSingle(query, unsplashKey, excludeIds);
+        const photo = await searchUnsplashSingle(query, unsplashKey, excludeIds, verificationContext);
         if (photo) {
-          console.log(`[suggestDayPhoto] Unsplash trouvé avec query: "${query}"`);
+          console.log(`[suggestDayPhoto] photo acceptée (score ${photo.relevanceScore}) avec query: "${query}"`);
           return { ok: true as const, photo, source: "unsplash" as const };
         }
       }
