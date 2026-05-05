@@ -952,7 +952,7 @@ export function QuoteContentEditorBlock({
         <div className="flex items-center justify-between flex-wrap gap-2">
           <Label>Itinéraire jour par jour ({jours.length})</Label>
           {canWrite && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <Button
                 size="sm"
                 variant="outline"
@@ -965,7 +965,7 @@ export function QuoteContentEditorBlock({
                 ) : (
                   <RefreshCw className="h-4 w-4 mr-1" />
                 )}
-                Synchroniser PDF + vols
+                Sync PDF + vols
               </Button>
               <Button
                 size="sm"
@@ -979,7 +979,7 @@ export function QuoteContentEditorBlock({
                 ) : (
                   <Trash2 className="h-4 w-4 mr-1" />
                 )}
-                Nettoyer doublons
+                Doublons
               </Button>
               <Button
                 size="sm"
@@ -993,7 +993,7 @@ export function QuoteContentEditorBlock({
                 ) : (
                   <Sparkles className="h-4 w-4 mr-1" />
                 )}
-                Enrichir hôtels
+                Hôtels
               </Button>
               <Button
                 size="sm"
@@ -1007,7 +1007,7 @@ export function QuoteContentEditorBlock({
                 ) : (
                   <Search className="h-4 w-4 mr-1" />
                 )}
-                Enrichir photos
+                Photos
               </Button>
               <Button
                 size="sm"
@@ -1021,7 +1021,7 @@ export function QuoteContentEditorBlock({
                 ) : (
                   <ListChecks className="h-4 w-4 mr-1" />
                 )}
-                Détecter inclusions
+                Inclusions
               </Button>
               <Button
                 size="sm"
@@ -1039,7 +1039,7 @@ export function QuoteContentEditorBlock({
                 ) : (
                   <Plane className="h-4 w-4 mr-1" />
                 )}
-                {jours.length === 0 ? "Générer depuis les vols" : "Régénérer depuis les vols"}
+                {jours.length === 0 ? "Générer" : "Depuis les vols"}
               </Button>
               <Button size="sm" variant="outline" onClick={addJour}>
                 <Plus className="h-4 w-4 mr-1" />
