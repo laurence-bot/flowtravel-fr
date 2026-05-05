@@ -12,6 +12,7 @@ import { computeCotationFinance, ligneEcheances, computeAcompteClient } from "@/
 import { formatRoutingForClient, iataToCity } from "@/lib/iata";
 import { airlineName } from "@/lib/airlines";
 import { Check, Phone, MessageSquare, MapPin, Calendar, Users, Sparkles, Plane, Clock } from "lucide-react";
+import { InclusionPills } from "@/components/cotation/InclusionPills";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/p/$token")({
@@ -316,6 +317,11 @@ function PublicQuotePage() {
                         <h3 className="brand-heading text-2xl md:text-3xl font-light brand-primary mb-3">
                           {j.titre}
                         </h3>
+                        {j.inclusions && Object.keys(j.inclusions).length > 0 && (
+                          <div className="mb-4">
+                            <InclusionPills inclusions={j.inclusions} variant="full" />
+                          </div>
+                        )}
                         {j.description && (
                           <p className="text-stone-700 leading-relaxed whitespace-pre-line">
                             {j.description}
