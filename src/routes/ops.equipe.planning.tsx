@@ -299,22 +299,34 @@ function PlanningPage() {
   };
 
   const save = async () => {
-    if (!form.employee_id) { toast.error("Employé requis"); return; }
-    if (!form.date_debut) { toast.error("Date requise"); return; }
+    const empId = selectedCell?.emp.id ?? form.employee_id;
+    if (!empId) { toast.error("Employé requis"); return; }
     setSaving(true);
     try {
-      const dates = expandDates(form.date_debut, form.repeat, month);
-      await Promise.all(dates.map(date =>
-        upsertPlanning({
-          employee_id: form.employee_id,
-          date_jour: date,
-          type: form.type,
-          heure_debut: form.heure_debut || null,
-          heure_fin: form.heure_fin || null,
-          note: form.note || null,
-        })
-      ));
-      toast.success(`${dates.length} entrée(s) ajoutée(s)`);
+      if (form.mode === "semaine_type") {
+        const toCreate = generateEntriesFromWeekConfig(
+          empId, form.mois_cible,
+          form.semaine_a, form.semaine_b,
+          form.utilise_semaine_b, form.type,
+        );
+        if (!toCreate.length) { toast.error("Aucun jour actif sélectionné"); setSaving(false); return; }
+        await Promise.all(toCreate.map(e => upsertPlanning(e)));
+        toast.success(`${toCreate.length} entrée(s) générée(s) pour ${form.mois_cible}`);
+      } else {
+        if (!form.date_debut) { toast.error("Date requise"); setSaving(false); return; }
+        const dates = expandDates(form.date_debut, form.repeat, month);
+        await Promise.all(dates.map(date =>
+          upsertPlanning({
+            employee_id: empId,
+            date_jour: date,
+            type: form.type,
+            heure_debut: form.heure_debut || null,
+            heure_fin: form.heure_fin || null,
+            note: form.note || null,
+          })
+        ));
+        toast.success(`${dates.length} entrée(s) ajoutée(s)`);
+      }
       setOpen(false);
       setForm(EMPTY_FORM);
       load();
