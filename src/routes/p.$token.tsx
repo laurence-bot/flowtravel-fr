@@ -319,7 +319,7 @@ function PublicQuotePage() {
                         </h3>
                         {j.inclusions && Object.keys(j.inclusions).length > 0 && (
                           <div className="mb-4">
-                            <InclusionPills inclusions={j.inclusions} variant="client" />
+                            <InclusionPills inclusions={j.inclusions} variant="full" />
                           </div>
                         )}
                         {j.description && (
