@@ -178,7 +178,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     items.filter((item) => {
       if (item.superAdminOnly && !isSuperAdmin) return false;
       // /ops/equipe (raccourci RH agence) caché au super_admin (a déjà la section OPS)
-      if (item.to === "/ops/equipe" && isSuperAdmin) return false;
+      if (item.to === "/ops/equipe" && isSuperAdmin && !item.superAdminOnly) return false;
       if (item.to === "/couvertures-fx" && !fxEnabled) return false;
       return canAccessRoute(role, item.to);
     });
