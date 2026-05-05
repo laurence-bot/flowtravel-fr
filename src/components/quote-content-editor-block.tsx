@@ -135,7 +135,68 @@ export function QuoteContentEditorBlock({
   const [enrichLoading, setEnrichLoading] = useState(false);
   const [hasFlights, setHasFlights] = useState(false);
   const [genIntroLoading, setGenIntroLoading] = useState(false);
+  const [genInclusLoading, setGenInclusLoading] = useState(false);
   const callGenerateIntro = useServerFn(generateQuoteIntro);
+
+  const generateInclus = async () => {
+    setGenInclusLoading(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const optsRes = await (supabase as any)
+        .from("flight_options")
+        .select("id")
+        .eq("cotation_id", cotationId);
+      const optionIds = ((optsRes.data ?? []) as Array<{ id: string }>).map((v) => v.id);
+
+      let segments: Array<{ aeroport_depart: string; aeroport_arrivee: string }> = [];
+      if (optionIds.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const segsRes = await (supabase as any)
+          .from("flight_segments")
+          .select("aeroport_depart, aeroport_arrivee")
+          .in("flight_option_id", optionIds);
+        segments = (segsRes.data ?? []) as typeof segments;
+      }
+
+      const hasVolInternational = segments.some(
+        (s) => s.aeroport_depart.slice(0, 2) !== s.aeroport_arrivee.slice(0, 2),
+      );
+      const hasVolDomestique = segments.some(
+        (s) => s.aeroport_depart.slice(0, 2) === s.aeroport_arrivee.slice(0, 2),
+      );
+
+      const { inclus_text, non_inclus_text } = generateInclusText({
+        jours: jours.map((j) => ({
+          titre: j.titre,
+          description: j.description,
+          date_jour: j.date_jour,
+          inclusions: j.inclusions ?? null,
+        })),
+        nombrePax: nombrePax ?? 2,
+        hasVolInternational,
+        hasVolDomestique,
+      });
+
+      setInclus(inclus_text);
+      setNonInclus(non_inclus_text);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from("cotations")
+        .update({
+          inclus_text: inclus_text || null,
+          non_inclus_text: non_inclus_text || null,
+        })
+        .eq("id", cotationId);
+
+      if (error) toast.error(error.message);
+      else toast.success("Inclusions générées depuis le programme.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erreur de génération.");
+    } finally {
+      setGenInclusLoading(false);
+    }
+  };
 
   const handleGenerateIntro = async () => {
     setGenIntroLoading(true);
