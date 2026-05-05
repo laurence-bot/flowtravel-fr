@@ -17,7 +17,11 @@ import { ImagePicker } from "@/components/image-picker";
 import { generateDayText } from "@/server/quote-day-text.functions";
 import { suggestDayPhoto } from "@/server/quote-images.functions";
 import { generateQuoteIntro } from "@/server/quote-intro.functions";
-import type { CotationJour } from "@/lib/quote-public";
+import type { CotationJour, Inclusions } from "@/lib/quote-public";
+import { detectInclusions } from "@/lib/detect-inclusions";
+import { InclusionPills } from "@/components/cotation/InclusionPills";
+import { InclusionToggles } from "@/components/cotation/InclusionToggles";
+import { ListChecks } from "lucide-react";
 import {
   ImageIcon,
   Plus,
