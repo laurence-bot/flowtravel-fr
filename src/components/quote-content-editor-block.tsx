@@ -1217,6 +1217,7 @@ function JourEditor({
   cotationId,
   canWrite,
   destination,
+  usedPhotoUrls,
   onUpdate,
   onDelete,
   dragHandleProps,
@@ -1229,6 +1230,7 @@ function JourEditor({
   cotationId: string;
   canWrite: boolean;
   destination: string | null;
+  usedPhotoUrls: Set<string>;
   onUpdate: (patch: Partial<CotationJour>) => void;
   onDelete: () => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
