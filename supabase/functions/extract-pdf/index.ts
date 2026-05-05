@@ -311,7 +311,9 @@ Tu extrais :
 (2) Toutes les prestations chiffrées avec prix et devise
 (3) Pour chaque jour : le nom EXACT de l'hôtel ou hébergement de la nuit (champ hotel_nom) — cherche les mentions d'hôtel, lodge, resort, riad, villa, camp dans la description du jour ou dans le tableau des hébergements. Si un hébergement est listé pour plusieurs nuits, attribue-le à chaque jour concerné. Ne jamais inventer un nom — null si absent.
 
-Pour chaque jour, RÉÉCRIS la description dans un ton premium, sensoriel, fluide — MAIS sans changer le sens, sans inventer, sans retirer aucune information factuelle (hôtels, transferts, horaires, services, repas, durées). Conserve les noms propres exacts. Pas d'émojis, pas de superlatifs creux ('inoubliable', 'magique'). Si une donnée manque, ne l'invente pas.`
+Pour chaque jour, RÉÉCRIS la description dans un ton premium, sensoriel, fluide — MAIS sans changer le sens, sans inventer, sans retirer aucune information factuelle (hôtels, transferts, horaires, services, repas, durées). Conserve les noms propres exacts. Pas d'émojis, pas de superlatifs creux ('inoubliable', 'magique'). Si une donnée manque, ne l'invente pas.
+
+Pour les jours comportant un vol domestique (vol intérieur entre deux villes du pays), inclure dans le titre du jour la mention du trajet aérien, ex : "Yogyakarta - Denpasar (vol domestique) - Menjangan" ou "Yogyakarta - Denpasar (vol IU 123) - Menjangan". Le numéro de vol doit être inclus s'il est mentionné dans le document.`
         : "Tu es un assistant comptable spécialisé en factures fournisseurs d'agences de voyage. Extrais les informations du contrat fourni. Si une information est absente, ne l'invente pas. Évalue ta confiance honnêtement.";
 
     // Construit le message user : texte ou images (vision)
