@@ -30,7 +30,11 @@ import { computeCoverageUsage, computeFxPnl } from "@/lib/fx-pnl";
 import type { FactureEcheance, Paiement } from "@/hooks/use-data";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { Plus, Shield, ShieldAlert, ShieldCheck, TrendingUp, TrendingDown } from "lucide-react";
+import { Plus, Shield, ShieldAlert, ShieldCheck, TrendingUp, TrendingDown, Pencil, Trash2, Coins } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 import { tenterAjoutCouverture } from "@/lib/dedup";
@@ -72,6 +76,19 @@ function CouverturesFXPage() {
   const anomalies = coverages.filter((c) => c.statut === "anomalie" || c.statut === "expiree").length;
   const fxPnl = computeFxPnl({ echeances, paiements, reservations });
 
+  const stockParDevise = coverages.reduce<Record<string, { total: number; disponible: number; engage: number; reserve: number; eur: number }>>((acc, c) => {
+    const { reserve, engage, disponible } = coverageBalance(c, reservations);
+    const k = c.devise;
+    if (!acc[k]) acc[k] = { total: 0, disponible: 0, engage: 0, reserve: 0, eur: 0 };
+    acc[k].total += Number(c.montant_devise);
+    acc[k].disponible += disponible;
+    acc[k].engage += engage;
+    acc[k].reserve += reserve;
+    acc[k].eur += Number(c.montant_devise) * Number(c.taux_change);
+    return acc;
+  }, {});
+  const stockEntries = Object.entries(stockParDevise).sort((a, b) => b[1].eur - a[1].eur);
+
   return (
     <div className="space-y-8">
       <PageHeader
@@ -86,6 +103,39 @@ function CouverturesFXPage() {
         <KPI label="Réservées" value={`${reservees}`} icon={ShieldCheck} hint="Affectées à des factures" />
         <KPI label="Alertes" value={`${anomalies}`} icon={ShieldAlert} hint="Expirées ou en anomalie" tone="alert" />
       </section>
+
+      {stockEntries.length > 0 && (
+        <Card className="border-border/60 overflow-hidden">
+          <div className="px-6 py-4 border-b border-border/60 flex items-center gap-2">
+            <Coins className="h-4 w-4 text-muted-foreground" />
+            <h2 className="font-display text-lg">Stock total par devise</h2>
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Devise</TableHead>
+                <TableHead className="text-right">Total couvert</TableHead>
+                <TableHead className="text-right">Engagé</TableHead>
+                <TableHead className="text-right">Réservé</TableHead>
+                <TableHead className="text-right">Disponible</TableHead>
+                <TableHead className="text-right">Équivalent EUR</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {stockEntries.map(([devise, s]) => (
+                <TableRow key={devise}>
+                  <TableCell><Badge variant="outline" className="font-mono">{devise}</Badge></TableCell>
+                  <TableCell className="text-right tabular-nums font-medium">{formatMoney(s.total, devise as DeviseCode)}</TableCell>
+                  <TableCell className="text-right tabular-nums text-destructive">{formatMoney(s.engage, devise as DeviseCode)}</TableCell>
+                  <TableCell className="text-right tabular-nums text-amber-600 dark:text-amber-400">{formatMoney(s.reserve, devise as DeviseCode)}</TableCell>
+                  <TableCell className="text-right tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">{formatMoney(s.disponible, devise as DeviseCode)}</TableCell>
+                  <TableCell className="text-right tabular-nums text-muted-foreground">{formatEUR(s.eur)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
 
       <Card className="border-border/60 overflow-hidden">
         <div className="px-6 py-4 border-b border-border/60">
@@ -114,6 +164,7 @@ function CouverturesFXPage() {
                 <TableHead className="text-right">Disponible</TableHead>
                 <TableHead>Échéance</TableHead>
                 <TableHead>Statut</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -150,6 +201,9 @@ function CouverturesFXPage() {
                     <TableCell className="text-sm">{formatDate(c.date_echeance)}</TableCell>
                     <TableCell>
                       <StatutBadge statut={c.statut} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <CoverageRowActions coverage={c} userId={user?.id} onDone={refetch} />
                     </TableCell>
                   </TableRow>
                 );
@@ -435,5 +489,165 @@ function NewCoverageDialog({ userId, existing, onDone }: { userId?: string; exis
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function CoverageRowActions({ coverage, userId, onDone }: { coverage: FxCoverage; userId?: string; onDone: () => void }) {
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [form, setForm] = useState({
+    reference: coverage.reference ?? "",
+    devise: coverage.devise as Exclude<DeviseCode, "EUR">,
+    montant_devise: String(coverage.montant_devise),
+    taux_change: String(coverage.taux_change),
+    date_ouverture: coverage.date_ouverture,
+    date_echeance: coverage.date_echeance,
+    notes: coverage.notes ?? "",
+    statut: coverage.statut as FxCoverageStatut,
+  });
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    const parsed = coverageSchema.safeParse({
+      reference: form.reference || undefined,
+      devise: form.devise,
+      montant_devise: Number(form.montant_devise),
+      taux_change: Number(form.taux_change),
+      date_ouverture: form.date_ouverture,
+      date_echeance: form.date_echeance,
+      notes: form.notes || undefined,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Champs invalides");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from("fx_coverages").update({
+      reference: parsed.data.reference ?? null,
+      devise: parsed.data.devise,
+      montant_devise: parsed.data.montant_devise,
+      taux_change: parsed.data.taux_change,
+      date_ouverture: parsed.data.date_ouverture,
+      date_echeance: parsed.data.date_echeance,
+      notes: parsed.data.notes ?? null,
+      statut: form.statut,
+    }).eq("id", coverage.id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    if (userId) {
+      await logAudit({ userId, entity: "fx_coverage", entityId: coverage.id, action: "update", description: `Couverture FX modifiée` });
+    }
+    toast.success("Couverture mise à jour");
+    setEditOpen(false);
+    onDone();
+  };
+
+  const remove = async () => {
+    setDeleting(true);
+    const { error } = await supabase.from("fx_coverages").delete().eq("id", coverage.id);
+    setDeleting(false);
+    if (error) { toast.error(error.message); return; }
+    if (userId) {
+      await logAudit({ userId, entity: "fx_coverage", entityId: coverage.id, action: "delete", description: `Couverture FX supprimée` });
+    }
+    toast.success("Couverture supprimée");
+    onDone();
+  };
+
+  const devisesEtrangeres = DEVISES.filter((d) => d.code !== "EUR");
+
+  return (
+    <div className="flex items-center justify-end gap-1">
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogTrigger asChild>
+          <Button size="icon" variant="ghost" className="h-8 w-8" title="Modifier">
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Modifier la couverture</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Référence</Label>
+              <Input value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Devise</Label>
+                <Select value={form.devise} onValueChange={(v) => setForm({ ...form, devise: v as Exclude<DeviseCode, "EUR"> })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {devisesEtrangeres.map((d) => (
+                      <SelectItem key={d.code} value={d.code}>{d.code} — {DEVISE_LABELS[d.code]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Montant en devise</Label>
+                <Input type="number" step="0.01" value={form.montant_devise} onChange={(e) => setForm({ ...form, montant_devise: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <Label>Taux vers EUR</Label>
+              <Input type="number" step="0.0001" value={form.taux_change} onChange={(e) => setForm({ ...form, taux_change: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Ouverture</Label>
+                <Input type="date" value={form.date_ouverture} onChange={(e) => setForm({ ...form, date_ouverture: e.target.value })} />
+              </div>
+              <div>
+                <Label>Échéance</Label>
+                <Input type="date" value={form.date_echeance} onChange={(e) => setForm({ ...form, date_echeance: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <Label>Statut</Label>
+              <Select value={form.statut} onValueChange={(v) => setForm({ ...form, statut: v as FxCoverageStatut })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(FX_STATUT_LABELS) as FxCoverageStatut[]).map((s) => (
+                    <SelectItem key={s} value={s}>{FX_STATUT_LABELS[s]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Notes</Label>
+              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setEditOpen(false)}>Annuler</Button>
+              <Button onClick={save} disabled={saving}>{saving ? "Enregistrement…" : "Enregistrer"}</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" title="Supprimer">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette couverture ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Action irréversible. Les réservations associées seront orphelines.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={remove} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? "Suppression…" : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
