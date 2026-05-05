@@ -87,7 +87,33 @@ function fmtH(h: number): string {
   return `${sign}${hh}h${mm > 0 ? mm : ""}`;
 }
 
+const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+const JS_DAY_TO_IDX: Record<number, number> = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 0: 6 };
+
+type JourConfig = {
+  actif: boolean;
+  heure_debut: string;
+  heure_fin: string;
+  pause_minutes: string;
+};
+
+type WeekConfig = { [jour: number]: JourConfig };
+
+const DEFAULT_JOUR: JourConfig = {
+  actif: true,
+  heure_debut: "09:00",
+  heure_fin: "17:30",
+  pause_minutes: "30",
+};
+
+const EMPTY_WEEK: WeekConfig = Object.fromEntries(
+  [0, 1, 2, 3, 4, 5, 6].map(i => [i, { ...DEFAULT_JOUR, actif: i < 5 }])
+) as WeekConfig;
+
+type FormMode = "simple" | "semaine_type";
+
 type FormState = {
+  mode: FormMode;
   employee_id: string;
   date_debut: string;
   type: PlanningType;
@@ -96,9 +122,14 @@ type FormState = {
   pause_minutes: string;
   note: string;
   repeat: string;
+  semaine_a: WeekConfig;
+  semaine_b: WeekConfig;
+  utilise_semaine_b: boolean;
+  mois_cible: string;
 };
 
 const EMPTY_FORM: FormState = {
+  mode: "simple",
   employee_id: "",
   date_debut: new Date().toISOString().slice(0, 10),
   type: "travail",
@@ -107,7 +138,109 @@ const EMPTY_FORM: FormState = {
   pause_minutes: "30",
   note: "",
   repeat: "none",
+  semaine_a: { ...EMPTY_WEEK },
+  semaine_b: { ...EMPTY_WEEK },
+  utilise_semaine_b: false,
+  mois_cible: new Date().toISOString().slice(0, 7),
 };
+
+function generateEntriesFromWeekConfig(
+  employeeId: string,
+  month: string,
+  semaineA: WeekConfig,
+  semaineB: WeekConfig,
+  utiliseSemaineB: boolean,
+  type: PlanningType,
+): Array<{
+  employee_id: string; date_jour: string; type: PlanningType;
+  heure_debut: string | null; heure_fin: string | null; note: string | null;
+}> {
+  const days = daysInMonth(month);
+  const entries: Array<{
+    employee_id: string; date_jour: string; type: PlanningType;
+    heure_debut: string | null; heure_fin: string | null; note: string | null;
+  }> = [];
+  days.forEach(dateStr => {
+    const date = new Date(dateStr);
+    const jourIdx = JS_DAY_TO_IDX[date.getDay()];
+    const isoWeek = getISOWeek(date);
+    const isSemaineA = isoWeek % 2 === 1;
+    const config = utiliseSemaineB
+      ? (isSemaineA ? semaineA[jourIdx] : semaineB[jourIdx])
+      : semaineA[jourIdx];
+    if (!config?.actif) return;
+    entries.push({
+      employee_id: employeeId,
+      date_jour: dateStr,
+      type,
+      heure_debut: config.heure_debut || null,
+      heure_fin: config.heure_fin || null,
+      note: null,
+    });
+  });
+  return entries;
+}
+
+function WeekGrid({
+  label, config, onChange,
+}: {
+  label: string;
+  config: WeekConfig;
+  onChange: (cfg: WeekConfig) => void;
+}) {
+  const update = (jourIdx: number, patch: Partial<JourConfig>) => {
+    onChange({ ...config, [jourIdx]: { ...config[jourIdx], ...patch } });
+  };
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium">{label}</Label>
+      <div className="rounded-lg border overflow-hidden">
+        {[0, 1, 2, 3, 4, 5, 6].map(i => {
+          const jour = config[i];
+          return (
+            <div key={i} className={`flex items-center gap-3 px-3 py-2 border-b last:border-b-0 transition-colors ${
+              jour.actif ? "bg-background" : "bg-muted/30"
+            }`}>
+              <label className="flex items-center gap-2 w-24 cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  checked={jour.actif}
+                  onChange={e => update(i, { actif: e.target.checked })}
+                  className="rounded"
+                />
+                <span className={`text-sm font-medium ${!jour.actif ? "text-muted-foreground" : ""}`}>
+                  {JOURS[i]}
+                </span>
+              </label>
+              {jour.actif ? (
+                <div className="flex items-center gap-2 flex-1">
+                  <Input type="time" value={jour.heure_debut}
+                    onChange={e => update(i, { heure_debut: e.target.value })}
+                    className="h-7 text-xs w-24" />
+                  <span className="text-muted-foreground text-xs">→</span>
+                  <Input type="time" value={jour.heure_fin}
+                    onChange={e => update(i, { heure_fin: e.target.value })}
+                    className="h-7 text-xs w-24" />
+                  <Select value={jour.pause_minutes} onValueChange={v => update(i, { pause_minutes: v })}>
+                    <SelectTrigger className="h-7 text-xs w-24"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Pas de pause</SelectItem>
+                      <SelectItem value="30">30 min</SelectItem>
+                      <SelectItem value="45">45 min</SelectItem>
+                      <SelectItem value="60">1h</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <span className="text-xs text-muted-foreground italic">Repos</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function PlanningPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -166,22 +299,34 @@ function PlanningPage() {
   };
 
   const save = async () => {
-    if (!form.employee_id) { toast.error("Employé requis"); return; }
-    if (!form.date_debut) { toast.error("Date requise"); return; }
+    const empId = selectedCell?.emp.id ?? form.employee_id;
+    if (!empId) { toast.error("Employé requis"); return; }
     setSaving(true);
     try {
-      const dates = expandDates(form.date_debut, form.repeat, month);
-      await Promise.all(dates.map(date =>
-        upsertPlanning({
-          employee_id: form.employee_id,
-          date_jour: date,
-          type: form.type,
-          heure_debut: form.heure_debut || null,
-          heure_fin: form.heure_fin || null,
-          note: form.note || null,
-        })
-      ));
-      toast.success(`${dates.length} entrée(s) ajoutée(s)`);
+      if (form.mode === "semaine_type") {
+        const toCreate = generateEntriesFromWeekConfig(
+          empId, form.mois_cible,
+          form.semaine_a, form.semaine_b,
+          form.utilise_semaine_b, form.type,
+        );
+        if (!toCreate.length) { toast.error("Aucun jour actif sélectionné"); setSaving(false); return; }
+        await Promise.all(toCreate.map(e => upsertPlanning(e)));
+        toast.success(`${toCreate.length} entrée(s) générée(s) pour ${form.mois_cible}`);
+      } else {
+        if (!form.date_debut) { toast.error("Date requise"); setSaving(false); return; }
+        const dates = expandDates(form.date_debut, form.repeat, month);
+        await Promise.all(dates.map(date =>
+          upsertPlanning({
+            employee_id: empId,
+            date_jour: date,
+            type: form.type,
+            heure_debut: form.heure_debut || null,
+            heure_fin: form.heure_fin || null,
+            note: form.note || null,
+          })
+        ));
+        toast.success(`${dates.length} entrée(s) ajoutée(s)`);
+      }
       setOpen(false);
       setForm(EMPTY_FORM);
       load();
@@ -502,7 +647,7 @@ function PlanningPage() {
 
       {/* Modal ajout entrée planning */}
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(EMPTY_FORM); }}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {selectedCell
@@ -510,11 +655,12 @@ function PlanningPage() {
                 : "Ajouter au planning"}
             </DialogTitle>
           </DialogHeader>
-          <div className="grid gap-3">
+
+          <div className="grid gap-4">
             {!selectedCell && (
-              <div>
+              <div className="space-y-1.5">
                 <Label>Employé</Label>
-                <Select value={form.employee_id} onValueChange={(v) => setForm({ ...form, employee_id: v })}>
+                <Select value={form.employee_id} onValueChange={v => setForm({ ...form, employee_id: v })}>
                   <SelectTrigger><SelectValue placeholder="Choisir…" /></SelectTrigger>
                   <SelectContent>
                     {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}
@@ -523,76 +669,160 @@ function PlanningPage() {
               </div>
             )}
 
-            <div>
-              <Label>Type</Label>
-              <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v as PlanningType })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(Object.entries(PLANNING_TYPE_LABELS) as [PlanningType, string][]).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Date de début</Label>
-              <Input type="date" value={form.date_debut} onChange={(e) => setForm({ ...form, date_debut: e.target.value })} />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Arrivée</Label>
-                <Input type="time" value={form.heure_debut} onChange={(e) => setForm({ ...form, heure_debut: e.target.value })} />
+            <div className="space-y-1.5">
+              <Label>Mode de saisie</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, mode: "simple" })}
+                  className={`px-3 py-2 rounded-lg border text-sm text-left transition-colors ${
+                    form.mode === "simple"
+                      ? "border-primary bg-primary/5 font-medium"
+                      : "border-border text-muted-foreground hover:border-primary/50"
+                  }`}
+                >
+                  <div className="font-medium">Entrée simple</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">Un jour ou avec répétition basique</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, mode: "semaine_type" })}
+                  className={`px-3 py-2 rounded-lg border text-sm text-left transition-colors ${
+                    form.mode === "semaine_type"
+                      ? "border-primary bg-primary/5 font-medium"
+                      : "border-border text-muted-foreground hover:border-primary/50"
+                  }`}
+                >
+                  <div className="font-medium">Planning type</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">Semaine A / B avec jours personnalisés</div>
+                </button>
               </div>
-              <div>
-                <Label>Départ</Label>
-                <Input type="time" value={form.heure_fin} onChange={(e) => setForm({ ...form, heure_fin: e.target.value })} />
-              </div>
             </div>
 
-            <div>
-              <Label>Pause déjeuner (minutes)</Label>
-              <Select value={form.pause_minutes} onValueChange={(v) => setForm({ ...form, pause_minutes: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">Pas de pause</SelectItem>
-                  <SelectItem value="30">30 min</SelectItem>
-                  <SelectItem value="45">45 min</SelectItem>
-                  <SelectItem value="60">1 heure</SelectItem>
-                  <SelectItem value="90">1h30</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {form.mode === "simple" && (
+              <>
+                <div className="space-y-1.5">
+                  <Label>Type</Label>
+                  <Select value={form.type} onValueChange={v => setForm({ ...form, type: v as PlanningType })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(Object.entries(PLANNING_TYPE_LABELS) as [PlanningType, string][]).map(([k, v]) => (
+                        <SelectItem key={k} value={k}>{v}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Date de début</Label>
+                  <Input type="date" value={form.date_debut}
+                    onChange={e => setForm({ ...form, date_debut: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Arrivée</Label>
+                    <Input type="time" value={form.heure_debut}
+                      onChange={e => setForm({ ...form, heure_debut: e.target.value })} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Départ</Label>
+                    <Input type="time" value={form.heure_fin}
+                      onChange={e => setForm({ ...form, heure_fin: e.target.value })} />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Pause déjeuner</Label>
+                  <Select value={form.pause_minutes} onValueChange={v => setForm({ ...form, pause_minutes: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Pas de pause</SelectItem>
+                      <SelectItem value="30">30 min</SelectItem>
+                      <SelectItem value="45">45 min</SelectItem>
+                      <SelectItem value="60">1 heure</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Répétition</Label>
+                  <Select value={form.repeat} onValueChange={v => setForm({ ...form, repeat: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {REPEAT_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  {form.repeat === "week2" && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      1 {DAY_FULL[new Date(form.date_debut).getDay()]} sur 2, à partir du {form.date_debut}
+                    </p>
+                  )}
+                  {form.repeat === "week" && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Chaque {DAY_FULL[new Date(form.date_debut).getDay()]} du mois {month}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Note <span className="text-xs text-muted-foreground">(optionnel)</span></Label>
+                  <Input value={form.note} onChange={e => setForm({ ...form, note: e.target.value })}
+                    placeholder="ex : Formation Paris, RDV client…" />
+                </div>
+              </>
+            )}
 
-            <div>
-              <Label>Répétition</Label>
-              <Select value={form.repeat} onValueChange={(v) => setForm({ ...form, repeat: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {REPEAT_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              {form.repeat === "week2" && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  1 {DAY_FULL[new Date(form.date_debut).getDay()]} sur 2, à partir du {form.date_debut}
-                </p>
-              )}
-              {form.repeat === "week" && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Chaque {DAY_FULL[new Date(form.date_debut).getDay()]} du mois {month}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label>Note (optionnel)</Label>
-              <Textarea rows={2} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="ex : Formation Paris, RDV client…" />
-            </div>
+            {form.mode === "semaine_type" && (
+              <>
+                <div className="space-y-1.5">
+                  <Label>Mois à remplir</Label>
+                  <Input type="month" value={form.mois_cible}
+                    onChange={e => setForm({ ...form, mois_cible: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Type d'activité</Label>
+                  <Select value={form.type} onValueChange={v => setForm({ ...form, type: v as PlanningType })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(Object.entries(PLANNING_TYPE_LABELS) as [PlanningType, string][]).map(([k, v]) => (
+                        <SelectItem key={k} value={k}>{v}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border hover:bg-muted/30 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={form.utilise_semaine_b}
+                    onChange={e => setForm({ ...form, utilise_semaine_b: e.target.checked })}
+                    className="rounded"
+                  />
+                  <div>
+                    <div className="text-sm font-medium">Activer semaine B (alternance)</div>
+                    <div className="text-xs text-muted-foreground">
+                      Semaines impaires = A · Semaines paires = B
+                    </div>
+                  </div>
+                </label>
+                <WeekGrid
+                  label={form.utilise_semaine_b ? "Semaine A (semaines impaires)" : "Jours travaillés"}
+                  config={form.semaine_a}
+                  onChange={cfg => setForm({ ...form, semaine_a: cfg })}
+                />
+                {form.utilise_semaine_b && (
+                  <WeekGrid
+                    label="Semaine B (semaines paires)"
+                    config={form.semaine_b}
+                    onChange={cfg => setForm({ ...form, semaine_b: cfg })}
+                  />
+                )}
+              </>
+            )}
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setOpen(false); setForm(EMPTY_FORM); }}>Annuler</Button>
-            <Button onClick={save} disabled={saving}>{saving ? "Enregistrement…" : "Enregistrer"}</Button>
+            <Button variant="outline" onClick={() => { setOpen(false); setForm(EMPTY_FORM); }}>
+              Annuler
+            </Button>
+            <Button onClick={save} disabled={saving}>
+              {saving ? "Enregistrement…" : "Enregistrer"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
