@@ -267,6 +267,7 @@ export function buildItineraryFromFlights(
     const j2 = days[1];
     if (!j2.isFlightDay) {
       j2.titre = `Arrivée à ${villeDestination ?? "destination"}`;
+      j2.isFlightDay = true;
       j2.description =
         `Arrivée à ${villeDestination ?? "destination"} le ${fmtDateLong(arrDate)}` +
         (outbound[outbound.length - 1]?.heure_arrivee
