@@ -321,6 +321,12 @@ export function QuoteContentEditorBlock({
     return d.toISOString().slice(0, 10);
   };
 
+  // Suit toutes les image_url déjà utilisées dans les jours
+  const usedPhotoUrls = useMemo(
+    () => new Set(jours.map((j) => j.image_url).filter(Boolean) as string[]),
+    [jours],
+  );
+
   const addJour = async () => {
     const ordre = jours.length > 0 ? Math.max(...jours.map((j) => j.ordre)) + 1 : 1;
     const autoDate = computeAutoDate(jours.length);
