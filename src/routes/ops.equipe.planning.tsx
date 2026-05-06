@@ -302,11 +302,11 @@ function PlanningPage() {
 
         let dates: string[];
         if ((form.type === "deplacement" || form.type === "formation") && form.date_fin && form.date_fin >= form.date_debut) {
-          // Plage multi-jours : tous les jours ouvrés entre début et fin, sans restriction de mois
+          // Plage multi-jours : tous les jours entre début et fin (week-ends inclus)
           const allDays: string[] = [];
           let cur = form.date_debut;
           while (cur <= form.date_fin) {
-            if (!isWeekend(cur)) allDays.push(cur);
+            allDays.push(cur);
             cur = addDays(cur, 1);
           }
           dates = allDays.length ? allDays : [form.date_debut];
