@@ -302,8 +302,14 @@ function PlanningPage() {
 
         let dates: string[];
         if ((form.type === "deplacement" || form.type === "formation") && form.date_fin && form.date_fin >= form.date_debut) {
-          dates = daysInMonth(month).filter(d => d >= form.date_debut && d <= form.date_fin && !isWeekend(d));
-          if (!dates.length) dates = [form.date_debut];
+          // Plage multi-jours : tous les jours ouvrés entre début et fin, sans restriction de mois
+          const allDays: string[] = [];
+          let cur = form.date_debut;
+          while (cur <= form.date_fin) {
+            if (!isWeekend(cur)) allDays.push(cur);
+            cur = addDays(cur, 1);
+          }
+          dates = allDays.length ? allDays : [form.date_debut];
         } else {
           dates = expandDates(form.date_debut, form.repeat, month);
         }
