@@ -761,29 +761,33 @@ function PlanningPage() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label>Arrivée</Label>
-                    <Input type="time" value={form.heure_debut} onChange={e => setForm({ ...form, heure_debut: e.target.value })} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Départ</Label>
-                    <Input type="time" value={form.heure_fin} onChange={e => setForm({ ...form, heure_fin: e.target.value })} />
-                  </div>
-                </div>
+                {!(form.type === "deplacement" || form.type === "formation") && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label>Arrivée</Label>
+                        <Input type="time" value={form.heure_debut} onChange={e => setForm({ ...form, heure_debut: e.target.value })} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Départ</Label>
+                        <Input type="time" value={form.heure_fin} onChange={e => setForm({ ...form, heure_fin: e.target.value })} />
+                      </div>
+                    </div>
 
-                <div className="space-y-1.5">
-                  <Label>Pause déjeuner</Label>
-                  <Select value={form.pause_minutes} onValueChange={v => setForm({ ...form, pause_minutes: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">Pas de pause</SelectItem>
-                      <SelectItem value="30">30 min</SelectItem>
-                      <SelectItem value="45">45 min</SelectItem>
-                      <SelectItem value="60">1 heure</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                    <div className="space-y-1.5">
+                      <Label>Pause déjeuner</Label>
+                      <Select value={form.pause_minutes} onValueChange={v => setForm({ ...form, pause_minutes: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">Pas de pause</SelectItem>
+                          <SelectItem value="30">30 min</SelectItem>
+                          <SelectItem value="45">45 min</SelectItem>
+                          <SelectItem value="60">1 heure</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
 
                 {!isEditing && (
                   <div className="space-y-1.5">
