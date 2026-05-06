@@ -291,6 +291,7 @@ function PlanningPage() {
         load();
         return;
       }
+
       if (form.mode === "semaine_type") {
         const toCreate = generateEntriesFromWeekConfig(empId, form.mois_cible, form.semaine_a, form.semaine_b, form.utilise_semaine_b, form.type);
         if (!toCreate.length) { toast.error("Aucun jour actif sélectionné"); setSaving(false); return; }
@@ -298,6 +299,7 @@ function PlanningPage() {
         toast.success(`${toCreate.length} entrée(s) générée(s) pour ${form.mois_cible}`);
       } else {
         if (!form.date_debut) { toast.error("Date requise"); setSaving(false); return; }
+
         let dates: string[];
         if ((form.type === "deplacement" || form.type === "formation") && form.date_fin && form.date_fin >= form.date_debut) {
           dates = daysInMonth(month).filter(d => d >= form.date_debut && d <= form.date_fin && !isWeekend(d));
@@ -305,6 +307,33 @@ function PlanningPage() {
         } else {
           dates = expandDates(form.date_debut, form.repeat, month);
         }
+
+        // ── Détection de conflits ──────────────────────────────────────
+        const EXCLUSIFS: PlanningType[] = ["travail", "teletravail", "deplacement", "formation"];
+        if (EXCLUSIFS.includes(form.type)) {
+          const conflictDates = dates.filter(d => {
+            const existing = cellFor(empId, d);
+            return existing.some(e => EXCLUSIFS.includes(e.type) && e.id !== form.editId);
+          });
+
+          if (conflictDates.length > 0) {
+            const conflictEntries = conflictDates.flatMap(d =>
+              cellFor(empId, d).filter(e => EXCLUSIFS.includes(e.type))
+            );
+            const confirmed = window.confirm(
+              `Conflit détecté sur ${conflictDates.length} jour(s) :\n` +
+              conflictDates.map(d => {
+                const existing = cellFor(empId, d).filter(e => EXCLUSIFS.includes(e.type));
+                return `• ${d} : ${existing.map(e => PLANNING_TYPE_LABELS[e.type]).join(", ")} → remplacé par ${PLANNING_TYPE_LABELS[form.type]}`;
+              }).join("\n") +
+              `\n\nVoulez-vous remplacer les entrées existantes ?`
+            );
+            if (!confirmed) { setSaving(false); return; }
+            await Promise.all(conflictEntries.map(e => deletePlanning(e.id)));
+          }
+        }
+        // ──────────────────────────────────────────────────────────────
+
         await Promise.all(dates.map(date =>
           upsertPlanning({ employee_id: empId, date_jour: date, type: form.type, heure_debut: form.heure_debut || null, heure_fin: form.heure_fin || null, note: form.note || null })
         ));
