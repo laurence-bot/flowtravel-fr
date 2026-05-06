@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Trash2, Copy, AlertTriangle, Check, X } from "lucide-react";
+import { ArrowLeft, Trash2, Copy, AlertTriangle, Check, X, Pencil } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,13 +23,13 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/ops/equipe/planning")({ component: PlanningPage });
 
-const TYPE_COLORS: Record<PlanningType, string> = {
-  travail:     "bg-green-100 text-green-800 border-green-200",
-  teletravail: "bg-blue-100 text-blue-800 border-blue-200",
-  reunion:     "bg-purple-100 text-purple-800 border-purple-200",
-  deplacement: "bg-orange-100 text-orange-800 border-orange-200",
-  formation:   "bg-amber-100 text-amber-800 border-amber-200",
-  autre:       "bg-zinc-100 text-zinc-600 border-zinc-200",
+const TYPE_COLORS: Record<PlanningType, { badge: string; dot: string }> = {
+  travail:     { badge: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
+  teletravail: { badge: "bg-sky-50 text-sky-700 border-sky-200",            dot: "bg-sky-500" },
+  reunion:     { badge: "bg-violet-50 text-violet-700 border-violet-200",   dot: "bg-violet-500" },
+  deplacement: { badge: "bg-orange-50 text-orange-700 border-orange-200",   dot: "bg-orange-500" },
+  formation:   { badge: "bg-amber-50 text-amber-700 border-amber-200",      dot: "bg-amber-500" },
+  autre:       { badge: "bg-zinc-50 text-zinc-500 border-zinc-200",         dot: "bg-zinc-400" },
 };
 
 const DAY_LABELS = ["D", "L", "M", "M", "J", "V", "S"];
@@ -90,22 +90,10 @@ function fmtH(h: number): string {
 const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 const JS_DAY_TO_IDX: Record<number, number> = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 0: 6 };
 
-type JourConfig = {
-  actif: boolean;
-  heure_debut: string;
-  heure_fin: string;
-  pause_minutes: string;
-};
-
+type JourConfig = { actif: boolean; heure_debut: string; heure_fin: string; pause_minutes: string };
 type WeekConfig = { [jour: number]: JourConfig };
 
-const DEFAULT_JOUR: JourConfig = {
-  actif: true,
-  heure_debut: "09:00",
-  heure_fin: "17:30",
-  pause_minutes: "30",
-};
-
+const DEFAULT_JOUR: JourConfig = { actif: true, heure_debut: "09:00", heure_fin: "17:30", pause_minutes: "30" };
 const EMPTY_WEEK: WeekConfig = Object.fromEntries(
   [0, 1, 2, 3, 4, 5, 6].map(i => [i, { ...DEFAULT_JOUR, actif: i < 5 }])
 ) as WeekConfig;
@@ -114,6 +102,7 @@ type FormMode = "simple" | "semaine_type";
 
 type FormState = {
   mode: FormMode;
+  editId: string | null;
   employee_id: string;
   date_debut: string;
   date_fin: string;
@@ -131,6 +120,7 @@ type FormState = {
 
 const EMPTY_FORM: FormState = {
   mode: "simple",
+  editId: null,
   employee_id: "",
   date_debut: new Date().toISOString().slice(0, 10),
   date_fin: "",
@@ -147,52 +137,33 @@ const EMPTY_FORM: FormState = {
 };
 
 function generateEntriesFromWeekConfig(
-  employeeId: string,
-  month: string,
-  semaineA: WeekConfig,
-  semaineB: WeekConfig,
-  utiliseSemaineB: boolean,
-  type: PlanningType,
-): Array<{
-  employee_id: string; date_jour: string; type: PlanningType;
-  heure_debut: string | null; heure_fin: string | null; note: string | null;
-}> {
+  employeeId: string, month: string,
+  semaineA: WeekConfig, semaineB: WeekConfig,
+  utiliseSemaineB: boolean, type: PlanningType,
+) {
   const days = daysInMonth(month);
-  const entries: Array<{
-    employee_id: string; date_jour: string; type: PlanningType;
-    heure_debut: string | null; heure_fin: string | null; note: string | null;
-  }> = [];
-  days.forEach(dateStr => {
+  return days.flatMap(dateStr => {
     const date = new Date(dateStr);
     const jourIdx = JS_DAY_TO_IDX[date.getDay()];
     const isoWeek = getISOWeek(date);
-    const isSemaineA = isoWeek % 2 === 1;
     const config = utiliseSemaineB
-      ? (isSemaineA ? semaineA[jourIdx] : semaineB[jourIdx])
+      ? (isoWeek % 2 === 1 ? semaineA[jourIdx] : semaineB[jourIdx])
       : semaineA[jourIdx];
-    if (!config?.actif) return;
-    entries.push({
+    if (!config?.actif) return [];
+    return [{
       employee_id: employeeId,
       date_jour: dateStr,
       type,
       heure_debut: config.heure_debut || null,
       heure_fin: config.heure_fin || null,
       note: null,
-    });
+    }];
   });
-  return entries;
 }
 
-function WeekGrid({
-  label, config, onChange,
-}: {
-  label: string;
-  config: WeekConfig;
-  onChange: (cfg: WeekConfig) => void;
-}) {
-  const update = (jourIdx: number, patch: Partial<JourConfig>) => {
+function WeekGrid({ label, config, onChange }: { label: string; config: WeekConfig; onChange: (cfg: WeekConfig) => void }) {
+  const update = (jourIdx: number, patch: Partial<JourConfig>) =>
     onChange({ ...config, [jourIdx]: { ...config[jourIdx], ...patch } });
-  };
   return (
     <div className="space-y-2">
       <Label className="text-sm font-medium">{label}</Label>
@@ -200,29 +171,16 @@ function WeekGrid({
         {[0, 1, 2, 3, 4, 5, 6].map(i => {
           const jour = config[i];
           return (
-            <div key={i} className={`flex items-center gap-3 px-3 py-2 border-b last:border-b-0 transition-colors ${
-              jour.actif ? "bg-background" : "bg-muted/30"
-            }`}>
+            <div key={i} className={`flex items-center gap-3 px-3 py-2 border-b last:border-b-0 transition-colors ${jour.actif ? "bg-background" : "bg-muted/30"}`}>
               <label className="flex items-center gap-2 w-24 cursor-pointer shrink-0">
-                <input
-                  type="checkbox"
-                  checked={jour.actif}
-                  onChange={e => update(i, { actif: e.target.checked })}
-                  className="rounded"
-                />
-                <span className={`text-sm font-medium ${!jour.actif ? "text-muted-foreground" : ""}`}>
-                  {JOURS[i]}
-                </span>
+                <input type="checkbox" checked={jour.actif} onChange={e => update(i, { actif: e.target.checked })} className="rounded" />
+                <span className={`text-sm font-medium ${!jour.actif ? "text-muted-foreground" : ""}`}>{JOURS[i]}</span>
               </label>
               {jour.actif ? (
                 <div className="flex items-center gap-2 flex-1">
-                  <Input type="time" value={jour.heure_debut}
-                    onChange={e => update(i, { heure_debut: e.target.value })}
-                    className="h-7 text-xs w-24" />
+                  <Input type="time" value={jour.heure_debut} onChange={e => update(i, { heure_debut: e.target.value })} className="h-7 text-xs w-24" />
                   <span className="text-muted-foreground text-xs">→</span>
-                  <Input type="time" value={jour.heure_fin}
-                    onChange={e => update(i, { heure_fin: e.target.value })}
-                    className="h-7 text-xs w-24" />
+                  <Input type="time" value={jour.heure_fin} onChange={e => update(i, { heure_fin: e.target.value })} className="h-7 text-xs w-24" />
                   <Select value={jour.pause_minutes} onValueChange={v => update(i, { pause_minutes: v })}>
                     <SelectTrigger className="h-7 text-xs w-24"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -274,7 +232,6 @@ function PlanningPage() {
     setEmployees(actifs);
     setEntries(plan);
     setRecups(recs);
-
     await Promise.all(actifs.map(async emp => {
       const empEntries = plan.filter(e => e.employee_id === emp.id);
       const realisees = calcHeuresRealisees(empEntries);
@@ -291,12 +248,25 @@ function PlanningPage() {
     entries.filter(e => e.employee_id === empId && e.date_jour === date);
 
   const openAdd = (emp?: Employee, date?: string) => {
+    setForm({ ...EMPTY_FORM, employee_id: emp?.id ?? "", date_debut: date ?? new Date().toISOString().slice(0, 10) });
+    setSelectedCell(emp && date ? { emp, date } : null);
+    setOpen(true);
+  };
+
+  const openEdit = (e: React.MouseEvent, entry: PlanningEntry, emp: Employee) => {
+    e.stopPropagation();
+    setSelectedCell({ emp, date: entry.date_jour });
     setForm({
       ...EMPTY_FORM,
-      employee_id: emp?.id ?? "",
-      date_debut: date ?? new Date().toISOString().slice(0, 10),
+      editId: entry.id,
+      employee_id: entry.employee_id,
+      date_debut: entry.date_jour,
+      type: entry.type,
+      heure_debut: entry.heure_debut ?? "09:00",
+      heure_fin: entry.heure_fin ?? "17:30",
+      pause_minutes: "30",
+      note: entry.note ?? "",
     });
-    setSelectedCell(emp && date ? { emp, date } : null);
     setOpen(true);
   };
 
@@ -305,12 +275,24 @@ function PlanningPage() {
     if (!empId) { toast.error("Employé requis"); return; }
     setSaving(true);
     try {
+      if (form.editId) {
+        await deletePlanning(form.editId);
+        await upsertPlanning({
+          employee_id: empId,
+          date_jour: form.date_debut,
+          type: form.type,
+          heure_debut: form.heure_debut || null,
+          heure_fin: form.heure_fin || null,
+          note: form.note || null,
+        });
+        toast.success("Entrée mise à jour");
+        setOpen(false);
+        setForm(EMPTY_FORM);
+        load();
+        return;
+      }
       if (form.mode === "semaine_type") {
-        const toCreate = generateEntriesFromWeekConfig(
-          empId, form.mois_cible,
-          form.semaine_a, form.semaine_b,
-          form.utilise_semaine_b, form.type,
-        );
+        const toCreate = generateEntriesFromWeekConfig(empId, form.mois_cible, form.semaine_a, form.semaine_b, form.utilise_semaine_b, form.type);
         if (!toCreate.length) { toast.error("Aucun jour actif sélectionné"); setSaving(false); return; }
         await Promise.all(toCreate.map(e => upsertPlanning(e)));
         toast.success(`${toCreate.length} entrée(s) générée(s) pour ${form.mois_cible}`);
@@ -318,21 +300,13 @@ function PlanningPage() {
         if (!form.date_debut) { toast.error("Date requise"); setSaving(false); return; }
         let dates: string[];
         if ((form.type === "deplacement" || form.type === "formation") && form.date_fin && form.date_fin >= form.date_debut) {
-          dates = daysInMonth(month)
-            .filter(d => d >= form.date_debut && d <= form.date_fin && !isWeekend(d));
+          dates = daysInMonth(month).filter(d => d >= form.date_debut && d <= form.date_fin && !isWeekend(d));
           if (!dates.length) dates = [form.date_debut];
         } else {
           dates = expandDates(form.date_debut, form.repeat, month);
         }
         await Promise.all(dates.map(date =>
-          upsertPlanning({
-            employee_id: empId,
-            date_jour: date,
-            type: form.type,
-            heure_debut: form.heure_debut || null,
-            heure_fin: form.heure_fin || null,
-            note: form.note || null,
-          })
+          upsertPlanning({ employee_id: empId, date_jour: date, type: form.type, heure_debut: form.heure_debut || null, heure_fin: form.heure_fin || null, note: form.note || null })
         ));
         toast.success(`${dates.length} entrée(s) ajoutée(s)`);
       }
@@ -342,7 +316,8 @@ function PlanningPage() {
     } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
 
-  const del = async (id: string) => {
+  const del = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
     try { await deletePlanning(id); load(); }
     catch (e: any) { toast.error(e.message); }
   };
@@ -350,21 +325,11 @@ function PlanningPage() {
   const copyWeek = async (monday: string) => {
     const mon = new Date(monday);
     const sun = new Date(monday); sun.setDate(sun.getDate() + 6);
-    const weekEntries = entries.filter(e => {
-      const d = new Date(e.date_jour);
-      return d >= mon && d <= sun;
-    });
+    const weekEntries = entries.filter(e => { const d = new Date(e.date_jour); return d >= mon && d <= sun; });
     if (!weekEntries.length) { toast.error("Aucune entrée cette semaine"); return; }
     try {
       await Promise.all(weekEntries.map(e =>
-        upsertPlanning({
-          employee_id: e.employee_id,
-          date_jour: addDays(e.date_jour, 7),
-          type: e.type,
-          heure_debut: e.heure_debut ?? null,
-          heure_fin: e.heure_fin ?? null,
-          note: e.note ?? null,
-        })
+        upsertPlanning({ employee_id: e.employee_id, date_jour: addDays(e.date_jour, 7), type: e.type, heure_debut: e.heure_debut ?? null, heure_fin: e.heure_fin ?? null, note: e.note ?? null })
       ));
       toast.success(`${weekEntries.length} entrée(s) copiée(s)`);
       load();
@@ -374,14 +339,7 @@ function PlanningPage() {
   const saveRecup = async () => {
     if (!recupForm.employee_id || !recupForm.heures_demandees) { toast.error("Champs requis"); return; }
     try {
-      await createRecupDemande({
-        employee_id: recupForm.employee_id,
-        mois: month,
-        type: recupForm.type,
-        heures_demandees: Number(recupForm.heures_demandees),
-        date_souhaitee: recupForm.date_souhaitee || undefined,
-        motif: recupForm.motif || undefined,
-      });
+      await createRecupDemande({ employee_id: recupForm.employee_id, mois: month, type: recupForm.type, heures_demandees: Number(recupForm.heures_demandees), date_souhaitee: recupForm.date_souhaitee || undefined, motif: recupForm.motif || undefined });
       toast.success("Demande créée");
       setRecupOpen(false);
       load();
@@ -391,14 +349,20 @@ function PlanningPage() {
   const alertes = alertesFinDeMois(compteurs, employees);
   const empById = (id: string) => employees.find(e => e.id === id);
 
-  const weeks: string[][] = [];
+  const weeks: { days: string[]; weekNum: number }[] = [];
   let cur: string[] = [];
-  days.forEach(d => {
+  days.forEach((d, i) => {
     cur.push(d);
-    if (new Date(d).getDay() === 0 || d === days[days.length - 1]) { weeks.push(cur); cur = []; }
+    const dt = new Date(d);
+    if (dt.getDay() === 0 || i === days.length - 1) {
+      weeks.push({ days: cur, weekNum: getISOWeek(new Date(cur[0])) });
+      cur = [];
+    }
   });
 
   const pendingCount = recups.filter(r => r.statut === "demande").length;
+  const isEditing = !!form.editId;
+  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <div className="space-y-6">
@@ -454,7 +418,10 @@ function PlanningPage() {
         <TabsContent value="planning" className="space-y-4">
           <div className="flex flex-wrap gap-2 text-xs">
             {(Object.entries(PLANNING_TYPE_LABELS) as [PlanningType, string][]).map(([k, v]) => (
-              <span key={k} className={`px-2 py-1 rounded border ${TYPE_COLORS[k]}`}>{v}</span>
+              <span key={k} className={`inline-flex items-center gap-1.5 px-2 py-1 rounded border ${TYPE_COLORS[k].badge}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${TYPE_COLORS[k].dot}`} />
+                {v}
+              </span>
             ))}
           </div>
 
@@ -463,12 +430,16 @@ function PlanningPage() {
               <thead>
                 <tr className="bg-muted/40 border-b">
                   <th className="text-left px-2 py-1 sticky left-0 bg-muted/40 z-10">Sem.</th>
-                  {weeks.map((week, wi) => {
-                    const monday = week.find(d => new Date(d).getDay() === 1) ?? week[0];
+                  {weeks.map((wk, wi) => {
+                    const monday = wk.days.find(d => new Date(d).getDay() === 1) ?? wk.days[0];
                     return (
-                      <th key={wi} colSpan={week.length} className="text-center font-normal px-2 py-1 border-l">
-                        <button onClick={() => copyWeek(monday)} title="Copier sur semaine suivante" className="inline-flex items-center gap-1 hover:text-foreground text-muted-foreground">
-                          <Copy className="h-3 w-3" /> S{wi + 1}
+                      <th key={wi} colSpan={wk.days.length} className="text-center font-normal px-2 py-1 border-l">
+                        <button
+                          onClick={() => copyWeek(monday)}
+                          title="Copier sur semaine suivante"
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors px-1.5 py-0.5 rounded hover:bg-muted/50"
+                        >
+                          <Copy className="h-3 w-3" /> S{wk.weekNum}
                         </button>
                       </th>
                     );
@@ -480,10 +451,24 @@ function PlanningPage() {
                   {days.map(d => {
                     const dt = new Date(d);
                     const wk = isWeekend(d);
+                    const isToday = d === today;
+                    const isFirstOfWeek = dt.getDay() === 1 && d !== days[0];
                     return (
-                      <th key={d} className={`px-1 py-1 font-normal min-w-[44px] ${wk ? "bg-muted/40 text-muted-foreground" : ""}`}>
-                        <div className="text-sm font-medium">{dt.getDate()}</div>
-                        <div className="text-[10px] uppercase">{DAY_LABELS[dt.getDay()]}</div>
+                      <th
+                        key={d}
+                        className={[
+                          "px-1 py-1 font-normal min-w-[44px] border-l",
+                          isFirstOfWeek ? "border-l-2 border-l-border/60" : "border-border/40",
+                          wk ? "bg-muted/40 text-muted-foreground" : "",
+                          isToday ? "bg-primary/10" : "",
+                        ].join(" ")}
+                      >
+                        <div className={`text-[10px] uppercase ${isToday ? "text-primary font-semibold" : ""}`}>
+                          {DAY_LABELS[dt.getDay()]}
+                        </div>
+                        <div className={`text-sm font-medium ${isToday ? "text-primary" : ""}`}>
+                          {dt.getDate()}
+                        </div>
                       </th>
                     );
                   })}
@@ -505,27 +490,62 @@ function PlanningPage() {
                       {days.map(d => {
                         const cells = cellFor(emp.id, d);
                         const wk = isWeekend(d);
+                        const dt = new Date(d);
+                        const isFirstOfWeek = dt.getDay() === 1 && d !== days[0];
                         return (
-                          <td key={d} onClick={() => openAdd(emp, d)} className={`align-top p-1 border-l cursor-pointer hover:bg-muted/30 ${wk ? "bg-muted/20" : ""}`}>
-                            {cells.map(c => (
-                              <div key={c.id} className={`mb-0.5 px-1 py-0.5 rounded border ${TYPE_COLORS[c.type]}`}>
-                                <div className="flex items-center justify-between gap-1">
-                                  <span className="text-[10px] font-medium">{PLANNING_TYPE_LABELS[c.type].slice(0, 3)}</span>
-                                  <button onClick={(e) => { e.stopPropagation(); del(c.id); }} className="opacity-40 hover:opacity-100">
-                                    <Trash2 className="h-3 w-3" />
-                                  </button>
+                          <td
+                            key={d}
+                            onClick={() => !cells.length && openAdd(emp, d)}
+                            className={[
+                              "align-top py-1.5 px-1 border-l transition-colors",
+                              isFirstOfWeek ? "border-l-2 border-l-border/60" : "border-border/40",
+                              wk ? "bg-muted/15" : cells.length === 0 ? "hover:bg-muted/20 cursor-pointer" : "cursor-default",
+                            ].join(" ")}
+                          >
+                            <div className="space-y-1">
+                              {cells.map(c => (
+                                <div key={c.id} className={`group relative px-1.5 py-1 rounded border ${TYPE_COLORS[c.type].badge}`}>
+                                  <div className="absolute -top-1.5 -right-1.5 hidden group-hover:flex gap-0.5">
+                                    <button
+                                      onClick={(e) => openEdit(e, c, emp)}
+                                      className="w-5 h-5 rounded-full bg-background border shadow-sm flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
+                                      title="Modifier"
+                                    >
+                                      <Pencil className="h-2.5 w-2.5" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => del(e, c.id)}
+                                      className="w-5 h-5 rounded-full bg-background border shadow-sm flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                                      title="Supprimer"
+                                    >
+                                      <Trash2 className="h-2.5 w-2.5" />
+                                    </button>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${TYPE_COLORS[c.type].dot}`} />
+                                    <span className="text-[10px] font-medium uppercase">
+                                      {PLANNING_TYPE_LABELS[c.type].slice(0, 3)}
+                                    </span>
+                                  </div>
+                                  {c.heure_debut && (
+                                    <div className="text-[9px] tabular-nums mt-0.5">
+                                      {c.heure_debut}–{c.heure_fin}
+                                    </div>
+                                  )}
+                                  {c.note && (
+                                    <div className="text-[9px] mt-0.5 truncate opacity-75" title={c.note}>
+                                      {c.note}
+                                    </div>
+                                  )}
                                 </div>
-                                {c.heure_debut && (
-                                  <div className="text-[9px]">{c.heure_debut}–{c.heure_fin}</div>
-                                )}
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </td>
                         );
                       })}
                       <td className="px-2 py-2 border-l text-right font-medium">
                         {compteur ? (
-                          <span className={solde > 0 ? "text-green-600" : solde < 0 ? "text-red-500" : "text-muted-foreground"}>
+                          <span className={solde > 0 ? "text-emerald-600" : solde < 0 ? "text-red-500" : "text-muted-foreground"}>
                             {fmtH(solde)}
                           </span>
                         ) : "—"}
@@ -565,7 +585,7 @@ function PlanningPage() {
                         <td className="px-3 py-2 text-right">{c.heures_realisees}h</td>
                         <td className="px-3 py-2 text-right">{c.heures_report > 0 ? `+${c.heures_report}h` : "—"}</td>
                         <td className="px-3 py-2 text-right">
-                          <span className={`font-medium ${c.solde > 0 ? "text-green-600" : c.solde < 0 ? "text-red-500" : "text-muted-foreground"}`}>
+                          <span className={`font-medium ${c.solde > 0 ? "text-emerald-600" : c.solde < 0 ? "text-red-500" : "text-muted-foreground"}`}>
                             {fmtH(c.solde)}
                           </span>
                         </td>
@@ -619,7 +639,7 @@ function PlanningPage() {
                         <td className="px-3 py-2">{r.motif ?? "—"}</td>
                         <td className="px-3 py-2">
                           <span className={`px-2 py-0.5 rounded text-xs ${
-                            r.statut === "approuvee" ? "bg-green-100 text-green-800" :
+                            r.statut === "approuvee" ? "bg-emerald-100 text-emerald-800" :
                             r.statut === "refusee" ? "bg-red-100 text-red-800" :
                             "bg-amber-100 text-amber-800"
                           }`}>
@@ -654,19 +674,24 @@ function PlanningPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Modal ajout entrée planning */}
-      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(EMPTY_FORM); }}>
+      {/* Modal ajout / édition entrée planning */}
+      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setForm(EMPTY_FORM); setSelectedCell(null); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {selectedCell
-                ? `${selectedCell.emp.prenom} · ${DAY_FULL[new Date(selectedCell.date).getDay()]} ${selectedCell.date}`
-                : "Ajouter au planning"}
+              {isEditing ? (
+                <span className="inline-flex items-center gap-2">
+                  <Pencil className="h-4 w-4" />
+                  Modifier — {selectedCell?.emp.prenom} · {selectedCell?.date}
+                </span>
+              ) : selectedCell ? (
+                `${selectedCell.emp.prenom} · ${DAY_FULL[new Date(selectedCell.date).getDay()]} ${selectedCell.date}`
+              ) : "Ajouter au planning"}
             </DialogTitle>
           </DialogHeader>
 
           <div className="grid gap-4">
-            {!selectedCell && (
+            {!selectedCell && !isEditing && (
               <div className="space-y-1.5">
                 <Label>Employé</Label>
                 <Select value={form.employee_id} onValueChange={v => setForm({ ...form, employee_id: v })}>
@@ -678,37 +703,28 @@ function PlanningPage() {
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <Label>Mode de saisie</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, mode: "simple" })}
-                  className={`px-3 py-2 rounded-lg border text-sm text-left transition-colors ${
-                    form.mode === "simple"
-                      ? "border-primary bg-primary/5 font-medium"
-                      : "border-border text-muted-foreground hover:border-primary/50"
-                  }`}
-                >
-                  <div className="font-medium">Entrée simple</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">Un jour ou avec répétition basique</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, mode: "semaine_type" })}
-                  className={`px-3 py-2 rounded-lg border text-sm text-left transition-colors ${
-                    form.mode === "semaine_type"
-                      ? "border-primary bg-primary/5 font-medium"
-                      : "border-border text-muted-foreground hover:border-primary/50"
-                  }`}
-                >
-                  <div className="font-medium">Planning type</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">Semaine A / B avec jours personnalisés</div>
-                </button>
+            {!isEditing && (
+              <div className="space-y-1.5">
+                <Label>Mode de saisie</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["simple", "semaine_type"] as FormMode[]).map(m => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setForm({ ...form, mode: m })}
+                      className={`px-3 py-2 rounded-lg border text-sm text-left transition-colors ${form.mode === m ? "border-primary bg-primary/5 font-medium" : "border-border text-muted-foreground hover:border-primary/50"}`}
+                    >
+                      <div className="font-medium">{m === "simple" ? "Entrée simple" : "Planning type"}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {m === "simple" ? "Un jour ou avec répétition basique" : "Semaine A / B avec jours personnalisés"}
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            {form.mode === "simple" && (
+            {(form.mode === "simple" || isEditing) && (
               <>
                 <div className="space-y-1.5">
                   <Label>Type</Label>
@@ -716,53 +732,46 @@ function PlanningPage() {
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {(Object.entries(PLANNING_TYPE_LABELS) as [PlanningType, string][]).map(([k, v]) => (
-                        <SelectItem key={k} value={k}>{v}</SelectItem>
+                        <SelectItem key={k} value={k}>
+                          <span className="inline-flex items-center gap-2">
+                            <span className={`w-1.5 h-1.5 rounded-full ${TYPE_COLORS[k].dot}`} />
+                            {v}
+                          </span>
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                {(form.type === "deplacement" || form.type === "formation") ? (
+
+                {!isEditing && (form.type === "deplacement" || form.type === "formation") ? (
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label>Date de début</Label>
-                      <Input
-                        type="date"
-                        value={form.date_debut}
-                        onChange={e => setForm({ ...form, date_debut: e.target.value })}
-                      />
+                      <Input type="date" value={form.date_debut} onChange={e => setForm({ ...form, date_debut: e.target.value })} />
                     </div>
                     <div className="space-y-1.5">
                       <Label>Date de fin</Label>
-                      <Input
-                        type="date"
-                        value={form.date_fin}
-                        onChange={e => setForm({ ...form, date_fin: e.target.value })}
-                        min={form.date_debut}
-                      />
+                      <Input type="date" value={form.date_fin} onChange={e => setForm({ ...form, date_fin: e.target.value })} min={form.date_debut} />
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-1.5">
                     <Label>Date</Label>
-                    <Input
-                      type="date"
-                      value={form.date_debut}
-                      onChange={e => setForm({ ...form, date_debut: e.target.value })}
-                    />
+                    <Input type="date" value={form.date_debut} onChange={e => setForm({ ...form, date_debut: e.target.value })} />
                   </div>
                 )}
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label>Arrivée</Label>
-                    <Input type="time" value={form.heure_debut}
-                      onChange={e => setForm({ ...form, heure_debut: e.target.value })} />
+                    <Input type="time" value={form.heure_debut} onChange={e => setForm({ ...form, heure_debut: e.target.value })} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Départ</Label>
-                    <Input type="time" value={form.heure_fin}
-                      onChange={e => setForm({ ...form, heure_fin: e.target.value })} />
+                    <Input type="time" value={form.heure_fin} onChange={e => setForm({ ...form, heure_fin: e.target.value })} />
                   </div>
                 </div>
+
                 <div className="space-y-1.5">
                   <Label>Pause déjeuner</Label>
                   <Select value={form.pause_minutes} onValueChange={v => setForm({ ...form, pause_minutes: v })}>
@@ -775,39 +784,41 @@ function PlanningPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Répétition</Label>
-                  <Select value={form.repeat} onValueChange={v => setForm({ ...form, repeat: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {REPEAT_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  {form.repeat === "week2" && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      1 {DAY_FULL[new Date(form.date_debut).getDay()]} sur 2, à partir du {form.date_debut}
-                    </p>
-                  )}
-                  {form.repeat === "week" && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Chaque {DAY_FULL[new Date(form.date_debut).getDay()]} du mois {month}
-                    </p>
-                  )}
-                </div>
+
+                {!isEditing && (
+                  <div className="space-y-1.5">
+                    <Label>Répétition</Label>
+                    <Select value={form.repeat} onValueChange={v => setForm({ ...form, repeat: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {REPEAT_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    {form.repeat === "week2" && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        1 {DAY_FULL[new Date(form.date_debut).getDay()]} sur 2, à partir du {form.date_debut}
+                      </p>
+                    )}
+                    {form.repeat === "week" && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Chaque {DAY_FULL[new Date(form.date_debut).getDay()]} du mois {month}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="space-y-1.5">
                   <Label>Note <span className="text-xs text-muted-foreground">(optionnel)</span></Label>
-                  <Input value={form.note} onChange={e => setForm({ ...form, note: e.target.value })}
-                    placeholder="ex : Formation Paris, RDV client…" />
+                  <Input value={form.note} onChange={e => setForm({ ...form, note: e.target.value })} placeholder="ex : Formation Paris, RDV client…" />
                 </div>
               </>
             )}
 
-            {form.mode === "semaine_type" && (
+            {form.mode === "semaine_type" && !isEditing && (
               <>
                 <div className="space-y-1.5">
                   <Label>Mois à remplir</Label>
-                  <Input type="month" value={form.mois_cible}
-                    onChange={e => setForm({ ...form, mois_cible: e.target.value })} />
+                  <Input type="month" value={form.mois_cible} onChange={e => setForm({ ...form, mois_cible: e.target.value })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Type d'activité</Label>
@@ -821,17 +832,10 @@ function PlanningPage() {
                   </Select>
                 </div>
                 <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border hover:bg-muted/30 transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={form.utilise_semaine_b}
-                    onChange={e => setForm({ ...form, utilise_semaine_b: e.target.checked })}
-                    className="rounded"
-                  />
+                  <input type="checkbox" checked={form.utilise_semaine_b} onChange={e => setForm({ ...form, utilise_semaine_b: e.target.checked })} className="rounded" />
                   <div>
                     <div className="text-sm font-medium">Activer semaine B (alternance)</div>
-                    <div className="text-xs text-muted-foreground">
-                      Semaines impaires = A · Semaines paires = B
-                    </div>
+                    <div className="text-xs text-muted-foreground">Semaines impaires = A · Semaines paires = B</div>
                   </div>
                 </label>
                 <WeekGrid
@@ -840,22 +844,18 @@ function PlanningPage() {
                   onChange={cfg => setForm({ ...form, semaine_a: cfg })}
                 />
                 {form.utilise_semaine_b && (
-                  <WeekGrid
-                    label="Semaine B (semaines paires)"
-                    config={form.semaine_b}
-                    onChange={cfg => setForm({ ...form, semaine_b: cfg })}
-                  />
+                  <WeekGrid label="Semaine B (semaines paires)" config={form.semaine_b} onChange={cfg => setForm({ ...form, semaine_b: cfg })} />
                 )}
               </>
             )}
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setOpen(false); setForm(EMPTY_FORM); }}>
+            <Button variant="outline" onClick={() => { setOpen(false); setForm(EMPTY_FORM); setSelectedCell(null); }}>
               Annuler
             </Button>
             <Button onClick={save} disabled={saving}>
-              {saving ? "Enregistrement…" : "Enregistrer"}
+              {saving ? "Enregistrement…" : isEditing ? "Mettre à jour" : "Enregistrer"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -891,20 +891,16 @@ function PlanningPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Heures à récupérer</Label>
-                <Input type="number" step="0.5" value={recupForm.heures_demandees}
-                  onChange={(e) => setRecupForm({ ...recupForm, heures_demandees: e.target.value })} />
+                <Input type="number" step="0.5" value={recupForm.heures_demandees} onChange={(e) => setRecupForm({ ...recupForm, heures_demandees: e.target.value })} />
               </div>
               <div>
                 <Label>Date souhaitée</Label>
-                <Input type="date" value={recupForm.date_souhaitee}
-                  onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })} />
+                <Input type="date" value={recupForm.date_souhaitee} onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })} />
               </div>
             </div>
             <div>
               <Label>Motif (optionnel)</Label>
-              <Textarea rows={2} value={recupForm.motif}
-                onChange={(e) => setRecupForm({ ...recupForm, motif: e.target.value })}
-                placeholder="ex : Semaine chargée, urgence client…" />
+              <Textarea rows={2} value={recupForm.motif} onChange={(e) => setRecupForm({ ...recupForm, motif: e.target.value })} placeholder="ex : Semaine chargée, urgence client…" />
             </div>
           </div>
           <DialogFooter>
