@@ -388,9 +388,17 @@ export type RecupDemande = {
   created_at: string;
 };
 
+/** Heures par jour créditées forfaitairement pour déplacement/formation (offert par l'agence, sans heures sup). */
+export const HEURES_FORFAIT_DEPLACEMENT_FORMATION = 7;
+
 export function calcHeuresRealisees(entries: PlanningEntry[]): number {
   let total = 0;
   for (const e of entries) {
+    // Forfait fixe 7h/jour pour déplacement et formation, peu importe les horaires saisis
+    if (e.type === "deplacement" || e.type === "formation") {
+      total += HEURES_FORFAIT_DEPLACEMENT_FORMATION;
+      continue;
+    }
     if (e.type !== "travail" && e.type !== "teletravail" && e.type !== "reunion") continue;
     if (!e.heure_debut || !e.heure_fin) continue;
     const [dh, dm] = e.heure_debut.split(":").map(Number);
@@ -401,6 +409,11 @@ export function calcHeuresRealisees(entries: PlanningEntry[]): number {
     total += netMin / 60;
   }
   return Math.round(total * 100) / 100;
+}
+
+/** Heures effectives uniquement (travail/teletravail/reunion) — base pour le calcul des heures supplémentaires. */
+export function calcHeuresEffectives(entries: PlanningEntry[]): number {
+  return calcHeuresRealisees(entries.filter(e => e.type === "travail" || e.type === "teletravail" || e.type === "reunion"));
 }
 
 export async function getCompteur(employeeId: string, mois: string): Promise<CompteurHeures | null> {
