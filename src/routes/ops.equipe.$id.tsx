@@ -311,13 +311,13 @@ function EmployeeDetail() {
                     ["S", 6],
                   ].map(([label, dow]) => {
                     const jours = employee.semaine_a_jours ?? [1, 2, 3, 4, 5];
-                    const actif = jours.includes(dow as number);
+                    const actif = jours.includes(Number(dow));
                     return (
                       <button
                         key={dow}
                         type="button"
                         onClick={() => {
-                          const next = actif ? jours.filter((j) => j !== dow) : [...jours, dow as number].sort();
+                          const next = actif ? jours.filter((j) => j !== Number(dow)) : [...jours, Number(dow)].sort();
                           setEmployee({ ...employee, semaine_a_jours: next });
                         }}
                         className={`w-10 h-10 rounded-lg text-sm font-medium border transition-colors ${actif ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}
@@ -341,13 +341,15 @@ function EmployeeDetail() {
                       ["S", 6],
                     ].map(([label, dow]) => {
                       const jours = employee.semaine_b_jours ?? [1, 2, 4, 5];
-                      const actif = jours.includes(dow as number);
+                      const actif = jours.includes(Number(dow));
                       return (
                         <button
                           key={dow}
                           type="button"
                           onClick={() => {
-                            const next = actif ? jours.filter((j) => j !== dow) : [...jours, dow as number].sort();
+                            const next = actif
+                              ? jours.filter((j) => j !== Number(dow))
+                              : [...jours, Number(dow)].sort();
                             setEmployee({ ...employee, semaine_b_jours: next });
                           }}
                           className={`w-10 h-10 rounded-lg text-sm font-medium border transition-colors ${actif ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}
