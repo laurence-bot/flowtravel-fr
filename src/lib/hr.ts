@@ -742,7 +742,8 @@ export function frenchHolidays(year: number): Set<string> {
     d.setUTCDate(d.getUTCDate() + n);
     return d.toISOString().slice(0, 10);
   };
-  return new Set([...fixed, addDays(1), addDays(39), addDays(50)]); // Lundi de Pâques, Ascension, Pentecôte
+  // Lundi de Pentecôte = journée de solidarité depuis 2004 → travaillé, non chômé
+  return new Set([...fixed, addDays(1), addDays(39)]); // Lundi de Pâques, Ascension uniquement
 }
 
 export function isJourFerie(dateIso: string, holidays?: Set<string>): boolean {
