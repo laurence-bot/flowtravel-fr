@@ -310,18 +310,59 @@ function PlanningPage() {
       } else {
         if (!form.date_debut) { toast.error("Date requise"); setSaving(false); return; }
 
-        let dates: string[];
-        if ((form.type === "deplacement" || form.type === "formation") && form.date_fin && form.date_fin >= form.date_debut) {
-          // Plage multi-jours : tous les jours entre début et fin (week-ends inclus)
-          const allDays: string[] = [];
+        // Cas plage continue (déplacement/formation) : une seule entrée avec date_start/date_end
+        const isRangeType = (form.type === "deplacement" || form.type === "formation") && form.date_fin && form.date_fin >= form.date_debut;
+
+        if (isRangeType) {
+          // Conflit : tout jour de la plage déjà occupé par un type exclusif
+          const EXCLUSIFS: PlanningType[] = ["travail", "teletravail", "deplacement", "formation"];
+          const rangeDays: string[] = [];
           let cur = form.date_debut;
-          while (cur <= form.date_fin) {
-            allDays.push(cur);
-            cur = addDays(cur, 1);
+          while (cur <= form.date_fin) { rangeDays.push(cur); cur = addDays(cur, 1); }
+          const conflictEntries = Array.from(new Map(
+            rangeDays.flatMap(d => cellFor(empId, d).filter(e => EXCLUSIFS.includes(e.type) && e.id !== form.editId).map(e => [e.id, e]))
+          ).values());
+          if (conflictEntries.length > 0) {
+            const confirmed = window.confirm(`${conflictEntries.length} entrée(s) existante(s) sur la plage seront remplacées. Continuer ?`);
+            if (!confirmed) { setSaving(false); return; }
+            await Promise.all(conflictEntries.map(e => deletePlanning(e.id)));
           }
-          dates = allDays.length ? allDays : [form.date_debut];
+          await upsertPlanning({
+            employee_id: empId,
+            date_start: form.date_debut,
+            date_end: form.date_fin,
+            type: form.type,
+            heure_debut: form.heure_debut || null,
+            heure_fin: form.heure_fin || null,
+            note: form.note || null,
+          });
+          toast.success("Plage ajoutée");
         } else {
-          dates = expandDates(form.date_debut, form.repeat, month);
+          const dates = expandDates(form.date_debut, form.repeat, month);
+
+          // ── Détection de conflits ──────────────────────────────────────
+          const EXCLUSIFS: PlanningType[] = ["travail", "teletravail", "deplacement", "formation"];
+          if (EXCLUSIFS.includes(form.type)) {
+            const conflictDates = dates.filter(d => {
+              const existing = cellFor(empId, d);
+              return existing.some(e => EXCLUSIFS.includes(e.type) && e.id !== form.editId);
+            });
+            if (conflictDates.length > 0) {
+              const conflictEntries = Array.from(new Map(
+                conflictDates.flatMap(d => cellFor(empId, d).filter(e => EXCLUSIFS.includes(e.type)).map(e => [e.id, e]))
+              ).values());
+              const confirmed = window.confirm(
+                `Conflit détecté sur ${conflictDates.length} jour(s). Remplacer les entrées existantes ?`
+              );
+              if (!confirmed) { setSaving(false); return; }
+              await Promise.all(conflictEntries.map(e => deletePlanning(e.id)));
+            }
+          }
+          const groupId = dates.length > 1 ? crypto.randomUUID() : null;
+          await Promise.all(dates.map(date =>
+            upsertPlanning({ employee_id: empId, date_start: date, date_end: date, type: form.type, heure_debut: form.heure_debut || null, heure_fin: form.heure_fin || null, note: form.note || null, group_id: groupId } as any)
+          ));
+          toast.success(`${dates.length} entrée(s) ajoutée(s)`);
         }
 
         // ── Détection de conflits ──────────────────────────────────────
