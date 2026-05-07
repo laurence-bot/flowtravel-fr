@@ -59,11 +59,26 @@ export type Absence = {
 
 export type PlanningEntry = {
   id: string; employee_id: string; agence_id: string | null;
-  date_jour: string; heure_debut: string | null; heure_fin: string | null;
+  date_start: string; date_end: string;
+  heure_debut: string | null; heure_fin: string | null;
   type: PlanningType; note: string | null;
   group_id: string | null;
   pause_minutes?: number | null;
 };
+
+/** True if the entry's [date_start, date_end] range covers the given ISO date. */
+export function planningEntryCoversDate(e: PlanningEntry, dateIso: string): boolean {
+  return e.date_start <= dateIso && dateIso <= e.date_end;
+}
+/** Expand the entry into the list of ISO dates it covers (inclusive). */
+export function planningEntryDays(e: PlanningEntry): string[] {
+  const out: string[] = [];
+  const end = new Date(`${e.date_end}T00:00:00Z`);
+  for (let d = new Date(`${e.date_start}T00:00:00Z`); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+    out.push(d.toISOString().slice(0, 10));
+  }
+  return out;
+}
 
 export type TimeEntry = {
   id: string; employee_id: string; agence_id: string | null;
