@@ -60,7 +60,7 @@ function AbsencesPage() {
 
   const [recups, setRecups] = useState<RecupDemande[]>([]);
   const [recupOpen, setRecupOpen] = useState(false);
-  const [recupForm, setRecupForm] = useState({ employee_id: "", heures_demandees: "7", date_souhaitee: "", motif: "" });
+  const [recupForm, setRecupForm] = useState({ employee_id: "", date_souhaitee: "", heure_debut: "09:00", heure_fin: "12:00", motif: "" });
 
   const reload = async () => {
     setLoading(true);
