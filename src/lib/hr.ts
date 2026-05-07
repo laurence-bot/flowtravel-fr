@@ -354,6 +354,47 @@ export async function approveAbsence(id: string): Promise<void> {
     })
     .eq("id", id);
   if (error) throw error;
+
+  // Bloquer les jours dans le planning pour que l'absence soit visible
+  // dans le calendrier et prise en compte dans les conflits.
+  try {
+    const { data: absence } = await supabase.from("hr_absences").select("*").eq("id", id).maybeSingle();
+    const a = absence as any;
+    if (a) {
+      const employee = await getEmployee(a.employee_id);
+      const year = Number(a.date_debut.slice(0, 4));
+      const holidays = frenchHolidays(year);
+      // Itérer sur chaque jour ouvré de la plage
+      const start = new Date(a.date_debut);
+      const end = new Date(a.date_fin);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const iso = d.toISOString().slice(0, 10);
+        if (!isJourOuvre(iso, holidays)) continue;
+        // Supprimer les entrées de travail existantes sur ce jour (éviter conflits)
+        await supabase
+          .from("hr_planning_entries")
+          .delete()
+          .eq("employee_id", a.employee_id)
+          .eq("date_start", iso)
+          .in("type", ["travail", "teletravail"]);
+        // Créer une entrée "recup" ou le type d'absence approprié dans le planning
+        // On mappe AbsenceType → PlanningType pour visualisation
+        const planningType = a.type === "recup" ? "recuperation" : "autre";
+        await (supabase.from("hr_planning_entries") as any).insert({
+          employee_id: a.employee_id,
+          agence_id: employee?.agence_id ?? null,
+          date_start: iso,
+          date_end: iso,
+          type: planningType,
+          note: `Absence : ${a.type}${a.motif ? " — " + a.motif : ""}`,
+          created_by: user?.id ?? null,
+        });
+      }
+    }
+  } catch (e) {
+    // Non bloquant : le statut est déjà mis à jour
+    console.warn("approveAbsence: planning sync failed", e);
+  }
 }
 export async function rejectAbsence(id: string, motif: string): Promise<void> {
   const {
@@ -374,10 +415,17 @@ export async function rejectAbsence(id: string, motif: string): Promise<void> {
 export function computeWorkingDays(start: string, end: string): number {
   const s = new Date(start);
   const e = new Date(end);
+  // Calcule les jours fériés pour toutes les années couvertes par la plage
+  const years = new Set<number>();
+  for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+    years.add(d.getFullYear());
+  }
+  const holidays = new Set<string>();
+  years.forEach((y) => frenchHolidays(y).forEach((h) => holidays.add(h)));
   let n = 0;
   for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
-    const day = d.getDay();
-    if (day !== 0 && day !== 6) n++;
+    const iso = d.toISOString().slice(0, 10);
+    if (isJourOuvre(iso, holidays)) n++;
   }
   return n;
 }
@@ -739,6 +787,7 @@ export function calcCompteurMensuel(
   const base = joursOuvres.length * heuresParJour;
   let travailReel = 0;
   let depForm = 0;
+  let heuresRecup = 0;
   for (const e of entries) {
     if (e.type === "deplacement" || e.type === "formation") {
       // Forfait 7h par jour ouvré couvert par la plage [date_start, date_end]
@@ -748,12 +797,16 @@ export function calcCompteurMensuel(
     } else if (e.type === "travail" || e.type === "teletravail" || e.type === "reunion") {
       // Ces types couvrent un seul jour (date_start === date_end).
       if (ouvresSet.has(e.date_start)) travailReel += dureeNetteEntry(e);
+    } else if (e.type === "recuperation") {
+      // Les récupérations consomment des heures sup : on les déduit du solde
+      if (ouvresSet.has(e.date_start)) heuresRecup += dureeNetteEntry(e);
     }
   }
   const baseRestante = Math.max(0, base - depForm);
   const realisees = travailReel + depForm;
-  const solde = Math.round((travailReel - baseRestante) * 100) / 100;
-  const heuresSup = Math.round(Math.max(0, travailReel - baseRestante) * 100) / 100;
+  // solde = heures travaillées - base + récups posées (les récups réduisent le solde positif)
+  const solde = Math.round((travailReel - baseRestante - heuresRecup) * 100) / 100;
+  const heuresSup = Math.round(Math.max(0, travailReel - baseRestante - heuresRecup) * 100) / 100;
   return {
     base: Math.round(base * 100) / 100,
     travailReel: Math.round(travailReel * 100) / 100,
