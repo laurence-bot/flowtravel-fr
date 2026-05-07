@@ -39,6 +39,7 @@ export type Cotation = {
   prix_vente_usd: number | null;
   regime_tva: CotationRegimeTva;
   taux_tva_marge: number;
+  taux_marge_cible: number | null;
   statut: CotationStatut;
   raison_perte: string | null;
   dossier_id: string | null;
@@ -204,25 +205,25 @@ export function ligneEcheances(ligne: CotationLigne) {
     {
       type: "acompte_1",
       pct: ligne.pct_acompte_1,
-      montant_devise: total * ligne.pct_acompte_1 / 100,
+      montant_devise: (total * ligne.pct_acompte_1) / 100,
       date_echeance: ligne.date_acompte_1,
     },
     {
       type: "acompte_2",
       pct: ligne.pct_acompte_2,
-      montant_devise: total * ligne.pct_acompte_2 / 100,
+      montant_devise: (total * ligne.pct_acompte_2) / 100,
       date_echeance: ligne.date_acompte_2,
     },
     {
       type: "acompte_3",
       pct: ligne.pct_acompte_3,
-      montant_devise: total * ligne.pct_acompte_3 / 100,
+      montant_devise: (total * ligne.pct_acompte_3) / 100,
       date_echeance: ligne.date_acompte_3,
     },
     {
       type: "solde",
       pct: ligne.pct_solde,
-      montant_devise: total * ligne.pct_solde / 100,
+      montant_devise: (total * ligne.pct_solde) / 100,
       date_echeance: ligne.date_solde,
     },
   ];
@@ -257,8 +258,7 @@ export async function duplicateCotation(
     .from("cotations")
     .select("version_number")
     .eq("group_id", source.group_id);
-  const nextVersion =
-    Math.max(0, ...(existing ?? []).map((r: { version_number: number }) => r.version_number)) + 1;
+  const nextVersion = Math.max(0, ...(existing ?? []).map((r: { version_number: number }) => r.version_number)) + 1;
 
   // Calcul du décalage de dates si nouvelles dates fournies
   let dayShift = 0;
@@ -391,18 +391,11 @@ export async function deleteCotation(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any;
 
-  const { data: cotationMeta } = await sb
-    .from("cotations")
-    .select("demande_id")
-    .eq("id", cotationId)
-    .maybeSingle();
+  const { data: cotationMeta } = await sb.from("cotations").select("demande_id").eq("id", cotationId).maybeSingle();
   const demandeId = cotationMeta?.demande_id as string | null | undefined;
 
   // Récupérer les flight_options pour supprimer leurs segments
-  const { data: flightOpts } = await sb
-    .from("flight_options")
-    .select("id")
-    .eq("cotation_id", cotationId);
+  const { data: flightOpts } = await sb.from("flight_options").select("id").eq("cotation_id", cotationId);
   const flightIds = (flightOpts ?? []).map((f: { id: string }) => f.id);
   if (flightIds.length > 0) {
     await sb.from("flight_segments").delete().in("flight_option_id", flightIds);
@@ -431,11 +424,7 @@ export async function deleteCotation(
   if (error) return { ok: false, error: error.message };
 
   if (demandeId) {
-    const { data: remaining } = await sb
-      .from("cotations")
-      .select("id")
-      .eq("demande_id", demandeId)
-      .limit(1);
+    const { data: remaining } = await sb.from("cotations").select("id").eq("demande_id", demandeId).limit(1);
     if ((remaining ?? []).length === 0) {
       await sb
         .from("demandes")
@@ -475,7 +464,9 @@ export async function transformerCotationEnDossier(
   // 2. Pour chaque ligne -> facture fournisseur prévisionnelle + échéances
   const lignesSrc = lignes.filter((l) => l.cotation_id === cot.id);
   for (const l of lignesSrc) {
-    const montantTotalDevise = Number(l.montant_devise || 0) * Number(l.quantite || 1) *
+    const montantTotalDevise =
+      Number(l.montant_devise || 0) *
+      Number(l.quantite || 1) *
       (l.mode_tarifaire === "par_personne" ? Math.max(1, cot.nombre_pax) : 1);
     const montantTotalEur = ligneCoutEur(l, cot.nombre_pax);
 
@@ -511,13 +502,16 @@ export async function transformerCotationEnDossier(
           type: e.type,
           date_echeance: e.date_echeance,
           devise: l.devise,
-          montant_devise: e.montant_devise *
+          montant_devise:
+            e.montant_devise *
             (l.mode_tarifaire === "par_personne" ? Math.max(1, cot.nombre_pax) : 1) *
             Number(l.quantite || 1),
           taux_change: l.taux_change_vers_eur,
-          montant_eur: (e.montant_devise *
+          montant_eur:
+            e.montant_devise *
             (l.mode_tarifaire === "par_personne" ? Math.max(1, cot.nombre_pax) : 1) *
-            Number(l.quantite || 1)) * l.taux_change_vers_eur,
+            Number(l.quantite || 1) *
+            l.taux_change_vers_eur,
           fx_source: l.source_fx,
           coverage_id: l.couverture_id,
         })),
@@ -536,11 +530,7 @@ export async function transformerCotationEnDossier(
 }
 
 /** Stats client pour bloc fiche contact. */
-export function computeClientCotationStats(
-  clientId: string,
-  cotations: Cotation[],
-  lignes: CotationLigne[],
-) {
+export function computeClientCotationStats(clientId: string, cotations: Cotation[], lignes: CotationLigne[]) {
   const mine = cotations.filter((c) => c.client_id === clientId);
   // dernière version par group
   const byGroup = new Map<string, Cotation>();
@@ -552,9 +542,7 @@ export function computeClientCotationStats(
 
   const enCours = last.filter((c) => c.statut === "brouillon").length;
   const envoyees = last.filter((c) => c.statut === "envoyee").length;
-  const validees = last.filter(
-    (c) => c.statut === "validee" || c.statut === "transformee_en_dossier",
-  ).length;
+  const validees = last.filter((c) => c.statut === "validee" || c.statut === "transformee_en_dossier").length;
   const perdues = last.filter((c) => c.statut === "perdue").length;
   const transformees = last.filter((c) => c.statut === "transformee_en_dossier").length;
 
