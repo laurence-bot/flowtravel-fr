@@ -8,33 +8,40 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useTable } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { formatDate, formatEUR } from "@/lib/format";
 import {
-  DEVISES, DEVISE_LABELS, FX_STATUT_COLORS, FX_STATUT_LABELS,
-  coverageBalance, formatMoney,
-  type DeviseCode, type FxCoverage, type FxCoverageStatut, type FxReservation,
+  DEVISES,
+  DEVISE_LABELS,
+  FX_STATUT_COLORS,
+  FX_STATUT_LABELS,
+  coverageBalance,
+  formatMoney,
+  type DeviseCode,
+  type FxCoverage,
+  type FxCoverageStatut,
+  type FxReservation,
 } from "@/lib/fx";
 import { computeCoverageUsage, computeFxPnl } from "@/lib/fx-pnl";
 import type { FactureEcheance, Paiement } from "@/hooks/use-data";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { FxOptimisationDashboard } from "@/components/fx-optimisation-dashboard";
 import { Plus, Shield, ShieldAlert, ShieldCheck, TrendingUp, TrendingDown, Pencil, Trash2, Coins } from "lucide-react";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
-  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
@@ -49,18 +56,20 @@ export const Route = createFileRoute("/couvertures-fx")({
   ),
 });
 
-const coverageSchema = z.object({
-  reference: z.string().trim().max(80).optional(),
-  devise: z.enum(["USD","GBP","ZAR","CHF","CAD","AUD","JPY","AED","MAD","TND"]),
-  montant_devise: z.number().positive("Montant > 0"),
-  taux_change: z.number().positive("Taux > 0"),
-  date_ouverture: z.string().min(1),
-  date_echeance: z.string().min(1),
-  notes: z.string().max(500).optional(),
-}).refine((d) => d.date_echeance >= d.date_ouverture, {
-  path: ["date_echeance"],
-  message: "L'échéance doit être ≥ ouverture",
-});
+const coverageSchema = z
+  .object({
+    reference: z.string().trim().max(80).optional(),
+    devise: z.enum(["USD", "GBP", "ZAR", "CHF", "CAD", "AUD", "JPY", "AED", "MAD", "TND"]),
+    montant_devise: z.number().positive("Montant > 0"),
+    taux_change: z.number().positive("Taux > 0"),
+    date_ouverture: z.string().min(1),
+    date_echeance: z.string().min(1),
+    notes: z.string().max(500).optional(),
+  })
+  .refine((d) => d.date_echeance >= d.date_ouverture, {
+    path: ["date_echeance"],
+    message: "L'échéance doit être ≥ ouverture",
+  });
 
 function CouverturesFXPage() {
   const { user } = useAuth();
@@ -69,15 +78,15 @@ function CouverturesFXPage() {
   const { data: echeances } = useTable<FactureEcheance>("facture_echeances");
   const { data: paiements } = useTable<Paiement>("paiements");
 
-  const totalEUR = coverages.reduce(
-    (s, c) => s + Number(c.montant_devise) * Number(c.taux_change), 0,
-  );
+  const totalEUR = coverages.reduce((s, c) => s + Number(c.montant_devise) * Number(c.taux_change), 0);
   const ouvertes = coverages.filter((c) => c.statut === "ouverte").length;
   const reservees = coverages.filter((c) => c.statut === "reservee").length;
   const anomalies = coverages.filter((c) => c.statut === "anomalie" || c.statut === "expiree").length;
   const fxPnl = computeFxPnl({ echeances, paiements, reservations });
 
-  const stockParDevise = coverages.reduce<Record<string, { total: number; disponible: number; engage: number; reserve: number; eur: number }>>((acc, c) => {
+  const stockParDevise = coverages.reduce<
+    Record<string, { total: number; disponible: number; engage: number; reserve: number; eur: number }>
+  >((acc, c) => {
     const { reserve, engage, disponible } = coverageBalance(c, reservations);
     const k = c.devise;
     if (!acc[k]) acc[k] = { total: 0, disponible: 0, engage: 0, reserve: 0, eur: 0 };
@@ -125,11 +134,23 @@ function CouverturesFXPage() {
             <TableBody>
               {stockEntries.map(([devise, s]) => (
                 <TableRow key={devise}>
-                  <TableCell><Badge variant="outline" className="font-mono">{devise}</Badge></TableCell>
-                  <TableCell className="text-right tabular-nums font-medium">{formatMoney(s.total, devise as DeviseCode)}</TableCell>
-                  <TableCell className="text-right tabular-nums text-destructive">{formatMoney(s.engage, devise as DeviseCode)}</TableCell>
-                  <TableCell className="text-right tabular-nums text-amber-600 dark:text-amber-400">{formatMoney(s.reserve, devise as DeviseCode)}</TableCell>
-                  <TableCell className="text-right tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">{formatMoney(s.disponible, devise as DeviseCode)}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-mono">
+                      {devise}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums font-medium">
+                    {formatMoney(s.total, devise as DeviseCode)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-destructive">
+                    {formatMoney(s.engage, devise as DeviseCode)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-amber-600 dark:text-amber-400">
+                    {formatMoney(s.reserve, devise as DeviseCode)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">
+                    {formatMoney(s.disponible, devise as DeviseCode)}
+                  </TableCell>
                   <TableCell className="text-right tabular-nums text-muted-foreground">{formatEUR(s.eur)}</TableCell>
                 </TableRow>
               ))}
@@ -176,19 +197,22 @@ function CouverturesFXPage() {
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.reference || "—"}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="font-mono">{c.devise}</Badge>
+                      <Badge variant="outline" className="font-mono">
+                        {c.devise}
+                      </Badge>
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatMoney(c.montant_devise, c.devise)}
-                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{formatMoney(c.montant_devise, c.devise)}</TableCell>
                     <TableCell className="text-right tabular-nums text-muted-foreground">
                       {Number(c.taux_change).toFixed(4)}
                     </TableCell>
-                    <TableCell className="text-right tabular-nums font-medium">
-                      {formatEUR(eur)}
-                    </TableCell>
+                    <TableCell className="text-right tabular-nums font-medium">{formatEUR(eur)}</TableCell>
                     <TableCell>
-                      <UsageBar engage={engage} reserve={reserve} disponible={disponible} total={Number(c.montant_devise)} />
+                      <UsageBar
+                        engage={engage}
+                        reserve={reserve}
+                        disponible={disponible}
+                        total={Number(c.montant_devise)}
+                      />
                     </TableCell>
                     <TableCell className="text-right tabular-nums text-destructive">
                       {formatMoney(engage, c.devise)}
@@ -214,9 +238,8 @@ function CouverturesFXPage() {
         )}
       </Card>
 
-      <FxOptimisationDashboard coverages={coverages} reservations={reservations} />
-
       {/* Impact change global */}
+      <FxOptimisationDashboard coverages={coverages} reservations={reservations} />
       {fxPnl.entries.length > 0 && (
         <section className="space-y-4">
           <h2 className="font-display text-lg flex items-center gap-2">
@@ -224,9 +247,20 @@ function CouverturesFXPage() {
             Impact change (gain / perte FX)
           </h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KPI label="Exposition totale" value={formatEUR(fxPnl.expositionEUR)} icon={TrendingUp} hint={`${fxPnl.entries.length} mouvement(s)`} />
+            <KPI
+              label="Exposition totale"
+              value={formatEUR(fxPnl.expositionEUR)}
+              icon={TrendingUp}
+              hint={`${fxPnl.entries.length} mouvement(s)`}
+            />
             <KPI label="Couvert" value={formatEUR(fxPnl.couvert)} icon={ShieldCheck} hint="via couvertures" />
-            <KPI label="Non couvert" value={formatEUR(fxPnl.nonCouvert)} icon={ShieldAlert} hint="exposé taux du jour" tone={fxPnl.nonCouvert > 0 ? "alert" : undefined} />
+            <KPI
+              label="Non couvert"
+              value={formatEUR(fxPnl.nonCouvert)}
+              icon={ShieldAlert}
+              hint="exposé taux du jour"
+              tone={fxPnl.nonCouvert > 0 ? "alert" : undefined}
+            />
             <KPI
               label="Écart net vs marché"
               value={`${fxPnl.net >= 0 ? "+" : ""}${formatEUR(fxPnl.net)}`}
@@ -262,17 +296,26 @@ function CouverturesFXPage() {
             <TableBody>
               {coverages.map((c) => {
                 const u = computeCoverageUsage(c, reservations);
-                const ecartTone = u.ecart === 0 ? "" : u.ecart > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive";
+                const ecartTone =
+                  u.ecart === 0 ? "" : u.ecart > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive";
                 return (
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.reference || "—"}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="font-mono">{c.devise}</Badge>
+                      <Badge variant="outline" className="font-mono">
+                        {c.devise}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{Number(c.taux_change).toFixed(4)}</TableCell>
-                    <TableCell className="text-right tabular-nums text-amber-600 dark:text-amber-400">{formatMoney(u.reserve, c.devise)}</TableCell>
-                    <TableCell className="text-right tabular-nums text-destructive">{formatMoney(u.engage, c.devise)}</TableCell>
-                    <TableCell className="text-right tabular-nums text-emerald-600 dark:text-emerald-400">{formatMoney(u.disponible, c.devise)}</TableCell>
+                    <TableCell className="text-right tabular-nums text-amber-600 dark:text-amber-400">
+                      {formatMoney(u.reserve, c.devise)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-destructive">
+                      {formatMoney(u.engage, c.devise)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-emerald-600 dark:text-emerald-400">
+                      {formatMoney(u.disponible, c.devise)}
+                    </TableCell>
                     <TableCell className={`text-right tabular-nums font-medium ${ecartTone}`}>
                       {u.ecart === 0 ? "—" : `${u.ecart > 0 ? "+" : ""}${formatEUR(u.ecart)}`}
                     </TableCell>
@@ -289,13 +332,25 @@ function CouverturesFXPage() {
 
 function StatutBadge({ statut }: { statut: FxCoverageStatut }) {
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-medium ${FX_STATUT_COLORS[statut]}`}>
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-medium ${FX_STATUT_COLORS[statut]}`}
+    >
       {FX_STATUT_LABELS[statut]}
     </span>
   );
 }
 
-function UsageBar({ engage, reserve, disponible, total }: { engage: number; reserve: number; disponible: number; total: number }) {
+function UsageBar({
+  engage,
+  reserve,
+  disponible,
+  total,
+}: {
+  engage: number;
+  reserve: number;
+  disponible: number;
+  total: number;
+}) {
   const safeTotal = total > 0 ? total : 1;
   const pctEngage = Math.min(100, (engage / safeTotal) * 100);
   const pctReserve = Math.min(100 - pctEngage, (reserve / safeTotal) * 100);
@@ -318,9 +373,14 @@ function UsageBar({ engage, reserve, disponible, total }: { engage: number; rese
 }
 
 function KPI({
-  label, value, icon: Icon, hint, tone,
+  label,
+  value,
+  icon: Icon,
+  hint,
+  tone,
 }: {
-  label: string; value: string;
+  label: string;
+  value: string;
   icon: React.ComponentType<{ className?: string }>;
   hint?: string;
   tone?: "alert";
@@ -333,7 +393,9 @@ function KPI({
           <div className={`mt-1 text-2xl font-display ${tone === "alert" ? "text-destructive" : ""}`}>{value}</div>
           {hint && <div className="text-xs text-muted-foreground mt-1">{hint}</div>}
         </div>
-        <div className={`h-9 w-9 rounded-md flex items-center justify-center ${tone === "alert" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
+        <div
+          className={`h-9 w-9 rounded-md flex items-center justify-center ${tone === "alert" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}
+        >
           <Icon className="h-4 w-4" />
         </div>
       </div>
@@ -341,7 +403,15 @@ function KPI({
   );
 }
 
-function NewCoverageDialog({ userId, existing, onDone }: { userId?: string; existing: FxCoverage[]; onDone: () => void }) {
+function NewCoverageDialog({
+  userId,
+  existing,
+  onDone,
+}: {
+  userId?: string;
+  existing: FxCoverage[];
+  onDone: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     reference: "",
@@ -398,16 +468,20 @@ function NewCoverageDialog({ userId, existing, onDone }: { userId?: string; exis
     if (replaceId) {
       await supabase.from("fx_coverages").delete().eq("id", replaceId);
     }
-    const { data, error } = await supabase.from("fx_coverages").insert({
-      user_id: userId,
-      reference: parsed.data.reference ?? null,
-      devise: parsed.data.devise,
-      montant_devise: parsed.data.montant_devise,
-      taux_change: parsed.data.taux_change,
-      date_ouverture: parsed.data.date_ouverture,
-      date_echeance: parsed.data.date_echeance,
-      notes: parsed.data.notes ?? null,
-    }).select("id").single();
+    const { data, error } = await supabase
+      .from("fx_coverages")
+      .insert({
+        user_id: userId,
+        reference: parsed.data.reference ?? null,
+        devise: parsed.data.devise,
+        montant_devise: parsed.data.montant_devise,
+        taux_change: parsed.data.taux_change,
+        date_ouverture: parsed.data.date_ouverture,
+        date_echeance: parsed.data.date_echeance,
+        notes: parsed.data.notes ?? null,
+      })
+      .select("id")
+      .single();
     setSaving(false);
     if (error) {
       toast.error(error.message);
@@ -443,28 +517,50 @@ function NewCoverageDialog({ userId, existing, onDone }: { userId?: string; exis
         <div className="space-y-4">
           <div>
             <Label>Référence (optionnel)</Label>
-            <Input value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} placeholder="Ebury #12345" />
+            <Input
+              value={form.reference}
+              onChange={(e) => setForm({ ...form, reference: e.target.value })}
+              placeholder="Ebury #12345"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Devise</Label>
-              <Select value={form.devise} onValueChange={(v) => setForm({ ...form, devise: v as Exclude<DeviseCode, "EUR"> })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={form.devise}
+                onValueChange={(v) => setForm({ ...form, devise: v as Exclude<DeviseCode, "EUR"> })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {devisesEtrangeres.map((d) => (
-                    <SelectItem key={d.code} value={d.code}>{d.code} — {DEVISE_LABELS[d.code]}</SelectItem>
+                    <SelectItem key={d.code} value={d.code}>
+                      {d.code} — {DEVISE_LABELS[d.code]}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
               <Label>Montant en devise</Label>
-              <Input type="number" step="0.01" value={form.montant_devise} onChange={(e) => setForm({ ...form, montant_devise: e.target.value })} />
+              <Input
+                type="number"
+                step="0.01"
+                value={form.montant_devise}
+                onChange={(e) => setForm({ ...form, montant_devise: e.target.value })}
+              />
             </div>
           </div>
           <div>
             <Label>Taux vers EUR (1 {form.devise} = X EUR)</Label>
-            <Input type="number" step="0.0001" value={form.taux_change} onChange={(e) => setForm({ ...form, taux_change: e.target.value })} placeholder="0.92" />
+            <Input
+              type="number"
+              step="0.0001"
+              value={form.taux_change}
+              onChange={(e) => setForm({ ...form, taux_change: e.target.value })}
+              placeholder="0.92"
+            />
             {form.montant_devise && form.taux_change && (
               <p className="text-xs text-muted-foreground mt-1">
                 Équivaut à {formatEUR(Number(form.montant_devise) * Number(form.taux_change))}
@@ -474,11 +570,19 @@ function NewCoverageDialog({ userId, existing, onDone }: { userId?: string; exis
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Date d'ouverture</Label>
-              <Input type="date" value={form.date_ouverture} onChange={(e) => setForm({ ...form, date_ouverture: e.target.value })} />
+              <Input
+                type="date"
+                value={form.date_ouverture}
+                onChange={(e) => setForm({ ...form, date_ouverture: e.target.value })}
+              />
             </div>
             <div>
               <Label>Date d'échéance</Label>
-              <Input type="date" value={form.date_echeance} onChange={(e) => setForm({ ...form, date_echeance: e.target.value })} />
+              <Input
+                type="date"
+                value={form.date_echeance}
+                onChange={(e) => setForm({ ...form, date_echeance: e.target.value })}
+              />
             </div>
           </div>
           <div>
@@ -486,8 +590,12 @@ function NewCoverageDialog({ userId, existing, onDone }: { userId?: string; exis
             <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
-            <Button onClick={submit} disabled={saving}>{saving ? "Enregistrement…" : "Créer"}</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={submit} disabled={saving}>
+              {saving ? "Enregistrement…" : "Créer"}
+            </Button>
           </div>
         </div>
       </DialogContent>
@@ -495,7 +603,15 @@ function NewCoverageDialog({ userId, existing, onDone }: { userId?: string; exis
   );
 }
 
-function CoverageRowActions({ coverage, userId, onDone }: { coverage: FxCoverage; userId?: string; onDone: () => void }) {
+function CoverageRowActions({
+  coverage,
+  userId,
+  onDone,
+}: {
+  coverage: FxCoverage;
+  userId?: string;
+  onDone: () => void;
+}) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState({
@@ -525,20 +641,32 @@ function CoverageRowActions({ coverage, userId, onDone }: { coverage: FxCoverage
       return;
     }
     setSaving(true);
-    const { error } = await supabase.from("fx_coverages").update({
-      reference: parsed.data.reference ?? null,
-      devise: parsed.data.devise,
-      montant_devise: parsed.data.montant_devise,
-      taux_change: parsed.data.taux_change,
-      date_ouverture: parsed.data.date_ouverture,
-      date_echeance: parsed.data.date_echeance,
-      notes: parsed.data.notes ?? null,
-      statut: form.statut,
-    }).eq("id", coverage.id);
+    const { error } = await supabase
+      .from("fx_coverages")
+      .update({
+        reference: parsed.data.reference ?? null,
+        devise: parsed.data.devise,
+        montant_devise: parsed.data.montant_devise,
+        taux_change: parsed.data.taux_change,
+        date_ouverture: parsed.data.date_ouverture,
+        date_echeance: parsed.data.date_echeance,
+        notes: parsed.data.notes ?? null,
+        statut: form.statut,
+      })
+      .eq("id", coverage.id);
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     if (userId) {
-      await logAudit({ userId, entity: "fx_coverage", entityId: coverage.id, action: "update", description: `Couverture FX modifiée` });
+      await logAudit({
+        userId,
+        entity: "fx_coverage",
+        entityId: coverage.id,
+        action: "update",
+        description: `Couverture FX modifiée`,
+      });
     }
     toast.success("Couverture mise à jour");
     setEditOpen(false);
@@ -549,9 +677,18 @@ function CoverageRowActions({ coverage, userId, onDone }: { coverage: FxCoverage
     setDeleting(true);
     const { error } = await supabase.from("fx_coverages").delete().eq("id", coverage.id);
     setDeleting(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     if (userId) {
-      await logAudit({ userId, entity: "fx_coverage", entityId: coverage.id, action: "delete", description: `Couverture FX supprimée` });
+      await logAudit({
+        userId,
+        entity: "fx_coverage",
+        entityId: coverage.id,
+        action: "delete",
+        description: `Couverture FX supprimée`,
+      });
     }
     toast.success("Couverture supprimée");
     onDone();
@@ -579,41 +716,70 @@ function CoverageRowActions({ coverage, userId, onDone }: { coverage: FxCoverage
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Devise</Label>
-                <Select value={form.devise} onValueChange={(v) => setForm({ ...form, devise: v as Exclude<DeviseCode, "EUR"> })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={form.devise}
+                  onValueChange={(v) => setForm({ ...form, devise: v as Exclude<DeviseCode, "EUR"> })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {devisesEtrangeres.map((d) => (
-                      <SelectItem key={d.code} value={d.code}>{d.code} — {DEVISE_LABELS[d.code]}</SelectItem>
+                      <SelectItem key={d.code} value={d.code}>
+                        {d.code} — {DEVISE_LABELS[d.code]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Montant en devise</Label>
-                <Input type="number" step="0.01" value={form.montant_devise} onChange={(e) => setForm({ ...form, montant_devise: e.target.value })} />
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={form.montant_devise}
+                  onChange={(e) => setForm({ ...form, montant_devise: e.target.value })}
+                />
               </div>
             </div>
             <div>
               <Label>Taux vers EUR</Label>
-              <Input type="number" step="0.0001" value={form.taux_change} onChange={(e) => setForm({ ...form, taux_change: e.target.value })} />
+              <Input
+                type="number"
+                step="0.0001"
+                value={form.taux_change}
+                onChange={(e) => setForm({ ...form, taux_change: e.target.value })}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Ouverture</Label>
-                <Input type="date" value={form.date_ouverture} onChange={(e) => setForm({ ...form, date_ouverture: e.target.value })} />
+                <Input
+                  type="date"
+                  value={form.date_ouverture}
+                  onChange={(e) => setForm({ ...form, date_ouverture: e.target.value })}
+                />
               </div>
               <div>
                 <Label>Échéance</Label>
-                <Input type="date" value={form.date_echeance} onChange={(e) => setForm({ ...form, date_echeance: e.target.value })} />
+                <Input
+                  type="date"
+                  value={form.date_echeance}
+                  onChange={(e) => setForm({ ...form, date_echeance: e.target.value })}
+                />
               </div>
             </div>
             <div>
               <Label>Statut</Label>
               <Select value={form.statut} onValueChange={(v) => setForm({ ...form, statut: v as FxCoverageStatut })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {(Object.keys(FX_STATUT_LABELS) as FxCoverageStatut[]).map((s) => (
-                    <SelectItem key={s} value={s}>{FX_STATUT_LABELS[s]}</SelectItem>
+                    <SelectItem key={s} value={s}>
+                      {FX_STATUT_LABELS[s]}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -623,8 +789,12 @@ function CoverageRowActions({ coverage, userId, onDone }: { coverage: FxCoverage
               <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setEditOpen(false)}>Annuler</Button>
-              <Button onClick={save} disabled={saving}>{saving ? "Enregistrement…" : "Enregistrer"}</Button>
+              <Button variant="outline" onClick={() => setEditOpen(false)}>
+                Annuler
+              </Button>
+              <Button onClick={save} disabled={saving}>
+                {saving ? "Enregistrement…" : "Enregistrer"}
+              </Button>
             </div>
           </div>
         </DialogContent>
@@ -632,7 +802,12 @@ function CoverageRowActions({ coverage, userId, onDone }: { coverage: FxCoverage
 
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" title="Supprimer">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 text-destructive hover:text-destructive"
+            title="Supprimer"
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </AlertDialogTrigger>
@@ -645,7 +820,11 @@ function CoverageRowActions({ coverage, userId, onDone }: { coverage: FxCoverage
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={remove} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={remove}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               {deleting ? "Suppression…" : "Supprimer"}
             </AlertDialogAction>
           </AlertDialogFooter>
