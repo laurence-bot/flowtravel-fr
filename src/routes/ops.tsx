@@ -8,12 +8,14 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export const Route = createFileRoute("/ops")({
   beforeLoad: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw redirect({ to: "/auth" });
+    // getUser() attend la restauration de la session (vs getSession qui peut renvoyer null
+    // au premier render après navigation directe), évitant un redirect /app erroné.
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) throw redirect({ to: "/auth" });
     const { data } = await supabase
       .from("user_profiles")
       .select("is_super_admin")
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .maybeSingle();
     if (!data?.is_super_admin) throw redirect({ to: "/app" });
   },
