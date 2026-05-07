@@ -391,27 +391,115 @@ export type RecupDemande = {
 /** Heures par jour créditées forfaitairement pour déplacement/formation (offert par l'agence, sans heures sup). */
 export const HEURES_FORFAIT_DEPLACEMENT_FORMATION = 7;
 
+/** Calcule les jours fériés français pour une année donnée (date YYYY-MM-DD). */
+export function frenchHolidays(year: number): Set<string> {
+  const fixed = [
+    `${year}-01-01`, `${year}-05-01`, `${year}-05-08`,
+    `${year}-07-14`, `${year}-08-15`, `${year}-11-01`,
+    `${year}-11-11`, `${year}-12-25`,
+  ];
+  // Pâques (algorithme de Meeus/Jones/Butcher)
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  const easter = new Date(Date.UTC(year, month - 1, day));
+  const addDays = (n: number) => {
+    const d = new Date(easter); d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+  return new Set([...fixed, addDays(1), addDays(39), addDays(50)]); // Lundi de Pâques, Ascension, Pentecôte
+}
+
+export function isJourFerie(dateIso: string, holidays?: Set<string>): boolean {
+  const set = holidays ?? frenchHolidays(Number(dateIso.slice(0, 4)));
+  return set.has(dateIso);
+}
+
+export function isJourOuvre(dateIso: string, holidays?: Set<string>): boolean {
+  const day = new Date(`${dateIso}T00:00:00Z`).getUTCDay();
+  if (day === 0 || day === 6) return false;
+  return !isJourFerie(dateIso, holidays);
+}
+
+/** Heures contractuelles par jour pour un employé (par défaut 7h pour 35h/semaine). */
+export function heuresContractuellesParJour(_emp?: Pick<Employee, "type_contrat"> | null): number {
+  return 7;
+}
+
+function dureeNetteEntry(e: PlanningEntry): number {
+  if (!e.heure_debut || !e.heure_fin) return 0;
+  const [dh, dm] = e.heure_debut.split(":").map(Number);
+  const [fh, fm] = e.heure_fin.split(":").map(Number);
+  const dureeMin = (fh * 60 + fm) - (dh * 60 + dm);
+  const pauseMin = (e as any).pause_minutes ?? 30;
+  return Math.max(0, dureeMin - pauseMin) / 60;
+}
+
+/**
+ * Détail d'un compteur mensuel pour un employé.
+ * - base = jours ouvrés × heures/jour contractuelles
+ * - travailReel = heures réelles travail/teletravail/reunion sur jours ouvrés
+ * - depForm = 7h forfait par jour ouvré dep/formation (n'engendre pas d'heures sup)
+ * - solde = travailReel - (base - depForm)
+ * - heuresSup = max(0, travailReel - max(0, base - depForm))
+ */
+export function calcCompteurMensuel(
+  entries: PlanningEntry[],
+  joursOuvres: string[],
+  heuresParJour: number = 7,
+): { base: number; travailReel: number; depForm: number; realisees: number; solde: number; heuresSup: number } {
+  const ouvresSet = new Set(joursOuvres);
+  const base = joursOuvres.length * heuresParJour;
+  let travailReel = 0;
+  let depForm = 0;
+  for (const e of entries) {
+    if (!ouvresSet.has(e.date_jour)) continue;
+    if (e.type === "deplacement" || e.type === "formation") {
+      depForm += HEURES_FORFAIT_DEPLACEMENT_FORMATION;
+    } else if (e.type === "travail" || e.type === "teletravail" || e.type === "reunion") {
+      travailReel += dureeNetteEntry(e);
+    }
+  }
+  const baseRestante = Math.max(0, base - depForm);
+  const realisees = travailReel + depForm;
+  const solde = Math.round((travailReel - baseRestante) * 100) / 100;
+  const heuresSup = Math.round(Math.max(0, travailReel - baseRestante) * 100) / 100;
+  return {
+    base: Math.round(base * 100) / 100,
+    travailReel: Math.round(travailReel * 100) / 100,
+    depForm: Math.round(depForm * 100) / 100,
+    realisees: Math.round(realisees * 100) / 100,
+    solde,
+    heuresSup,
+  };
+}
+
 export function calcHeuresRealisees(entries: PlanningEntry[]): number {
+  // Conservé pour rétrocompatibilité : somme travail réel + forfait dep/form, tous jours confondus.
   let total = 0;
   for (const e of entries) {
-    // Forfait fixe 7h/jour pour déplacement et formation, peu importe les horaires saisis
     if (e.type === "deplacement" || e.type === "formation") {
       total += HEURES_FORFAIT_DEPLACEMENT_FORMATION;
       continue;
     }
     if (e.type !== "travail" && e.type !== "teletravail" && e.type !== "reunion") continue;
-    if (!e.heure_debut || !e.heure_fin) continue;
-    const [dh, dm] = e.heure_debut.split(":").map(Number);
-    const [fh, fm] = e.heure_fin.split(":").map(Number);
-    const dureeMin = (fh * 60 + fm) - (dh * 60 + dm);
-    const pauseMin = (e as any).pause_minutes ?? 30;
-    const netMin = Math.max(0, dureeMin - pauseMin);
-    total += netMin / 60;
+    total += dureeNetteEntry(e);
   }
   return Math.round(total * 100) / 100;
 }
 
-/** Heures effectives uniquement (travail/teletravail/reunion) — base pour le calcul des heures supplémentaires. */
+/** Heures effectives uniquement (travail/teletravail/reunion). */
 export function calcHeuresEffectives(entries: PlanningEntry[]): number {
   return calcHeuresRealisees(entries.filter(e => e.type === "travail" || e.type === "teletravail" || e.type === "reunion"));
 }

@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/page-header";
 import {
   listEmployees, listPlanning, upsertPlanning, deletePlanning, deletePlanningGroup,
   calcHeuresRealisees, upsertCompteur, listCompteurs, listRecupDemandes,
+  frenchHolidays, isJourOuvre, heuresContractuellesParJour, calcCompteurMensuel,
   createRecupDemande, approuverRecupDemande, refuserRecupDemande,
   alertesFinDeMois,
   PLANNING_TYPE_LABELS,
@@ -233,11 +234,14 @@ function PlanningPage() {
     setEmployees(actifs);
     setEntries(plan);
     setRecups(recs);
+    const year = Number(month.slice(0, 4));
+    const holidays = frenchHolidays(year);
+    const joursOuvres = days.filter(d => isJourOuvre(d, holidays));
     await Promise.all(actifs.map(async emp => {
       const empEntries = plan.filter(e => e.employee_id === emp.id);
-      const realisees = calcHeuresRealisees(empEntries);
-      const contractuelles = 35 * (days.filter(d => !isWeekend(d)).length / 5);
-      await upsertCompteur(emp.id, month, realisees, Math.round(contractuelles * 100) / 100);
+      const hParJour = heuresContractuellesParJour(emp);
+      const c = calcCompteurMensuel(empEntries, joursOuvres, hParJour);
+      await upsertCompteur(emp.id, month, c.realisees, c.base);
     }));
     setCompteurs(await listCompteurs(month));
   };
