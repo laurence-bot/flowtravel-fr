@@ -604,6 +604,40 @@ export async function createRecupDemande(input: {
     .select("*")
     .single();
   if (error) throw error;
+
+  // Notifier les admins de l'agence
+  try {
+    const { data: emp } = await supabase
+      .from("hr_employees")
+      .select("prenom,nom")
+      .eq("id", input.employee_id)
+      .maybeSingle();
+    const nomAgent = emp ? `${emp.prenom ?? ""} ${emp.nom ?? ""}`.trim() : "un agent";
+
+    if (agence_id) {
+      const { data: admins } = await supabase
+        .from("user_profiles")
+        .select("user_id, user_roles!inner(role)")
+        .eq("agence_id", agence_id)
+        .eq("user_roles.role", "administrateur" as any);
+      const adminIds = (admins ?? []).map((a: any) => a.user_id).filter(Boolean);
+      if (adminIds.length > 0) {
+        await supabase.from("agent_notifications").insert(
+          adminIds.map((uid: string) => ({
+            user_id: uid,
+            agence_id,
+            type: "recup_demande",
+            titre: "Nouvelle demande de récupération",
+            message: `Nouvelle demande de récupération de ${nomAgent}`,
+            link: "/ops/equipe/absences",
+          })),
+        );
+      }
+    }
+  } catch (e) {
+    console.warn("notify admin recup_demande failed", e);
+  }
+
   return data as unknown as RecupDemande;
 }
 
