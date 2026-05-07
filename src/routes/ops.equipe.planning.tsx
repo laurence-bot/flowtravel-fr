@@ -540,42 +540,28 @@ function PlanningPage() {
                             ].join(" ")}
                           >
                             <div className="space-y-1">
-                              {cells.map(c => (
-                                <div key={c.id} className={`group relative px-1.5 py-1 rounded border ${TYPE_COLORS[c.type].badge}`}>
-                                  <div className="absolute -top-1.5 -right-1.5 hidden group-hover:flex gap-0.5">
-                                    <button
-                                      onClick={(e) => openEdit(e, c, emp)}
-                                      className="w-5 h-5 rounded-full bg-background border shadow-sm flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
-                                      title="Modifier"
-                                    >
-                                      <Pencil className="h-2.5 w-2.5" />
-                                    </button>
-                                    <button
-                                      onClick={(e) => del(e, c.id)}
-                                      className="w-5 h-5 rounded-full bg-background border shadow-sm flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors"
-                                      title="Supprimer"
-                                    >
-                                      <Trash2 className="h-2.5 w-2.5" />
-                                    </button>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${TYPE_COLORS[c.type].dot}`} />
-                                    <span className="text-[10px] font-medium uppercase">
-                                      {PLANNING_TYPE_LABELS[c.type].slice(0, 3)}
-                                    </span>
-                                  </div>
-                                  {c.heure_debut && (
-                                    <div className="text-[9px] tabular-nums mt-0.5">
-                                      {c.heure_debut}–{c.heure_fin}
+                              {cells.map(c => {
+                                const tc = TYPE_COLORS[c.type];
+                                return (
+                                  <button
+                                    key={c.id}
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setActionEntry({ entry: c, emp }); }}
+                                    className={`w-full text-left px-1.5 py-0.5 rounded border ${tc.badge} hover:ring-1 hover:ring-foreground/20`}
+                                    title={c.note ?? PLANNING_TYPE_LABELS[c.type]}
+                                  >
+                                    <div className="flex items-center gap-1">
+                                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${tc.dot}`} />
+                                      <span className="text-[10px] font-semibold tracking-wide">{tc.abbr}</span>
                                     </div>
-                                  )}
-                                  {c.note && (
-                                    <div className="text-[9px] mt-0.5 truncate opacity-75" title={c.note}>
-                                      {c.note}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
+                                    {c.heure_debut && (
+                                      <div className="text-[9px] tabular-nums opacity-70">
+                                        {c.heure_debut.slice(0,5)}–{(c.heure_fin ?? "").slice(0,5)}
+                                      </div>
+                                    )}
+                                  </button>
+                                );
+                              })}
                             </div>
                           </td>
                         );
