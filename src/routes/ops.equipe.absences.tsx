@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { RequireAuth } from "@/components/require-auth";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Check, X, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,13 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { sendTransactionalEmail } from "@/lib/email/send";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/ops/equipe/absences")({
-  component: () => (
-    <RequireAuth>
-      <AbsencesPage />
-    </RequireAuth>
-  ),
-});
+export const Route = createFileRoute("/ops/equipe/absences")({ component: AbsencesPage });
 
 const STATUT_COLORS: Record<AbsenceStatut, string> = {
   demande: "bg-amber-100 text-amber-700",
