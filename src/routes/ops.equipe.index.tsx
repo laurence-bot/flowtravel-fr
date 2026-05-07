@@ -94,6 +94,7 @@ function EquipeIndex() {
 
   const days = useMemo(() => daysInMonth(month), [month]);
   const holidays = useMemo(() => frenchHolidays(Number(month.slice(0, 4))), [month]);
+  const joursOuvres = useMemo(() => days.filter((d) => isJourOuvre(d, holidays)), [days, holidays]);
 
   const reload = async () => {
     setLoading(true);
@@ -152,6 +153,18 @@ function EquipeIndex() {
         const heuresRecup = recups
           .filter((r) => r.employee_id === emp.id && r.statut === "approuvee")
           .reduce((s, r) => s + (r.heures_demandees ?? 0), 0);
+        // Calcul des heures de référence avec contexte
+        // 35h/semaine sur 6 jours ouvrés (lun-sam) = 35/6 ≈ 5.83h/jour
+        // On arrondit à 2 décimales pour l'affichage
+        const heuresHebdo = 35;
+        const joursParSemaine = 6;
+        const hParJour = Math.round((heuresHebdo / joursParSemaine) * 100) / 100;
+        const joursOuvresCount = joursOuvres.length;
+        const heuresBrutes = Math.round(joursOuvresCount * hParJour * 100) / 100;
+        // Heures effectivement dues = heures brutes - congés pris (congés = jours × hParJour)
+        // Les 5 semaines légales (25j/an) sont déjà comptées via les absences réelles
+        const heuresConge = joursConge * hParJour;
+        const heuresAjustees = Math.max(0, heuresBrutes - heuresConge);
         return {
           nom: `${emp.prenom} ${emp.nom}`,
           poste: emp.poste ?? "",
@@ -162,9 +175,14 @@ function EquipeIndex() {
           jours_conge: joursConge,
           jours_maladie: joursMaladie,
           heures_recup: heuresRecup,
+          // Contexte explicatif
+          jours_ouvres: joursOuvresCount,
+          h_par_jour: hParJour,
+          heures_brutes: heuresBrutes,
+          heures_ajustees: heuresAjustees,
         };
       }),
-    [employees, compteurs, absences, recups],
+    [employees, compteurs, absences, recups, joursOuvres],
   );
 
   const exportRecap = () => {
@@ -423,7 +441,12 @@ function EquipeIndex() {
                 <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="text-left px-4 py-3">Employé</th>
-                    <th className="text-right px-4 py-3">H. contract.</th>
+                    <th className="text-right px-4 py-3">
+                      <span title="Jours ouvrés lun–sam × 5.83h/jour (35h/sem sur 6j)">H. brutes</span>
+                    </th>
+                    <th className="text-right px-4 py-3">
+                      <span title="Heures brutes moins les congés pris ce mois">H. attendues</span>
+                    </th>
                     <th className="text-right px-4 py-3">H. réalisées</th>
                     <th className="text-right px-4 py-3">Solde</th>
                     <th className="text-right px-4 py-3">Congés (j)</th>
@@ -438,7 +461,18 @@ function EquipeIndex() {
                         {r.nom}
                         {r.poste && <span className="ml-2 text-xs text-muted-foreground">{r.poste}</span>}
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums">{r.heures_contractuelles}h</td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        <span className="font-medium">{r.heures_brutes}h</span>
+                        <div className="text-[11px] text-muted-foreground">
+                          {r.jours_ouvres}j × {r.h_par_jour}h
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        <span className="font-medium">{r.heures_ajustees}h</span>
+                        {r.jours_conge > 0 && (
+                          <div className="text-[11px] text-muted-foreground">− {r.jours_conge}j congés</div>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-right tabular-nums">{r.heures_realisees}h</td>
                       <td className="px-4 py-3 text-right tabular-nums font-medium">
                         <span
@@ -463,7 +497,10 @@ function EquipeIndex() {
                   <tr>
                     <td className="px-4 py-2 text-muted-foreground">Total équipe</td>
                     <td className="px-4 py-2 text-right tabular-nums">
-                      {recapRows.reduce((s, r) => s + r.heures_contractuelles, 0)}h
+                      {recapRows.reduce((s, r) => s + r.heures_brutes, 0)}h
+                    </td>
+                    <td className="px-4 py-2 text-right tabular-nums">
+                      {recapRows.reduce((s, r) => s + r.heures_ajustees, 0)}h
                     </td>
                     <td className="px-4 py-2 text-right tabular-nums">
                       {recapRows.reduce((s, r) => s + r.heures_realisees, 0)}h
