@@ -757,10 +757,25 @@ export function isJourOuvre(dateIso: string, holidays?: Set<string>): boolean {
   return !isJourFerie(dateIso, holidays);
 }
 
-/** Heures contractuelles par jour — ajusté à 7.5h/jour (horaires réels de l'agence).
- *  À affiner par employé une fois les contrats mis à jour. */
-export function heuresContractuellesParJour(_emp?: Pick<Employee, "type_contrat"> | null): number {
-  return 7.5; // 37h30/sem ÷ 5 jours — à réviser selon contrat
+/** Heures contractuelles par jour — lit depuis l'employé, sinon 7.5h. */
+export function heuresContractuellesParJour(emp?: Pick<Employee, "type_contrat" | "heures_par_jour"> | null): number {
+  return emp?.heures_par_jour ?? 7.5;
+}
+
+/** Retourne true si la date est un jour travaillé selon le rythme A/B de l'employé. */
+export function estJourTravaille(emp: Employee, dateIso: string): boolean {
+  const dow = new Date(`${dateIso}T00:00:00Z`).getUTCDay();
+  if (dow === 0) return false;
+  if (!emp.rythme_semaine || emp.rythme_semaine === "fixe") {
+    return (emp.semaine_a_jours ?? [1, 2, 3, 4, 5]).includes(dow);
+  }
+  const d = new Date(`${dateIso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6) % 7));
+  const w1 = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  const isoW = 1 + Math.round(((d.getTime() - w1.getTime()) / 86400000 - 3 + ((w1.getUTCDay() + 6) % 7)) / 7);
+  const ref = emp.semaine_ref_iso ?? 1;
+  const isA = (((isoW - ref) % 2) + 2) % 2 === 0;
+  return (isA ? (emp.semaine_a_jours ?? [1, 2, 3, 4, 5, 6]) : (emp.semaine_b_jours ?? [1, 2, 4, 5])).includes(dow);
 }
 
 function dureeNetteEntry(e: PlanningEntry): number {
@@ -783,10 +798,12 @@ function dureeNetteEntry(e: PlanningEntry): number {
 export function calcCompteurMensuel(
   entries: PlanningEntry[],
   joursOuvres: string[],
-  heuresParJour: number = 7,
+  heuresParJour: number = 7.5,
+  emp?: Employee,
 ): { base: number; travailReel: number; depForm: number; realisees: number; solde: number; heuresSup: number } {
-  const ouvresSet = new Set(joursOuvres);
-  const base = joursOuvres.length * heuresParJour;
+  const joursEffectifs = emp ? joursOuvres.filter((d) => estJourTravaille(emp, d)) : joursOuvres;
+  const ouvresSet = new Set(joursEffectifs);
+  const base = joursEffectifs.length * heuresParJour;
 
   // Calcul par jour pour éviter tout double comptage
   // Priorité : travail/teletravail/reunion avec horaires > deplacement/formation > rien
