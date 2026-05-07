@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { RequireAuth } from "@/components/require-auth";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,13 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/ops/equipe/evaluations")({
-  component: () => (
-    <RequireAuth>
-      <EvalsPage />
-    </RequireAuth>
-  ),
-});
+export const Route = createFileRoute("/ops/equipe/evaluations")({ component: EvalsPage });
 
 function EvalsPage() {
   const [items, setItems] = useState<Evaluation[]>([]);
