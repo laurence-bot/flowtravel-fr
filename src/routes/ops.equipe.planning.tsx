@@ -364,39 +364,8 @@ function PlanningPage() {
           ));
           toast.success(`${dates.length} entrée(s) ajoutée(s)`);
         }
-
-        // ── Détection de conflits ──────────────────────────────────────
-        const EXCLUSIFS: PlanningType[] = ["travail", "teletravail", "deplacement", "formation"];
-        if (EXCLUSIFS.includes(form.type)) {
-          const conflictDates = dates.filter(d => {
-            const existing = cellFor(empId, d);
-            return existing.some(e => EXCLUSIFS.includes(e.type) && e.id !== form.editId);
-          });
-
-          if (conflictDates.length > 0) {
-            const conflictEntries = conflictDates.flatMap(d =>
-              cellFor(empId, d).filter(e => EXCLUSIFS.includes(e.type))
-            );
-            const confirmed = window.confirm(
-              `Conflit détecté sur ${conflictDates.length} jour(s) :\n` +
-              conflictDates.map(d => {
-                const existing = cellFor(empId, d).filter(e => EXCLUSIFS.includes(e.type));
-                return `• ${d} : ${existing.map(e => PLANNING_TYPE_LABELS[e.type]).join(", ")} → remplacé par ${PLANNING_TYPE_LABELS[form.type]}`;
-              }).join("\n") +
-              `\n\nVoulez-vous remplacer les entrées existantes ?`
-            );
-            if (!confirmed) { setSaving(false); return; }
-            await Promise.all(conflictEntries.map(e => deletePlanning(e.id)));
-          }
-        }
-        // ──────────────────────────────────────────────────────────────
-
-        const groupId = dates.length > 1 ? crypto.randomUUID() : null;
-        await Promise.all(dates.map(date =>
-          upsertPlanning({ employee_id: empId, date_jour: date, type: form.type, heure_debut: form.heure_debut || null, heure_fin: form.heure_fin || null, note: form.note || null, group_id: groupId } as any)
-        ));
-        toast.success(`${dates.length} entrée(s) ajoutée(s)`);
       }
+
       setOpen(false);
       setForm(EMPTY_FORM);
       load();
