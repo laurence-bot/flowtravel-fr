@@ -58,7 +58,7 @@ function MyEval() {
         </Card>
       }
 
-      {items.length > 1 && <Card className="p-0 overflow-hidden">
+      {items.length > 1 && <Card className="p-0 overflow-hidden overflow-x-auto">
         <div className="p-4 border-b font-medium">Historique</div>
         <table className="w-full text-sm">
           <tbody>{items.map(e => (

@@ -54,7 +54,7 @@ function EquipeIndex() {
         }
       />
 
-      <Card className="p-0 overflow-hidden">
+      <Card className="p-0 overflow-hidden overflow-x-auto">
         {loading ? (
           <div className="p-10 text-center text-sm text-muted-foreground">Chargement…</div>
         ) : employees.length === 0 ? (

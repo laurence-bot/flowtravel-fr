@@ -37,7 +37,7 @@ function EvalsPage() {
         action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />Nouvelle campagne</Button>}
       />
 
-      <Card className="p-0 overflow-hidden">
+      <Card className="p-0 overflow-hidden overflow-x-auto">
         {items.length === 0 ? <div className="p-10 text-center text-muted-foreground">Aucune évaluation</div> :
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">

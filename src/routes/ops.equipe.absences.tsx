@@ -275,7 +275,7 @@ function AbsencesPage() {
           {items.length === 0 ? "Aucune absence enregistrée" : "Aucun résultat pour ces filtres"}
         </Card>
       ) : (
-        <Card className="p-0 overflow-hidden">
+        <Card className="p-0 overflow-hidden overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
@@ -337,7 +337,7 @@ function AbsencesPage() {
         </TabsContent>
 
         <TabsContent value="recups" className="mt-4">
-          <Card className="p-0 overflow-hidden">
+          <Card className="p-0 overflow-hidden overflow-x-auto">
             {recups.length === 0 ? (
               <p className="p-10 text-center text-muted-foreground">Aucune demande de récupération</p>
             ) : (

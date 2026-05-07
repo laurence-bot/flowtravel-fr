@@ -87,7 +87,7 @@ function PointagePage() {
         }
       </Card>
 
-      <Card className="p-0 overflow-hidden">
+      <Card className="p-0 overflow-hidden overflow-x-auto">
         <div className="px-4 py-3 border-b font-medium">Écart planifié / pointé sur la période</div>
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
@@ -113,7 +113,7 @@ function PointagePage() {
         </table>
       </Card>
 
-      <Card className="p-0 overflow-hidden">
+      <Card className="p-0 overflow-hidden overflow-x-auto">
         <div className="px-4 py-3 border-b font-medium">Historique des pointages</div>
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">

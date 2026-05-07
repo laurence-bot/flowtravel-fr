@@ -116,7 +116,7 @@ function CongesPage() {
         <Card className="p-4"><div className="text-xs uppercase text-muted-foreground">RTT restants</div><div className="text-3xl font-display">{rttRest}</div></Card>
       </div>
 
-      <Card className="p-0 overflow-hidden">
+      <Card className="p-0 overflow-hidden overflow-x-auto">
         {items.length === 0 ? <div className="p-10 text-center text-muted-foreground">Aucune demande</div> :
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
@@ -136,7 +136,7 @@ function CongesPage() {
       </Card>
 
       {recups.length > 0 && (
-        <Card className="p-0 overflow-hidden">
+        <Card className="p-0 overflow-hidden overflow-x-auto">
           <div className="px-4 py-3 border-b bg-muted/40 text-xs uppercase text-muted-foreground">Demandes de récupération</div>
           <table className="w-full text-sm">
             <thead className="bg-muted/20 text-xs uppercase text-muted-foreground">
