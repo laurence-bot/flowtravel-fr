@@ -238,8 +238,6 @@ function CouverturesFXPage() {
         )}
       </Card>
 
-      {/* Impact change global */}
-      <FxOptimisationDashboard coverages={coverages} reservations={reservations} />
       {fxPnl.entries.length > 0 && (
         <section className="space-y-4">
           <h2 className="font-display text-lg flex items-center gap-2">
