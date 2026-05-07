@@ -10,10 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PageHeader } from "@/components/page-header";
 import {
   listAbsences, approveAbsence, rejectAbsence, createAbsence,
-  listEmployees,
+  listEmployees, listRecupDemandes, createRecupDemande,
+  approuverRecupDemande, refuserRecupDemande,
   ABSENCE_TYPE_LABELS, ABSENCE_STATUT_LABELS,
-  type Absence, type Employee, type AbsenceType, type AbsenceStatut,
+  type Absence, type Employee, type AbsenceType, type AbsenceStatut, type RecupDemande,
 } from "@/lib/hr";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { sendTransactionalEmail } from "@/lib/email/send";
 import { toast } from "sonner";
@@ -55,12 +58,17 @@ function AbsencesPage() {
   const [filterEmp, setFilterEmp] = useState("tous");
   const [filterStatut, setFilterStatut] = useState("tous");
 
+  const [recups, setRecups] = useState<RecupDemande[]>([]);
+  const [recupOpen, setRecupOpen] = useState(false);
+  const [recupForm, setRecupForm] = useState({ employee_id: "", heures_demandees: "7", date_souhaitee: "", motif: "" });
+
   const reload = async () => {
     setLoading(true);
     try {
-      const [data, emps] = await Promise.all([listAbsences(), listEmployees()]);
+      const [data, emps, recs] = await Promise.all([listAbsences(), listEmployees(), listRecupDemandes()]);
       setItems(data);
       setAllEmployees(emps);
+      setRecups(recs);
       const map: EmpMap = {};
       emps.forEach(e => { map[e.id] = { prenom: e.prenom, nom: e.nom, email: e.email }; });
       setEmpMap(map);
@@ -70,6 +78,24 @@ function AbsencesPage() {
   };
 
   useEffect(() => { reload(); }, []);
+
+  const saveRecup = async () => {
+    if (!recupForm.employee_id || !recupForm.heures_demandees) { toast.error("Champs requis"); return; }
+    try {
+      await createRecupDemande({
+        employee_id: recupForm.employee_id,
+        mois: new Date().toISOString().slice(0, 7),
+        type: "heures",
+        heures_demandees: Number(recupForm.heures_demandees),
+        date_souhaitee: recupForm.date_souhaitee || undefined,
+        motif: recupForm.motif || undefined,
+      });
+      toast.success("Demande créée");
+      setRecupOpen(false);
+      setRecupForm({ employee_id: "", heures_demandees: "7", date_souhaitee: "", motif: "" });
+      reload();
+    } catch (e: any) { toast.error(e.message); }
+  };
 
   const filtered = items.filter(a => {
     if (filterEmp !== "tous" && a.employee_id !== filterEmp) return false;
@@ -159,14 +185,30 @@ function AbsencesPage() {
       </Link>
 
       <PageHeader
-        title="Demandes de congés"
-        description="Validation et saisie des absences"
+        title="Demandes de congés & récupérations"
+        description="Validation et saisie des absences et récupérations d'heures"
         action={
-          <Button onClick={() => setOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" /> Saisir une absence
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setRecupOpen(true)}>+ Demande récup</Button>
+            <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" /> Saisir une absence</Button>
+          </div>
         }
       />
+
+      <Tabs defaultValue="absences">
+        <TabsList>
+          <TabsTrigger value="absences">Absences</TabsTrigger>
+          <TabsTrigger value="recups">
+            Récupérations
+            {recups.filter(r => r.statut === "demande").length > 0 && (
+              <span className="ml-2 px-1.5 py-0.5 text-xs bg-amber-500 text-white rounded">
+                {recups.filter(r => r.statut === "demande").length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="absences" className="space-y-4 mt-4">
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
@@ -274,6 +316,65 @@ function AbsencesPage() {
           </table>
         </Card>
       )}
+        </TabsContent>
+
+        <TabsContent value="recups" className="mt-4">
+          <Card className="p-0 overflow-hidden">
+            {recups.length === 0 ? (
+              <p className="p-10 text-center text-muted-foreground">Aucune demande de récupération</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="text-left px-4 py-3">Employé</th>
+                    <th className="text-right px-4 py-3">Heures</th>
+                    <th className="text-left px-4 py-3">Date souhaitée</th>
+                    <th className="text-left px-4 py-3">Motif</th>
+                    <th className="text-left px-4 py-3">Statut</th>
+                    <th className="text-right px-4 py-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recups.map(r => {
+                    const emp = empMap[r.employee_id];
+                    return (
+                      <tr key={r.id} className="border-t">
+                        <td className="px-4 py-3">{emp ? `${emp.prenom} ${emp.nom}` : "—"}</td>
+                        <td className="px-4 py-3 text-right">{r.heures_demandees}h</td>
+                        <td className="px-4 py-3">{r.date_souhaitee ?? "—"}</td>
+                        <td className="px-4 py-3 max-w-[240px] truncate">{r.motif ?? "—"}</td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            r.statut === "approuvee" ? "bg-green-100 text-green-700" :
+                            r.statut === "refusee" ? "bg-red-100 text-red-600" :
+                            "bg-amber-100 text-amber-700"
+                          }`}>
+                            {r.statut === "approuvee" ? "Approuvée" : r.statut === "refusee" ? "Refusée" : "En attente"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {r.statut === "demande" && (
+                            <div className="flex gap-1 justify-end">
+                              <Button size="sm" onClick={async () => {
+                                try { await approuverRecupDemande(r.id); toast.success("Approuvée"); reload(); }
+                                catch (e: any) { toast.error(e.message); }
+                              }}><Check className="h-3 w-3" /></Button>
+                              <Button size="sm" variant="outline" onClick={async () => {
+                                try { await refuserRecupDemande(r.id); toast.success("Refusée"); reload(); }
+                                catch (e: any) { toast.error(e.message); }
+                              }}><X className="h-3 w-3" /></Button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(EMPTY_FORM); }}>
         <DialogContent className="max-w-lg">
@@ -348,6 +449,41 @@ function AbsencesPage() {
             <Button onClick={addManual} disabled={saving}>
               {saving ? "Enregistrement…" : "Enregistrer"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={recupOpen} onOpenChange={setRecupOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Demande de récupération d'heures</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Employé</Label>
+              <Select value={recupForm.employee_id} onValueChange={(v) => setRecupForm({ ...recupForm, employee_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Choisir…" /></SelectTrigger>
+                <SelectContent>
+                  {allEmployees.map(e => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Heures demandées</Label>
+                <Input type="number" step="0.5" value={recupForm.heures_demandees} onChange={(e) => setRecupForm({ ...recupForm, heures_demandees: e.target.value })} />
+              </div>
+              <div>
+                <Label>Date souhaitée</Label>
+                <Input type="date" value={recupForm.date_souhaitee} onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <Label>Motif</Label>
+              <Textarea rows={2} value={recupForm.motif} onChange={(e) => setRecupForm({ ...recupForm, motif: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRecupOpen(false)}>Annuler</Button>
+            <Button onClick={saveRecup}>Enregistrer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

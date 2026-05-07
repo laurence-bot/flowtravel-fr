@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/page-header";
 import {
-  listEmployees, listPlanning, upsertPlanning, deletePlanning,
+  listEmployees, listPlanning, upsertPlanning, deletePlanning, deletePlanningGroup,
   calcHeuresRealisees, upsertCompteur, listCompteurs, listRecupDemandes,
   createRecupDemande, approuverRecupDemande, refuserRecupDemande,
   alertesFinDeMois,
@@ -23,13 +23,13 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/ops/equipe/planning")({ component: PlanningPage });
 
-const TYPE_COLORS: Record<PlanningType, { badge: string; dot: string }> = {
-  travail:     { badge: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
-  teletravail: { badge: "bg-sky-50 text-sky-700 border-sky-200",            dot: "bg-sky-500" },
-  reunion:     { badge: "bg-violet-50 text-violet-700 border-violet-200",   dot: "bg-violet-500" },
-  deplacement: { badge: "bg-orange-50 text-orange-700 border-orange-200",   dot: "bg-orange-500" },
-  formation:   { badge: "bg-amber-50 text-amber-700 border-amber-200",      dot: "bg-amber-500" },
-  autre:       { badge: "bg-zinc-50 text-zinc-500 border-zinc-200",         dot: "bg-zinc-400" },
+const TYPE_COLORS: Record<PlanningType, { badge: string; dot: string; abbr: string }> = {
+  travail:     { badge: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500", abbr: "TRA" },
+  teletravail: { badge: "bg-sky-50 text-sky-700 border-sky-200",            dot: "bg-sky-500",     abbr: "TLT" },
+  reunion:     { badge: "bg-violet-50 text-violet-700 border-violet-200",   dot: "bg-violet-500",  abbr: "RÉU" },
+  deplacement: { badge: "bg-orange-50 text-orange-700 border-orange-200",   dot: "bg-orange-500",  abbr: "DÉP" },
+  formation:   { badge: "bg-amber-50 text-amber-700 border-amber-200",      dot: "bg-amber-500",   abbr: "FOR" },
+  autre:       { badge: "bg-zinc-50 text-zinc-500 border-zinc-200",         dot: "bg-zinc-400",    abbr: "AUT" },
 };
 
 const DAY_LABELS = ["D", "L", "M", "M", "J", "V", "S"];
@@ -213,6 +213,7 @@ function PlanningPage() {
   const [saving, setSaving] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{ emp: Employee; date: string } | null>(null);
   const [tab, setTab] = useState("planning");
+  const [actionEntry, setActionEntry] = useState<{ entry: PlanningEntry; emp: Employee } | null>(null);
 
   const [recupOpen, setRecupOpen] = useState(false);
   const [recupForm, setRecupForm] = useState({
@@ -253,8 +254,7 @@ function PlanningPage() {
     setOpen(true);
   };
 
-  const openEdit = (e: React.MouseEvent, entry: PlanningEntry, emp: Employee) => {
-    e.stopPropagation();
+  const openEdit = (entry: PlanningEntry, emp: Employee) => {
     setSelectedCell({ emp, date: entry.date_jour });
     setForm({
       ...EMPTY_FORM,
@@ -267,6 +267,7 @@ function PlanningPage() {
       pause_minutes: "30",
       note: entry.note ?? "",
     });
+    setActionEntry(null);
     setOpen(true);
   };
 
@@ -340,8 +341,9 @@ function PlanningPage() {
         }
         // ──────────────────────────────────────────────────────────────
 
+        const groupId = dates.length > 1 ? crypto.randomUUID() : null;
         await Promise.all(dates.map(date =>
-          upsertPlanning({ employee_id: empId, date_jour: date, type: form.type, heure_debut: form.heure_debut || null, heure_fin: form.heure_fin || null, note: form.note || null })
+          upsertPlanning({ employee_id: empId, date_jour: date, type: form.type, heure_debut: form.heure_debut || null, heure_fin: form.heure_fin || null, note: form.note || null, group_id: groupId } as any)
         ));
         toast.success(`${dates.length} entrée(s) ajoutée(s)`);
       }
@@ -351,9 +353,12 @@ function PlanningPage() {
     } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
 
-  const del = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
+  const del = async (id: string) => {
     try { await deletePlanning(id); load(); }
+    catch (e: any) { toast.error(e.message); }
+  };
+  const delGroup = async (groupId: string) => {
+    try { await deletePlanningGroup(groupId); setActionEntry(null); load(); }
     catch (e: any) { toast.error(e.message); }
   };
 
@@ -406,7 +411,7 @@ function PlanningPage() {
       </Link>
 
       <PageHeader
-        title="Planning"
+        title={`Planning — ${new Date(`${month}-01`).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}`}
         description="Vue mensuelle, compteurs d'heures et récupérations"
         action={
           <div className="flex items-center gap-2">
@@ -538,42 +543,28 @@ function PlanningPage() {
                             ].join(" ")}
                           >
                             <div className="space-y-1">
-                              {cells.map(c => (
-                                <div key={c.id} className={`group relative px-1.5 py-1 rounded border ${TYPE_COLORS[c.type].badge}`}>
-                                  <div className="absolute -top-1.5 -right-1.5 hidden group-hover:flex gap-0.5">
-                                    <button
-                                      onClick={(e) => openEdit(e, c, emp)}
-                                      className="w-5 h-5 rounded-full bg-background border shadow-sm flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
-                                      title="Modifier"
-                                    >
-                                      <Pencil className="h-2.5 w-2.5" />
-                                    </button>
-                                    <button
-                                      onClick={(e) => del(e, c.id)}
-                                      className="w-5 h-5 rounded-full bg-background border shadow-sm flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors"
-                                      title="Supprimer"
-                                    >
-                                      <Trash2 className="h-2.5 w-2.5" />
-                                    </button>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${TYPE_COLORS[c.type].dot}`} />
-                                    <span className="text-[10px] font-medium uppercase">
-                                      {PLANNING_TYPE_LABELS[c.type].slice(0, 3)}
-                                    </span>
-                                  </div>
-                                  {c.heure_debut && (
-                                    <div className="text-[9px] tabular-nums mt-0.5">
-                                      {c.heure_debut}–{c.heure_fin}
+                              {cells.map(c => {
+                                const tc = TYPE_COLORS[c.type];
+                                return (
+                                  <button
+                                    key={c.id}
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setActionEntry({ entry: c, emp }); }}
+                                    className={`w-full text-left px-1.5 py-0.5 rounded border ${tc.badge} hover:ring-1 hover:ring-foreground/20`}
+                                    title={c.note ?? PLANNING_TYPE_LABELS[c.type]}
+                                  >
+                                    <div className="flex items-center gap-1">
+                                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${tc.dot}`} />
+                                      <span className="text-[10px] font-semibold tracking-wide">{tc.abbr}</span>
                                     </div>
-                                  )}
-                                  {c.note && (
-                                    <div className="text-[9px] mt-0.5 truncate opacity-75" title={c.note}>
-                                      {c.note}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
+                                    {c.heure_debut && (
+                                      <div className="text-[9px] tabular-nums opacity-70">
+                                        {c.heure_debut.slice(0,5)}–{(c.heure_fin ?? "").slice(0,5)}
+                                      </div>
+                                    )}
+                                  </button>
+                                );
+                              })}
                             </div>
                           </td>
                         );
@@ -897,6 +888,39 @@ function PlanningPage() {
               {saving ? "Enregistrement…" : isEditing ? "Mettre à jour" : "Enregistrer"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog d'action sur entrée */}
+      <Dialog open={!!actionEntry} onOpenChange={(v) => !v && setActionEntry(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {actionEntry && `${actionEntry.emp.prenom} · ${actionEntry.entry.date_jour}`}
+            </DialogTitle>
+          </DialogHeader>
+          {actionEntry && (
+            <div className="space-y-2">
+              <div className="text-sm text-muted-foreground">
+                {PLANNING_TYPE_LABELS[actionEntry.entry.type]}
+                {actionEntry.entry.heure_debut && ` · ${actionEntry.entry.heure_debut.slice(0,5)}–${(actionEntry.entry.heure_fin ?? "").slice(0,5)}`}
+                {actionEntry.entry.note && ` · ${actionEntry.entry.note}`}
+              </div>
+              <div className="flex flex-col gap-2 pt-2">
+                <Button variant="outline" onClick={() => openEdit(actionEntry.entry, actionEntry.emp)}>
+                  <Pencil className="h-4 w-4 mr-2" /> Modifier
+                </Button>
+                <Button variant="outline" onClick={() => { del(actionEntry.entry.id); setActionEntry(null); }}>
+                  <Trash2 className="h-4 w-4 mr-2" /> Supprimer ce jour
+                </Button>
+                {actionEntry.entry.group_id && (
+                  <Button variant="destructive" onClick={() => delGroup(actionEntry.entry.group_id!)}>
+                    <Trash2 className="h-4 w-4 mr-2" /> Supprimer toute la série
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
