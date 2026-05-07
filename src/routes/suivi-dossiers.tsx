@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { RequireAuth } from "@/components/require-auth";
 import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/app-layout";
 import { PageHeader } from "@/components/page-header";
@@ -10,7 +11,11 @@ import { Loader2, ArrowRight, AlertTriangle, Clock, CheckCircle2, FileSignature,
 import { formatEUR } from "@/lib/format";
 
 export const Route = createFileRoute("/suivi-dossiers")({
-  component: SuiviDossiersPage,
+  component: () => (
+    <RequireAuth>
+      <SuiviDossiersPage />
+    </RequireAuth>
+  ),
   head: () => ({ meta: [{ title: "Suivi des dossiers" }] }),
 });
 
@@ -54,7 +59,9 @@ function SuiviDossiersPage() {
       // → "en attente paiement / signature acompte"
       const { data: cotsRaw } = await supabase
         .from("cotations")
-        .select("id, titre, client_id, statut, dossier_id, contacts:client_id(nom), quote_public_links(accepted_at, expires_at)")
+        .select(
+          "id, titre, client_id, statut, dossier_id, contacts:client_id(nom), quote_public_links(accepted_at, expires_at)",
+        )
         .eq("user_id", user.id)
         .in("statut", ["envoyee", "validee"])
         .order("updated_at", { ascending: false });
@@ -104,10 +111,7 @@ function SuiviDossiersPage() {
             .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle(),
-          supabase
-            .from("factures_clients")
-            .select("id, statut")
-            .eq("dossier_id", d.id),
+          supabase.from("factures_clients").select("id, statut").eq("dossier_id", d.id),
         ]);
 
         const facturesTotal = (factures ?? []).length;
@@ -312,17 +316,13 @@ function Section({
     <Card className="mb-6">
       <CardHeader>
         <CardTitle className="text-base">{title}</CardTitle>
-        {description && (
-          <p className="text-xs text-muted-foreground mt-1">{description}</p>
-        )}
+        {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
       </CardHeader>
       <CardContent className="px-0 pb-0">
         {hasChildren ? (
           <div className="border-t">{children}</div>
         ) : (
-          <div className="px-4 py-6 text-center text-sm text-muted-foreground border-t">
-            {emptyText}
-          </div>
+          <div className="px-4 py-6 text-center text-sm text-muted-foreground border-t">{emptyText}</div>
         )}
       </CardContent>
     </Card>
