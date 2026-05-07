@@ -8,27 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useTable, type Contact, type Paiement } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -148,10 +130,7 @@ function CotationDetailPage() {
   const { data: fournisseurConditions } = useTable<any>("fournisseur_conditions" as any);
 
   const cot = cotations.find((c) => c.id === id);
-  const lignesCot = useMemo(
-    () => lignes.filter((l) => l.cotation_id === id),
-    [lignes, id],
-  );
+  const lignesCot = useMemo(() => lignes.filter((l) => l.cotation_id === id), [lignes, id]);
 
   // Form édition générale
   const [editing, setEditing] = useState(false);
@@ -224,14 +203,10 @@ function CotationDetailPage() {
   const acompteInfo = computeAcompteClient(cot, lignes);
   const client = contacts.find((c) => c.id === cot.client_id);
   const fournisseurs = contacts.filter((c) => c.type === "fournisseur");
-  const acompteClientRecu = !!cot.dossier_id && paiements.some(
-    (p) => p.dossier_id === cot.dossier_id && p.type === "paiement_client",
-  );
+  const acompteClientRecu =
+    !!cot.dossier_id && paiements.some((p) => p.dossier_id === cot.dossier_id && p.type === "paiement_client");
   const tone = COTATION_STATUT_TONES[cot.statut];
-  const isLocked =
-    cot.statut === "transformee_en_dossier" ||
-    cot.statut === "perdue" ||
-    cot.statut === "archivee";
+  const isLocked = cot.statut === "transformee_en_dossier" || cot.statut === "perdue" || cot.statut === "archivee";
 
   const startEdit = () => {
     setEdit({
@@ -248,6 +223,7 @@ function CotationDetailPage() {
       prix_vente_usd: cot.prix_vente_usd,
       regime_tva: cot.regime_tva,
       taux_tva_marge: cot.taux_tva_marge,
+      taux_marge_cible: cot.taux_marge_cible ?? null,
       notes: cot.notes,
     });
     setEditing(true);
@@ -256,10 +232,7 @@ function CotationDetailPage() {
   const saveEdit = async () => {
     if (!user) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from("cotations")
-      .update(edit)
-      .eq("id", cot.id);
+    const { error } = await (supabase as any).from("cotations").update(edit).eq("id", cot.id);
     if (error) return toast.error(error.message);
     await logAudit({
       userId: user.id,
@@ -278,10 +251,7 @@ function CotationDetailPage() {
     const oldAgentId = cot.agent_id ?? null;
     if (newAgentId === oldAgentId) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from("cotations")
-      .update({ agent_id: newAgentId })
-      .eq("id", cot.id);
+    const { error } = await (supabase as any).from("cotations").update({ agent_id: newAgentId }).eq("id", cot.id);
     if (error) return toast.error(error.message);
     const oldName = agentLabel(agents.find((a) => a.user_id === oldAgentId));
     const newName = agentLabel(agents.find((a) => a.user_id === newAgentId));
@@ -314,10 +284,7 @@ function CotationDetailPage() {
     });
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
     const totalPct =
-      parsed.data.pct_acompte_1 +
-      parsed.data.pct_acompte_2 +
-      parsed.data.pct_acompte_3 +
-      parsed.data.pct_solde;
+      parsed.data.pct_acompte_1 + parsed.data.pct_acompte_2 + parsed.data.pct_acompte_3 + parsed.data.pct_solde;
     if (Math.abs(totalPct - 100) > 0.01) {
       return toast.error("La somme des % doit faire 100%.");
     }
@@ -351,10 +318,7 @@ function CotationDetailPage() {
     setSubmittingLigne(true);
     if (replaceId) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any)
-        .from("cotation_lignes_fournisseurs")
-        .delete()
-        .eq("id", replaceId);
+      await (supabase as any).from("cotation_lignes_fournisseurs").delete().eq("id", replaceId);
     }
     const montantEur = parsed.data.montant_devise * parsed.data.taux_change_vers_eur;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -414,10 +378,7 @@ function CotationDetailPage() {
     if (!user) return;
     if (!confirm("Supprimer cette ligne ?")) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any)
-      .from("cotation_lignes_fournisseurs")
-      .delete()
-      .eq("id", ligneId);
+    await (supabase as any).from("cotation_lignes_fournisseurs").delete().eq("id", ligneId);
     await logAudit({
       userId: user.id,
       entity: "cotation_ligne",
@@ -430,8 +391,7 @@ function CotationDetailPage() {
 
   const valider = async () => {
     if (!user) return;
-    if (lignesCot.length === 0)
-      return toast.error("Ajoutez au moins une ligne fournisseur.");
+    if (lignesCot.length === 0) return toast.error("Ajoutez au moins une ligne fournisseur.");
     // archiver les autres versions du group
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any)
@@ -441,10 +401,7 @@ function CotationDetailPage() {
       .neq("id", cot.id)
       .in("statut", ["brouillon", "envoyee", "validee"]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any)
-      .from("cotations")
-      .update({ statut: "validee" })
-      .eq("id", cot.id);
+    await (supabase as any).from("cotations").update({ statut: "validee" }).eq("id", cot.id);
     // Engager définitivement les réservations FX liées (dossier confirmé)
     const engagement = await engageReservationsForCotation({ userId: user.id, cotationId: cot.id });
     await logAudit({
@@ -510,10 +467,7 @@ function CotationDetailPage() {
     )
       return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any)
-      .from("cotations")
-      .update({ statut: "envoyee", raison_perte: null })
-      .eq("id", cot.id);
+    await (supabase as any).from("cotations").update({ statut: "envoyee", raison_perte: null }).eq("id", cot.id);
     const restoration = await reactivateReleasedReservationsForCotation({
       userId: user.id,
       cotationId: cot.id,
@@ -592,9 +546,7 @@ function CotationDetailPage() {
     if (!cot.programme_pdf_url) return;
     setPdfLoading(true);
     try {
-      const { data, error } = await supabase.storage
-        .from("pdf-imports")
-        .createSignedUrl(cot.programme_pdf_url, 300);
+      const { data, error } = await supabase.storage.from("pdf-imports").createSignedUrl(cot.programme_pdf_url, 300);
       if (error || !data?.signedUrl) {
         toast.error("Impossible d'ouvrir le document.");
         return;
@@ -608,19 +560,19 @@ function CotationDetailPage() {
 
   const deleteProgrammePdf = async () => {
     if (!cot.programme_pdf_url) return;
-    if (!confirm("Supprimer le PDF importé de cette cotation ? Les jours et lignes déjà importés restent modifiables.")) return;
+    if (!confirm("Supprimer le PDF importé de cette cotation ? Les jours et lignes déjà importés restent modifiables."))
+      return;
     setPdfDeleting(true);
     try {
-      const { error: storageError } = await supabase.storage
-        .from("pdf-imports")
-        .remove([cot.programme_pdf_url]);
+      const { error: storageError } = await supabase.storage.from("pdf-imports").remove([cot.programme_pdf_url]);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)
         .from("cotations")
         .update({ programme_pdf_url: null, programme_pdf_name: null })
         .eq("id", cot.id);
       if (error) return toast.error(error.message);
-      if (storageError) toast.warning("PDF détaché de la cotation, mais le fichier source n'a pas pu être supprimé du stockage.");
+      if (storageError)
+        toast.warning("PDF détaché de la cotation, mais le fichier source n'a pas pu être supprimé du stockage.");
       else toast.success("PDF importé supprimé.");
       refetchCot();
     } finally {
@@ -630,13 +582,11 @@ function CotationDetailPage() {
 
   const transformer = async () => {
     if (!user) return;
-    if (cot.statut !== "validee")
-      return toast.error("La cotation doit être validée.");
+    if (cot.statut !== "validee") return toast.error("La cotation doit être validée.");
     if (!cot.client_id) return toast.error("Client requis.");
-    const { data: dossierId, error } = await (supabase as any).rpc(
-      "transformer_cotation_en_dossier",
-      { _cotation_id: cot.id },
-    );
+    const { data: dossierId, error } = await (supabase as any).rpc("transformer_cotation_en_dossier", {
+      _cotation_id: cot.id,
+    });
     if (error) return toast.error(error.message);
     await logAudit({
       userId: user.id,
@@ -696,11 +646,15 @@ function CotationDetailPage() {
           <UsersIcon className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-xs text-muted-foreground">Agent responsable :</span>
           <Select value={cot.agent_id ?? ""} onValueChange={reassignAgent} disabled={!canWrite}>
-            <SelectTrigger className="h-7 w-[220px] text-xs"><SelectValue placeholder="Non assigné" /></SelectTrigger>
+            <SelectTrigger className="h-7 w-[220px] text-xs">
+              <SelectValue placeholder="Non assigné" />
+            </SelectTrigger>
             <SelectContent>
               {agents.map((a) => (
                 <SelectItem key={a.user_id} value={a.user_id}>
-                  {agentLabel(a)}{a.user_id === user?.id ? " (moi)" : ""}{!a.actif ? " · inactif" : ""}
+                  {agentLabel(a)}
+                  {a.user_id === user?.id ? " (moi)" : ""}
+                  {!a.actif ? " · inactif" : ""}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -709,13 +663,7 @@ function CotationDetailPage() {
       </div>
 
       {/* Devis web client (lien partageable) */}
-      {user && (
-        <PublicQuoteLinkBlock
-          cotationId={cot.id}
-          userId={user.id}
-          canWrite={canWrite}
-        />
-      )}
+      {user && <PublicQuoteLinkBlock cotationId={cot.id} userId={user.id} canWrite={canWrite} />}
 
       {/* Éditeur de contenu du devis web (hero + jours) */}
       {user && (
@@ -743,92 +691,96 @@ function CotationDetailPage() {
         />
       )}
 
-      {/* Résumé financier */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Card className="p-4">
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-            Prix vente TTC
+      {/* Résumé financier — design unifié */}
+      <Card className="p-0 overflow-hidden">
+        <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
+          {/* Colonne gauche : flux d'argent */}
+          <div className="p-5 space-y-4">
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Flux financiers</div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm text-muted-foreground">Prix de vente TTC</span>
+              <span className="text-xl font-semibold tabular text-[color:var(--revenue)]">
+                {fin.prixVente > 0 ? (
+                  formatEUR(fin.prixVente)
+                ) : (
+                  <span className="text-sm text-muted-foreground italic">À définir</span>
+                )}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm text-muted-foreground">Coût fournisseurs</span>
+              <span className="text-xl font-semibold tabular text-[color:var(--cost)]">{formatEUR(fin.coutTotal)}</span>
+            </div>
+            <div className="border-t pt-3 flex items-baseline justify-between">
+              <span className="text-sm text-muted-foreground">Marge brute</span>
+              <span className={`text-base font-medium tabular ${fin.margeBrute >= 0 ? "" : "text-destructive"}`}>
+                {formatEUR(fin.margeBrute)}
+              </span>
+            </div>
+            {fin.tvaSurMarge > 0 && (
+              <div className="flex items-baseline justify-between">
+                <span className="text-xs text-muted-foreground">
+                  TVA sur marge ({REGIME_TVA_LABELS[cot.regime_tva]})
+                </span>
+                <span className="text-sm tabular text-muted-foreground">− {formatEUR(fin.tvaSurMarge)}</span>
+              </div>
+            )}
           </div>
-          <div className="mt-1 text-lg font-semibold tabular text-[color:var(--revenue)]">
-            {formatEUR(fin.prixVente)}
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-            Coût fournisseurs
-          </div>
-          <div className="mt-1 text-lg font-semibold tabular text-[color:var(--cost)]">
-            {formatEUR(fin.coutTotal)}
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-            Marge brute
-          </div>
-          <div
-            className={`mt-1 text-lg font-semibold tabular ${fin.margeBrute >= 0 ? "" : "text-destructive"}`}
-          >
-            {formatEUR(fin.margeBrute)}
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-            TVA marge
-          </div>
-          <div className="mt-1 text-lg font-semibold tabular">
-            {formatEUR(fin.tvaSurMarge)}
-          </div>
-          <div className="text-[10px] text-muted-foreground">
-            {REGIME_TVA_LABELS[cot.regime_tva]}
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-            Marge nette
-          </div>
-          <div
-            className={`mt-1 text-lg font-semibold tabular ${fin.margeNette >= 0 ? "text-[color:var(--margin)]" : "text-destructive"}`}
-          >
-            {formatEUR(fin.margeNette)}
-          </div>
-          <div className="text-[10px] text-muted-foreground">
-            {fin.margeNettePct.toFixed(1)}% du CA
-      </div>
 
-      {/* Acompte client à demander */}
-      {acompteInfo.acompte > 0 && (
-        <Card className="p-4 border-l-4 border-l-[color:var(--margin)]">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                Acompte client à demander à la confirmation
-              </div>
-              <div className="mt-1 text-2xl font-semibold tabular text-[color:var(--margin)]">
-                {formatEUR(acompteInfo.acompte)}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                = {formatEUR(acompteInfo.acomptesFournisseurs)} acomptes fournisseurs
-                {acompteInfo.partMarge > 0 && ` + ${formatEUR(acompteInfo.partMarge)} (50% de la marge)`}
-              </div>
-              {acompteInfo.margeNegative && (
-                <div className="text-xs text-destructive mt-1">
-                  ⚠ Marge négative : acompte limité au coût fournisseurs.
+          {/* Colonne droite : marge + acompte */}
+          <div className="p-5 space-y-4">
+            {/* Marge nette — élément principal */}
+            <div className="rounded-lg bg-muted/40 px-4 py-3 flex items-center justify-between">
+              <div>
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Marge nette</div>
+                <div
+                  className={`text-2xl font-bold tabular mt-0.5 ${fin.margeNette >= 0 ? "text-[color:var(--margin)]" : "text-destructive"}`}
+                >
+                  {formatEUR(fin.margeNette)}
                 </div>
-              )}
-            </div>
-            <div className="text-right">
-              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                Solde au départ
               </div>
-              <div className="mt-1 text-lg font-medium tabular">
-                {formatEUR(acompteInfo.solde)}
+              <div
+                className={`text-3xl font-bold tabular ${fin.margeNette >= 0 ? "text-[color:var(--margin)]" : "text-destructive"} opacity-90`}
+              >
+                {fin.margeNettePct.toFixed(1)}%
               </div>
             </div>
+
+            {/* Acompte */}
+            {acompteInfo.acompte > 0 && (
+              <div className="space-y-1.5">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  À encaisser à la confirmation
+                </div>
+                <div className="flex items-baseline justify-between">
+                  <div>
+                    <span className="text-lg font-semibold tabular text-[color:var(--margin)]">
+                      {formatEUR(acompteInfo.acompte)}
+                    </span>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {formatEUR(acompteInfo.acomptesFournisseurs)} fournisseurs
+                      {acompteInfo.partMarge > 0 && ` + ${formatEUR(acompteInfo.partMarge)} marge`}
+                    </div>
+                    {acompteInfo.margeNegative && (
+                      <div className="text-xs text-destructive mt-0.5">⚠ Marge négative</div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-muted-foreground">Solde départ</div>
+                    <div className="text-base font-medium tabular mt-0.5">{formatEUR(acompteInfo.solde)}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {fin.prixVente === 0 && fin.coutTotal > 0 && (
+              <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
+                Utilisez le calculateur de marge ci-dessous pour définir le prix de vente.
+              </div>
+            )}
           </div>
-        </Card>
-      )}
-        </Card>
-      </div>
+        </div>
+      </Card>
 
       {/* Alertes qualité */}
       {(() => {
@@ -903,9 +855,8 @@ function CotationDetailPage() {
         <Card className="p-4 flex flex-wrap items-center gap-3 border-amber-500/40 bg-amber-500/5">
           <div className="text-sm text-muted-foreground flex-1 min-w-0">
             Cotation marquée comme perdue
-            {cot.raison_perte ? ` (${cot.raison_perte})` : ""}. Le client revient&nbsp;?
-            Tu peux la rouvrir — les réservations FX libérées seront restaurées
-            si les couvertures ont encore du solde disponible.
+            {cot.raison_perte ? ` (${cot.raison_perte})` : ""}. Le client revient&nbsp;? Tu peux la rouvrir — les
+            réservations FX libérées seront restaurées si les couvertures ont encore du solde disponible.
           </div>
           <Button onClick={rouvrirCotation} variant="default" className="shrink-0">
             <RotateCcw className="h-4 w-4 mr-2" /> Rouvrir la cotation
@@ -931,9 +882,7 @@ function CotationDetailPage() {
               label="Pays"
               value={
                 cot.pays_destination
-                  ? `${cot.pays_destination} ${
-                      isEUCountry(cot.pays_destination) ? "🇪🇺" : "🌍"
-                    }`
+                  ? `${cot.pays_destination} ${isEUCountry(cot.pays_destination) ? "🇪🇺" : "🌍"}`
                   : "—"
               }
             />
@@ -948,37 +897,24 @@ function CotationDetailPage() {
               label="Régime TVA"
               value={
                 REGIME_TVA_LABELS[cot.regime_tva] +
-                (cot.pays_destination
-                  ? isEUCountry(cot.pays_destination)
-                    ? " (UE)"
-                    : " (hors UE — 0 %)"
-                  : "")
+                (cot.pays_destination ? (isEUCountry(cot.pays_destination) ? " (UE)" : " (hors UE — 0 %)") : "")
               }
             />
             <Info
               label="Taux TVA marge"
-              value={
-                cot.regime_tva === "hors_ue"
-                  ? "0 % (hors UE)"
-                  : `${cot.taux_tva_marge}%`
-              }
+              value={cot.regime_tva === "hors_ue" ? "0 % (hors UE)" : `${cot.taux_tva_marge}%`}
             />
           </div>
         ) : (
           <div className="space-y-3">
             <div className="grid md:grid-cols-2 gap-3">
               <Field label="Titre">
-                <Input
-                  value={edit.titre ?? ""}
-                  onChange={(e) => setEdit({ ...edit, titre: e.target.value })}
-                />
+                <Input value={edit.titre ?? ""} onChange={(e) => setEdit({ ...edit, titre: e.target.value })} />
               </Field>
               <Field label="Destination (libre)">
                 <Input
                   value={edit.destination ?? ""}
-                  onChange={(e) =>
-                    setEdit({ ...edit, destination: e.target.value })
-                  }
+                  onChange={(e) => setEdit({ ...edit, destination: e.target.value })}
                 />
               </Field>
               <Field label="Pays (pilote la TVA)">
@@ -993,11 +929,7 @@ function CotationDetailPage() {
                       regime_tva: regime,
                       // taux à 0 si hors UE, sinon défaut 20 si actuellement 0
                       taux_tva_marge:
-                        regime === "hors_ue"
-                          ? 0
-                          : (edit.taux_tva_marge ?? 0) > 0
-                            ? edit.taux_tva_marge
-                            : 20,
+                        regime === "hors_ue" ? 0 : (edit.taux_tva_marge ?? 0) > 0 ? edit.taux_tva_marge : 20,
                     });
                   }}
                 >
@@ -1015,18 +947,13 @@ function CotationDetailPage() {
                 </Select>
               </Field>
               <Field label="Langue">
-                <Input
-                  value={edit.langue ?? ""}
-                  onChange={(e) => setEdit({ ...edit, langue: e.target.value })}
-                />
+                <Input value={edit.langue ?? ""} onChange={(e) => setEdit({ ...edit, langue: e.target.value })} />
               </Field>
               <Field label="Pax">
                 <Input
                   type="number"
                   value={edit.nombre_pax ?? 1}
-                  onChange={(e) =>
-                    setEdit({ ...edit, nombre_pax: Number(e.target.value) })
-                  }
+                  onChange={(e) => setEdit({ ...edit, nombre_pax: Number(e.target.value) })}
                 />
               </Field>
               <Field label="Chambres">
@@ -1045,18 +972,14 @@ function CotationDetailPage() {
                 <Input
                   type="date"
                   value={edit.date_depart ?? ""}
-                  onChange={(e) =>
-                    setEdit({ ...edit, date_depart: e.target.value })
-                  }
+                  onChange={(e) => setEdit({ ...edit, date_depart: e.target.value })}
                 />
               </Field>
               <Field label="Date retour">
                 <Input
                   type="date"
                   value={edit.date_retour ?? ""}
-                  onChange={(e) =>
-                    setEdit({ ...edit, date_retour: e.target.value })
-                  }
+                  onChange={(e) => setEdit({ ...edit, date_retour: e.target.value })}
                 />
               </Field>
               <div className="md:col-span-2">
@@ -1064,8 +987,14 @@ function CotationDetailPage() {
                   coutTotal={fin.coutTotal}
                   regimeTva={(edit.regime_tva ?? "hors_ue") as "marge_ue" | "hors_ue"}
                   tauxTvaMarge={Number(edit.taux_tva_marge ?? 20)}
-                  onApply={({ prixHt, prixTtc }) =>
-                    setEdit({ ...edit, prix_vente_ht: prixHt, prix_vente_ttc: prixTtc })
+                  tauxMargeCible={cot.taux_marge_cible ?? null}
+                  onApply={({ prixHt, prixTtc, tauxMargeCible }) =>
+                    setEdit({
+                      ...edit,
+                      prix_vente_ht: prixHt,
+                      prix_vente_ttc: prixTtc,
+                      taux_marge_cible: tauxMargeCible,
+                    })
                   }
                 />
               </div>
@@ -1074,9 +1003,7 @@ function CotationDetailPage() {
                   type="number"
                   step="0.01"
                   value={edit.prix_vente_ht ?? 0}
-                  onChange={(e) =>
-                    setEdit({ ...edit, prix_vente_ht: Number(e.target.value) })
-                  }
+                  onChange={(e) => setEdit({ ...edit, prix_vente_ht: Number(e.target.value) })}
                 />
               </Field>
               <Field label="Prix TTC">
@@ -1084,17 +1011,13 @@ function CotationDetailPage() {
                   type="number"
                   step="0.01"
                   value={edit.prix_vente_ttc ?? 0}
-                  onChange={(e) =>
-                    setEdit({ ...edit, prix_vente_ttc: Number(e.target.value) })
-                  }
+                  onChange={(e) => setEdit({ ...edit, prix_vente_ttc: Number(e.target.value) })}
                 />
               </Field>
               <Field label="Régime TVA (auto selon pays)">
                 <Select
                   value={edit.regime_tva ?? "hors_ue"}
-                  onValueChange={(v) =>
-                    setEdit({ ...edit, regime_tva: v as CotationRegimeTva })
-                  }
+                  onValueChange={(v) => setEdit({ ...edit, regime_tva: v as CotationRegimeTva })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -1182,9 +1105,7 @@ function CotationDetailPage() {
           )}
         </div>
         {lignesCot.length === 0 ? (
-          <div className="p-10 text-sm text-muted-foreground text-center">
-            Aucune ligne fournisseur.
-          </div>
+          <div className="p-10 text-sm text-muted-foreground text-center">Aucune ligne fournisseur.</div>
         ) : (
           <Table>
             <TableHeader>
@@ -1206,32 +1127,20 @@ function CotationDetailPage() {
                   <TableCell className="text-sm">
                     <div className="font-medium">{l.nom_fournisseur}</div>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {l.prestation ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {l.mode_tarifaire === "par_personne" ? "/ pax" : "global"}
-                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{l.prestation ?? "—"}</TableCell>
+                  <TableCell className="text-xs">{l.mode_tarifaire === "par_personne" ? "/ pax" : "global"}</TableCell>
                   <TableCell className="text-right tabular">{l.quantite}</TableCell>
                   <TableCell className="text-right tabular">
                     {l.devise} {l.montant_devise.toFixed(2)}
                   </TableCell>
-                  <TableCell className="text-right tabular">
-                    {l.taux_change_vers_eur.toFixed(4)}
-                  </TableCell>
-                  <TableCell className="text-right tabular">
-                    {formatEUR(ligneCoutEur(l, cot.nombre_pax))}
-                  </TableCell>
+                  <TableCell className="text-right tabular">{l.taux_change_vers_eur.toFixed(4)}</TableCell>
+                  <TableCell className="text-right tabular">{formatEUR(ligneCoutEur(l, cot.nombre_pax))}</TableCell>
                   <TableCell className="text-right text-xs tabular">
                     {l.pct_acompte_1}/{l.pct_acompte_2}/{l.pct_acompte_3}/{l.pct_solde}
                   </TableCell>
                   <TableCell>
                     {canWrite && !isLocked && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => supprimerLigne(l.id)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => supprimerLigne(l.id)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     )}
@@ -1291,19 +1200,16 @@ function CotationDetailPage() {
                     const conds = fournisseurConditions.filter(
                       (fc: { fournisseur_id: string }) => fc.fournisseur_id === v,
                     );
-                    const cond =
-                      conds.find((fc: { est_principale: boolean }) => fc.est_principale) ??
-                      conds[0];
+                    const cond = conds.find((fc: { est_principale: boolean }) => fc.est_principale) ?? conds[0];
                     const devisesAcc: string[] = cond?.devises_acceptees ?? [];
                     const nextDevise =
                       devisesAcc.length > 0 && devisesAcc.includes(ligneForm.devise)
                         ? ligneForm.devise
-                        : (devisesAcc[0] as DeviseCode | undefined) ?? ligneForm.devise;
+                        : ((devisesAcc[0] as DeviseCode | undefined) ?? ligneForm.devise);
                     setLigneForm({
                       ...ligneForm,
                       fournisseur_id: v,
-                      nom_fournisseur:
-                        ligneForm.nom_fournisseur || c?.nom || "",
+                      nom_fournisseur: ligneForm.nom_fournisseur || c?.nom || "",
                       devise: nextDevise as DeviseCode,
                       pct_acompte_1: cond ? String(cond.pct_acompte_1 ?? 30) : ligneForm.pct_acompte_1,
                       pct_acompte_2: cond ? String(cond.pct_acompte_2 ?? 0) : ligneForm.pct_acompte_2,
@@ -1327,9 +1233,7 @@ function CotationDetailPage() {
               <Field label="Prestation">
                 <Input
                   value={ligneForm.prestation}
-                  onChange={(e) =>
-                    setLigneForm({ ...ligneForm, prestation: e.target.value })
-                  }
+                  onChange={(e) => setLigneForm({ ...ligneForm, prestation: e.target.value })}
                 />
               </Field>
               {/* Champ "payeur" supprimé : par défaut l'agence règle le fournisseur */}
@@ -1357,9 +1261,7 @@ function CotationDetailPage() {
                   type="number"
                   step="1"
                   value={ligneForm.quantite}
-                  onChange={(e) =>
-                    setLigneForm({ ...ligneForm, quantite: e.target.value })
-                  }
+                  onChange={(e) => setLigneForm({ ...ligneForm, quantite: e.target.value })}
                 />
               </Field>
               <Field label="Devise">
@@ -1433,9 +1335,7 @@ function CotationDetailPage() {
                 montantDevise={
                   Number(ligneForm.montant_devise) *
                   Number(ligneForm.quantite || 1) *
-                  (ligneForm.mode_tarifaire === "par_personne"
-                    ? Math.max(1, cot.nombre_pax)
-                    : 1)
+                  (ligneForm.mode_tarifaire === "par_personne" ? Math.max(1, cot.nombre_pax) : 1)
                 }
                 selectedCoverageId={ligneForm.couverture_id || null}
                 onPick={({ coverage, taux }) =>
@@ -1449,9 +1349,7 @@ function CotationDetailPage() {
               />
             )}
             <div className="border-t pt-3">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                Échéances (% du montant)
-              </Label>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Échéances (% du montant)</Label>
               <div className="grid grid-cols-4 gap-2 mt-2">
                 {(
                   [
@@ -1467,9 +1365,7 @@ function CotationDetailPage() {
                       type="number"
                       step="0.1"
                       value={ligneForm[k]}
-                      onChange={(e) =>
-                        setLigneForm({ ...ligneForm, [k]: e.target.value })
-                      }
+                      onChange={(e) => setLigneForm({ ...ligneForm, [k]: e.target.value })}
                     />
                     <Input
                       type="date"
@@ -1485,9 +1381,7 @@ function CotationDetailPage() {
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                La somme doit faire 100%.
-              </p>
+              <p className="text-xs text-muted-foreground mt-2">La somme doit faire 100%.</p>
             </div>
 
             <div className="flex justify-end gap-2">
@@ -1536,9 +1430,8 @@ function CotationDetailPage() {
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Cette action est <strong>irréversible</strong>. Toutes les étapes,
-              lignes prix fournisseurs, options de vols et liens publics liés
-              seront supprimés.
+              Cette action est <strong>irréversible</strong>. Toutes les étapes, lignes prix fournisseurs, options de
+              vols et liens publics liés seront supprimés.
             </p>
             {cot.dossier_id && (
               <p className="text-sm text-destructive">
@@ -1546,7 +1439,9 @@ function CotationDetailPage() {
               </p>
             )}
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>Annuler</Button>
+              <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>
+                Annuler
+              </Button>
               <Button variant="destructive" onClick={confirmDelete} disabled={deleting || !!cot.dossier_id}>
                 {deleting ? "Suppression…" : "Supprimer définitivement"}
               </Button>
@@ -1571,21 +1466,28 @@ function CotationDetailPage() {
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Date de départ">
-                <Input type="date" value={dupForm.newDateDepart}
-                  onChange={(e) => setDupForm({ ...dupForm, newDateDepart: e.target.value })} />
+                <Input
+                  type="date"
+                  value={dupForm.newDateDepart}
+                  onChange={(e) => setDupForm({ ...dupForm, newDateDepart: e.target.value })}
+                />
               </Field>
               <Field label="Date de retour">
-                <Input type="date" value={dupForm.newDateRetour}
-                  onChange={(e) => setDupForm({ ...dupForm, newDateRetour: e.target.value })} />
+                <Input
+                  type="date"
+                  value={dupForm.newDateRetour}
+                  onChange={(e) => setDupForm({ ...dupForm, newDateRetour: e.target.value })}
+                />
               </Field>
             </div>
             <p className="text-xs text-muted-foreground">
-              Si tu changes la date de départ, les dates des étapes, prestations
-              et échéances fournisseurs seront décalées automatiquement du même
-              nombre de jours.
+              Si tu changes la date de départ, les dates des étapes, prestations et échéances fournisseurs seront
+              décalées automatiquement du même nombre de jours.
             </p>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setDuplicateOpen(false)} disabled={duplicating}>Annuler</Button>
+              <Button variant="outline" onClick={() => setDuplicateOpen(false)} disabled={duplicating}>
+                Annuler
+              </Button>
               <Button onClick={confirmDuplicate} disabled={duplicating}>
                 {duplicating ? "Création…" : "Créer la version"}
               </Button>
@@ -1593,8 +1495,6 @@ function CotationDetailPage() {
           </div>
         </DialogContent>
       </Dialog>
-
-
 
       {(() => {
         const versions = cotations
@@ -1608,16 +1508,10 @@ function CotationDetailPage() {
               {versions.map((v) => {
                 const f = computeCotationFinance(v, lignes);
                 return (
-                  <li
-                    key={v.id}
-                    className="flex items-center justify-between gap-3"
-                  >
+                  <li key={v.id} className="flex items-center justify-between gap-3">
                     <div>
                       <span className="font-medium">v{v.version_number}</span>
-                      <Badge
-                        variant="outline"
-                        className={`ml-2 ${TONE_CLASS[COTATION_STATUT_TONES[v.statut]]}`}
-                      >
+                      <Badge variant="outline" className={`ml-2 ${TONE_CLASS[COTATION_STATUT_TONES[v.statut]]}`}>
                         {COTATION_STATUT_LABELS[v.statut]}
                       </Badge>
                     </div>
@@ -1645,9 +1539,7 @@ function CotationDetailPage() {
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-        {label}
-      </div>
+      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className="mt-0.5">{value}</div>
     </div>
   );
