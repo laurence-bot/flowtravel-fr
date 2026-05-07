@@ -34,7 +34,7 @@ import {
 import { Inbox, Plus, ChevronRight, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/demandes")({
+export const Route = createFileRoute("/demandes/$id")({
   component: DemandesRoute,
 });
 
