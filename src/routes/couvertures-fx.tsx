@@ -521,7 +521,7 @@ function NewCoverageDialog({
               placeholder="Ebury #12345"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Devise</Label>
               <Select
@@ -565,7 +565,7 @@ function NewCoverageDialog({
               </p>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Date d'ouverture</Label>
               <Input
@@ -711,7 +711,7 @@ function CoverageRowActions({
               <Label>Référence</Label>
               <Input value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>Devise</Label>
                 <Select
@@ -749,7 +749,7 @@ function CoverageRowActions({
                 onChange={(e) => setForm({ ...form, taux_change: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>Ouverture</Label>
                 <Input

@@ -275,8 +275,8 @@ function AbsencesPage() {
           {items.length === 0 ? "Aucune absence enregistrée" : "Aucun résultat pour ces filtres"}
         </Card>
       ) : (
-        <Card className="p-0 overflow-hidden">
-          <table className="w-full text-sm">
+        <Card className="p-0 overflow-hidden overflow-x-auto">
+          <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="text-left px-4 py-3">Employé</th>
@@ -337,11 +337,11 @@ function AbsencesPage() {
         </TabsContent>
 
         <TabsContent value="recups" className="mt-4">
-          <Card className="p-0 overflow-hidden">
+          <Card className="p-0 overflow-hidden overflow-x-auto">
             {recups.length === 0 ? (
               <p className="p-10 text-center text-muted-foreground">Aucune demande de récupération</p>
             ) : (
-              <table className="w-full text-sm">
+              <table className="w-full text-sm min-w-[640px]">
                 <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="text-left px-4 py-3">Employé</th>
@@ -431,7 +431,7 @@ function AbsencesPage() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>Date de début</Label>
                 <Input type="date" value={form.date_debut} onChange={(e) => setForm({ ...form, date_debut: e.target.value })} />
@@ -494,7 +494,7 @@ function AbsencesPage() {
               <Label>Date souhaitée *</Label>
               <Input type="date" value={recupForm.date_souhaitee} onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>Heure de début *</Label>
                 <Input type="time" step={900} value={recupForm.heure_debut} onChange={(e) => setRecupForm({ ...recupForm, heure_debut: e.target.value })} />

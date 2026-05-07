@@ -175,7 +175,7 @@ function PaiementsPage() {
               onChange={(e) => setForm({ ...form, date: e.target.value })}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Méthode</Label>
               <Select value={form.methode} onValueChange={(v: Paiement["methode"]) => setForm({ ...form, methode: v })}>

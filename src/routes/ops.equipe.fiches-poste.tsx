@@ -127,7 +127,7 @@ function FichesPostePage() {
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Nouvelle fiche de poste</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Employé *</Label>
                 <Select value={form.employee_id} onValueChange={(v) => setForm({ ...form, employee_id: v })}>

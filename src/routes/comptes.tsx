@@ -274,7 +274,7 @@ function NewCompteDialog({ userId, onDone }: { userId?: string; onDone: () => vo
             <Label>Nom</Label>
             <Input autoFocus required value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} placeholder="SG Gestion, CIC Anticipation…" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Banque</Label>
               <Select value={form.banque} onValueChange={(v: CompteBanque) => setForm({ ...form, banque: v })}>
@@ -401,7 +401,7 @@ function NewTransfertDialog({
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Montant (€)</Label>
               <Input type="number" step="0.01" min="0.01" required value={form.montant} onChange={(e) => setForm({ ...form, montant: e.target.value })} />

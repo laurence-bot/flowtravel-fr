@@ -303,7 +303,7 @@ function ContractsPage() {
                 {documents.length === 0 ? "Aucun document — commencez par en ajouter un" : "Aucun résultat pour ces filtres"}
               </p>
             ) : (
-              <table className="w-full text-sm">
+              <table className="w-full text-sm min-w-[640px]">
                 <thead className="bg-muted/30 border-b">
                   <tr>
                     <th className="text-left px-3 py-2">Document</th>
@@ -366,7 +366,7 @@ function ContractsPage() {
             {contracts.length === 0 ? (
               <p className="p-10 text-center text-muted-foreground">Aucun contrat de travail</p>
             ) : (
-              <table className="w-full text-sm">
+              <table className="w-full text-sm min-w-[640px]">
                 <thead className="bg-muted/30 border-b">
                   <tr>
                     <th className="text-left px-3 py-2">Titre</th>
@@ -440,7 +440,7 @@ function ContractsPage() {
               <Input value={contractForm.titre} onChange={(e) => setContractForm({ ...contractForm, titre: e.target.value })}
                 placeholder="ex : CDI — Agent de voyages" />
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label>Type</Label>
                 <Select value={contractForm.type_contrat} onValueChange={(v) => setContractForm({ ...contractForm, type_contrat: v as ContractType })}>
@@ -515,7 +515,7 @@ function ContractsPage() {
               <Input value={docForm.titre} onChange={(e) => setDocForm({ ...docForm, titre: e.target.value })}
                 placeholder="ex : Avenant télétravail — juin 2026" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Date du document</Label>
                 <Input type="date" value={docForm.date_document}
