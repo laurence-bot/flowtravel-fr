@@ -61,6 +61,8 @@ export type PlanningEntry = {
   id: string; employee_id: string; agence_id: string | null;
   date_jour: string; heure_debut: string | null; heure_fin: string | null;
   type: PlanningType; note: string | null;
+  group_id: string | null;
+  pause_minutes?: number | null;
 };
 
 export type TimeEntry = {
@@ -232,12 +234,43 @@ export async function upsertPlanning(input: Partial<PlanningEntry> & { employee_
     date_jour: input.date_jour, type: input.type,
     heure_debut: input.heure_debut ?? null, heure_fin: input.heure_fin ?? null,
     note: input.note ?? null, created_by: user?.id ?? null,
-  });
+    group_id: (input as any).group_id ?? null,
+    pause_minutes: (input as any).pause_minutes ?? null,
+  } as any);
   if (error) throw error;
 }
 export async function deletePlanning(id: string): Promise<void> {
   const { error } = await supabase.from("hr_planning_entries").delete().eq("id", id);
   if (error) throw error;
+}
+export async function deletePlanningGroup(groupId: string): Promise<void> {
+  const { error } = await supabase.from("hr_planning_entries").delete().eq("group_id", groupId);
+  if (error) throw error;
+}
+
+/** Liste les pointages de l'agence (admin). */
+export async function listAllTimeEntries(fromIso: string, toIso: string): Promise<TimeEntry[]> {
+  return listTimeEntriesAgence(fromIso, toIso);
+}
+
+/** Calcule les heures pointées d'un employé un jour donné (paire arrivée→sortie). */
+export function calcHeuresPointees(entries: TimeEntry[]): number {
+  const sorted = [...entries].sort((a, b) => a.event_at.localeCompare(b.event_at));
+  let total = 0;
+  let arrivee: number | null = null;
+  let pauseStart: number | null = null;
+  let pauseTotal = 0;
+  for (const e of sorted) {
+    const t = new Date(e.event_at).getTime();
+    if (e.event_type === "arrivee") arrivee = t;
+    else if (e.event_type === "pause_debut") pauseStart = t;
+    else if (e.event_type === "pause_fin" && pauseStart != null) { pauseTotal += t - pauseStart; pauseStart = null; }
+    else if (e.event_type === "sortie" && arrivee != null) {
+      total += (t - arrivee) - pauseTotal;
+      arrivee = null; pauseTotal = 0; pauseStart = null;
+    }
+  }
+  return Math.round((total / 3600000) * 100) / 100;
 }
 
 // =========== Evaluations ===========
