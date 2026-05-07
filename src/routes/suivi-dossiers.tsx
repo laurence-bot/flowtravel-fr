@@ -149,11 +149,9 @@ function SuiviDossiersPage() {
 
   if (loading) {
     return (
-      <AppLayout>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      </AppLayout>
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
     );
   }
 
@@ -165,7 +163,7 @@ function SuiviDossiersPage() {
   ];
 
   return (
-    <AppLayout>
+    <div className="space-y-6">
       <PageHeader
         title="Suivi des dossiers"
         description="Vue synthétique du parcours client : paiement → signature → facturation."
@@ -295,7 +293,7 @@ function SuiviDossiersPage() {
           </Link>
         ))}
       </Section>
-    </AppLayout>
+    </div>
   );
 }
 
