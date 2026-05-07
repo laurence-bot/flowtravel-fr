@@ -2542,6 +2542,7 @@ export type Database = {
           date_naissance: string | null
           date_sortie: string | null
           email: string | null
+          heures_par_jour: number | null
           iban: string | null
           id: string
           jours_conges_par_an: number | null
@@ -2550,10 +2551,15 @@ export type Database = {
           nom: string
           notes: string | null
           numero_secu: string | null
+          pause_minutes: number | null
           pays: string | null
           poste: string | null
           prenom: string
+          rythme_semaine: string | null
           salaire_brut_mensuel: number | null
+          semaine_a_jours: number[] | null
+          semaine_b_jours: number[] | null
+          semaine_ref_iso: number | null
           telephone: string | null
           type_contrat: Database["public"]["Enums"]["hr_contract_type"] | null
           updated_at: string
@@ -2572,6 +2578,7 @@ export type Database = {
           date_naissance?: string | null
           date_sortie?: string | null
           email?: string | null
+          heures_par_jour?: number | null
           iban?: string | null
           id?: string
           jours_conges_par_an?: number | null
@@ -2580,10 +2587,15 @@ export type Database = {
           nom: string
           notes?: string | null
           numero_secu?: string | null
+          pause_minutes?: number | null
           pays?: string | null
           poste?: string | null
           prenom: string
+          rythme_semaine?: string | null
           salaire_brut_mensuel?: number | null
+          semaine_a_jours?: number[] | null
+          semaine_b_jours?: number[] | null
+          semaine_ref_iso?: number | null
           telephone?: string | null
           type_contrat?: Database["public"]["Enums"]["hr_contract_type"] | null
           updated_at?: string
@@ -2602,6 +2614,7 @@ export type Database = {
           date_naissance?: string | null
           date_sortie?: string | null
           email?: string | null
+          heures_par_jour?: number | null
           iban?: string | null
           id?: string
           jours_conges_par_an?: number | null
@@ -2610,10 +2623,15 @@ export type Database = {
           nom?: string
           notes?: string | null
           numero_secu?: string | null
+          pause_minutes?: number | null
           pays?: string | null
           poste?: string | null
           prenom?: string
+          rythme_semaine?: string | null
           salaire_brut_mensuel?: number | null
+          semaine_a_jours?: number[] | null
+          semaine_b_jours?: number[] | null
+          semaine_ref_iso?: number | null
           telephone?: string | null
           type_contrat?: Database["public"]["Enums"]["hr_contract_type"] | null
           updated_at?: string
