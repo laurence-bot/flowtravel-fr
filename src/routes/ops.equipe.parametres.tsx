@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { RequireAuth } from "@/components/require-auth";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Save, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,11 @@ import { getHrSettings, upsertHrSettings, type HrSettings } from "@/lib/hr";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/ops/equipe/parametres")({
-  component: ParametresEquipe,
+  component: () => (
+    <RequireAuth>
+      <ParametresEquipe />
+    </RequireAuth>
+  ),
 });
 
 function ParametresEquipe() {
@@ -54,24 +59,38 @@ function ParametresEquipe() {
 
   return (
     <div className="space-y-6">
-      <Link to="/ops/equipe" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        to="/ops/equipe"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="h-4 w-4" /> Retour à l'équipe
       </Link>
 
       <PageHeader
         title="Paramètres RH"
         description="Configuration de l'envoi mensuel au comptable"
-        action={<Button onClick={save} disabled={saving}><Save className="h-4 w-4 mr-2" />{saving ? "…" : "Enregistrer"}</Button>}
+        action={
+          <Button onClick={save} disabled={saving}>
+            <Save className="h-4 w-4 mr-2" />
+            {saving ? "…" : "Enregistrer"}
+          </Button>
+        }
       />
 
       <Card className="p-6 space-y-4 max-w-2xl">
         <h3 className="font-display text-lg">Email du comptable</h3>
         <p className="text-sm text-muted-foreground">
-          Le récap mensuel (jours travaillés, congés, absences) sera envoyé automatiquement à cette adresse le jour défini de chaque mois pour les fiches de paie.
+          Le récap mensuel (jours travaillés, congés, absences) sera envoyé automatiquement à cette adresse le jour
+          défini de chaque mois pour les fiches de paie.
         </p>
         <div className="space-y-1.5">
           <Label>Email principal</Label>
-          <Input type="email" placeholder="comptable@cabinet.fr" value={emailComptable} onChange={(e) => setEmailComptable(e.target.value)} />
+          <Input
+            type="email"
+            placeholder="comptable@cabinet.fr"
+            value={emailComptable}
+            onChange={(e) => setEmailComptable(e.target.value)}
+          />
         </div>
         <div className="space-y-1.5">
           <Label>Email en copie (optionnel)</Label>
@@ -79,7 +98,13 @@ function ParametresEquipe() {
         </div>
         <div className="space-y-1.5">
           <Label>Jour d'envoi du mois</Label>
-          <Input type="number" min={1} max={28} value={jourEnvoi} onChange={(e) => setJourEnvoi(Number(e.target.value) || 1)} />
+          <Input
+            type="number"
+            min={1}
+            max={28}
+            value={jourEnvoi}
+            onChange={(e) => setJourEnvoi(Number(e.target.value) || 1)}
+          />
           <p className="text-xs text-muted-foreground">Le récap couvre toujours le mois précédent.</p>
         </div>
         {settings?.derniere_execution_at && (
@@ -92,7 +117,8 @@ function ParametresEquipe() {
       <Card className="p-6 space-y-3 max-w-2xl">
         <h3 className="font-display text-lg">Tester l'envoi maintenant</h3>
         <p className="text-sm text-muted-foreground">
-          Lance immédiatement la génération du récap (mois précédent) et l'envoi par email à toutes les agences ayant un email comptable configuré.
+          Lance immédiatement la génération du récap (mois précédent) et l'envoi par email à toutes les agences ayant un
+          email comptable configuré.
         </p>
         <Button
           variant="outline"
