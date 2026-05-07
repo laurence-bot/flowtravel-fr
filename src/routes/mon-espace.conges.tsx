@@ -26,15 +26,22 @@ export const Route = createFileRoute("/mon-espace/conges")({
 function CongesPage() {
   const [emp, setEmp] = useState<Employee | null>(null);
   const [items, setItems] = useState<Absence[]>([]);
+  const [recups, setRecups] = useState<RecupDemande[]>([]);
   const [open, setOpen] = useState(false);
+  const [recupOpen, setRecupOpen] = useState(false);
   const [form, setForm] = useState({ type: "conge_paye" as AbsenceType, date_debut: "", date_fin: "", motif: "" });
+  const [recupForm, setRecupForm] = useState({ type: "heures" as RecupDemande["type"], heures_demandees: 1, date_souhaitee: "", motif: "" });
 
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const e = await getEmployeeByUserId(user.id);
     setEmp(e);
-    if (e) setItems(await listAbsences(e.id));
+    if (e) {
+      setItems(await listAbsences(e.id));
+      const allRecups = await listRecupDemandes();
+      setRecups(allRecups.filter(r => r.employee_id === e.id));
+    }
   };
   useEffect(() => { load().catch(err => toast.error(err.message)); }, []);
 
@@ -42,6 +49,25 @@ function CongesPage() {
     if (!emp || !form.date_debut || !form.date_fin) return;
     try { await createAbsence({ employee_id: emp.id, ...form }); setOpen(false); setForm({ type: "conge_paye", date_debut: "", date_fin: "", motif: "" }); load(); toast.success("Demande envoyée"); }
     catch (e: any) { toast.error(e.message); }
+  };
+
+  const submitRecup = async () => {
+    if (!emp || !recupForm.heures_demandees) return;
+    const mois = (recupForm.date_souhaitee || new Date().toISOString().slice(0, 10)).slice(0, 7);
+    try {
+      await createRecupDemande({
+        employee_id: emp.id,
+        mois,
+        type: recupForm.type,
+        heures_demandees: recupForm.heures_demandees,
+        date_souhaitee: recupForm.date_souhaitee || undefined,
+        motif: recupForm.motif || undefined,
+      });
+      setRecupOpen(false);
+      setRecupForm({ type: "heures", heures_demandees: 1, date_souhaitee: "", motif: "" });
+      load();
+      toast.success("Demande de récupération envoyée");
+    } catch (e: any) { toast.error(e.message); }
   };
 
   if (!emp) return <Card className="p-10 text-center">Aucune fiche employé liée à votre compte.</Card>;
@@ -58,7 +84,10 @@ function CongesPage() {
           <h1 className="font-display text-3xl">Mes congés</h1>
           <p className="text-muted-foreground">Demandes & soldes</p>
         </div>
-        <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />Demander</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setRecupOpen(true)}>Demander une récup</Button>
+          <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />Demander congé</Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -85,6 +114,26 @@ function CongesPage() {
         }
       </Card>
 
+      {recups.length > 0 && (
+        <Card className="p-0 overflow-hidden">
+          <div className="px-4 py-3 border-b bg-muted/40 text-xs uppercase text-muted-foreground">Demandes de récupération</div>
+          <table className="w-full text-sm">
+            <thead className="bg-muted/20 text-xs uppercase text-muted-foreground">
+              <tr><th className="text-left px-4 py-2">Mois</th><th className="text-left px-4 py-2">Type</th><th className="text-left px-4 py-2">Heures</th><th className="text-left px-4 py-2">Date souhaitée</th><th className="text-left px-4 py-2">Statut</th></tr>
+            </thead>
+            <tbody>{recups.map(r => (
+              <tr key={r.id} className="border-t">
+                <td className="px-4 py-2">{r.mois}</td>
+                <td className="px-4 py-2">{r.type}</td>
+                <td className="px-4 py-2">{r.heures_demandees}h</td>
+                <td className="px-4 py-2">{r.date_souhaitee ?? "—"}</td>
+                <td className="px-4 py-2"><span className="text-xs px-2 py-0.5 rounded-full bg-muted">{RECUP_STATUT_LABELS[r.statut]}</span></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </Card>
+      )}
+
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Nouvelle demande</DialogTitle></DialogHeader>
@@ -105,6 +154,33 @@ function CongesPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
             <Button onClick={submit}>Envoyer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={recupOpen} onOpenChange={setRecupOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Demander une récupération</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div><Label>Type</Label>
+              <Select value={recupForm.type} onValueChange={(v) => setRecupForm({ ...recupForm, type: v as RecupDemande["type"] })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="heures">Heures</SelectItem>
+                  <SelectItem value="journee">Journée</SelectItem>
+                  <SelectItem value="report_exceptionnel">Report exceptionnel</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Heures</Label><Input type="number" min={0.5} step={0.5} value={recupForm.heures_demandees} onChange={(e) => setRecupForm({ ...recupForm, heures_demandees: Number(e.target.value) })} /></div>
+              <div><Label>Date souhaitée</Label><Input type="date" value={recupForm.date_souhaitee} onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })} /></div>
+            </div>
+            <div><Label>Motif</Label><Textarea rows={3} value={recupForm.motif} onChange={(e) => setRecupForm({ ...recupForm, motif: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRecupOpen(false)}>Annuler</Button>
+            <Button onClick={submitRecup}>Envoyer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
