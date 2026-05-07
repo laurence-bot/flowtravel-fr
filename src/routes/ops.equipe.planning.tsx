@@ -254,8 +254,7 @@ function PlanningPage() {
     setOpen(true);
   };
 
-  const openEdit = (e: React.MouseEvent, entry: PlanningEntry, emp: Employee) => {
-    e.stopPropagation();
+  const openEdit = (entry: PlanningEntry, emp: Employee) => {
     setSelectedCell({ emp, date: entry.date_jour });
     setForm({
       ...EMPTY_FORM,
@@ -268,6 +267,7 @@ function PlanningPage() {
       pause_minutes: "30",
       note: entry.note ?? "",
     });
+    setActionEntry(null);
     setOpen(true);
   };
 
