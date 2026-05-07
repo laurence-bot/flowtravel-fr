@@ -4,7 +4,30 @@ import { ArrowLeft, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
-import { listEvaluations, createEvaluation, listEmployees, type Evaluation, type Employee } from "@/lib/hr";
+import {
+  listEvaluations,
+  createEvaluation,
+  listEmployees,
+  type Evaluation,
+  type Employee,
+  type EvaluationStatut,
+} from "@/lib/hr";
+
+const EVAL_STATUT_LABELS: Record<EvaluationStatut, string> = {
+  a_completer: "À compléter",
+  auto_eval_faite: "Auto-éval. faite",
+  entretien_fait: "Entretien fait",
+  signee: "Signée",
+  cloturee: "Clôturée",
+};
+
+const EVAL_STATUT_COLORS: Record<EvaluationStatut, string> = {
+  a_completer: "bg-amber-100 text-amber-800",
+  auto_eval_faite: "bg-blue-100 text-blue-800",
+  entretien_fait: "bg-violet-100 text-violet-800",
+  signee: "bg-green-100 text-green-800",
+  cloturee: "bg-zinc-100 text-zinc-600",
+};
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -83,7 +106,11 @@ function EvalsPage() {
                       {emp?.prenom} {emp?.nom}
                     </td>
                     <td className="px-4 py-2">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-muted">{e.statut}</span>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full ${EVAL_STATUT_COLORS[e.statut] ?? "bg-muted text-muted-foreground"}`}
+                      >
+                        {EVAL_STATUT_LABELS[e.statut] ?? e.statut}
+                      </span>
                     </td>
                     <td className="px-4 py-2">{e.note_globale ?? "—"}</td>
                   </tr>
