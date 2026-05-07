@@ -345,8 +345,9 @@ function AbsencesPage() {
                 <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="text-left px-4 py-3">Employé</th>
+                    <th className="text-left px-4 py-3">Date</th>
+                    <th className="text-left px-4 py-3">Horaires</th>
                     <th className="text-right px-4 py-3">Heures</th>
-                    <th className="text-left px-4 py-3">Date souhaitée</th>
                     <th className="text-left px-4 py-3">Motif</th>
                     <th className="text-left px-4 py-3">Statut</th>
                     <th className="text-right px-4 py-3">Actions</th>
@@ -355,34 +356,39 @@ function AbsencesPage() {
                 <tbody>
                   {recups.map(r => {
                     const emp = empMap[r.employee_id];
+                    const statutLabel = r.statut === "approuvee" ? "Approuvée" : r.statut === "refusee" ? "Refusée" : r.statut === "annulee" ? "Annulée" : "En attente";
+                    const statutClass = r.statut === "approuvee" ? "bg-green-100 text-green-700"
+                      : r.statut === "refusee" ? "bg-red-100 text-red-600"
+                      : r.statut === "annulee" ? "bg-zinc-100 text-zinc-500"
+                      : "bg-amber-100 text-amber-700";
                     return (
                       <tr key={r.id} className="border-t">
                         <td className="px-4 py-3">{emp ? `${emp.prenom} ${emp.nom}` : "—"}</td>
+                        <td className="px-4 py-3">{r.date_souhaitee ?? r.mois}</td>
+                        <td className="px-4 py-3">{r.heure_debut && r.heure_fin ? `${r.heure_debut.slice(0,5)}–${r.heure_fin.slice(0,5)}` : "—"}</td>
                         <td className="px-4 py-3 text-right">{r.heures_demandees}h</td>
-                        <td className="px-4 py-3">{r.date_souhaitee ?? "—"}</td>
                         <td className="px-4 py-3 max-w-[240px] truncate">{r.motif ?? "—"}</td>
                         <td className="px-4 py-3">
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            r.statut === "approuvee" ? "bg-green-100 text-green-700" :
-                            r.statut === "refusee" ? "bg-red-100 text-red-600" :
-                            "bg-amber-100 text-amber-700"
-                          }`}>
-                            {r.statut === "approuvee" ? "Approuvée" : r.statut === "refusee" ? "Refusée" : "En attente"}
-                          </span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${statutClass}`}>{statutLabel}</span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {r.statut === "demande" && (
-                            <div className="flex gap-1 justify-end">
-                              <Button size="sm" onClick={async () => {
-                                try { await approuverRecupDemande(r.id); toast.success("Approuvée"); reload(); }
-                                catch (e: any) { toast.error(e.message); }
-                              }}><Check className="h-3 w-3" /></Button>
-                              <Button size="sm" variant="outline" onClick={async () => {
-                                try { await refuserRecupDemande(r.id); toast.success("Refusée"); reload(); }
-                                catch (e: any) { toast.error(e.message); }
-                              }}><X className="h-3 w-3" /></Button>
-                            </div>
-                          )}
+                          <div className="flex gap-1 justify-end">
+                            {r.statut === "demande" && (
+                              <>
+                                <Button size="sm" onClick={async () => {
+                                  try { await approuverRecupDemande(r.id); toast.success("Approuvée — entrée ajoutée au planning"); reload(); }
+                                  catch (e: any) { toast.error(e.message); }
+                                }}><Check className="h-3 w-3" /></Button>
+                                <Button size="sm" variant="outline" onClick={async () => {
+                                  try { await refuserRecupDemande(r.id); toast.success("Refusée"); reload(); }
+                                  catch (e: any) { toast.error(e.message); }
+                                }}><X className="h-3 w-3" /></Button>
+                              </>
+                            )}
+                            <Button size="sm" variant="ghost" onClick={() => handleDeleteRecup(r.id)} title="Supprimer">
+                              <Trash2 className="h-3 w-3 text-red-600" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );
