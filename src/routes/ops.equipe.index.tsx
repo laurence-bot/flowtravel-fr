@@ -153,9 +153,9 @@ function EquipeIndex() {
         const heuresRecup = recups
           .filter((r) => r.employee_id === emp.id && r.statut === "approuvee")
           .reduce((s, r) => s + (r.heures_demandees ?? 0), 0);
-        // H. brutes = jours ouvrés agence × 7h/jour (contrat 35h/5j)
+        // H. brutes = jours ouvrés agence × 7.5h/jour (horaires réels agence)
         const joursOuvresCount = joursOuvres.length;
-        const hParJour = 7;
+        const hParJour = 7.5;
         const heuresBrutes = joursOuvresCount * hParJour;
         return {
           nom: `${emp.prenom} ${emp.nom}`,
@@ -434,7 +434,7 @@ function EquipeIndex() {
                   <tr>
                     <th className="text-left px-4 py-3">Employé</th>
                     <th className="text-right px-4 py-3">
-                      <span title="Jours ouvrés agence × 7h/jour (base 35h/5j)">H. brutes</span>
+                      <span title="Jours ouvrés agence × 7.5h/jour (horaires réels agence)">H. brutes</span>
                     </th>
                     <th className="text-right px-4 py-3">H. réalisées</th>
                     <th className="text-right px-4 py-3">Solde</th>
