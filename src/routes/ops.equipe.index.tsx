@@ -153,18 +153,13 @@ function EquipeIndex() {
         const heuresRecup = recups
           .filter((r) => r.employee_id === emp.id && r.statut === "approuvee")
           .reduce((s, r) => s + (r.heures_demandees ?? 0), 0);
-        // Calcul des heures de référence avec contexte
-        // 35h/semaine sur 6 jours ouvrés (lun-sam) = 35/6 ≈ 5.83h/jour
-        // On arrondit à 2 décimales pour l'affichage
-        const heuresHebdo = 35;
-        const joursParSemaine = 6;
-        const hParJour = Math.round((heuresHebdo / joursParSemaine) * 100) / 100;
+        // H. brutes = jours ouvrés (lun-sam) × heures/jour contractuelles
+        // 35h/semaine ÷ 6 jours = 5h50 par jour → arrondi au quart d'heure près
         const joursOuvresCount = joursOuvres.length;
+        const hParJourExact = 35 / 6; // 5.8333...
+        // Arrondi à 0.25h près (quart d'heure) pour éviter les flottants laids
+        const hParJour = Math.round(hParJourExact * 4) / 4; // 5.75h
         const heuresBrutes = Math.round(joursOuvresCount * hParJour * 100) / 100;
-        // Heures effectivement dues = heures brutes - congés pris (congés = jours × hParJour)
-        // Les 5 semaines légales (25j/an) sont déjà comptées via les absences réelles
-        const heuresConge = joursConge * hParJour;
-        const heuresAjustees = Math.max(0, heuresBrutes - heuresConge);
         return {
           nom: `${emp.prenom} ${emp.nom}`,
           poste: emp.poste ?? "",
@@ -179,7 +174,6 @@ function EquipeIndex() {
           jours_ouvres: joursOuvresCount,
           h_par_jour: hParJour,
           heures_brutes: heuresBrutes,
-          heures_ajustees: heuresAjustees,
         };
       }),
     [employees, compteurs, absences, recups, joursOuvres],
@@ -444,9 +438,6 @@ function EquipeIndex() {
                     <th className="text-right px-4 py-3">
                       <span title="Jours ouvrés lun–sam × 5.83h/jour (35h/sem sur 6j)">H. brutes</span>
                     </th>
-                    <th className="text-right px-4 py-3">
-                      <span title="Heures brutes moins les congés pris ce mois">H. attendues</span>
-                    </th>
                     <th className="text-right px-4 py-3">H. réalisées</th>
                     <th className="text-right px-4 py-3">Solde</th>
                     <th className="text-right px-4 py-3">Congés (j)</th>
@@ -466,12 +457,6 @@ function EquipeIndex() {
                         <div className="text-[11px] text-muted-foreground">
                           {r.jours_ouvres}j × {r.h_par_jour}h
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-right tabular-nums">
-                        <span className="font-medium">{r.heures_ajustees}h</span>
-                        {r.jours_conge > 0 && (
-                          <div className="text-[11px] text-muted-foreground">− {r.jours_conge}j congés</div>
-                        )}
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums">{r.heures_realisees}h</td>
                       <td className="px-4 py-3 text-right tabular-nums font-medium">
@@ -498,9 +483,6 @@ function EquipeIndex() {
                     <td className="px-4 py-2 text-muted-foreground">Total équipe</td>
                     <td className="px-4 py-2 text-right tabular-nums">
                       {recapRows.reduce((s, r) => s + r.heures_brutes, 0)}h
-                    </td>
-                    <td className="px-4 py-2 text-right tabular-nums">
-                      {recapRows.reduce((s, r) => s + r.heures_ajustees, 0)}h
                     </td>
                     <td className="px-4 py-2 text-right tabular-nums">
                       {recapRows.reduce((s, r) => s + r.heures_realisees, 0)}h
