@@ -434,8 +434,8 @@ function PlanningPage() {
         title={`Planning — ${new Date(`${month}-01`).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}`}
         description="Vue mensuelle, compteurs d'heures et récupérations"
         action={
-          <div className="flex items-center gap-2">
-            <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-44" />
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-full sm:w-44" />
             <Button variant="outline" onClick={() => setRecupOpen(true)}>Récupération</Button>
             <Button onClick={() => openAdd()}>+ Ajouter</Button>
           </div>
