@@ -38,11 +38,17 @@ function FactureClientDetail() {
       if (!data) return setNotFound(true);
       setFacture(data);
       const [c, co, ag] = await Promise.all([
-        data.client_id ? supabase.from("contacts").select("*").eq("id", data.client_id).maybeSingle() : Promise.resolve({ data: null }),
-        data.cotation_id ? supabase.from("cotations").select("*").eq("id", data.cotation_id).maybeSingle() : Promise.resolve({ data: null }),
+        data.client_id
+          ? supabase.from("contacts").select("*").eq("id", data.client_id).maybeSingle()
+          : Promise.resolve({ data: null }),
+        data.cotation_id
+          ? supabase.from("cotations").select("*").eq("id", data.cotation_id).maybeSingle()
+          : Promise.resolve({ data: null }),
         supabase.from("agency_settings").select("*").eq("user_id", data.user_id).maybeSingle(),
       ]);
-      setClient(c.data); setCotation(co.data); setAgency(ag.data);
+      setClient(c.data);
+      setCotation(co.data);
+      setAgency(ag.data);
     })();
   }, [id]);
 
@@ -50,7 +56,9 @@ function FactureClientDetail() {
     return (
       <div className="text-center py-20">
         <h2 className="font-display text-2xl">Facture introuvable</h2>
-        <Button asChild variant="outline" className="mt-4"><Link to="/factures-clients">Retour</Link></Button>
+        <Button asChild variant="outline" className="mt-4">
+          <Link to="/factures-clients">Retour</Link>
+        </Button>
       </div>
     );
   }
@@ -67,7 +75,10 @@ function FactureClientDetail() {
   return (
     <div className="container mx-auto px-4 py-6 max-w-4xl">
       <div className="flex items-center justify-between mb-6 print:hidden">
-        <Link to="/factures-clients" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
+        <Link
+          to="/factures-clients"
+          className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5"
+        >
           <ArrowLeft className="h-4 w-4" /> Retour
         </Link>
         <div className="flex gap-2">
@@ -80,14 +91,15 @@ function FactureClientDetail() {
         </div>
       </div>
 
-      <div className="bg-white border rounded-md p-10 print:border-0 print:p-0 print:shadow-none">
+      <div className="bg-card border rounded-md p-10 print:bg-white print:border-0 print:p-0 print:shadow-none">
         {/* En-tête */}
         <div className="flex justify-between items-start mb-10">
           <div>
             {agency?.logo_url && <img src={agency.logo_url} alt="" className="h-16 mb-3 object-contain" />}
             <div className="font-medium text-lg">{agency?.legal_name || agency?.agency_name || ""}</div>
-            <div className="text-xs text-stone-600 whitespace-pre-line">
-              {agency?.address}{agency?.address && (agency?.city || agency?.country) ? "\n" : ""}
+            <div className="text-xs text-muted-foreground whitespace-pre-line">
+              {agency?.address}
+              {agency?.address && (agency?.city || agency?.country) ? "\n" : ""}
               {[agency?.city, agency?.country].filter(Boolean).join(", ")}
               {agency?.siret ? `\nSIRET : ${agency.siret}` : ""}
               {agency?.vat_number ? `\nTVA : ${agency.vat_number}` : ""}
@@ -97,12 +109,18 @@ function FactureClientDetail() {
           <div className="text-right">
             <h1 className="text-2xl font-serif">{TYPE_LABEL[facture.type_facture] || "Facture"}</h1>
             <div className="font-mono text-sm mt-2">N° {facture.numero}</div>
-            <div className="text-xs text-stone-600 mt-1">Émise le {formatDate(facture.date_emission)}</div>
+            <div className="text-xs text-muted-foreground mt-1">Émise le {formatDate(facture.date_emission)}</div>
             {facture.date_echeance && (
-              <div className="text-xs text-stone-600">Échéance : {formatDate(facture.date_echeance)}</div>
+              <div className="text-xs text-muted-foreground">Échéance : {formatDate(facture.date_echeance)}</div>
             )}
             <Badge className="mt-3" variant={facture.statut === "payee" ? "default" : "outline"}>
-              {facture.statut}
+              {facture.statut === "brouillon"
+                ? "Brouillon"
+                : facture.statut === "emise"
+                  ? "Émise"
+                  : facture.statut === "payee"
+                    ? "Payée"
+                    : "Annulée"}
             </Badge>
           </div>
         </div>
@@ -112,7 +130,7 @@ function FactureClientDetail() {
           <div className="text-xs uppercase tracking-wider text-stone-500 mb-1">Facturé à</div>
           <div className="font-medium">{client?.nom || "—"}</div>
           {client?.contact_principal && <div className="text-sm">{client.contact_principal}</div>}
-          <div className="text-xs text-stone-600 whitespace-pre-line">
+          <div className="text-xs text-muted-foreground whitespace-pre-line">
             {client?.adresse}
             {client?.adresse && (client?.code_postal || client?.ville) ? "\n" : ""}
             {[client?.code_postal, client?.ville].filter(Boolean).join(" ")}
@@ -122,8 +140,8 @@ function FactureClientDetail() {
 
         {/* Lignes */}
         <table className="w-full text-sm mb-8">
-          <thead className="border-b border-stone-300">
-            <tr className="text-left text-xs uppercase tracking-wider text-stone-500">
+          <thead className="border-b border-border">
+            <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground">
               <th className="py-2">Désignation</th>
               <th className="py-2 text-right">Quote-part</th>
               <th className="py-2 text-right">HT</th>
@@ -132,13 +150,14 @@ function FactureClientDetail() {
             </tr>
           </thead>
           <tbody>
-            <tr className="border-b border-stone-200">
+            <tr className="border-b border-border/60">
               <td className="py-3">
                 <div className="font-medium">{cotation?.titre || "Voyage"}</div>
-                {cotation?.destination && <div className="text-xs text-stone-600">{cotation.destination}</div>}
+                {cotation?.destination && <div className="text-xs text-muted-foreground">{cotation.destination}</div>}
                 {cotation?.date_depart && (
-                  <div className="text-xs text-stone-600">
-                    Du {formatDate(cotation.date_depart)}{cotation.date_retour ? ` au ${formatDate(cotation.date_retour)}` : ""}
+                  <div className="text-xs text-muted-foreground">
+                    Du {formatDate(cotation.date_depart)}
+                    {cotation.date_retour ? ` au ${formatDate(cotation.date_retour)}` : ""}
                   </div>
                 )}
               </td>
@@ -153,20 +172,29 @@ function FactureClientDetail() {
         {/* Totaux */}
         <div className="flex justify-end mb-8">
           <div className="w-64 space-y-1 text-sm">
-            <div className="flex justify-between"><span className="text-stone-600">Total HT</span><span>{formatEUR(Number(facture.montant_ht))}</span></div>
-            <div className="flex justify-between"><span className="text-stone-600">TVA ({Number(facture.taux_tva)} %)</span><span>{formatEUR(Number(facture.montant_tva))}</span></div>
-            <div className="flex justify-between border-t border-stone-300 pt-2 font-medium text-base">
-              <span>Total TTC</span><span>{formatEUR(Number(facture.montant_ttc))}</span>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Total HT</span>
+              <span>{formatEUR(Number(facture.montant_ht))}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">TVA ({Number(facture.taux_tva)} %)</span>
+              <span>{formatEUR(Number(facture.montant_tva))}</span>
+            </div>
+            <div className="flex justify-between border-t border-border pt-2 font-medium text-base">
+              <span>Total TTC</span>
+              <span>{formatEUR(Number(facture.montant_ttc))}</span>
             </div>
             {facture.regime_tva && (
-              <div className="text-xs text-stone-500 mt-2">Régime TVA : {facture.regime_tva.replace("_", " ")}</div>
+              <div className="text-xs text-muted-foreground mt-2">
+                Régime TVA : {facture.regime_tva.replace("_", " ")}
+              </div>
             )}
           </div>
         </div>
 
         {/* Footer */}
         {agency?.pdf_footer_text && (
-          <div className="text-xs text-stone-500 border-t border-stone-200 pt-4 whitespace-pre-line">
+          <div className="text-xs text-muted-foreground border-t pt-4 whitespace-pre-line">
             {agency.pdf_footer_text}
           </div>
         )}
