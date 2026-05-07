@@ -891,6 +891,39 @@ function PlanningPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog d'action sur entrée */}
+      <Dialog open={!!actionEntry} onOpenChange={(v) => !v && setActionEntry(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {actionEntry && `${actionEntry.emp.prenom} · ${actionEntry.entry.date_jour}`}
+            </DialogTitle>
+          </DialogHeader>
+          {actionEntry && (
+            <div className="space-y-2">
+              <div className="text-sm text-muted-foreground">
+                {PLANNING_TYPE_LABELS[actionEntry.entry.type]}
+                {actionEntry.entry.heure_debut && ` · ${actionEntry.entry.heure_debut.slice(0,5)}–${(actionEntry.entry.heure_fin ?? "").slice(0,5)}`}
+                {actionEntry.entry.note && ` · ${actionEntry.entry.note}`}
+              </div>
+              <div className="flex flex-col gap-2 pt-2">
+                <Button variant="outline" onClick={() => openEdit(actionEntry.entry, actionEntry.emp)}>
+                  <Pencil className="h-4 w-4 mr-2" /> Modifier
+                </Button>
+                <Button variant="outline" onClick={() => { del(actionEntry.entry.id); setActionEntry(null); }}>
+                  <Trash2 className="h-4 w-4 mr-2" /> Supprimer ce jour
+                </Button>
+                {actionEntry.entry.group_id && (
+                  <Button variant="destructive" onClick={() => delGroup(actionEntry.entry.group_id!)}>
+                    <Trash2 className="h-4 w-4 mr-2" /> Supprimer toute la série
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Modal récupération */}
       <Dialog open={recupOpen} onOpenChange={setRecupOpen}>
         <DialogContent className="max-w-xl">
