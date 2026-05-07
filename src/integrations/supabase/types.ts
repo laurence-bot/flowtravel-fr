@@ -2876,10 +2876,13 @@ export type Database = {
           created_at: string | null
           date_souhaitee: string | null
           employee_id: string | null
+          heure_debut: string | null
+          heure_fin: string | null
           heures_demandees: number
           id: string
           mois: string
           motif: string | null
+          planning_entry_id: string | null
           statut: string
           traite_at: string | null
           traite_par: string | null
@@ -2890,10 +2893,13 @@ export type Database = {
           created_at?: string | null
           date_souhaitee?: string | null
           employee_id?: string | null
+          heure_debut?: string | null
+          heure_fin?: string | null
           heures_demandees: number
           id?: string
           mois: string
           motif?: string | null
+          planning_entry_id?: string | null
           statut?: string
           traite_at?: string | null
           traite_par?: string | null
@@ -2904,10 +2910,13 @@ export type Database = {
           created_at?: string | null
           date_souhaitee?: string | null
           employee_id?: string | null
+          heure_debut?: string | null
+          heure_fin?: string | null
           heures_demandees?: number
           id?: string
           mois?: string
           motif?: string | null
+          planning_entry_id?: string | null
           statut?: string
           traite_at?: string | null
           traite_par?: string | null
@@ -3743,6 +3752,7 @@ export type Database = {
         | "deplacement"
         | "formation"
         | "autre"
+        | "recuperation"
       hr_time_event: "arrivee" | "pause_debut" | "pause_fin" | "sortie"
       mariage_contribution_statut: "en_attente" | "paye" | "annule"
       paiement_methode: "virement" | "carte" | "especes"
@@ -4081,6 +4091,7 @@ export const Constants = {
         "deplacement",
         "formation",
         "autre",
+        "recuperation",
       ],
       hr_time_event: ["arrivee", "pause_debut", "pause_fin", "sortie"],
       mariage_contribution_statut: ["en_attente", "paye", "annule"],
