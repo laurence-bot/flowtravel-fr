@@ -1,6 +1,44 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, FolderOpen, Wallet, LogOut, Menu, X, Landmark, Upload, Link2, FileDown, LineChart, Compass, ScrollText, UserCog, Shield, FileScan, FileText, Inbox, Building2, Video, ShieldCheck, MessageSquare, AlertTriangle, Sparkles, FileSignature, Receipt, Heart, BookOpen, GraduationCap, Wrench, Clock, CalendarDays, Briefcase, Award, Settings, UserCircle, ChevronDown, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import {
+  LayoutDashboard,
+  Users,
+  FolderOpen,
+  Wallet,
+  LogOut,
+  Menu,
+  X,
+  Landmark,
+  Upload,
+  Link2,
+  FileDown,
+  LineChart,
+  Compass,
+  ScrollText,
+  UserCog,
+  Shield,
+  FileScan,
+  FileText,
+  Inbox,
+  Building2,
+  Video,
+  ShieldCheck,
+  MessageSquare,
+  AlertTriangle,
+  FileSignature,
+  Receipt,
+  Heart,
+  BookOpen,
+  GraduationCap,
+  Wrench,
+  Clock,
+  CalendarDays,
+  Briefcase,
+  Award,
+  Settings,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
@@ -63,7 +101,7 @@ const navFlowTravelGroups: NavGroup[] = [
   },
 ];
 
-// Section "Mon espace" — accessible à tous les utilisateurs (employés)
+// Section "Mon espace" — accessible à tous les utilisateurs (employés, sauf super_admin)
 const navMonEspace: NavItem[] = [
   { to: "/mon-espace/pointage", label: "Pointage", icon: Clock },
   { to: "/mon-espace/conges", label: "Mes congés", icon: CalendarDays },
@@ -72,9 +110,7 @@ const navMonEspace: NavItem[] = [
 ];
 
 // Section 2 : Gestion de l'agence
-const navAgenceTop: NavItem[] = [
-  { to: "/pilotage", label: "Pilotage", icon: Compass },
-];
+const navAgenceTop: NavItem[] = [{ to: "/pilotage", label: "Pilotage", icon: Compass }];
 
 const navAgenceGroups: NavGroup[] = [
   {
@@ -130,70 +166,126 @@ const navAgenceGroups: NavGroup[] = [
   },
 ];
 
+// ─── CollapsibleGroup sorti du render pour éviter les re-créations de composant ───
+function CollapsibleGroup({
+  group,
+  isActive,
+  onClick,
+  renderItem,
+}: {
+  group: NavGroup;
+  isActive: (to: string) => boolean;
+  onClick?: () => void;
+  renderItem: (item: NavItem, onClick?: () => void) => React.ReactNode;
+}) {
+  const containsActive = group.items.some((i) => isActive(i.to));
+  const storageKey = `nav-group:${group.key}`;
+  const [open, setOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return containsActive;
+    const stored = window.localStorage.getItem(storageKey);
+    if (stored === null) return containsActive;
+    return stored === "1";
+  });
+
+  useEffect(() => {
+    if (containsActive && !open) setOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [containsActive]);
+
+  const toggle = useCallback(() => {
+    setOpen((v) => {
+      const nv = !v;
+      try {
+        window.localStorage.setItem(storageKey, nv ? "1" : "0");
+      } catch {}
+      return nv;
+    });
+  }, [storageKey]);
+
+  const Icon = group.icon;
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={toggle}
+        className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-[13px] text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
+      >
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="font-medium tracking-wide flex-1 text-left truncate">{group.label}</span>
+        {open ? (
+          <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+        ) : (
+          <ChevronRight className="h-3.5 w-3.5 opacity-60" />
+        )}
+      </button>
+      {open && <div className="mt-1 space-y-0.5">{group.items.map((item) => renderItem(item, onClick))}</div>}
+    </div>
+  );
+}
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
-  const { role } = useRole();
+  // ✅ Source unique de vérité : isSuperAdmin et agenceId viennent du hook
+  const { role, isSuperAdmin, agenceId, loading: roleLoading } = useRole();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [agencyName, setAgencyName] = useState<string | null>(null);
   const { settings: agencySettings } = useAgencySettings();
   const hasAgencyLogo = !!agencySettings?.logo_url;
 
+  // Charge le nom de l'agence à partir de l'agenceId fourni par useRole
   useEffect(() => {
-    if (!user) {
-      setIsSuperAdmin(false);
-      setAgencyName(null);
-      return;
+    if (!agenceId) {
+      // Super admin ou utilisateur sans agence : nom depuis agency_settings
+      if (!user) {
+        setAgencyName(null);
+        return;
+      }
+      supabase
+        .from("agency_settings")
+        .select("agency_name")
+        .eq("user_id", user.id)
+        .maybeSingle()
+        .then(({ data }) => setAgencyName(data?.agency_name ?? null));
+    } else {
+      supabase
+        .from("agences")
+        .select("nom_commercial")
+        .eq("id", agenceId)
+        .maybeSingle()
+        .then(({ data }) => setAgencyName(data?.nom_commercial ?? null));
     }
-    supabase
-      .from("user_profiles")
-      .select("is_super_admin, agence_id")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(async ({ data }) => {
-        setIsSuperAdmin(!!data?.is_super_admin);
-        if (data?.agence_id) {
-          const { data: ag } = await supabase
-            .from("agences")
-            .select("nom_commercial")
-            .eq("id", data.agence_id)
-            .maybeSingle();
-          setAgencyName(ag?.nom_commercial ?? null);
-        } else {
-          const { data: settings } = await supabase
-            .from("agency_settings")
-            .select("agency_name")
-            .eq("user_id", user.id)
-            .maybeSingle();
-          setAgencyName(settings?.agency_name ?? null);
-        }
-      });
-  }, [user]);
+  }, [agenceId, user]);
 
   const fxEnabled = !!agencySettings?.utilise_couvertures_fx;
 
-  const filterItems = (items: NavItem[]) =>
-    items.filter((item) => {
-      if (item.superAdminOnly && !isSuperAdmin) return false;
-      // /ops/equipe (raccourci RH agence) caché au super_admin (a déjà la section OPS)
-      if (item.to === "/ops/equipe" && isSuperAdmin && !item.superAdminOnly) return false;
-      if (item.to === "/couvertures-fx" && !fxEnabled) return false;
-      return canAccessRoute(role, item.to);
-    });
+  const isActive = useCallback(
+    (to: string) => (to === "/app" ? location.pathname === "/app" : location.pathname.startsWith(to)),
+    [location.pathname],
+  );
+
+  const filterItems = useCallback(
+    (items: NavItem[]) =>
+      items.filter((item) => {
+        if (item.superAdminOnly && !isSuperAdmin) return false;
+        // Raccourci RH agence masqué pour le super_admin qui a déjà la section OPS
+        if (item.to === "/ops/equipe" && isSuperAdmin && !item.superAdminOnly) return false;
+        if (item.to === "/couvertures-fx" && !fxEnabled) return false;
+        return canAccessRoute(role, item.to);
+      }),
+    [isSuperAdmin, fxEnabled, role],
+  );
 
   const visibleFlowTopRaw = isSuperAdmin ? filterItems(navFlowTravelTop) : [];
   const visibleFlowGroups = navFlowTravelGroups
     .filter((g) => !g.superAdminOnly || isSuperAdmin)
     .map((g) => ({ ...g, items: filterItems(g.items) }))
     .filter((g) => g.items.length > 0);
-
   const visibleAgenceTop = filterItems(navAgenceTop);
   const visibleAgenceGroups = navAgenceGroups
     .map((g) => ({ ...g, items: filterItems(g.items) }))
     .filter((g) => g.items.length > 0);
-
   const visibleMonEspaceNav = isSuperAdmin ? [] : filterItems(navMonEspace);
 
   const handleSignOut = async () => {
@@ -201,81 +293,37 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     navigate({ to: "/auth" });
   };
 
-  const isActive = (to: string) =>
-    to === "/app" ? location.pathname === "/app" : location.pathname.startsWith(to);
-
-  const NavLinkItem = ({ item, onClick, indent }: { item: NavItem; onClick?: () => void; indent?: boolean }) => {
-    const Icon = item.icon;
-    const active = isActive(item.to);
-    return (
-      <Link
-        to={item.to}
-        onClick={onClick}
-        className={cn(
-          "group flex items-center gap-3 px-3 py-2 rounded-md text-[13px] transition-all relative",
-          indent && "pl-8",
-          active
-            ? "bg-sidebar-accent text-sidebar-accent-foreground"
-            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
-        )}
-      >
-        {active && (
-          <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2px] bg-[color:var(--gold)] rounded-r" />
-        )}
-        <Icon className={cn("h-4 w-4 shrink-0", active && "text-[color:var(--gold)]")} />
-        <span className="font-medium tracking-wide truncate">{item.label}</span>
-      </Link>
-    );
-  };
-
-  const CollapsibleGroup = ({ group, onClick }: { group: NavGroup; onClick?: () => void }) => {
-    const containsActive = group.items.some((i) => isActive(i.to));
-    const storageKey = `nav-group:${group.key}`;
-    const [open, setOpen] = useState<boolean>(() => {
-      if (typeof window === "undefined") return containsActive;
-      const stored = window.localStorage.getItem(storageKey);
-      if (stored === null) return containsActive;
-      return stored === "1";
-    });
-    useEffect(() => {
-      if (containsActive && !open) setOpen(true);
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [containsActive]);
-    const toggle = () => {
-      setOpen((v) => {
-        const nv = !v;
-        try { window.localStorage.setItem(storageKey, nv ? "1" : "0"); } catch {}
-        return nv;
-      });
-    };
-    const Icon = group.icon;
-    return (
-      <div>
-        <button
-          type="button"
-          onClick={toggle}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-[13px] text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
+  const renderNavItem = useCallback(
+    (item: NavItem, onClick?: () => void, indent?: boolean) => {
+      const Icon = item.icon;
+      const active = isActive(item.to);
+      return (
+        <Link
+          key={item.to}
+          to={item.to}
+          onClick={onClick}
+          className={cn(
+            "group flex items-center gap-3 px-3 py-2 rounded-md text-[13px] transition-all relative",
+            indent && "pl-8",
+            active
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+          )}
         >
-          <Icon className="h-4 w-4 shrink-0" />
-          <span className="font-medium tracking-wide flex-1 text-left truncate">{group.label}</span>
-          {open ? <ChevronDown className="h-3.5 w-3.5 opacity-60" /> : <ChevronRight className="h-3.5 w-3.5 opacity-60" />}
-        </button>
-        {open && (
-          <div className="mt-1 space-y-0.5">
-            {group.items.map((item) => (
-              <NavLinkItem key={item.to} item={item} onClick={onClick} indent />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
+          {active && (
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2px] bg-[color:var(--gold)] rounded-r" />
+          )}
+          <Icon className={cn("h-4 w-4 shrink-0", active && "text-[color:var(--gold)]")} />
+          <span className="font-medium tracking-wide truncate">{item.label}</span>
+        </Link>
+      );
+    },
+    [isActive],
+  );
 
   const SectionHeader = ({ label, sublabel }: { label: string; sublabel?: string }) => (
     <div className="px-3 pt-2 pb-2">
-      <div className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--gold)] font-semibold">
-        {label}
-      </div>
+      <div className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--gold)] font-semibold">{label}</div>
       {sublabel && (
         <div className="text-[11px] text-sidebar-foreground/50 mt-0.5 truncate" title={sublabel}>
           {sublabel}
@@ -290,27 +338,32 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="rounded-md border border-[color:var(--gold)]/20 bg-[color:var(--gold)]/5 p-2 mb-4">
           <SectionHeader label="FlowTravel OPS" sublabel="Vous seul · pilotage plateforme" />
           <div className="space-y-1">
-            {visibleFlowTopRaw.map((item) => (
-              <NavLinkItem key={item.to} item={item} onClick={onClick} />
-            ))}
+            {visibleFlowTopRaw.map((item) => renderNavItem(item, onClick))}
             {visibleFlowGroups.map((g) => (
-              <CollapsibleGroup key={g.key} group={g} onClick={onClick} />
+              <CollapsibleGroup
+                key={g.key}
+                group={g}
+                isActive={isActive}
+                onClick={onClick}
+                renderItem={(item, cb) => renderNavItem(item, cb, true)}
+              />
             ))}
           </div>
         </div>
       )}
       {(visibleAgenceTop.length > 0 || visibleAgenceGroups.length > 0) && (
         <>
-          <SectionHeader
-            label="Mon agence"
-            sublabel={agencyName ?? "Espace de travail"}
-          />
+          <SectionHeader label="Mon agence" sublabel={agencyName ?? "Espace de travail"} />
           <div className="space-y-1">
-            {visibleAgenceTop.map((item) => (
-              <NavLinkItem key={item.to} item={item} onClick={onClick} />
-            ))}
+            {visibleAgenceTop.map((item) => renderNavItem(item, onClick))}
             {visibleAgenceGroups.map((g) => (
-              <CollapsibleGroup key={g.key} group={g} onClick={onClick} />
+              <CollapsibleGroup
+                key={g.key}
+                group={g}
+                isActive={isActive}
+                onClick={onClick}
+                renderItem={(item, cb) => renderNavItem(item, cb, true)}
+              />
             ))}
           </div>
         </>
@@ -318,11 +371,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {visibleMonEspaceNav.length > 0 && (
         <>
           <SectionHeader label="Mon espace" sublabel="Espace employé" />
-          <div className="space-y-1">
-            {visibleMonEspaceNav.map((item) => (
-              <NavLinkItem key={item.to} item={item} onClick={onClick} />
-            ))}
-          </div>
+          <div className="space-y-1">{visibleMonEspaceNav.map((item) => renderNavItem(item, onClick))}</div>
         </>
       )}
     </nav>
@@ -332,17 +381,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen w-full bg-background">
       {/* Sidebar desktop */}
       <aside className="hidden md:flex w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-        <div className={cn(
-          "px-6 py-7 border-b border-sidebar-border",
-          hasAgencyLogo && "bg-[oklch(0.97_0.012_80)] text-foreground"
-        )}>
+        <div
+          className={cn(
+            "px-6 py-7 border-b border-sidebar-border",
+            hasAgencyLogo && "bg-[oklch(0.97_0.012_80)] text-foreground",
+          )}
+        >
           <Logo variant={hasAgencyLogo ? "dark" : "light"} />
         </div>
         <NavList />
         <div className="px-4 py-5 border-t border-sidebar-border space-y-2">
-          <div className="px-3 text-[11px] uppercase tracking-[0.18em] text-sidebar-foreground/40">
-            Connecté
-          </div>
+          <div className="px-3 text-[11px] uppercase tracking-[0.18em] text-sidebar-foreground/40">Connecté</div>
           <div className="px-3 text-xs text-sidebar-foreground/80 truncate" title={user?.email ?? ""}>
             {user?.email}
           </div>
@@ -367,15 +416,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
-          <div
-            className="absolute inset-0 bg-foreground/40"
-            onClick={() => setMobileOpen(false)}
-          />
+          <div className="absolute inset-0 bg-foreground/40" onClick={() => setMobileOpen(false)} />
           <aside className="relative w-72 bg-sidebar text-sidebar-foreground flex flex-col">
-            <div className={cn(
-              "px-6 py-6 border-b border-sidebar-border flex items-center justify-between",
-              hasAgencyLogo && "bg-[oklch(0.97_0.012_80)] text-foreground"
-            )}>
+            <div
+              className={cn(
+                "px-6 py-6 border-b border-sidebar-border flex items-center justify-between",
+                hasAgencyLogo && "bg-[oklch(0.97_0.012_80)] text-foreground",
+              )}
+            >
               <Logo variant={hasAgencyLogo ? "dark" : "light"} />
               <button onClick={() => setMobileOpen(false)} className="text-sidebar-foreground/70">
                 <X className="h-5 w-5" />
