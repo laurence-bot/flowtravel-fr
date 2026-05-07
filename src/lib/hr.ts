@@ -65,6 +65,8 @@ export const TIME_EVENT_LABELS: Record<TimeEvent, string> = {
   sortie: "Sortie",
 };
 
+export type RythmeType = "fixe" | "ab";
+
 export type Employee = {
   id: string;
   agence_id: string | null;
@@ -85,12 +87,6 @@ export type Employee = {
   notes: string | null;
   actif: boolean;
   created_at: string;
-  heures_par_jour: number;
-  pause_minutes: number;
-  rythme_semaine: "fixe" | "ab";
-  semaine_a_jours: number[];
-  semaine_b_jours: number[];
-  semaine_ref_iso: number | null;
 };
 
 export type Contract = {
