@@ -48,6 +48,7 @@ const ROUTE_ACCESS: Record<AppRole, string[]> = {
     "/factures-clients", "/bulletins", "/carnets", "/mariages",
     "/cotations", "/demandes", "/coaching", "/support",
     "/mon-espace", "/suivi-dossiers",
+    "/ops/equipe/planning",
   ],
   gestion: [
     "/", "/app", "/pilotage", "/contacts", "/dossiers",
