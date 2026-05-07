@@ -757,9 +757,10 @@ export function isJourOuvre(dateIso: string, holidays?: Set<string>): boolean {
   return !isJourFerie(dateIso, holidays);
 }
 
-/** Heures contractuelles par jour (35h/sem sur 5 jours = 7h/jour). */
+/** Heures contractuelles par jour — ajusté à 7.5h/jour (horaires réels de l'agence).
+ *  À affiner par employé une fois les contrats mis à jour. */
 export function heuresContractuellesParJour(_emp?: Pick<Employee, "type_contrat"> | null): number {
-  return 7; // 35h ÷ 5 jours
+  return 7.5; // 37h30/sem ÷ 5 jours — à réviser selon contrat
 }
 
 function dureeNetteEntry(e: PlanningEntry): number {
@@ -767,7 +768,7 @@ function dureeNetteEntry(e: PlanningEntry): number {
   const [dh, dm] = e.heure_debut.split(":").map(Number);
   const [fh, fm] = e.heure_fin.split(":").map(Number);
   const dureeMin = fh * 60 + fm - (dh * 60 + dm);
-  const pauseMin = (e as any).pause_minutes ?? 30;
+  const pauseMin = (e as any).pause_minutes ?? 30; // 30 min de pause repas par défaut
   return Math.max(0, dureeMin - pauseMin) / 60;
 }
 
@@ -807,9 +808,10 @@ export function calcCompteurMensuel(
       if (!ouvresSet.has(d)) continue;
       const existing = heuresParJourMap.get(d) ?? null;
       if (isContextOnly) {
-        // Déplacement/formation sans horaires = marqueur de contexte uniquement
-        // On ne l'ajoute QUE si aucune entrée avec horaires n'existe déjà pour ce jour
-        if (existing === null) {
+        // Déplacement/formation = info de contexte (lieu), heures normales du contrat
+        // On ne compte que lun-ven (pas le samedi), et seulement si aucune entrée réelle ce jour
+        const jourSemaine = new Date(`${d}T00:00:00Z`).getUTCDay(); // 0=dim, 6=sam
+        if (jourSemaine !== 0 && jourSemaine !== 6 && existing === null) {
           heuresParJourMap.set(d, duree > 0 ? duree : heuresParJour);
         }
       } else {
