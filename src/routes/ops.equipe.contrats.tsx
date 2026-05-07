@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { RequireAuth } from "@/components/require-auth";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Upload, X, FileText, Send, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,24 +12,42 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/page-header";
 import {
-  listEmployees, listContracts, createContract, sendContractForSignature,
-  listHrDocuments, createHrDocument, updateHrDocument, deleteHrDocument, uploadHrDocumentPdf,
-  CONTRACT_TYPE_LABELS, DOC_CATEGORIE_LABELS, DOC_CATEGORIE_ICONS,
-  type Employee, type Contract, type ContractType,
-  type HrDocument, type DocCategorie,
+  listEmployees,
+  listContracts,
+  createContract,
+  sendContractForSignature,
+  listHrDocuments,
+  createHrDocument,
+  updateHrDocument,
+  deleteHrDocument,
+  uploadHrDocumentPdf,
+  CONTRACT_TYPE_LABELS,
+  DOC_CATEGORIE_LABELS,
+  DOC_CATEGORIE_ICONS,
+  type Employee,
+  type Contract,
+  type ContractType,
+  type HrDocument,
+  type DocCategorie,
 } from "@/lib/hr";
 import { sendTransactionalEmail } from "@/lib/email/send";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/ops/equipe/contrats")({ component: ContractsPage });
+export const Route = createFileRoute("/ops/equipe/contrats")({
+  component: () => (
+    <RequireAuth>
+      <ContractsPage />
+    </RequireAuth>
+  ),
+});
 
 const STATUT_COLORS: Record<string, string> = {
   brouillon: "bg-zinc-100 text-zinc-600",
-  a_signer:  "bg-amber-100 text-amber-700",
-  signe:     "bg-green-100 text-green-700",
-  archive:   "bg-slate-100 text-slate-500",
-  rompu:     "bg-red-100 text-red-600",
+  a_signer: "bg-amber-100 text-amber-700",
+  signe: "bg-green-100 text-green-700",
+  archive: "bg-slate-100 text-slate-500",
+  rompu: "bg-red-100 text-red-600",
 };
 
 async function uploadContractPdf(file: File, contractId: string): Promise<string> {
@@ -41,9 +60,7 @@ async function uploadContractPdf(file: File, contractId: string): Promise<string
   return data.publicUrl;
 }
 
-function PdfDropZone({
-  file, onChange,
-}: { file: File | null; onChange: (f: File | null) => void }) {
+function PdfDropZone({ file, onChange }: { file: File | null; onChange: (f: File | null) => void }) {
   const ref = useRef<HTMLInputElement>(null);
   return (
     <div
@@ -56,7 +73,11 @@ function PdfDropZone({
           <span className="font-medium">{file.name}</span>
           <span className="text-xs text-muted-foreground">({(file.size / 1024).toFixed(0)} Ko)</span>
           <button
-            onClick={(e) => { e.stopPropagation(); onChange(null); if (ref.current) ref.current.value = ""; }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange(null);
+              if (ref.current) ref.current.value = "";
+            }}
             className="ml-1 text-muted-foreground hover:text-destructive"
           >
             <X className="h-3.5 w-3.5" />
@@ -77,8 +98,14 @@ function PdfDropZone({
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (!f) return;
-          if (f.type !== "application/pdf") { toast.error("PDF uniquement"); return; }
-          if (f.size > 10 * 1024 * 1024) { toast.error("Max 10 Mo"); return; }
+          if (f.type !== "application/pdf") {
+            toast.error("PDF uniquement");
+            return;
+          }
+          if (f.size > 10 * 1024 * 1024) {
+            toast.error("Max 10 Mo");
+            return;
+          }
           onChange(f);
         }}
       />
@@ -98,48 +125,57 @@ function ContractsPage() {
   const [contractOpen, setContractOpen] = useState(false);
   const [contractPdf, setContractPdf] = useState<File | null>(null);
   const [contractForm, setContractForm] = useState({
-    employee_id: "", titre: "", type_contrat: "cdi" as ContractType,
-    date_debut: "", date_fin: "", contenu_html: "",
+    employee_id: "",
+    titre: "",
+    type_contrat: "cdi" as ContractType,
+    date_debut: "",
+    date_fin: "",
+    contenu_html: "",
   });
 
   const [docOpen, setDocOpen] = useState(false);
   const [docPdf, setDocPdf] = useState<File | null>(null);
   const [editingDoc, setEditingDoc] = useState<HrDocument | null>(null);
   const [docForm, setDocForm] = useState({
-    employee_id: "", categorie: "avenant" as DocCategorie,
-    titre: "", description: "", date_document: "",
+    employee_id: "",
+    categorie: "avenant" as DocCategorie,
+    titre: "",
+    description: "",
+    date_document: "",
     necessite_signature: false,
   });
 
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
-    const [emps, ctrs, docs] = await Promise.all([
-      listEmployees(),
-      listContracts(),
-      listHrDocuments(),
-    ]);
+    const [emps, ctrs, docs] = await Promise.all([listEmployees(), listContracts(), listHrDocuments()]);
     setEmployees(emps);
     setContracts(ctrs);
     setDocuments(docs);
   };
 
-  useEffect(() => { load().catch(e => toast.error(e.message)); }, []);
+  useEffect(() => {
+    load().catch((e) => toast.error(e.message));
+  }, []);
 
-  const empById = (id: string) => employees.find(e => e.id === id);
+  const empById = (id: string) => employees.find((e) => e.id === id);
 
-  const filteredDocs = documents.filter(d => {
+  const filteredDocs = documents.filter((d) => {
     if (filterEmp !== "tous" && d.employee_id !== filterEmp) return false;
     if (filterCat !== "tous" && d.categorie !== filterCat) return false;
     return true;
   });
 
   const createContractAction = async () => {
-    if (!contractForm.employee_id || !contractForm.titre) { toast.error("Employé et titre requis"); return; }
+    if (!contractForm.employee_id || !contractForm.titre) {
+      toast.error("Employé et titre requis");
+      return;
+    }
     setSaving(true);
     try {
       const contract = await createContract(contractForm.employee_id, {
-        titre: contractForm.titre, type_contrat: contractForm.type_contrat,
+        titre: contractForm.titre,
+        type_contrat: contractForm.type_contrat,
         date_debut: contractForm.date_debut || undefined,
         date_fin: contractForm.date_fin || undefined,
         contenu_html: contractForm.contenu_html || undefined,
@@ -157,20 +193,35 @@ function ContractsPage() {
       });
       setContractOpen(false);
       setContractPdf(null);
-      setContractForm({ employee_id: "", titre: "", type_contrat: "cdi", date_debut: "", date_fin: "", contenu_html: "" });
+      setContractForm({
+        employee_id: "",
+        titre: "",
+        type_contrat: "cdi",
+        date_debut: "",
+        date_fin: "",
+        contenu_html: "",
+      });
       load();
       toast.success("Contrat créé");
-    } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const saveDoc = async () => {
-    if (!docForm.employee_id || !docForm.titre) { toast.error("Employé et titre requis"); return; }
+    if (!docForm.employee_id || !docForm.titre) {
+      toast.error("Employé et titre requis");
+      return;
+    }
     setSaving(true);
     try {
       let doc: HrDocument;
       if (editingDoc) {
         await updateHrDocument(editingDoc.id, {
-          categorie: docForm.categorie, titre: docForm.titre,
+          categorie: docForm.categorie,
+          titre: docForm.titre,
           description: docForm.description || null,
           date_document: docForm.date_document || null,
           necessite_signature: docForm.necessite_signature,
@@ -193,10 +244,21 @@ function ContractsPage() {
       setDocOpen(false);
       setDocPdf(null);
       setEditingDoc(null);
-      setDocForm({ employee_id: "", categorie: "avenant", titre: "", description: "", date_document: "", necessite_signature: false });
+      setDocForm({
+        employee_id: "",
+        categorie: "avenant",
+        titre: "",
+        description: "",
+        date_document: "",
+        necessite_signature: false,
+      });
       load();
       toast.success(editingDoc ? "Document mis à jour" : "Document ajouté");
-    } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const openEditDoc = (doc: HrDocument) => {
@@ -215,8 +277,13 @@ function ContractsPage() {
 
   const delDoc = async (id: string) => {
     if (!confirm("Supprimer ce document ?")) return;
-    try { await deleteHrDocument(id); load(); toast.success("Supprimé"); }
-    catch (e: any) { toast.error(e.message); }
+    try {
+      await deleteHrDocument(id);
+      load();
+      toast.success("Supprimé");
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   const sendSign = async (c: Contract) => {
@@ -228,16 +295,26 @@ function ContractsPage() {
           templateName: "contract-to-sign",
           recipientEmail: emp.email,
           idempotencyKey: `contract-${c.id}-send`,
-          templateData: { prenom: emp.prenom, titre: c.titre, sign_url: `${window.location.origin}/contrat-signer/${c.token}` },
+          templateData: {
+            prenom: emp.prenom,
+            titre: c.titre,
+            sign_url: `${window.location.origin}/contrat-signer/${c.token}`,
+          },
         });
       }
-      load(); toast.success("Envoyé pour signature");
-    } catch (e: any) { toast.error(e.message); }
+      load();
+      toast.success("Envoyé pour signature");
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   return (
     <div className="space-y-6">
-      <Link to="/ops/equipe" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        to="/ops/equipe"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="h-4 w-4" /> Retour
       </Link>
 
@@ -246,13 +323,24 @@ function ContractsPage() {
         description="Tous les documents liés aux employés : contrats, avenants, déplacements, formations…"
         action={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setContractOpen(true)}>Nouveau contrat</Button>
-            <Button onClick={() => {
-              setEditingDoc(null);
-              setDocForm({ employee_id: "", categorie: "avenant", titre: "", description: "", date_document: "", necessite_signature: false });
-              setDocPdf(null);
-              setDocOpen(true);
-            }}>
+            <Button variant="outline" onClick={() => setContractOpen(true)}>
+              Nouveau contrat
+            </Button>
+            <Button
+              onClick={() => {
+                setEditingDoc(null);
+                setDocForm({
+                  employee_id: "",
+                  categorie: "avenant",
+                  titre: "",
+                  description: "",
+                  date_document: "",
+                  necessite_signature: false,
+                });
+                setDocPdf(null);
+                setDocOpen(true);
+              }}
+            >
               Ajouter un document
             </Button>
           </div>
@@ -276,21 +364,31 @@ function ContractsPage() {
             <div className="space-y-1.5">
               <Label className="text-xs">Employé</Label>
               <Select value={filterEmp} onValueChange={setFilterEmp}>
-                <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-56">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="tous">Tous</SelectItem>
-                  {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}
+                  {employees.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.prenom} {e.nom}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Catégorie</Label>
               <Select value={filterCat} onValueChange={setFilterCat}>
-                <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-56">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="tous">Toutes</SelectItem>
                   {Object.entries(DOC_CATEGORIE_LABELS).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                    <SelectItem key={k} value={k}>
+                      {v}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -300,7 +398,9 @@ function ContractsPage() {
           <Card className="p-0 overflow-auto">
             {filteredDocs.length === 0 ? (
               <p className="p-10 text-center text-muted-foreground">
-                {documents.length === 0 ? "Aucun document — commencez par en ajouter un" : "Aucun résultat pour ces filtres"}
+                {documents.length === 0
+                  ? "Aucun document — commencez par en ajouter un"
+                  : "Aucun résultat pour ces filtres"}
               </p>
             ) : (
               <table className="w-full text-sm min-w-[640px]">
@@ -315,7 +415,7 @@ function ContractsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredDocs.map(doc => {
+                  {filteredDocs.map((doc) => {
                     const emp = empById(doc.employee_id);
                     return (
                       <tr key={doc.id} className="border-b">
@@ -342,12 +442,20 @@ function ContractsPage() {
                           <div className="flex items-center gap-1 justify-end">
                             {doc.pdf_url && (
                               <a href={doc.pdf_url} target="_blank" rel="noreferrer">
-                                <Button size="sm" variant="ghost">PDF</Button>
+                                <Button size="sm" variant="ghost">
+                                  PDF
+                                </Button>
                               </a>
                             )}
-                            <Button size="sm" variant="ghost" onClick={() => openEditDoc(doc)}>Modifier</Button>
-                            <Button size="sm" variant="ghost" onClick={() => delDoc(doc.id)}
-                              className="text-destructive hover:text-destructive">
+                            <Button size="sm" variant="ghost" onClick={() => openEditDoc(doc)}>
+                              Modifier
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => delDoc(doc.id)}
+                              className="text-destructive hover:text-destructive"
+                            >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
@@ -379,7 +487,7 @@ function ContractsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {contracts.map(c => {
+                  {contracts.map((c) => {
                     const emp = empById(c.employee_id);
                     return (
                       <tr key={c.id} className="border-b">
@@ -393,10 +501,18 @@ function ContractsPage() {
                           </span>
                         </td>
                         <td className="px-3 py-2">
-                          {c.pdf_url
-                            ? <a href={c.pdf_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-xs">Voir PDF</a>
-                            : <span className="text-xs text-muted-foreground">—</span>
-                          }
+                          {c.pdf_url ? (
+                            <a
+                              href={c.pdf_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-600 hover:underline text-xs"
+                            >
+                              Voir PDF
+                            </a>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
                         </td>
                         <td className="px-3 py-2 text-right">
                           {c.statut === "brouillon" && (
@@ -405,8 +521,14 @@ function ContractsPage() {
                             </Button>
                           )}
                           {c.statut === "a_signer" && (
-                            <a href={`/contrat-signer/${c.token}`} target="_blank" rel="noreferrer"
-                              className="text-xs text-blue-600 hover:underline">Lien signature</a>
+                            <a
+                              href={`/contrat-signer/${c.token}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-xs text-blue-600 hover:underline"
+                            >
+                              Lien signature
+                            </a>
                           )}
                         </td>
                       </tr>
@@ -420,7 +542,13 @@ function ContractsPage() {
       </Tabs>
 
       {/* Modal nouveau contrat */}
-      <Dialog open={contractOpen} onOpenChange={(v) => { setContractOpen(v); if (!v) setContractPdf(null); }}>
+      <Dialog
+        open={contractOpen}
+        onOpenChange={(v) => {
+          setContractOpen(v);
+          if (!v) setContractPdf(null);
+        }}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Nouveau contrat de travail</DialogTitle>
@@ -428,37 +556,64 @@ function ContractsPage() {
           <div className="grid gap-4">
             <div className="space-y-1.5">
               <Label>Employé</Label>
-              <Select value={contractForm.employee_id} onValueChange={(v) => setContractForm({ ...contractForm, employee_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Choisir…" /></SelectTrigger>
+              <Select
+                value={contractForm.employee_id}
+                onValueChange={(v) => setContractForm({ ...contractForm, employee_id: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir…" />
+                </SelectTrigger>
                 <SelectContent>
-                  {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}
+                  {employees.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.prenom} {e.nom}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
               <Label>Titre</Label>
-              <Input value={contractForm.titre} onChange={(e) => setContractForm({ ...contractForm, titre: e.target.value })}
-                placeholder="ex : CDI — Agent de voyages" />
+              <Input
+                value={contractForm.titre}
+                onChange={(e) => setContractForm({ ...contractForm, titre: e.target.value })}
+                placeholder="ex : CDI — Agent de voyages"
+              />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label>Type</Label>
-                <Select value={contractForm.type_contrat} onValueChange={(v) => setContractForm({ ...contractForm, type_contrat: v as ContractType })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={contractForm.type_contrat}
+                  onValueChange={(v) => setContractForm({ ...contractForm, type_contrat: v as ContractType })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(CONTRACT_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                    {Object.entries(CONTRACT_TYPE_LABELS).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>
+                        {v}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
                 <Label>Début</Label>
-                <Input type="date" value={contractForm.date_debut}
-                  onChange={(e) => setContractForm({ ...contractForm, date_debut: e.target.value })} />
+                <Input
+                  type="date"
+                  value={contractForm.date_debut}
+                  onChange={(e) => setContractForm({ ...contractForm, date_debut: e.target.value })}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>Fin</Label>
-                <Input type="date" value={contractForm.date_fin}
-                  onChange={(e) => setContractForm({ ...contractForm, date_fin: e.target.value })} />
+                <Input
+                  type="date"
+                  value={contractForm.date_fin}
+                  onChange={(e) => setContractForm({ ...contractForm, date_fin: e.target.value })}
+                />
               </div>
             </div>
             <div className="space-y-1.5">
@@ -467,20 +622,36 @@ function ContractsPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Contenu texte (optionnel si PDF)</Label>
-              <Textarea rows={3} value={contractForm.contenu_html}
+              <Textarea
+                rows={3}
+                value={contractForm.contenu_html}
                 onChange={(e) => setContractForm({ ...contractForm, contenu_html: e.target.value })}
-                placeholder="Ou saisir le contenu ici…" />
+                placeholder="Ou saisir le contenu ici…"
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setContractOpen(false)}>Annuler</Button>
-            <Button onClick={createContractAction} disabled={saving}>{saving ? "Création…" : "Créer"}</Button>
+            <Button variant="outline" onClick={() => setContractOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={createContractAction} disabled={saving}>
+              {saving ? "Création…" : "Créer"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Modal document RH */}
-      <Dialog open={docOpen} onOpenChange={(v) => { setDocOpen(v); if (!v) { setEditingDoc(null); setDocPdf(null); } }}>
+      <Dialog
+        open={docOpen}
+        onOpenChange={(v) => {
+          setDocOpen(v);
+          if (!v) {
+            setEditingDoc(null);
+            setDocPdf(null);
+          }
+        }}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingDoc ? "Modifier le document" : "Ajouter un document"}</DialogTitle>
@@ -490,17 +661,28 @@ function ContractsPage() {
               <div className="space-y-1.5">
                 <Label>Employé</Label>
                 <Select value={docForm.employee_id} onValueChange={(v) => setDocForm({ ...docForm, employee_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Choisir…" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir…" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}
+                    {employees.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.prenom} {e.nom}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             )}
             <div className="space-y-1.5">
               <Label>Catégorie</Label>
-              <Select value={docForm.categorie} onValueChange={(v) => setDocForm({ ...docForm, categorie: v as DocCategorie })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={docForm.categorie}
+                onValueChange={(v) => setDocForm({ ...docForm, categorie: v as DocCategorie })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {Object.entries(DOC_CATEGORIE_LABELS).map(([k, v]) => (
                     <SelectItem key={k} value={k}>
@@ -512,14 +694,20 @@ function ContractsPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Titre</Label>
-              <Input value={docForm.titre} onChange={(e) => setDocForm({ ...docForm, titre: e.target.value })}
-                placeholder="ex : Avenant télétravail — juin 2026" />
+              <Input
+                value={docForm.titre}
+                onChange={(e) => setDocForm({ ...docForm, titre: e.target.value })}
+                placeholder="ex : Avenant télétravail — juin 2026"
+              />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Date du document</Label>
-                <Input type="date" value={docForm.date_document}
-                  onChange={(e) => setDocForm({ ...docForm, date_document: e.target.value })} />
+                <Input
+                  type="date"
+                  value={docForm.date_document}
+                  onChange={(e) => setDocForm({ ...docForm, date_document: e.target.value })}
+                />
               </div>
               <div className="space-y-1.5 flex flex-col justify-end">
                 <label className="flex items-center gap-2 cursor-pointer pb-2">
@@ -534,10 +722,15 @@ function ContractsPage() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Description <span className="text-xs text-muted-foreground">(optionnel)</span></Label>
-              <Textarea rows={2} value={docForm.description}
+              <Label>
+                Description <span className="text-xs text-muted-foreground">(optionnel)</span>
+              </Label>
+              <Textarea
+                rows={2}
+                value={docForm.description}
                 onChange={(e) => setDocForm({ ...docForm, description: e.target.value })}
-                placeholder="Contexte, objet du document…" />
+                placeholder="Contexte, objet du document…"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Fichier PDF</Label>
@@ -545,7 +738,12 @@ function ContractsPage() {
               {editingDoc?.pdf_url && !docPdf && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <FileText className="h-3.5 w-3.5" />
-                  <a href={editingDoc.pdf_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                  <a
+                    href={editingDoc.pdf_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
                     Voir PDF existant
                   </a>
                   <span>— uploader un nouveau pour remplacer</span>
@@ -554,8 +752,12 @@ function ContractsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDocOpen(false)}>Annuler</Button>
-            <Button onClick={saveDoc} disabled={saving}>{saving ? "Enregistrement…" : editingDoc ? "Mettre à jour" : "Ajouter"}</Button>
+            <Button variant="outline" onClick={() => setDocOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={saveDoc} disabled={saving}>
+              {saving ? "Enregistrement…" : editingDoc ? "Mettre à jour" : "Ajouter"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
