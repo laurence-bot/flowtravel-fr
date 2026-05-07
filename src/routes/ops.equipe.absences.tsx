@@ -452,6 +452,41 @@ function AbsencesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={recupOpen} onOpenChange={setRecupOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Demande de récupération d'heures</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Employé</Label>
+              <Select value={recupForm.employee_id} onValueChange={(v) => setRecupForm({ ...recupForm, employee_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Choisir…" /></SelectTrigger>
+                <SelectContent>
+                  {allEmployees.map(e => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Heures demandées</Label>
+                <Input type="number" step="0.5" value={recupForm.heures_demandees} onChange={(e) => setRecupForm({ ...recupForm, heures_demandees: e.target.value })} />
+              </div>
+              <div>
+                <Label>Date souhaitée</Label>
+                <Input type="date" value={recupForm.date_souhaitee} onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <Label>Motif</Label>
+              <Textarea rows={2} value={recupForm.motif} onChange={(e) => setRecupForm({ ...recupForm, motif: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRecupOpen(false)}>Annuler</Button>
+            <Button onClick={saveRecup}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
