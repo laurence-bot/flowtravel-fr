@@ -316,6 +316,65 @@ function AbsencesPage() {
           </table>
         </Card>
       )}
+        </TabsContent>
+
+        <TabsContent value="recups" className="mt-4">
+          <Card className="p-0 overflow-hidden">
+            {recups.length === 0 ? (
+              <p className="p-10 text-center text-muted-foreground">Aucune demande de récupération</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="text-left px-4 py-3">Employé</th>
+                    <th className="text-right px-4 py-3">Heures</th>
+                    <th className="text-left px-4 py-3">Date souhaitée</th>
+                    <th className="text-left px-4 py-3">Motif</th>
+                    <th className="text-left px-4 py-3">Statut</th>
+                    <th className="text-right px-4 py-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recups.map(r => {
+                    const emp = empMap[r.employee_id];
+                    return (
+                      <tr key={r.id} className="border-t">
+                        <td className="px-4 py-3">{emp ? `${emp.prenom} ${emp.nom}` : "—"}</td>
+                        <td className="px-4 py-3 text-right">{r.heures_demandees}h</td>
+                        <td className="px-4 py-3">{r.date_souhaitee ?? "—"}</td>
+                        <td className="px-4 py-3 max-w-[240px] truncate">{r.motif ?? "—"}</td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            r.statut === "approuvee" ? "bg-green-100 text-green-700" :
+                            r.statut === "refusee" ? "bg-red-100 text-red-600" :
+                            "bg-amber-100 text-amber-700"
+                          }`}>
+                            {r.statut === "approuvee" ? "Approuvée" : r.statut === "refusee" ? "Refusée" : "En attente"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {r.statut === "demande" && (
+                            <div className="flex gap-1 justify-end">
+                              <Button size="sm" onClick={async () => {
+                                try { await approuverRecupDemande(r.id); toast.success("Approuvée"); reload(); }
+                                catch (e: any) { toast.error(e.message); }
+                              }}><Check className="h-3 w-3" /></Button>
+                              <Button size="sm" variant="outline" onClick={async () => {
+                                try { await refuserRecupDemande(r.id); toast.success("Refusée"); reload(); }
+                                catch (e: any) { toast.error(e.message); }
+                              }}><X className="h-3 w-3" /></Button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(EMPTY_FORM); }}>
         <DialogContent className="max-w-lg">
