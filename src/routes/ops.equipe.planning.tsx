@@ -340,8 +340,9 @@ function PlanningPage() {
         }
         // ──────────────────────────────────────────────────────────────
 
+        const groupId = dates.length > 1 ? crypto.randomUUID() : null;
         await Promise.all(dates.map(date =>
-          upsertPlanning({ employee_id: empId, date_jour: date, type: form.type, heure_debut: form.heure_debut || null, heure_fin: form.heure_fin || null, note: form.note || null })
+          upsertPlanning({ employee_id: empId, date_jour: date, type: form.type, heure_debut: form.heure_debut || null, heure_fin: form.heure_fin || null, note: form.note || null, group_id: groupId } as any)
         ));
         toast.success(`${dates.length} entrée(s) ajoutée(s)`);
       }
