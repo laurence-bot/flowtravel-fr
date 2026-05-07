@@ -2924,6 +2924,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_recup_planning_entry"
+            columns: ["planning_entry_id"]
+            isOneToOne: false
+            referencedRelation: "hr_planning_entries"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "hr_recup_demandes_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
