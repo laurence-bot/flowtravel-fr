@@ -23,6 +23,7 @@ import {
   createRecupDemande,
   annulerRecupDemande,
   type RecupDemande,
+  listCompteurs,
 } from "@/lib/hr";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -46,6 +47,7 @@ function CongesPage() {
   const [emp, setEmp] = useState<Employee | null>(null);
   const [items, setItems] = useState<Absence[]>([]);
   const [recups, setRecups] = useState<RecupDemande[]>([]);
+  const [soldeHeures, setSoldeHeures] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
   const [recupOpen, setRecupOpen] = useState(false);
   const [form, setForm] = useState({ type: "conge_paye" as AbsenceType, date_debut: "", date_fin: "", motif: "" });
@@ -73,9 +75,16 @@ function CongesPage() {
     const e = await getEmployeeByUserId(user.id);
     setEmp(e);
     if (e) {
-      setItems(await listAbsences(e.id));
-      const allRecups = await listRecupDemandes();
+      const moisCourant = new Date().toISOString().slice(0, 7);
+      const [absences, allRecups, compteurs] = await Promise.all([
+        listAbsences(e.id),
+        listRecupDemandes(),
+        listCompteurs(moisCourant),
+      ]);
+      setItems(absences);
       setRecups(allRecups.filter((r) => r.employee_id === e.id));
+      const compteur = compteurs.find((c) => c.employee_id === e.id);
+      setSoldeHeures(compteur?.solde ?? null);
     }
   };
   useEffect(() => {
@@ -173,15 +182,26 @@ function CongesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="p-4">
           <div className="text-xs uppercase text-muted-foreground">Congés payés restants</div>
-          <div className="text-3xl font-display">{cpRest}</div>
+          <div className="text-3xl font-display">{cpRest} j</div>
         </Card>
         <Card className="p-4">
           <div className="text-xs uppercase text-muted-foreground">RTT restants</div>
-          <div className="text-3xl font-display">{rttRest}</div>
+          <div className="text-3xl font-display">{rttRest} j</div>
         </Card>
+        {soldeHeures !== null && (
+          <Card className="p-4">
+            <div className="text-xs uppercase text-muted-foreground">Solde heures ce mois</div>
+            <div
+              className={`text-3xl font-display ${soldeHeures > 0 ? "text-emerald-600" : soldeHeures < 0 ? "text-red-500" : ""}`}
+            >
+              {soldeHeures > 0 ? "+" : ""}
+              {soldeHeures}h
+            </div>
+          </Card>
+        )}
       </div>
 
       <Card className="p-0 overflow-hidden overflow-x-auto">
