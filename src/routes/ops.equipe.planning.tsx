@@ -252,7 +252,7 @@ function PlanningPage() {
 
   const days = daysInMonth(month);
   const cellFor = (empId: string, date: string) =>
-    entries.filter(e => e.employee_id === empId && e.date_jour === date);
+    entries.filter(e => e.employee_id === empId && planningEntryCoversDate(e, date));
 
   const openAdd = (emp?: Employee, date?: string) => {
     setForm({ ...EMPTY_FORM, employee_id: emp?.id ?? "", date_debut: date ?? new Date().toISOString().slice(0, 10) });
