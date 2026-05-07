@@ -391,7 +391,7 @@ export type RecupDemande = {
 export function calcHeuresRealisees(entries: PlanningEntry[]): number {
   let total = 0;
   for (const e of entries) {
-    if (e.type !== "travail" && e.type !== "teletravail" && e.type !== "deplacement") continue;
+    if (e.type !== "travail" && e.type !== "teletravail" && e.type !== "reunion") continue;
     if (!e.heure_debut || !e.heure_fin) continue;
     const [dh, dm] = e.heure_debut.split(":").map(Number);
     const [fh, fm] = e.heure_fin.split(":").map(Number);
