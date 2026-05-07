@@ -30,6 +30,7 @@ import { computeCoverageUsage, computeFxPnl } from "@/lib/fx-pnl";
 import type { FactureEcheance, Paiement } from "@/hooks/use-data";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { FxOptimisationDashboard } from "@/components/fx-optimisation-dashboard";
 import { Plus, Shield, ShieldAlert, ShieldCheck, TrendingUp, TrendingDown, Pencil, Trash2, Coins } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -212,6 +213,8 @@ function CouverturesFXPage() {
           </Table>
         )}
       </Card>
+
+      <FxOptimisationDashboard coverages={coverages} reservations={reservations} />
 
       {/* Impact change global */}
       {fxPnl.entries.length > 0 && (
