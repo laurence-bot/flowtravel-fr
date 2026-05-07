@@ -16,6 +16,7 @@ export const Route = createFileRoute("/factures-clients/$id")({
   ),
 });
 
+// Labels longs pour l'impression — distincts des labels courts de la liste
 const TYPE_LABEL: Record<string, string> = {
   acompte_1: "Facture d'acompte n°1",
   acompte_2: "Facture d'acompte n°2",
