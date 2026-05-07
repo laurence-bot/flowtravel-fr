@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { RequireAuth } from "@/components/require-auth";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Trash2, Copy, AlertTriangle, Check, X, Pencil } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -11,49 +12,77 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/page-header";
 import {
-  listEmployees, listPlanning, upsertPlanning, deletePlanning, deletePlanningGroup,
-  calcHeuresRealisees, upsertCompteur, listCompteurs, listRecupDemandes,
-  frenchHolidays, isJourOuvre, heuresContractuellesParJour, calcCompteurMensuel,
-  createRecupDemande, approuverRecupDemande, refuserRecupDemande,
+  listEmployees,
+  listPlanning,
+  upsertPlanning,
+  deletePlanning,
+  deletePlanningGroup,
+  calcHeuresRealisees,
+  upsertCompteur,
+  listCompteurs,
+  listRecupDemandes,
+  frenchHolidays,
+  isJourOuvre,
+  heuresContractuellesParJour,
+  calcCompteurMensuel,
+  createRecupDemande,
+  approuverRecupDemande,
+  refuserRecupDemande,
   alertesFinDeMois,
   PLANNING_TYPE_LABELS,
   planningEntryCoversDate,
-  type Employee, type PlanningEntry, type PlanningType,
-  type CompteurHeures, type RecupDemande,
+  type Employee,
+  type PlanningEntry,
+  type PlanningType,
+  type CompteurHeures,
+  type RecupDemande,
 } from "@/lib/hr";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/ops/equipe/planning")({ component: PlanningPage });
+export const Route = createFileRoute("/ops/equipe/planning")({
+  component: () => (
+    <RequireAuth>
+      <PlanningPage />
+    </RequireAuth>
+  ),
+});
 
 const TYPE_COLORS: Record<PlanningType, { badge: string; dot: string; abbr: string }> = {
-  travail:     { badge: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500", abbr: "TRA" },
-  teletravail: { badge: "bg-sky-50 text-sky-700 border-sky-200",            dot: "bg-sky-500",     abbr: "TLT" },
-  reunion:     { badge: "bg-violet-50 text-violet-700 border-violet-200",   dot: "bg-violet-500",  abbr: "RÉU" },
-  deplacement: { badge: "bg-orange-50 text-orange-700 border-orange-200",   dot: "bg-orange-500",  abbr: "DÉP" },
-  formation:   { badge: "bg-amber-50 text-amber-700 border-amber-200",      dot: "bg-amber-500",   abbr: "FOR" },
-  recuperation:{ badge: "bg-purple-50 text-purple-700 border-purple-200",   dot: "bg-purple-500",  abbr: "RÉC" },
-  autre:       { badge: "bg-zinc-50 text-zinc-500 border-zinc-200",         dot: "bg-zinc-400",    abbr: "AUT" },
+  travail: { badge: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500", abbr: "TRA" },
+  teletravail: { badge: "bg-sky-50 text-sky-700 border-sky-200", dot: "bg-sky-500", abbr: "TLT" },
+  reunion: { badge: "bg-violet-50 text-violet-700 border-violet-200", dot: "bg-violet-500", abbr: "RÉU" },
+  deplacement: { badge: "bg-orange-50 text-orange-700 border-orange-200", dot: "bg-orange-500", abbr: "DÉP" },
+  formation: { badge: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500", abbr: "FOR" },
+  recuperation: { badge: "bg-purple-50 text-purple-700 border-purple-200", dot: "bg-purple-500", abbr: "RÉC" },
+  autre: { badge: "bg-zinc-50 text-zinc-500 border-zinc-200", dot: "bg-zinc-400", abbr: "AUT" },
 };
 
 const DAY_LABELS = ["D", "L", "M", "M", "J", "V", "S"];
 const DAY_FULL = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 
 const REPEAT_OPTIONS = [
-  { value: "none",        label: "Aucune répétition" },
-  { value: "week",        label: "Chaque semaine (même jour)" },
-  { value: "week2",       label: "1 semaine sur 2" },
+  { value: "none", label: "Aucune répétition" },
+  { value: "week", label: "Chaque semaine (même jour)" },
+  { value: "week2", label: "1 semaine sur 2" },
   { value: "month_ouvre", label: "Tous les jours ouvrés du mois" },
 ];
 
-function isWeekend(d: string) { const day = new Date(d).getDay(); return day === 0 || day === 6; }
-function addDays(d: string, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); }
+function isWeekend(d: string) {
+  const day = new Date(d).getDay();
+  return day === 0 || day === 6;
+}
+function addDays(d: string, n: number) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + n);
+  return x.toISOString().slice(0, 10);
+}
 
 function daysInMonth(month: string): string[] {
   const d = new Date(`${month}-01`);
-  const end = new Date(d); end.setMonth(end.getMonth() + 1);
+  const end = new Date(d);
+  end.setMonth(end.getMonth() + 1);
   const out: string[] = [];
-  for (let x = new Date(d); x < end; x.setDate(x.getDate() + 1))
-    out.push(x.toISOString().slice(0, 10));
+  for (let x = new Date(d); x < end; x.setDate(x.getDate() + 1)) out.push(x.toISOString().slice(0, 10));
   return out;
 }
 
@@ -68,16 +97,16 @@ function getISOWeek(d: Date): number {
 function expandDates(dateDebut: string, repeat: string, month: string): string[] {
   const monthDays = daysInMonth(month);
   if (repeat === "none") return [dateDebut];
-  if (repeat === "month_ouvre") return monthDays.filter(d => !isWeekend(d));
+  if (repeat === "month_ouvre") return monthDays.filter((d) => !isWeekend(d));
   if (repeat === "week") {
     const targetDay = new Date(dateDebut).getDay();
-    return monthDays.filter(d => new Date(d).getDay() === targetDay);
+    return monthDays.filter((d) => new Date(d).getDay() === targetDay);
   }
   if (repeat === "week2") {
     const targetDay = new Date(dateDebut).getDay();
-    const matching = monthDays.filter(d => new Date(d).getDay() === targetDay);
+    const matching = monthDays.filter((d) => new Date(d).getDay() === targetDay);
     const startWeek = getISOWeek(new Date(dateDebut));
-    return matching.filter(d => (getISOWeek(new Date(d)) - startWeek) % 2 === 0);
+    return matching.filter((d) => (getISOWeek(new Date(d)) - startWeek) % 2 === 0);
   }
   return [dateDebut];
 }
@@ -98,7 +127,7 @@ type WeekConfig = { [jour: number]: JourConfig };
 
 const DEFAULT_JOUR: JourConfig = { actif: true, heure_debut: "09:00", heure_fin: "17:30", pause_minutes: "30" };
 const EMPTY_WEEK: WeekConfig = Object.fromEntries(
-  [0, 1, 2, 3, 4, 5, 6].map(i => [i, { ...DEFAULT_JOUR, actif: i < 5 }])
+  [0, 1, 2, 3, 4, 5, 6].map((i) => [i, { ...DEFAULT_JOUR, actif: i < 5 }]),
 ) as WeekConfig;
 
 type FormMode = "simple" | "semaine_type";
@@ -140,53 +169,84 @@ const EMPTY_FORM: FormState = {
 };
 
 function generateEntriesFromWeekConfig(
-  employeeId: string, month: string,
-  semaineA: WeekConfig, semaineB: WeekConfig,
-  utiliseSemaineB: boolean, type: PlanningType,
+  employeeId: string,
+  month: string,
+  semaineA: WeekConfig,
+  semaineB: WeekConfig,
+  utiliseSemaineB: boolean,
+  type: PlanningType,
 ) {
   const days = daysInMonth(month);
-  return days.flatMap(dateStr => {
+  return days.flatMap((dateStr) => {
     const date = new Date(dateStr);
     const jourIdx = JS_DAY_TO_IDX[date.getDay()];
     const isoWeek = getISOWeek(date);
-    const config = utiliseSemaineB
-      ? (isoWeek % 2 === 1 ? semaineA[jourIdx] : semaineB[jourIdx])
-      : semaineA[jourIdx];
+    const config = utiliseSemaineB ? (isoWeek % 2 === 1 ? semaineA[jourIdx] : semaineB[jourIdx]) : semaineA[jourIdx];
     if (!config?.actif) return [];
-    return [{
-      employee_id: employeeId,
-      date_start: dateStr,
-      date_end: dateStr,
-      type,
-      heure_debut: config.heure_debut || null,
-      heure_fin: config.heure_fin || null,
-      note: null,
-    }];
+    return [
+      {
+        employee_id: employeeId,
+        date_start: dateStr,
+        date_end: dateStr,
+        type,
+        heure_debut: config.heure_debut || null,
+        heure_fin: config.heure_fin || null,
+        note: null,
+      },
+    ];
   });
 }
 
-function WeekGrid({ label, config, onChange }: { label: string; config: WeekConfig; onChange: (cfg: WeekConfig) => void }) {
+function WeekGrid({
+  label,
+  config,
+  onChange,
+}: {
+  label: string;
+  config: WeekConfig;
+  onChange: (cfg: WeekConfig) => void;
+}) {
   const update = (jourIdx: number, patch: Partial<JourConfig>) =>
     onChange({ ...config, [jourIdx]: { ...config[jourIdx], ...patch } });
   return (
     <div className="space-y-2">
       <Label className="text-sm font-medium">{label}</Label>
       <div className="rounded-lg border overflow-hidden">
-        {[0, 1, 2, 3, 4, 5, 6].map(i => {
+        {[0, 1, 2, 3, 4, 5, 6].map((i) => {
           const jour = config[i];
           return (
-            <div key={i} className={`flex items-center gap-3 px-3 py-2 border-b last:border-b-0 transition-colors ${jour.actif ? "bg-background" : "bg-muted/30"}`}>
+            <div
+              key={i}
+              className={`flex items-center gap-3 px-3 py-2 border-b last:border-b-0 transition-colors ${jour.actif ? "bg-background" : "bg-muted/30"}`}
+            >
               <label className="flex items-center gap-2 w-24 cursor-pointer shrink-0">
-                <input type="checkbox" checked={jour.actif} onChange={e => update(i, { actif: e.target.checked })} className="rounded" />
+                <input
+                  type="checkbox"
+                  checked={jour.actif}
+                  onChange={(e) => update(i, { actif: e.target.checked })}
+                  className="rounded"
+                />
                 <span className={`text-sm font-medium ${!jour.actif ? "text-muted-foreground" : ""}`}>{JOURS[i]}</span>
               </label>
               {jour.actif ? (
                 <div className="flex items-center gap-2 flex-1">
-                  <Input type="time" value={jour.heure_debut} onChange={e => update(i, { heure_debut: e.target.value })} className="h-7 text-xs w-24" />
+                  <Input
+                    type="time"
+                    value={jour.heure_debut}
+                    onChange={(e) => update(i, { heure_debut: e.target.value })}
+                    className="h-7 text-xs w-24"
+                  />
                   <span className="text-muted-foreground text-xs">→</span>
-                  <Input type="time" value={jour.heure_fin} onChange={e => update(i, { heure_fin: e.target.value })} className="h-7 text-xs w-24" />
-                  <Select value={jour.pause_minutes} onValueChange={v => update(i, { pause_minutes: v })}>
-                    <SelectTrigger className="h-7 text-xs w-24"><SelectValue /></SelectTrigger>
+                  <Input
+                    type="time"
+                    value={jour.heure_fin}
+                    onChange={(e) => update(i, { heure_fin: e.target.value })}
+                    className="h-7 text-xs w-24"
+                  />
+                  <Select value={jour.pause_minutes} onValueChange={(v) => update(i, { pause_minutes: v })}>
+                    <SelectTrigger className="h-7 text-xs w-24">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="0">Pas de pause</SelectItem>
                       <SelectItem value="30">30 min</SelectItem>
@@ -221,8 +281,11 @@ function PlanningPage() {
 
   const [recupOpen, setRecupOpen] = useState(false);
   const [recupForm, setRecupForm] = useState({
-    employee_id: "", type: "heures" as RecupDemande["type"],
-    heures_demandees: "7", date_souhaitee: "", motif: "",
+    employee_id: "",
+    type: "heures" as RecupDemande["type"],
+    heures_demandees: "7",
+    date_souhaitee: "",
+    motif: "",
   });
 
   const load = async () => {
@@ -233,27 +296,31 @@ function PlanningPage() {
       listCompteurs(month),
       listRecupDemandes(month),
     ]);
-    const actifs = emps.filter(e => e.actif);
+    const actifs = emps.filter((e) => e.actif);
     setEmployees(actifs);
     setEntries(plan);
     setRecups(recs);
     const year = Number(month.slice(0, 4));
     const holidays = frenchHolidays(year);
-    const joursOuvres = days.filter(d => isJourOuvre(d, holidays));
-    await Promise.all(actifs.map(async emp => {
-      const empEntries = plan.filter(e => e.employee_id === emp.id);
-      const hParJour = heuresContractuellesParJour(emp);
-      const c = calcCompteurMensuel(empEntries, joursOuvres, hParJour);
-      await upsertCompteur(emp.id, month, c.realisees, c.base);
-    }));
+    const joursOuvres = days.filter((d) => isJourOuvre(d, holidays));
+    await Promise.all(
+      actifs.map(async (emp) => {
+        const empEntries = plan.filter((e) => e.employee_id === emp.id);
+        const hParJour = heuresContractuellesParJour(emp);
+        const c = calcCompteurMensuel(empEntries, joursOuvres, hParJour);
+        await upsertCompteur(emp.id, month, c.realisees, c.base);
+      }),
+    );
     setCompteurs(await listCompteurs(month));
   };
 
-  useEffect(() => { load().catch(e => toast.error(e.message)); }, [month]);
+  useEffect(() => {
+    load().catch((e) => toast.error(e.message));
+  }, [month]);
 
   const days = daysInMonth(month);
   const cellFor = (empId: string, date: string) =>
-    entries.filter(e => e.employee_id === empId && planningEntryCoversDate(e, date));
+    entries.filter((e) => e.employee_id === empId && planningEntryCoversDate(e, date));
 
   const openAdd = (emp?: Employee, date?: string) => {
     setForm({ ...EMPTY_FORM, employee_id: emp?.id ?? "", date_debut: date ?? new Date().toISOString().slice(0, 10) });
@@ -281,12 +348,18 @@ function PlanningPage() {
 
   const save = async () => {
     const empId = selectedCell?.emp.id ?? form.employee_id;
-    if (!empId) { toast.error("Employé requis"); return; }
+    if (!empId) {
+      toast.error("Employé requis");
+      return;
+    }
     setSaving(true);
     try {
       if (form.editId) {
         await deletePlanning(form.editId);
-        const isRangeEdit = (form.type === "deplacement" || form.type === "formation") && form.date_fin && form.date_fin >= form.date_debut;
+        const isRangeEdit =
+          (form.type === "deplacement" || form.type === "formation") &&
+          form.date_fin &&
+          form.date_fin >= form.date_debut;
         await upsertPlanning({
           employee_id: empId,
           date_start: form.date_debut,
@@ -304,29 +377,61 @@ function PlanningPage() {
       }
 
       if (form.mode === "semaine_type") {
-        const toCreate = generateEntriesFromWeekConfig(empId, form.mois_cible, form.semaine_a, form.semaine_b, form.utilise_semaine_b, form.type);
-        if (!toCreate.length) { toast.error("Aucun jour actif sélectionné"); setSaving(false); return; }
-        await Promise.all(toCreate.map(e => upsertPlanning(e)));
+        const toCreate = generateEntriesFromWeekConfig(
+          empId,
+          form.mois_cible,
+          form.semaine_a,
+          form.semaine_b,
+          form.utilise_semaine_b,
+          form.type,
+        );
+        if (!toCreate.length) {
+          toast.error("Aucun jour actif sélectionné");
+          setSaving(false);
+          return;
+        }
+        await Promise.all(toCreate.map((e) => upsertPlanning(e)));
         toast.success(`${toCreate.length} entrée(s) générée(s) pour ${form.mois_cible}`);
       } else {
-        if (!form.date_debut) { toast.error("Date requise"); setSaving(false); return; }
+        if (!form.date_debut) {
+          toast.error("Date requise");
+          setSaving(false);
+          return;
+        }
 
         // Cas plage continue (déplacement/formation) : une seule entrée avec date_start/date_end
-        const isRangeType = (form.type === "deplacement" || form.type === "formation") && form.date_fin && form.date_fin >= form.date_debut;
+        const isRangeType =
+          (form.type === "deplacement" || form.type === "formation") &&
+          form.date_fin &&
+          form.date_fin >= form.date_debut;
 
         if (isRangeType) {
           // Conflit : tout jour de la plage déjà occupé par un type exclusif
           const EXCLUSIFS: PlanningType[] = ["travail", "teletravail", "deplacement", "formation"];
           const rangeDays: string[] = [];
           let cur = form.date_debut;
-          while (cur <= form.date_fin) { rangeDays.push(cur); cur = addDays(cur, 1); }
-          const conflictEntries = Array.from(new Map(
-            rangeDays.flatMap(d => cellFor(empId, d).filter(e => EXCLUSIFS.includes(e.type) && e.id !== form.editId).map(e => [e.id, e]))
-          ).values());
+          while (cur <= form.date_fin) {
+            rangeDays.push(cur);
+            cur = addDays(cur, 1);
+          }
+          const conflictEntries = Array.from(
+            new Map(
+              rangeDays.flatMap((d) =>
+                cellFor(empId, d)
+                  .filter((e) => EXCLUSIFS.includes(e.type) && e.id !== form.editId)
+                  .map((e) => [e.id, e]),
+              ),
+            ).values(),
+          );
           if (conflictEntries.length > 0) {
-            const confirmed = window.confirm(`${conflictEntries.length} entrée(s) existante(s) sur la plage seront remplacées. Continuer ?`);
-            if (!confirmed) { setSaving(false); return; }
-            await Promise.all(conflictEntries.map(e => deletePlanning(e.id)));
+            const confirmed = window.confirm(
+              `${conflictEntries.length} entrée(s) existante(s) sur la plage seront remplacées. Continuer ?`,
+            );
+            if (!confirmed) {
+              setSaving(false);
+              return;
+            }
+            await Promise.all(conflictEntries.map((e) => deletePlanning(e.id)));
           }
           await upsertPlanning({
             employee_id: empId,
@@ -344,25 +449,45 @@ function PlanningPage() {
           // ── Détection de conflits ──────────────────────────────────────
           const EXCLUSIFS: PlanningType[] = ["travail", "teletravail", "deplacement", "formation"];
           if (EXCLUSIFS.includes(form.type)) {
-            const conflictDates = dates.filter(d => {
+            const conflictDates = dates.filter((d) => {
               const existing = cellFor(empId, d);
-              return existing.some(e => EXCLUSIFS.includes(e.type) && e.id !== form.editId);
+              return existing.some((e) => EXCLUSIFS.includes(e.type) && e.id !== form.editId);
             });
             if (conflictDates.length > 0) {
-              const conflictEntries = Array.from(new Map(
-                conflictDates.flatMap(d => cellFor(empId, d).filter(e => EXCLUSIFS.includes(e.type)).map(e => [e.id, e]))
-              ).values());
-              const confirmed = window.confirm(
-                `Conflit détecté sur ${conflictDates.length} jour(s). Remplacer les entrées existantes ?`
+              const conflictEntries = Array.from(
+                new Map(
+                  conflictDates.flatMap((d) =>
+                    cellFor(empId, d)
+                      .filter((e) => EXCLUSIFS.includes(e.type))
+                      .map((e) => [e.id, e]),
+                  ),
+                ).values(),
               );
-              if (!confirmed) { setSaving(false); return; }
-              await Promise.all(conflictEntries.map(e => deletePlanning(e.id)));
+              const confirmed = window.confirm(
+                `Conflit détecté sur ${conflictDates.length} jour(s). Remplacer les entrées existantes ?`,
+              );
+              if (!confirmed) {
+                setSaving(false);
+                return;
+              }
+              await Promise.all(conflictEntries.map((e) => deletePlanning(e.id)));
             }
           }
           const groupId = dates.length > 1 ? crypto.randomUUID() : null;
-          await Promise.all(dates.map(date =>
-            upsertPlanning({ employee_id: empId, date_start: date, date_end: date, type: form.type, heure_debut: form.heure_debut || null, heure_fin: form.heure_fin || null, note: form.note || null, group_id: groupId } as any)
-          ));
+          await Promise.all(
+            dates.map((date) =>
+              upsertPlanning({
+                employee_id: empId,
+                date_start: date,
+                date_end: date,
+                type: form.type,
+                heure_debut: form.heure_debut || null,
+                heure_fin: form.heure_fin || null,
+                note: form.note || null,
+                group_id: groupId,
+              } as any),
+            ),
+          );
           toast.success(`${dates.length} entrée(s) ajoutée(s)`);
         }
       }
@@ -370,44 +495,88 @@ function PlanningPage() {
       setOpen(false);
       setForm(EMPTY_FORM);
       load();
-    } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const del = async (id: string) => {
-    try { await deletePlanning(id); load(); }
-    catch (e: any) { toast.error(e.message); }
+    try {
+      await deletePlanning(id);
+      load();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
   const delGroup = async (groupId: string) => {
-    try { await deletePlanningGroup(groupId); setActionEntry(null); load(); }
-    catch (e: any) { toast.error(e.message); }
+    try {
+      await deletePlanningGroup(groupId);
+      setActionEntry(null);
+      load();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   const copyWeek = async (monday: string) => {
     const mon = new Date(monday);
-    const sun = new Date(monday); sun.setDate(sun.getDate() + 6);
-    const weekEntries = entries.filter(e => { const d = new Date(e.date_start); return d >= mon && d <= sun; });
-    if (!weekEntries.length) { toast.error("Aucune entrée cette semaine"); return; }
+    const sun = new Date(monday);
+    sun.setDate(sun.getDate() + 6);
+    const weekEntries = entries.filter((e) => {
+      const d = new Date(e.date_start);
+      return d >= mon && d <= sun;
+    });
+    if (!weekEntries.length) {
+      toast.error("Aucune entrée cette semaine");
+      return;
+    }
     try {
-      await Promise.all(weekEntries.map(e =>
-        upsertPlanning({ employee_id: e.employee_id, date_start: addDays(e.date_start, 7), date_end: addDays(e.date_end, 7), type: e.type, heure_debut: e.heure_debut ?? null, heure_fin: e.heure_fin ?? null, note: e.note ?? null })
-      ));
+      await Promise.all(
+        weekEntries.map((e) =>
+          upsertPlanning({
+            employee_id: e.employee_id,
+            date_start: addDays(e.date_start, 7),
+            date_end: addDays(e.date_end, 7),
+            type: e.type,
+            heure_debut: e.heure_debut ?? null,
+            heure_fin: e.heure_fin ?? null,
+            note: e.note ?? null,
+          }),
+        ),
+      );
       toast.success(`${weekEntries.length} entrée(s) copiée(s)`);
       load();
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   const saveRecup = async () => {
-    if (!recupForm.employee_id || !recupForm.heures_demandees) { toast.error("Champs requis"); return; }
+    if (!recupForm.employee_id || !recupForm.heures_demandees) {
+      toast.error("Champs requis");
+      return;
+    }
     try {
-      await createRecupDemande({ employee_id: recupForm.employee_id, mois: month, type: recupForm.type, heures_demandees: Number(recupForm.heures_demandees), date_souhaitee: recupForm.date_souhaitee || undefined, motif: recupForm.motif || undefined });
+      await createRecupDemande({
+        employee_id: recupForm.employee_id,
+        mois: month,
+        type: recupForm.type,
+        heures_demandees: Number(recupForm.heures_demandees),
+        date_souhaitee: recupForm.date_souhaitee || undefined,
+        motif: recupForm.motif || undefined,
+      });
       toast.success("Demande créée");
       setRecupOpen(false);
       load();
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   const alertes = alertesFinDeMois(compteurs, employees);
-  const empById = (id: string) => employees.find(e => e.id === id);
+  const empById = (id: string) => employees.find((e) => e.id === id);
 
   const weeks: { days: string[]; weekNum: number }[] = [];
   let cur: string[] = [];
@@ -420,13 +589,16 @@ function PlanningPage() {
     }
   });
 
-  const pendingCount = recups.filter(r => r.statut === "demande").length;
+  const pendingCount = recups.filter((r) => r.statut === "demande").length;
   const isEditing = !!form.editId;
   const today = new Date().toISOString().slice(0, 10);
 
   return (
     <div className="space-y-6">
-      <Link to="/ops/equipe" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        to="/ops/equipe"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="h-4 w-4" /> Retour
       </Link>
 
@@ -436,7 +608,9 @@ function PlanningPage() {
         action={
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-full sm:w-44" />
-            <Button variant="outline" onClick={() => setRecupOpen(true)}>Récupération</Button>
+            <Button variant="outline" onClick={() => setRecupOpen(true)}>
+              Récupération
+            </Button>
             <Button onClick={() => openAdd()}>+ Ajouter</Button>
           </div>
         }
@@ -449,7 +623,8 @@ function PlanningPage() {
             <div className="flex-1">
               <h3 className="font-medium text-amber-900">Alerte fin de mois — heures à poser</h3>
               <p className="text-sm text-amber-800 mt-1">
-                Ces employés ont des heures supplémentaires non posées. Elles seront perdues à la fin du mois sauf demande exceptionnelle.
+                Ces employés ont des heures supplémentaires non posées. Elles seront perdues à la fin du mois sauf
+                demande exceptionnelle.
               </p>
               <div className="flex flex-wrap gap-2 mt-2">
                 {alertes.map(({ employee, solde }) => (
@@ -478,7 +653,10 @@ function PlanningPage() {
         <TabsContent value="planning" className="space-y-4">
           <div className="flex flex-wrap gap-2 text-xs">
             {(Object.entries(PLANNING_TYPE_LABELS) as [PlanningType, string][]).map(([k, v]) => (
-              <span key={k} className={`inline-flex items-center gap-1.5 px-2 py-1 rounded border ${TYPE_COLORS[k].badge}`}>
+              <span
+                key={k}
+                className={`inline-flex items-center gap-1.5 px-2 py-1 rounded border ${TYPE_COLORS[k].badge}`}
+              >
                 <span className={`w-1.5 h-1.5 rounded-full ${TYPE_COLORS[k].dot}`} />
                 {v}
               </span>
@@ -491,7 +669,7 @@ function PlanningPage() {
                 <tr className="bg-muted/40 border-b">
                   <th className="text-left px-2 py-1 sticky left-0 bg-muted/40 z-10">Sem.</th>
                   {weeks.map((wk, wi) => {
-                    const monday = wk.days.find(d => new Date(d).getDay() === 1) ?? wk.days[0];
+                    const monday = wk.days.find((d) => new Date(d).getDay() === 1) ?? wk.days[0];
                     return (
                       <th key={wi} colSpan={wk.days.length} className="text-center font-normal px-2 py-1 border-l">
                         <button
@@ -508,7 +686,7 @@ function PlanningPage() {
                 </tr>
                 <tr className="bg-muted/20 border-b">
                   <th className="text-left px-2 py-2 sticky left-0 bg-muted/20 z-10">Employé</th>
-                  {days.map(d => {
+                  {days.map((d) => {
                     const dt = new Date(d);
                     const wk = isWeekend(d);
                     const isToday = d === today;
@@ -517,7 +695,7 @@ function PlanningPage() {
                       <th
                         key={d}
                         className={[
-                          "px-1 py-1 font-normal w-[52px] min-w-[52px] max-w-[52px] border-l",
+                          "px-1 py-1 font-normal min-w-[44px] border-l",
                           isFirstOfWeek ? "border-l-2 border-l-border/60" : "border-border/40",
                           wk ? "bg-muted/40 text-muted-foreground" : "",
                           isToday ? "bg-primary/10" : "",
@@ -526,9 +704,7 @@ function PlanningPage() {
                         <div className={`text-[10px] uppercase ${isToday ? "text-primary font-semibold" : ""}`}>
                           {DAY_LABELS[dt.getDay()]}
                         </div>
-                        <div className={`text-sm font-medium ${isToday ? "text-primary" : ""}`}>
-                          {dt.getDate()}
-                        </div>
+                        <div className={`text-sm font-medium ${isToday ? "text-primary" : ""}`}>{dt.getDate()}</div>
                       </th>
                     );
                   })}
@@ -537,17 +713,21 @@ function PlanningPage() {
               </thead>
               <tbody>
                 {employees.length === 0 && (
-                  <tr><td colSpan={days.length + 2} className="text-center p-10 text-muted-foreground">Aucun employé actif</td></tr>
+                  <tr>
+                    <td colSpan={days.length + 2} className="text-center p-10 text-muted-foreground">
+                      Aucun employé actif
+                    </td>
+                  </tr>
                 )}
-                {employees.map(emp => {
-                  const compteur = compteurs.find(c => c.employee_id === emp.id);
+                {employees.map((emp) => {
+                  const compteur = compteurs.find((c) => c.employee_id === emp.id);
                   const solde = compteur?.solde ?? 0;
                   return (
                     <tr key={emp.id} className="border-b">
                       <td className="px-2 py-2 sticky left-0 bg-background z-10 font-medium whitespace-nowrap">
                         {emp.prenom} {emp.nom}
                       </td>
-                      {days.map(d => {
+                      {days.map((d) => {
                         const cells = cellFor(emp.id, d);
                         const wk = isWeekend(d);
                         const dt = new Date(d);
@@ -557,29 +737,36 @@ function PlanningPage() {
                             key={d}
                             onClick={() => !cells.length && openAdd(emp, d)}
                             className={[
-                              "align-top py-1.5 px-1 border-l transition-colors w-[52px] min-w-[52px] max-w-[52px]",
+                              "align-top py-1.5 px-1 border-l transition-colors",
                               isFirstOfWeek ? "border-l-2 border-l-border/60" : "border-border/40",
-                              wk ? "bg-muted/15" : cells.length === 0 ? "hover:bg-muted/20 cursor-pointer" : "cursor-default",
+                              wk
+                                ? "bg-muted/15"
+                                : cells.length === 0
+                                  ? "hover:bg-muted/20 cursor-pointer"
+                                  : "cursor-default",
                             ].join(" ")}
                           >
                             <div className="space-y-1">
-                              {cells.map(c => {
+                              {cells.map((c) => {
                                 const tc = TYPE_COLORS[c.type];
                                 return (
                                   <button
                                     key={c.id}
                                     type="button"
-                                    onClick={(e) => { e.stopPropagation(); setActionEntry({ entry: c, emp }); }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActionEntry({ entry: c, emp });
+                                    }}
                                     className={`w-full text-left px-1.5 py-0.5 rounded border ${tc.badge} hover:ring-1 hover:ring-foreground/20`}
                                     title={c.note ?? PLANNING_TYPE_LABELS[c.type]}
                                   >
-                                    <div className="flex items-center gap-1 min-w-0">
+                                    <div className="flex items-center gap-1">
                                       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${tc.dot}`} />
-                                      <span className="text-[10px] font-semibold tracking-wide truncate">{tc.abbr}</span>
+                                      <span className="text-[10px] font-semibold tracking-wide">{tc.abbr}</span>
                                     </div>
                                     {c.heure_debut && c.type !== "deplacement" && c.type !== "formation" && (
-                                      <div className="text-[9px] tabular-nums opacity-70 truncate">
-                                        {c.heure_debut.slice(0,5)}–{(c.heure_fin ?? "").slice(0,5)}
+                                      <div className="text-[9px] tabular-nums opacity-70">
+                                        {c.heure_debut.slice(0, 5)}–{(c.heure_fin ?? "").slice(0, 5)}
                                       </div>
                                     )}
                                   </button>
@@ -591,10 +778,16 @@ function PlanningPage() {
                       })}
                       <td className="px-2 py-2 border-l text-right font-medium">
                         {compteur ? (
-                          <span className={solde > 0 ? "text-emerald-600" : solde < 0 ? "text-red-500" : "text-muted-foreground"}>
+                          <span
+                            className={
+                              solde > 0 ? "text-emerald-600" : solde < 0 ? "text-red-500" : "text-muted-foreground"
+                            }
+                          >
                             {fmtH(solde)}
                           </span>
-                        ) : "—"}
+                        ) : (
+                          "—"
+                        )}
                       </td>
                     </tr>
                   );
@@ -621,26 +814,40 @@ function PlanningPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {compteurs.map(c => {
+                  {compteurs.map((c) => {
                     const emp = empById(c.employee_id);
                     if (!emp) return null;
                     return (
                       <tr key={c.id} className="border-b">
-                        <td className="px-3 py-2 font-medium">{emp.prenom} {emp.nom}</td>
+                        <td className="px-3 py-2 font-medium">
+                          {emp.prenom} {emp.nom}
+                        </td>
                         <td className="px-3 py-2 text-right">{c.heures_contractuelles}h</td>
                         <td className="px-3 py-2 text-right">{c.heures_realisees}h</td>
                         <td className="px-3 py-2 text-right">{c.heures_report > 0 ? `+${c.heures_report}h` : "—"}</td>
                         <td className="px-3 py-2 text-right">
-                          <span className={`font-medium ${c.solde > 0 ? "text-emerald-600" : c.solde < 0 ? "text-red-500" : "text-muted-foreground"}`}>
+                          <span
+                            className={`font-medium ${c.solde > 0 ? "text-emerald-600" : c.solde < 0 ? "text-red-500" : "text-muted-foreground"}`}
+                          >
                             {fmtH(c.solde)}
                           </span>
                         </td>
                         <td className="px-3 py-2 text-right">
                           {c.solde > 0 && (
-                            <Button size="sm" variant="outline" onClick={() => {
-                              setRecupForm({ employee_id: emp.id, type: "heures", heures_demandees: String(c.solde), date_souhaitee: "", motif: "" });
-                              setRecupOpen(true);
-                            }}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setRecupForm({
+                                  employee_id: emp.id,
+                                  type: "heures",
+                                  heures_demandees: String(c.solde),
+                                  date_souhaitee: "",
+                                  motif: "",
+                                });
+                                setRecupOpen(true);
+                              }}
+                            >
                               Poser récup
                             </Button>
                           )}
@@ -672,39 +879,65 @@ function PlanningPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recups.map(r => {
+                  {recups.map((r) => {
                     const emp = empById(r.employee_id);
                     return (
                       <tr key={r.id} className="border-b">
                         <td className="px-3 py-2">{emp ? `${emp.prenom} ${emp.nom}` : "—"}</td>
                         <td className="px-3 py-2">
-                          {r.type === "journee" ? "Journée entière" : r.type === "heures" ? "Heures" : "Report exceptionnel"}
+                          {r.type === "journee"
+                            ? "Journée entière"
+                            : r.type === "heures"
+                              ? "Heures"
+                              : "Report exceptionnel"}
                         </td>
                         <td className="px-3 py-2 text-right">{r.heures_demandees}h</td>
                         <td className="px-3 py-2">{r.date_souhaitee ?? "—"}</td>
                         <td className="px-3 py-2">{r.motif ?? "—"}</td>
                         <td className="px-3 py-2">
-                          <span className={`px-2 py-0.5 rounded text-xs ${
-                            r.statut === "approuvee" ? "bg-emerald-100 text-emerald-800" :
-                            r.statut === "refusee" ? "bg-red-100 text-red-800" :
-                            "bg-amber-100 text-amber-800"
-                          }`}>
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs ${
+                              r.statut === "approuvee"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : r.statut === "refusee"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-amber-100 text-amber-800"
+                            }`}
+                          >
                             {r.statut === "approuvee" ? "Approuvée" : r.statut === "refusee" ? "Refusée" : "En attente"}
                           </span>
                         </td>
                         <td className="px-3 py-2">
                           {r.statut === "demande" && (
                             <div className="flex gap-1 justify-end">
-                              <Button size="sm" variant="outline" onClick={async () => {
-                                try { await approuverRecupDemande(r.id); toast.success("Approuvée"); load(); }
-                                catch (e: any) { toast.error(e.message); }
-                              }}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={async () => {
+                                  try {
+                                    await approuverRecupDemande(r.id);
+                                    toast.success("Approuvée");
+                                    load();
+                                  } catch (e: any) {
+                                    toast.error(e.message);
+                                  }
+                                }}
+                              >
                                 <Check className="h-3 w-3" />
                               </Button>
-                              <Button size="sm" variant="outline" onClick={async () => {
-                                try { await refuserRecupDemande(r.id); toast.success("Refusée"); load(); }
-                                catch (e: any) { toast.error(e.message); }
-                              }}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={async () => {
+                                  try {
+                                    await refuserRecupDemande(r.id);
+                                    toast.success("Refusée");
+                                    load();
+                                  } catch (e: any) {
+                                    toast.error(e.message);
+                                  }
+                                }}
+                              >
                                 <X className="h-3 w-3" />
                               </Button>
                             </div>
@@ -721,7 +954,16 @@ function PlanningPage() {
       </Tabs>
 
       {/* Modal ajout / édition entrée planning */}
-      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setForm(EMPTY_FORM); setSelectedCell(null); } }}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          setOpen(v);
+          if (!v) {
+            setForm(EMPTY_FORM);
+            setSelectedCell(null);
+          }
+        }}
+      >
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
@@ -732,7 +974,9 @@ function PlanningPage() {
                 </span>
               ) : selectedCell ? (
                 `${selectedCell.emp.prenom} · ${DAY_FULL[new Date(selectedCell.date).getDay()]} ${selectedCell.date}`
-              ) : "Ajouter au planning"}
+              ) : (
+                "Ajouter au planning"
+              )}
             </DialogTitle>
           </DialogHeader>
 
@@ -740,10 +984,16 @@ function PlanningPage() {
             {!selectedCell && !isEditing && (
               <div className="space-y-1.5">
                 <Label>Employé</Label>
-                <Select value={form.employee_id} onValueChange={v => setForm({ ...form, employee_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Choisir…" /></SelectTrigger>
+                <Select value={form.employee_id} onValueChange={(v) => setForm({ ...form, employee_id: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir…" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}
+                    {employees.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.prenom} {e.nom}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -753,7 +1003,7 @@ function PlanningPage() {
               <div className="space-y-1.5">
                 <Label>Mode de saisie</Label>
                 <div className="grid grid-cols-2 gap-2">
-                  {(["simple", "semaine_type"] as FormMode[]).map(m => (
+                  {(["simple", "semaine_type"] as FormMode[]).map((m) => (
                     <button
                       key={m}
                       type="button"
@@ -762,7 +1012,9 @@ function PlanningPage() {
                     >
                       <div className="font-medium">{m === "simple" ? "Entrée simple" : "Planning type"}</div>
                       <div className="text-xs text-muted-foreground mt-0.5">
-                        {m === "simple" ? "Un jour ou avec répétition basique" : "Semaine A / B avec jours personnalisés"}
+                        {m === "simple"
+                          ? "Un jour ou avec répétition basique"
+                          : "Semaine A / B avec jours personnalisés"}
                       </div>
                     </button>
                   ))}
@@ -774,8 +1026,10 @@ function PlanningPage() {
               <>
                 <div className="space-y-1.5">
                   <Label>Type</Label>
-                  <Select value={form.type} onValueChange={v => setForm({ ...form, type: v as PlanningType })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v as PlanningType })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       {(Object.entries(PLANNING_TYPE_LABELS) as [PlanningType, string][]).map(([k, v]) => (
                         <SelectItem key={k} value={k}>
@@ -793,17 +1047,30 @@ function PlanningPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label>Date de début</Label>
-                      <Input type="date" value={form.date_debut} onChange={e => setForm({ ...form, date_debut: e.target.value })} />
+                      <Input
+                        type="date"
+                        value={form.date_debut}
+                        onChange={(e) => setForm({ ...form, date_debut: e.target.value })}
+                      />
                     </div>
                     <div className="space-y-1.5">
                       <Label>Date de fin</Label>
-                      <Input type="date" value={form.date_fin} onChange={e => setForm({ ...form, date_fin: e.target.value })} min={form.date_debut} />
+                      <Input
+                        type="date"
+                        value={form.date_fin}
+                        onChange={(e) => setForm({ ...form, date_fin: e.target.value })}
+                        min={form.date_debut}
+                      />
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-1.5">
                     <Label>Date</Label>
-                    <Input type="date" value={form.date_debut} onChange={e => setForm({ ...form, date_debut: e.target.value })} />
+                    <Input
+                      type="date"
+                      value={form.date_debut}
+                      onChange={(e) => setForm({ ...form, date_debut: e.target.value })}
+                    />
                   </div>
                 )}
 
@@ -812,18 +1079,28 @@ function PlanningPage() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <Label>Arrivée</Label>
-                        <Input type="time" value={form.heure_debut} onChange={e => setForm({ ...form, heure_debut: e.target.value })} />
+                        <Input
+                          type="time"
+                          value={form.heure_debut}
+                          onChange={(e) => setForm({ ...form, heure_debut: e.target.value })}
+                        />
                       </div>
                       <div className="space-y-1.5">
                         <Label>Départ</Label>
-                        <Input type="time" value={form.heure_fin} onChange={e => setForm({ ...form, heure_fin: e.target.value })} />
+                        <Input
+                          type="time"
+                          value={form.heure_fin}
+                          onChange={(e) => setForm({ ...form, heure_fin: e.target.value })}
+                        />
                       </div>
                     </div>
 
                     <div className="space-y-1.5">
                       <Label>Pause déjeuner</Label>
-                      <Select value={form.pause_minutes} onValueChange={v => setForm({ ...form, pause_minutes: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                      <Select value={form.pause_minutes} onValueChange={(v) => setForm({ ...form, pause_minutes: v })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="0">Pas de pause</SelectItem>
                           <SelectItem value="30">30 min</SelectItem>
@@ -838,10 +1115,16 @@ function PlanningPage() {
                 {!isEditing && (
                   <div className="space-y-1.5">
                     <Label>Répétition</Label>
-                    <Select value={form.repeat} onValueChange={v => setForm({ ...form, repeat: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                    <Select value={form.repeat} onValueChange={(v) => setForm({ ...form, repeat: v })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
-                        {REPEAT_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                        {REPEAT_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     {form.repeat === "week2" && (
@@ -858,8 +1141,14 @@ function PlanningPage() {
                 )}
 
                 <div className="space-y-1.5">
-                  <Label>Note <span className="text-xs text-muted-foreground">(optionnel)</span></Label>
-                  <Input value={form.note} onChange={e => setForm({ ...form, note: e.target.value })} placeholder="ex : Formation Paris, RDV client…" />
+                  <Label>
+                    Note <span className="text-xs text-muted-foreground">(optionnel)</span>
+                  </Label>
+                  <Input
+                    value={form.note}
+                    onChange={(e) => setForm({ ...form, note: e.target.value })}
+                    placeholder="ex : Formation Paris, RDV client…"
+                  />
                 </div>
               </>
             )}
@@ -868,21 +1157,34 @@ function PlanningPage() {
               <>
                 <div className="space-y-1.5">
                   <Label>Mois à remplir</Label>
-                  <Input type="month" value={form.mois_cible} onChange={e => setForm({ ...form, mois_cible: e.target.value })} />
+                  <Input
+                    type="month"
+                    value={form.mois_cible}
+                    onChange={(e) => setForm({ ...form, mois_cible: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Type d'activité</Label>
-                  <Select value={form.type} onValueChange={v => setForm({ ...form, type: v as PlanningType })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v as PlanningType })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       {(Object.entries(PLANNING_TYPE_LABELS) as [PlanningType, string][]).map(([k, v]) => (
-                        <SelectItem key={k} value={k}>{v}</SelectItem>
+                        <SelectItem key={k} value={k}>
+                          {v}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border hover:bg-muted/30 transition-colors">
-                  <input type="checkbox" checked={form.utilise_semaine_b} onChange={e => setForm({ ...form, utilise_semaine_b: e.target.checked })} className="rounded" />
+                  <input
+                    type="checkbox"
+                    checked={form.utilise_semaine_b}
+                    onChange={(e) => setForm({ ...form, utilise_semaine_b: e.target.checked })}
+                    className="rounded"
+                  />
                   <div>
                     <div className="text-sm font-medium">Activer semaine B (alternance)</div>
                     <div className="text-xs text-muted-foreground">Semaines impaires = A · Semaines paires = B</div>
@@ -891,17 +1193,28 @@ function PlanningPage() {
                 <WeekGrid
                   label={form.utilise_semaine_b ? "Semaine A (semaines impaires)" : "Jours travaillés"}
                   config={form.semaine_a}
-                  onChange={cfg => setForm({ ...form, semaine_a: cfg })}
+                  onChange={(cfg) => setForm({ ...form, semaine_a: cfg })}
                 />
                 {form.utilise_semaine_b && (
-                  <WeekGrid label="Semaine B (semaines paires)" config={form.semaine_b} onChange={cfg => setForm({ ...form, semaine_b: cfg })} />
+                  <WeekGrid
+                    label="Semaine B (semaines paires)"
+                    config={form.semaine_b}
+                    onChange={(cfg) => setForm({ ...form, semaine_b: cfg })}
+                  />
                 )}
               </>
             )}
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setOpen(false); setForm(EMPTY_FORM); setSelectedCell(null); }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setOpen(false);
+                setForm(EMPTY_FORM);
+                setSelectedCell(null);
+              }}
+            >
               Annuler
             </Button>
             <Button onClick={save} disabled={saving}>
@@ -916,21 +1229,29 @@ function PlanningPage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {actionEntry && `${actionEntry.emp.prenom} · ${actionEntry.entry.date_start}${actionEntry.entry.date_end !== actionEntry.entry.date_start ? ` → ${actionEntry.entry.date_end}` : ""}`}
+              {actionEntry &&
+                `${actionEntry.emp.prenom} · ${actionEntry.entry.date_start}${actionEntry.entry.date_end !== actionEntry.entry.date_start ? ` → ${actionEntry.entry.date_end}` : ""}`}
             </DialogTitle>
           </DialogHeader>
           {actionEntry && (
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground">
                 {PLANNING_TYPE_LABELS[actionEntry.entry.type]}
-                {actionEntry.entry.heure_debut && ` · ${actionEntry.entry.heure_debut.slice(0,5)}–${(actionEntry.entry.heure_fin ?? "").slice(0,5)}`}
+                {actionEntry.entry.heure_debut &&
+                  ` · ${actionEntry.entry.heure_debut.slice(0, 5)}–${(actionEntry.entry.heure_fin ?? "").slice(0, 5)}`}
                 {actionEntry.entry.note && ` · ${actionEntry.entry.note}`}
               </div>
               <div className="flex flex-col gap-2 pt-2">
                 <Button variant="outline" onClick={() => openEdit(actionEntry.entry, actionEntry.emp)}>
                   <Pencil className="h-4 w-4 mr-2" /> Modifier
                 </Button>
-                <Button variant="outline" onClick={() => { del(actionEntry.entry.id); setActionEntry(null); }}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    del(actionEntry.entry.id);
+                    setActionEntry(null);
+                  }}
+                >
                   <Trash2 className="h-4 w-4 mr-2" /> Supprimer ce jour
                 </Button>
                 {actionEntry.entry.group_id && (
@@ -953,17 +1274,31 @@ function PlanningPage() {
           <div className="grid gap-3">
             <div>
               <Label>Employé</Label>
-              <Select value={recupForm.employee_id} onValueChange={(v) => setRecupForm({ ...recupForm, employee_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Choisir…" /></SelectTrigger>
+              <Select
+                value={recupForm.employee_id}
+                onValueChange={(v) => setRecupForm({ ...recupForm, employee_id: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir…" />
+                </SelectTrigger>
                 <SelectContent>
-                  {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}
+                  {employees.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.prenom} {e.nom}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
               <Label>Type</Label>
-              <Select value={recupForm.type} onValueChange={(v) => setRecupForm({ ...recupForm, type: v as RecupDemande["type"] })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={recupForm.type}
+                onValueChange={(v) => setRecupForm({ ...recupForm, type: v as RecupDemande["type"] })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="heures">Poser des heures</SelectItem>
                   <SelectItem value="journee">Journée entière (7h)</SelectItem>
@@ -974,20 +1309,36 @@ function PlanningPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Heures à récupérer</Label>
-                <Input type="number" step="0.5" value={recupForm.heures_demandees} onChange={(e) => setRecupForm({ ...recupForm, heures_demandees: e.target.value })} />
+                <Input
+                  type="number"
+                  step="0.5"
+                  value={recupForm.heures_demandees}
+                  onChange={(e) => setRecupForm({ ...recupForm, heures_demandees: e.target.value })}
+                />
               </div>
               <div>
                 <Label>Date souhaitée</Label>
-                <Input type="date" value={recupForm.date_souhaitee} onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })} />
+                <Input
+                  type="date"
+                  value={recupForm.date_souhaitee}
+                  onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })}
+                />
               </div>
             </div>
             <div>
               <Label>Motif (optionnel)</Label>
-              <Textarea rows={2} value={recupForm.motif} onChange={(e) => setRecupForm({ ...recupForm, motif: e.target.value })} placeholder="ex : Semaine chargée, urgence client…" />
+              <Textarea
+                rows={2}
+                value={recupForm.motif}
+                onChange={(e) => setRecupForm({ ...recupForm, motif: e.target.value })}
+                placeholder="ex : Semaine chargée, urgence client…"
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRecupOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setRecupOpen(false)}>
+              Annuler
+            </Button>
             <Button onClick={saveRecup}>Enregistrer</Button>
           </DialogFooter>
         </DialogContent>
