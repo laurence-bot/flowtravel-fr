@@ -1027,7 +1027,9 @@ export async function annulerRecupDemande(id: string): Promise<void> {
 }
 
 export async function deleteRecupDemande(id: string): Promise<void> {
-  // Supprimer l'entrée planning associée si présente
+  // 1. Supprimer l'entrée planning liée si présente.
+  //    La FK ON DELETE SET NULL + trigger DB remet automatiquement
+  //    le statut à "demande" — pas besoin de le faire côté JS.
   const { data: dem } = await supabase
     .from("hr_recup_demandes" as any)
     .select("planning_entry_id")
@@ -1036,11 +1038,24 @@ export async function deleteRecupDemande(id: string): Promise<void> {
   const peId = (dem as any)?.planning_entry_id;
   if (peId) {
     await supabase.from("hr_planning_entries").delete().eq("id", peId);
+    // Attendre que la FK ON DELETE SET NULL soit propagée avant la suppression
+    await new Promise((r) => setTimeout(r, 100));
   }
+  // 2. Supprimer la demande elle-même
   const { error } = await supabase
     .from("hr_recup_demandes" as any)
     .delete()
     .eq("id", id);
+  if (error) throw error;
+}
+
+/** Détache une entrée planning d'une récup sans supprimer la demande.
+ *  Le trigger DB remet automatiquement le statut à "demande". */
+export async function detachPlanningFromRecup(recupId: string): Promise<void> {
+  const { error } = await supabase
+    .from("hr_recup_demandes" as any)
+    .update({ planning_entry_id: null })
+    .eq("id", recupId);
   if (error) throw error;
 }
 
