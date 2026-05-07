@@ -1,503 +1,340 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { RequireAuth } from "@/components/require-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useTable, type Contact } from "@/hooks/use-data";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
-import { useRole } from "@/hooks/use-role";
-import { usePageWriteAccess } from "@/hooks/use-page-write-access";
-import { useEditLock } from "@/hooks/use-edit-lock";
-import { EditLockBanner } from "@/components/edit-lock-banner";
-import { useAgents, agentLabel } from "@/hooks/use-agents";
 import { formatEUR, formatDate } from "@/lib/format";
+import { Heart, Download, Copy, Check } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { logAudit } from "@/lib/audit";
-import { DEMANDE_STATUT_LABELS, DEMANDE_CANAL_LABELS, type Demande, type DemandeStatut } from "@/lib/demandes";
-import { StatutPill } from "@/routes/demandes";
-import {
-  ArrowLeft,
-  Mail,
-  Phone,
-  Save,
-  Sparkles,
-  XCircle,
-  RefreshCw,
-  PlayCircle,
-  UserPlus,
-  Users as UsersIcon,
-} from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/mariages")({
   component: () => (
     <RequireAuth>
-      <DemandeDetail />
+      <MariagesPage />
     </RequireAuth>
   ),
 });
 
-function DemandeDetail() {
-  const { id } = Route.useParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const { agenceId } = useRole();
-  const { canWrite: canWriteRole } = usePageWriteAccess();
-  const editLock = useEditLock("demande", id);
-  const canWrite = canWriteRole && (editLock.isAlone || editLock.canEdit);
-  const { agents } = useAgents();
-  const { data: contacts, loading: contactsLoading, refetch: refetchContacts } = useTable<Contact>("contacts");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: demandes, loading: demandesLoading, refetch } = useTable<Demande>("demandes" as any);
+type Cotation = {
+  id: string;
+  titre: string;
+  prix_vente_ttc: number | null;
+  est_liste_mariage: boolean;
+  mariage_titre: string | null;
+  mariage_message: string | null;
+  mariage_objectif: number | null;
+};
+type Contribution = {
+  id: string;
+  cotation_id: string;
+  invite_prenom: string;
+  invite_nom: string;
+  invite_email: string | null;
+  montant: number;
+  message: string | null;
+  statut: string;
+  created_at: string;
+  email_couple_envoye_at: string | null;
+};
 
-  const demande = demandes.find((d) => d.id === id);
+function MariagesPage() {
+  const [cotations, setCotations] = useState<Cotation[]>([]);
+  const [selected, setSelected] = useState<string>("");
+  const [contributions, setContributions] = useState<Contribution[]>([]);
+  const [link, setLink] = useState<string>("");
+  const [copied, setCopied] = useState(false);
+  const [editTitre, setEditTitre] = useState("");
+  const [editMessage, setEditMessage] = useState("");
+  const [editObjectif, setEditObjectif] = useState<string>("");
 
-  const [notes, setNotes] = useState("");
-  const [perteOpen, setPerteOpen] = useState(false);
-  const [raisonPerte, setRaisonPerte] = useState("");
-  const [transformOpen, setTransformOpen] = useState(false);
-  const [transformTitre, setTransformTitre] = useState("");
+  const refetchCotations = async () => {
+    const { data } = await supabase
+      .from("cotations")
+      .select("id,titre,prix_vente_ttc,est_liste_mariage,mariage_titre,mariage_message,mariage_objectif")
+      .eq("est_liste_mariage", true)
+      .order("created_at", { ascending: false });
+    setCotations((data ?? []) as Cotation[]);
+  };
 
   useEffect(() => {
-    if (demande) {
-      setNotes(demande.notes ?? "");
-      setTransformTitre(demande.destination ? `Voyage ${demande.destination}` : `Voyage ${demande.nom_client}`);
-    }
-  }, [demande]);
+    refetchCotations();
+  }, []);
 
-  if (demandesLoading || contactsLoading) {
-    return <div className="text-muted-foreground text-sm">Chargement de la demande…</div>;
-  }
+  const current = cotations.find((c) => c.id === selected);
 
-  if (!demande) {
-    return (
-      <div className="p-8 text-center text-muted-foreground">
-        <p>Demande introuvable.</p>
-        <Button asChild variant="outline" className="mt-4">
-          <Link to="/demandes">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Retour
-          </Link>
-        </Button>
-      </div>
-    );
-  }
-
-  const client = contacts.find((c) => c.id === demande.client_id);
-
-  const updateStatut = async (statut: DemandeStatut, raison?: string) => {
-    if (!user) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from("demandes")
-      .update({
-        statut,
-        raison_perte: statut === "perdue" ? (raison ?? null) : null,
-        dernier_contact_at: new Date().toISOString(),
-      })
-      .eq("id", demande.id);
-    if (error) {
-      toast.error(error.message);
+  useEffect(() => {
+    if (!selected) {
+      setContributions([]);
+      setLink("");
       return;
     }
-    await logAudit({
-      userId: user.id,
-      entity: "demande",
-      entityId: demande.id,
-      action: "update",
-      description: `Statut → ${DEMANDE_STATUT_LABELS[statut]}`,
-    });
-    toast.success("Statut mis à jour.");
-    refetch();
+    supabase
+      .from("mariage_contributions")
+      .select("*")
+      .eq("cotation_id", selected)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setContributions((data ?? []) as Contribution[]));
+    supabase
+      .from("quote_public_links")
+      .select("token")
+      .eq("cotation_id", selected)
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setLink(`${window.location.origin}/mariage/${data.token}`);
+        else setLink("");
+      });
+    if (current) {
+      setEditTitre(current.mariage_titre ?? "");
+      setEditMessage(current.mariage_message ?? "");
+      setEditObjectif(current.mariage_objectif != null ? String(current.mariage_objectif) : "");
+    }
+  }, [selected, cotations]);
+
+  const toggleListe = async (c: Cotation, val: boolean) => {
+    await supabase.from("cotations").update({ est_liste_mariage: val }).eq("id", c.id);
+    refetchCotations();
   };
 
-  const remettreEnCoursSiCotationSupprimee = async () => {
-    if (!user) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: linked, error: linkedError } = await (supabase as any)
+  const saveDetails = async () => {
+    if (!current) return;
+    const { error } = await supabase
       .from("cotations")
-      .select("id")
-      .eq("demande_id", demande.id)
-      .limit(1);
-    if (linkedError) return toast.error(linkedError.message);
-    if ((linked ?? []).length > 0) {
-      toast.error("Une cotation existe encore pour cette demande.");
-      return;
-    }
-    await updateStatut("en_cours");
-  };
-
-  const saveNotes = async () => {
-    if (!user) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from("demandes")
-      .update({ notes, dernier_contact_at: new Date().toISOString() })
-      .eq("id", demande.id);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Notes enregistrées.");
-    refetch();
-  };
-
-  const creerClient = async () => {
-    if (!user) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: created, error } = await (supabase as any)
-      .from("contacts")
-      .insert({
-        user_id: user.id,
-        agence_id: agenceId ?? null,
-        nom: demande.nom_client,
-        type: "client",
-        email: demande.email,
-        telephone: demande.telephone,
-      })
-      .select()
-      .single();
-    if (error || !created) {
-      toast.error(error?.message ?? "Erreur");
-      return;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from("demandes").update({ client_id: created.id }).eq("id", demande.id);
-    toast.success("Client créé et associé.");
-    refetchContacts();
-    refetch();
-  };
-
-  const transformer = async () => {
-    if (!user) return;
-    let clientId = demande.client_id;
-    // crée le client si nécessaire
-    if (!clientId) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: c, error: e1 } = await (supabase as any)
-        .from("contacts")
-        .insert({
-          user_id: user.id,
-          agence_id: agenceId ?? null,
-          nom: demande.nom_client,
-          type: "client",
-          email: demande.email,
-          telephone: demande.telephone,
-        })
-        .select()
-        .single();
-      if (e1 || !c) {
-        toast.error(e1?.message ?? "Création client impossible");
-        return;
-      }
-      clientId = c.id;
-    }
-    // crée la cotation pré-remplie
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: cot, error: e2 } = await (supabase as any)
-      .from("cotations")
-      .insert({
-        user_id: user.id,
-        client_id: clientId,
-        titre: transformTitre || `Voyage ${demande.nom_client}`,
-        destination: demande.destination,
-        date_depart: demande.date_depart_souhaitee,
-        date_retour: demande.date_retour_souhaitee,
-        nombre_pax: demande.nombre_pax,
-        prix_vente_ttc: demande.budget ?? 0,
-        statut: "brouillon",
-        demande_id: demande.id,
-      })
-      .select()
-      .single();
-    if (e2 || !cot) {
-      toast.error(e2?.message ?? "Création cotation impossible");
-      return;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any)
-      .from("demandes")
       .update({
-        statut: "transformee_en_cotation",
-        client_id: clientId,
-        dernier_contact_at: new Date().toISOString(),
+        mariage_titre: editTitre || null,
+        mariage_message: editMessage || null,
+        mariage_objectif: editObjectif ? Number(editObjectif) : null,
       })
-      .eq("id", demande.id);
-    await logAudit({
-      userId: user.id,
-      entity: "demande",
-      entityId: demande.id,
-      action: "update",
-      description: `Demande transformée en cotation : ${cot.titre}`,
-      newValue: { cotation_id: cot.id },
-    });
-    await logAudit({
-      userId: user.id,
-      entity: "cotation",
-      entityId: cot.id,
-      action: "create",
-      description: `Cotation créée depuis demande : ${cot.titre}`,
-    });
-    toast.success("Cotation créée.");
-    setTransformOpen(false);
-    navigate({ to: "/cotations/$id", params: { id: cot.id } });
-  };
-
-  const reassignAgent = async (newAgentId: string) => {
-    if (!user || !demande) return;
-    const oldAgentId = demande.agent_id ?? null;
-    if (newAgentId === oldAgentId) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("demandes").update({ agent_id: newAgentId }).eq("id", demande.id);
+      .eq("id", current.id);
     if (error) return toast.error(error.message);
-    const oldName = agentLabel(agents.find((a) => a.user_id === oldAgentId));
-    const newName = agentLabel(agents.find((a) => a.user_id === newAgentId));
-    await logAudit({
-      userId: user.id,
-      entity: "demande" as any,
-      entityId: demande.id,
-      action: "update",
-      description: `Agent réassigné : ${oldName} → ${newName}`,
-      oldValue: { agent_id: oldAgentId },
-      newValue: { agent_id: newAgentId },
-    });
-    toast.success(`Agent : ${newName}`);
-    refetch();
+    toast.success("Détails enregistrés");
+    refetchCotations();
+  };
+
+  const generateLink = async () => {
+    if (!current) return;
+    const { data: existing } = await supabase
+      .from("quote_public_links")
+      .select("token")
+      .eq("cotation_id", current.id)
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
+    if (existing) {
+      setLink(`${window.location.origin}/mariage/${existing.token}`);
+      return;
+    }
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+    const { data, error } = await supabase
+      .from("quote_public_links")
+      .insert({ cotation_id: current.id, user_id: user.id, token })
+      .select()
+      .single();
+    if (error) return toast.error(error.message);
+    setLink(`${window.location.origin}/mariage/${data.token}`);
+    toast.success("Lien généré");
+  };
+
+  const copy = () => {
+    navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  const total = contributions.filter((c) => c.statut === "paye").reduce((s, c) => s + Number(c.montant), 0);
+  const objectif = Number(current?.mariage_objectif ?? current?.prix_vente_ttc ?? 0);
+  const pct = objectif > 0 ? Math.min(100, (total / objectif) * 100) : 0;
+
+  const exportCsv = () => {
+    const rows = [
+      ["Date", "Prénom", "Nom", "Email", "Montant", "Message", "Statut"],
+      ...contributions.map((c) => [
+        formatDate(c.created_at),
+        c.invite_prenom,
+        c.invite_nom,
+        c.invite_email ?? "",
+        String(c.montant),
+        c.message ?? "",
+        c.statut,
+      ]),
+    ];
+    const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(";")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `contributions-mariage-${current?.titre ?? "liste"}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
     <div className="space-y-6">
-      <EditLockBanner lock={editLock} />
       <PageHeader
-        title={demande.nom_client}
-        numero={(demande as { numero?: string | null }).numero ?? null}
-        description={`Demande créée le ${formatDate(demande.created_at)} · canal ${DEMANDE_CANAL_LABELS[demande.canal]}`}
-        action={
-          <div className="flex items-center gap-2">
-            <StatutPill statut={demande.statut} />
-            <Button asChild variant="outline" size="sm">
-              <Link to="/demandes">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Retour
-              </Link>
-            </Button>
-          </div>
-        }
+        title="Voyages de noces"
+        description="Activez la liste de mariage sur un devis et suivez les contributions des invités."
       />
 
-      <div className="inline-flex items-center gap-2">
-        <UsersIcon className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-xs text-muted-foreground">Agent responsable :</span>
-        <Select value={demande.agent_id ?? ""} onValueChange={reassignAgent} disabled={!canWrite}>
-          <SelectTrigger className="h-7 w-[220px] text-xs">
-            <SelectValue placeholder="Non assigné" />
+      <Card className="p-4">
+        <Label>Devis</Label>
+        <Select value={selected} onValueChange={setSelected}>
+          <SelectTrigger>
+            <SelectValue placeholder="Choisir un devis…" />
           </SelectTrigger>
           <SelectContent>
-            {agents.map((a) => (
-              <SelectItem key={a.user_id} value={a.user_id}>
-                {agentLabel(a)}
-                {a.user_id === user?.id ? " (moi)" : ""}
-                {!a.actif ? " · inactif" : ""}
+            {cotations.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.titre} {c.est_liste_mariage ? "💍" : ""}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-6">
-        {/* Infos client */}
-        <Card className="p-5 space-y-3">
-          <h3 className="font-display text-lg">Client</h3>
-          <div className="text-sm space-y-2">
-            <div className="font-medium">{demande.nom_client}</div>
-            {demande.email && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Mail className="h-3.5 w-3.5" /> {demande.email}
-              </div>
-            )}
-            {demande.telephone && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Phone className="h-3.5 w-3.5" /> {demande.telephone}
-              </div>
-            )}
-          </div>
-          {client ? (
-            <Button asChild variant="outline" size="sm" className="w-full">
-              <Link to="/contacts/$id" params={{ id: client.id }}>
-                Voir la fiche client
-              </Link>
-            </Button>
-          ) : (
-            canWrite && (
-              <Button onClick={creerClient} variant="outline" size="sm" className="w-full">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Créer le client
-              </Button>
-            )
-          )}
-        </Card>
-
-        {/* Voyage */}
-        <Card className="p-5 space-y-2 md:col-span-2">
-          <h3 className="font-display text-lg">Détails du voyage</h3>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <div className="text-xs text-muted-foreground">Destination</div>
-              <div className="font-medium">{demande.destination ?? "—"}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Pax</div>
-              <div className="font-medium">{demande.nombre_pax}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Dates</div>
-              <div className="font-medium">
-                {demande.date_depart_souhaitee
-                  ? `${demande.date_depart_souhaitee}${demande.date_retour_souhaitee ? ` → ${demande.date_retour_souhaitee}` : ""}`
-                  : "—"}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Budget</div>
-              <div className="font-medium">{demande.budget ? formatEUR(demande.budget) : "—"}</div>
-            </div>
-          </div>
-          {demande.message_client && (
-            <div className="pt-2">
-              <div className="text-xs text-muted-foreground mb-1">Message du client</div>
-              <div className="text-sm bg-secondary/40 rounded-md p-3 whitespace-pre-wrap">{demande.message_client}</div>
-            </div>
-          )}
-        </Card>
-      </div>
-
-      {/* Suivi & Notes */}
-      <Card className="p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="font-display text-lg">Suivi</h3>
-          <div className="text-xs text-muted-foreground">
-            Dernier contact : {demande.dernier_contact_at ? formatDate(demande.dernier_contact_at) : "—"}
-          </div>
-        </div>
-        <Textarea
-          rows={5}
-          placeholder="Notes de suivi, échanges, relances…"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          disabled={!canWrite}
-        />
-        {canWrite && (
-          <Button onClick={saveNotes} variant="outline" size="sm">
-            <Save className="h-4 w-4 mr-2" />
-            Enregistrer
-          </Button>
-        )}
-        {demande.statut === "perdue" && demande.raison_perte && (
-          <div className="text-sm bg-destructive/5 border border-destructive/20 rounded-md p-3">
-            <span className="font-medium">Raison de perte : </span>
-            {demande.raison_perte}
-          </div>
-        )}
       </Card>
 
-      {canWrite && demande.statut === "transformee_en_cotation" && (
-        <Card className="p-5 space-y-3 border-orange-500/30 bg-orange-500/5">
-          <h3 className="font-display text-lg">Statut bloqué</h3>
-          <p className="text-sm text-muted-foreground">
-            Si la cotation liée a été supprimée, cette action remet la demande en cours.
-          </p>
-          <Button variant="outline" size="sm" onClick={remettreEnCoursSiCotationSupprimee}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Remettre en cours
-          </Button>
-        </Card>
-      )}
-
-      {/* Actions */}
-      {canWrite && demande.statut !== "transformee_en_cotation" && (
-        <Card className="p-5 space-y-3">
-          <h3 className="font-display text-lg">Actions</h3>
-          <div className="flex flex-wrap gap-2">
-            {demande.statut !== "en_cours" && (
-              <Button variant="outline" size="sm" onClick={() => updateStatut("en_cours")}>
-                <PlayCircle className="h-4 w-4 mr-2" />
-                Marquer en cours
-              </Button>
-            )}
-            {demande.statut !== "a_relancer" && (
-              <Button variant="outline" size="sm" onClick={() => updateStatut("a_relancer")}>
-                <RefreshCw className="h-4 w-4 mr-2" />À relancer
-              </Button>
-            )}
-            <Dialog open={perteOpen} onOpenChange={setPerteOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="text-destructive">
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Marquer perdue
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Raison de perte</DialogTitle>
-                </DialogHeader>
-                <Textarea
-                  rows={3}
-                  placeholder="Prix trop élevé, délai trop court…"
-                  value={raisonPerte}
-                  onChange={(e) => setRaisonPerte(e.target.value)}
-                />
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setPerteOpen(false)}>
-                    Annuler
-                  </Button>
-                  <Button
-                    onClick={async () => {
-                      await updateStatut("perdue", raisonPerte);
-                      setPerteOpen(false);
-                    }}
-                  >
-                    Confirmer
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-            <Dialog open={transformOpen} onOpenChange={setTransformOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Créer une cotation
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Transformer en cotation</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Une cotation pré-remplie sera créée à partir des informations de cette demande.
-                    {!demande.client_id && " Le client sera créé automatiquement s'il n'existe pas encore."}
-                  </p>
-                  <div>
-                    <Label>Titre de la cotation</Label>
-                    <Input value={transformTitre} onChange={(e) => setTransformTitre(e.target.value)} />
-                  </div>
+      {current && (
+        <>
+          <Card className="p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-medium">Activer la liste de mariage</h2>
+                <p className="text-xs text-muted-foreground">
+                  Une fois activée, vous pourrez générer le lien public à partager aux invités.
+                </p>
+              </div>
+              <Switch checked={current.est_liste_mariage} onCheckedChange={(v) => toggleListe(current, v)} />
+            </div>
+            {current.est_liste_mariage && (
+              <div className="space-y-3 pt-3 border-t">
+                <div>
+                  <Label>Titre affiché</Label>
+                  <Input
+                    value={editTitre}
+                    onChange={(e) => setEditTitre(e.target.value)}
+                    placeholder="ex. Le voyage de noces de Marie & Jean"
+                  />
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setTransformOpen(false)}>
-                    Annuler
+                <div>
+                  <Label>Message aux invités</Label>
+                  <textarea
+                    className="w-full min-h-[80px] rounded-md border border-input bg-background p-2 text-sm"
+                    value={editMessage}
+                    onChange={(e) => setEditMessage(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Objectif (€)</Label>
+                  <Input
+                    type="number"
+                    value={editObjectif}
+                    onChange={(e) => setEditObjectif(e.target.value)}
+                    placeholder={current.prix_vente_ttc ? String(current.prix_vente_ttc) : ""}
+                  />
+                </div>
+                <Button onClick={saveDetails} size="sm">
+                  Enregistrer
+                </Button>
+              </div>
+            )}
+          </Card>
+
+          {current.est_liste_mariage && (
+            <>
+              <Card className="p-6 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-medium">Lien public à partager</h2>
+                  {!link && (
+                    <Button onClick={generateLink} size="sm">
+                      Générer le lien
+                    </Button>
+                  )}
+                </div>
+                {link && (
+                  <div className="flex gap-2">
+                    <Input value={link} readOnly />
+                    <Button onClick={copy} variant="outline">
+                      {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    </Button>
+                    <Button asChild variant="ghost">
+                      <a href={link} target="_blank" rel="noreferrer">
+                        Ouvrir
+                      </a>
+                    </Button>
+                  </div>
+                )}
+              </Card>
+
+              <Card className="p-6">
+                <div className="flex items-baseline justify-between mb-2">
+                  <span className="text-sm text-muted-foreground">Total reçu</span>
+                  <span className="text-sm text-muted-foreground">/ {formatEUR(objectif)}</span>
+                </div>
+                <div className="text-3xl font-serif">{formatEUR(total)}</div>
+                <Progress value={pct} className="mt-3" />
+              </Card>
+
+              <Card>
+                <div className="flex items-center justify-between p-4 border-b">
+                  <h2 className="font-medium">Contributions ({contributions.length})</h2>
+                  <Button variant="outline" size="sm" onClick={exportCsv}>
+                    <Download className="w-3 h-3 mr-1" />
+                    Export CSV
                   </Button>
-                  <Button onClick={transformer}>Créer la cotation</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </Card>
+                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Invité</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead className="text-right">Montant</TableHead>
+                      <TableHead>Message</TableHead>
+                      <TableHead>Email envoyé</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {contributions.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                          Aucune contribution
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {contributions.map((c) => (
+                      <TableRow key={c.id}>
+                        <TableCell className="text-xs">{formatDate(c.created_at)}</TableCell>
+                        <TableCell>
+                          {c.invite_prenom} {c.invite_nom}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{c.invite_email ?? "—"}</TableCell>
+                        <TableCell className="text-right font-medium">{formatEUR(Number(c.montant))}</TableCell>
+                        <TableCell className="text-xs italic max-w-[200px] truncate">{c.message ?? "—"}</TableCell>
+                        <TableCell>
+                          {c.email_couple_envoye_at ? (
+                            <Badge variant="default">✓</Badge>
+                          ) : (
+                            <Badge variant="secondary">—</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Card>
+            </>
+          )}
+        </>
       )}
     </div>
   );
