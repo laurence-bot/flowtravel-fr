@@ -485,11 +485,14 @@ export function calcCompteurMensuel(
   let travailReel = 0;
   let depForm = 0;
   for (const e of entries) {
-    if (!ouvresSet.has(e.date_jour)) continue;
     if (e.type === "deplacement" || e.type === "formation") {
-      depForm += HEURES_FORFAIT_DEPLACEMENT_FORMATION;
+      // Forfait 7h par jour ouvré couvert par la plage [date_start, date_end]
+      for (const d of planningEntryDays(e)) {
+        if (ouvresSet.has(d)) depForm += HEURES_FORFAIT_DEPLACEMENT_FORMATION;
+      }
     } else if (e.type === "travail" || e.type === "teletravail" || e.type === "reunion") {
-      travailReel += dureeNetteEntry(e);
+      // Ces types couvrent un seul jour (date_start === date_end).
+      if (ouvresSet.has(e.date_start)) travailReel += dureeNetteEntry(e);
     }
   }
   const baseRestante = Math.max(0, base - depForm);
