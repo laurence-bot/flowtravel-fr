@@ -17,6 +17,7 @@ import {
   createRecupDemande, approuverRecupDemande, refuserRecupDemande,
   alertesFinDeMois,
   PLANNING_TYPE_LABELS,
+  planningEntryCoversDate,
   type Employee, type PlanningEntry, type PlanningType,
   type CompteurHeures, type RecupDemande,
 } from "@/lib/hr";
@@ -153,7 +154,8 @@ function generateEntriesFromWeekConfig(
     if (!config?.actif) return [];
     return [{
       employee_id: employeeId,
-      date_jour: dateStr,
+      date_start: dateStr,
+      date_end: dateStr,
       type,
       heure_debut: config.heure_debut || null,
       heure_fin: config.heure_fin || null,
@@ -250,7 +252,7 @@ function PlanningPage() {
 
   const days = daysInMonth(month);
   const cellFor = (empId: string, date: string) =>
-    entries.filter(e => e.employee_id === empId && e.date_jour === date);
+    entries.filter(e => e.employee_id === empId && planningEntryCoversDate(e, date));
 
   const openAdd = (emp?: Employee, date?: string) => {
     setForm({ ...EMPTY_FORM, employee_id: emp?.id ?? "", date_debut: date ?? new Date().toISOString().slice(0, 10) });
@@ -259,12 +261,13 @@ function PlanningPage() {
   };
 
   const openEdit = (entry: PlanningEntry, emp: Employee) => {
-    setSelectedCell({ emp, date: entry.date_jour });
+    setSelectedCell({ emp, date: entry.date_start });
     setForm({
       ...EMPTY_FORM,
       editId: entry.id,
       employee_id: entry.employee_id,
-      date_debut: entry.date_jour,
+      date_debut: entry.date_start,
+      date_fin: entry.date_end !== entry.date_start ? entry.date_end : "",
       type: entry.type,
       heure_debut: entry.heure_debut ?? "09:00",
       heure_fin: entry.heure_fin ?? "17:30",
@@ -282,9 +285,11 @@ function PlanningPage() {
     try {
       if (form.editId) {
         await deletePlanning(form.editId);
+        const isRangeEdit = (form.type === "deplacement" || form.type === "formation") && form.date_fin && form.date_fin >= form.date_debut;
         await upsertPlanning({
           employee_id: empId,
-          date_jour: form.date_debut,
+          date_start: form.date_debut,
+          date_end: isRangeEdit ? form.date_fin : form.date_debut,
           type: form.type,
           heure_debut: form.heure_debut || null,
           heure_fin: form.heure_fin || null,
@@ -305,18 +310,59 @@ function PlanningPage() {
       } else {
         if (!form.date_debut) { toast.error("Date requise"); setSaving(false); return; }
 
-        let dates: string[];
-        if ((form.type === "deplacement" || form.type === "formation") && form.date_fin && form.date_fin >= form.date_debut) {
-          // Plage multi-jours : tous les jours entre début et fin (week-ends inclus)
-          const allDays: string[] = [];
+        // Cas plage continue (déplacement/formation) : une seule entrée avec date_start/date_end
+        const isRangeType = (form.type === "deplacement" || form.type === "formation") && form.date_fin && form.date_fin >= form.date_debut;
+
+        if (isRangeType) {
+          // Conflit : tout jour de la plage déjà occupé par un type exclusif
+          const EXCLUSIFS: PlanningType[] = ["travail", "teletravail", "deplacement", "formation"];
+          const rangeDays: string[] = [];
           let cur = form.date_debut;
-          while (cur <= form.date_fin) {
-            allDays.push(cur);
-            cur = addDays(cur, 1);
+          while (cur <= form.date_fin) { rangeDays.push(cur); cur = addDays(cur, 1); }
+          const conflictEntries = Array.from(new Map(
+            rangeDays.flatMap(d => cellFor(empId, d).filter(e => EXCLUSIFS.includes(e.type) && e.id !== form.editId).map(e => [e.id, e]))
+          ).values());
+          if (conflictEntries.length > 0) {
+            const confirmed = window.confirm(`${conflictEntries.length} entrée(s) existante(s) sur la plage seront remplacées. Continuer ?`);
+            if (!confirmed) { setSaving(false); return; }
+            await Promise.all(conflictEntries.map(e => deletePlanning(e.id)));
           }
-          dates = allDays.length ? allDays : [form.date_debut];
+          await upsertPlanning({
+            employee_id: empId,
+            date_start: form.date_debut,
+            date_end: form.date_fin,
+            type: form.type,
+            heure_debut: form.heure_debut || null,
+            heure_fin: form.heure_fin || null,
+            note: form.note || null,
+          });
+          toast.success("Plage ajoutée");
         } else {
-          dates = expandDates(form.date_debut, form.repeat, month);
+          const dates = expandDates(form.date_debut, form.repeat, month);
+
+          // ── Détection de conflits ──────────────────────────────────────
+          const EXCLUSIFS: PlanningType[] = ["travail", "teletravail", "deplacement", "formation"];
+          if (EXCLUSIFS.includes(form.type)) {
+            const conflictDates = dates.filter(d => {
+              const existing = cellFor(empId, d);
+              return existing.some(e => EXCLUSIFS.includes(e.type) && e.id !== form.editId);
+            });
+            if (conflictDates.length > 0) {
+              const conflictEntries = Array.from(new Map(
+                conflictDates.flatMap(d => cellFor(empId, d).filter(e => EXCLUSIFS.includes(e.type)).map(e => [e.id, e]))
+              ).values());
+              const confirmed = window.confirm(
+                `Conflit détecté sur ${conflictDates.length} jour(s). Remplacer les entrées existantes ?`
+              );
+              if (!confirmed) { setSaving(false); return; }
+              await Promise.all(conflictEntries.map(e => deletePlanning(e.id)));
+            }
+          }
+          const groupId = dates.length > 1 ? crypto.randomUUID() : null;
+          await Promise.all(dates.map(date =>
+            upsertPlanning({ employee_id: empId, date_start: date, date_end: date, type: form.type, heure_debut: form.heure_debut || null, heure_fin: form.heure_fin || null, note: form.note || null, group_id: groupId } as any)
+          ));
+          toast.success(`${dates.length} entrée(s) ajoutée(s)`);
         }
 
         // ── Détection de conflits ──────────────────────────────────────

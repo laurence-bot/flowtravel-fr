@@ -2786,7 +2786,8 @@ export type Database = {
           agence_id: string | null
           created_at: string
           created_by: string | null
-          date_jour: string
+          date_end: string
+          date_start: string
           employee_id: string
           group_id: string | null
           heure_debut: string | null
@@ -2801,7 +2802,8 @@ export type Database = {
           agence_id?: string | null
           created_at?: string
           created_by?: string | null
-          date_jour: string
+          date_end: string
+          date_start: string
           employee_id: string
           group_id?: string | null
           heure_debut?: string | null
@@ -2816,7 +2818,8 @@ export type Database = {
           agence_id?: string | null
           created_at?: string
           created_by?: string | null
-          date_jour?: string
+          date_end?: string
+          date_start?: string
           employee_id?: string
           group_id?: string | null
           heure_debut?: string | null

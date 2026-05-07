@@ -59,11 +59,26 @@ export type Absence = {
 
 export type PlanningEntry = {
   id: string; employee_id: string; agence_id: string | null;
-  date_jour: string; heure_debut: string | null; heure_fin: string | null;
+  date_start: string; date_end: string;
+  heure_debut: string | null; heure_fin: string | null;
   type: PlanningType; note: string | null;
   group_id: string | null;
   pause_minutes?: number | null;
 };
+
+/** True if the entry's [date_start, date_end] range covers the given ISO date. */
+export function planningEntryCoversDate(e: PlanningEntry, dateIso: string): boolean {
+  return e.date_start <= dateIso && dateIso <= e.date_end;
+}
+/** Expand the entry into the list of ISO dates it covers (inclusive). */
+export function planningEntryDays(e: PlanningEntry): string[] {
+  const out: string[] = [];
+  const end = new Date(`${e.date_end}T00:00:00Z`);
+  for (let d = new Date(`${e.date_start}T00:00:00Z`); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+    out.push(d.toISOString().slice(0, 10));
+  }
+  return out;
+}
 
 export type TimeEntry = {
   id: string; employee_id: string; agence_id: string | null;
@@ -221,17 +236,23 @@ export async function listTimeEntriesAgence(fromIso: string, toIso: string): Pro
 }
 
 // =========== Planning ===========
+/**
+ * Liste les entrées planning dont la plage [date_start, date_end] chevauche la
+ * période [fromIso, toIso]. Une entrée multi-mois apparaît dans tous les mois
+ * concernés.
+ */
 export async function listPlanning(fromIso: string, toIso: string): Promise<PlanningEntry[]> {
   const { data, error } = await supabase.from("hr_planning_entries").select("*")
-    .gte("date_jour", fromIso).lte("date_jour", toIso).order("date_jour");
-  if (error) throw error; return (data ?? []) as PlanningEntry[];
+    .lte("date_start", toIso).gte("date_end", fromIso).order("date_start");
+  if (error) throw error; return (data ?? []) as unknown as PlanningEntry[];
 }
-export async function upsertPlanning(input: Partial<PlanningEntry> & { employee_id: string; date_jour: string; type: PlanningType }): Promise<void> {
+export async function upsertPlanning(input: Partial<PlanningEntry> & { employee_id: string; date_start: string; type: PlanningType; date_end?: string }): Promise<void> {
   const employee = await getEmployee(input.employee_id);
   const { data: { user } } = await supabase.auth.getUser();
   const { error } = await supabase.from("hr_planning_entries").insert({
     employee_id: input.employee_id, agence_id: employee?.agence_id ?? null,
-    date_jour: input.date_jour, type: input.type,
+    date_start: input.date_start, date_end: input.date_end ?? input.date_start,
+    type: input.type,
     heure_debut: input.heure_debut ?? null, heure_fin: input.heure_fin ?? null,
     note: input.note ?? null, created_by: user?.id ?? null,
     group_id: (input as any).group_id ?? null,
@@ -464,11 +485,14 @@ export function calcCompteurMensuel(
   let travailReel = 0;
   let depForm = 0;
   for (const e of entries) {
-    if (!ouvresSet.has(e.date_jour)) continue;
     if (e.type === "deplacement" || e.type === "formation") {
-      depForm += HEURES_FORFAIT_DEPLACEMENT_FORMATION;
+      // Forfait 7h par jour ouvré couvert par la plage [date_start, date_end]
+      for (const d of planningEntryDays(e)) {
+        if (ouvresSet.has(d)) depForm += HEURES_FORFAIT_DEPLACEMENT_FORMATION;
+      }
     } else if (e.type === "travail" || e.type === "teletravail" || e.type === "reunion") {
-      travailReel += dureeNetteEntry(e);
+      // Ces types couvrent un seul jour (date_start === date_end).
+      if (ouvresSet.has(e.date_start)) travailReel += dureeNetteEntry(e);
     }
   }
   const baseRestante = Math.max(0, base - depForm);
