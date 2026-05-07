@@ -154,7 +154,8 @@ function generateEntriesFromWeekConfig(
     if (!config?.actif) return [];
     return [{
       employee_id: employeeId,
-      date_jour: dateStr,
+      date_start: dateStr,
+      date_end: dateStr,
       type,
       heure_debut: config.heure_debut || null,
       heure_fin: config.heure_fin || null,
