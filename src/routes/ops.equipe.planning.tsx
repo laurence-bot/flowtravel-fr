@@ -353,9 +353,12 @@ function PlanningPage() {
     } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
 
-  const del = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
+  const del = async (id: string) => {
     try { await deletePlanning(id); load(); }
+    catch (e: any) { toast.error(e.message); }
+  };
+  const delGroup = async (groupId: string) => {
+    try { await deletePlanningGroup(groupId); setActionEntry(null); load(); }
     catch (e: any) { toast.error(e.message); }
   };
 
