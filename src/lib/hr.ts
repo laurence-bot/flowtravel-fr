@@ -236,17 +236,23 @@ export async function listTimeEntriesAgence(fromIso: string, toIso: string): Pro
 }
 
 // =========== Planning ===========
+/**
+ * Liste les entrées planning dont la plage [date_start, date_end] chevauche la
+ * période [fromIso, toIso]. Une entrée multi-mois apparaît dans tous les mois
+ * concernés.
+ */
 export async function listPlanning(fromIso: string, toIso: string): Promise<PlanningEntry[]> {
   const { data, error } = await supabase.from("hr_planning_entries").select("*")
-    .gte("date_jour", fromIso).lte("date_jour", toIso).order("date_jour");
-  if (error) throw error; return (data ?? []) as PlanningEntry[];
+    .lte("date_start", toIso).gte("date_end", fromIso).order("date_start");
+  if (error) throw error; return (data ?? []) as unknown as PlanningEntry[];
 }
-export async function upsertPlanning(input: Partial<PlanningEntry> & { employee_id: string; date_jour: string; type: PlanningType }): Promise<void> {
+export async function upsertPlanning(input: Partial<PlanningEntry> & { employee_id: string; date_start: string; type: PlanningType; date_end?: string }): Promise<void> {
   const employee = await getEmployee(input.employee_id);
   const { data: { user } } = await supabase.auth.getUser();
   const { error } = await supabase.from("hr_planning_entries").insert({
     employee_id: input.employee_id, agence_id: employee?.agence_id ?? null,
-    date_jour: input.date_jour, type: input.type,
+    date_start: input.date_start, date_end: input.date_end ?? input.date_start,
+    type: input.type,
     heure_debut: input.heure_debut ?? null, heure_fin: input.heure_fin ?? null,
     note: input.note ?? null, created_by: user?.id ?? null,
     group_id: (input as any).group_id ?? null,
