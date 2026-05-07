@@ -384,11 +384,11 @@ function PlanningPage() {
   const copyWeek = async (monday: string) => {
     const mon = new Date(monday);
     const sun = new Date(monday); sun.setDate(sun.getDate() + 6);
-    const weekEntries = entries.filter(e => { const d = new Date(e.date_jour); return d >= mon && d <= sun; });
+    const weekEntries = entries.filter(e => { const d = new Date(e.date_start); return d >= mon && d <= sun; });
     if (!weekEntries.length) { toast.error("Aucune entrée cette semaine"); return; }
     try {
       await Promise.all(weekEntries.map(e =>
-        upsertPlanning({ employee_id: e.employee_id, date_jour: addDays(e.date_jour, 7), type: e.type, heure_debut: e.heure_debut ?? null, heure_fin: e.heure_fin ?? null, note: e.note ?? null })
+        upsertPlanning({ employee_id: e.employee_id, date_start: addDays(e.date_start, 7), date_end: addDays(e.date_end, 7), type: e.type, heure_debut: e.heure_debut ?? null, heure_fin: e.heure_fin ?? null, note: e.note ?? null })
       ));
       toast.success(`${weekEntries.length} entrée(s) copiée(s)`);
       load();
