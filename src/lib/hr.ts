@@ -757,9 +757,9 @@ export function isJourOuvre(dateIso: string, holidays?: Set<string>): boolean {
   return !isJourFerie(dateIso, holidays);
 }
 
-/** Heures contractuelles par jour (35h/sem sur 6 jours ouvrés lun-sam = 35/6 ≈ 5.83h). */
+/** Heures contractuelles par jour (35h/sem sur 5 jours = 7h/jour). */
 export function heuresContractuellesParJour(_emp?: Pick<Employee, "type_contrat"> | null): number {
-  return Math.round((35 / 6) * 100) / 100; // 5.83h
+  return 7; // 35h ÷ 5 jours
 }
 
 function dureeNetteEntry(e: PlanningEntry): number {
@@ -786,29 +786,44 @@ export function calcCompteurMensuel(
 ): { base: number; travailReel: number; depForm: number; realisees: number; solde: number; heuresSup: number } {
   const ouvresSet = new Set(joursOuvres);
   const base = joursOuvres.length * heuresParJour;
-  let travailReel = 0;
+
+  // Calcul par jour pour éviter tout double comptage
+  // Priorité : travail/teletravail/reunion avec horaires > deplacement/formation > rien
+  const heuresParJourMap = new Map<string, number>();
   let heuresRecup = 0;
+
   for (const e of entries) {
-    if (["travail", "teletravail", "reunion", "deplacement", "formation"].includes(e.type)) {
-      // Tous ces types = présence au travail (lieu différent pour déplacement/formation)
-      // Si horaires saisis → on prend la durée réelle
-      // Si pas d'horaires (déplacement sur plusieurs jours) → heures contractuelles par jour
-      const duree = dureeNetteEntry(e);
-      if (e.type === "deplacement" || e.type === "formation") {
-        for (const d of planningEntryDays(e)) {
-          if (ouvresSet.has(d)) {
-            // Utiliser les horaires si saisis, sinon les heures contractuelles du jour
-            travailReel += duree > 0 && e.date_start === e.date_end ? duree : heuresParJour;
-          }
+    if (e.type === "recuperation") {
+      if (ouvresSet.has(e.date_start)) heuresRecup += dureeNetteEntry(e);
+      continue;
+    }
+    const PRESENCE_TYPES = ["travail", "teletravail", "reunion", "deplacement", "formation"];
+    if (!PRESENCE_TYPES.includes(e.type)) continue;
+
+    const isContextOnly = e.type === "deplacement" || e.type === "formation";
+    const duree = dureeNetteEntry(e); // 0 si pas d'horaires
+
+    for (const d of planningEntryDays(e)) {
+      if (!ouvresSet.has(d)) continue;
+      const existing = heuresParJourMap.get(d) ?? null;
+      if (isContextOnly) {
+        // Déplacement/formation sans horaires = marqueur de contexte uniquement
+        // On ne l'ajoute QUE si aucune entrée avec horaires n'existe déjà pour ce jour
+        if (existing === null) {
+          heuresParJourMap.set(d, duree > 0 ? duree : heuresParJour);
         }
       } else {
-        if (ouvresSet.has(e.date_start)) travailReel += duree;
+        // Travail/teletravail/reunion avec horaires = valeur réelle, prioritaire
+        if (duree > 0) {
+          heuresParJourMap.set(d, (existing ?? 0) + duree);
+        } else if (existing === null) {
+          heuresParJourMap.set(d, heuresParJour);
+        }
       }
-    } else if (e.type === "recuperation") {
-      // Les récupérations consomment des heures : on les déduit du solde positif
-      if (ouvresSet.has(e.date_start)) heuresRecup += dureeNetteEntry(e);
     }
   }
+
+  const travailReel = Array.from(heuresParJourMap.values()).reduce((s, h) => s + h, 0);
   const realisees = travailReel;
   const solde = Math.round((travailReel - base - heuresRecup) * 100) / 100;
   const heuresSup = Math.round(Math.max(0, travailReel - base - heuresRecup) * 100) / 100;
