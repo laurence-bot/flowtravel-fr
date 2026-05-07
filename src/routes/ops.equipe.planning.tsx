@@ -17,6 +17,7 @@ import {
   createRecupDemande, approuverRecupDemande, refuserRecupDemande,
   alertesFinDeMois,
   PLANNING_TYPE_LABELS,
+  planningEntryCoversDate,
   type Employee, type PlanningEntry, type PlanningType,
   type CompteurHeures, type RecupDemande,
 } from "@/lib/hr";
