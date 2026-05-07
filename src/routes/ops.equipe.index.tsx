@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { RequireAuth } from "@/components/require-auth";
 import { useEffect, useState } from "react";
 import { Plus, Users, Settings as SettingsIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,11 @@ import { listEmployees, createEmployee, CONTRACT_TYPE_LABELS, type Employee, typ
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/ops/equipe/")({
-  component: EquipeIndex,
+  component: () => (
+    <RequireAuth>
+      <EquipeIndex />
+    </RequireAuth>
+  ),
 });
 
 function EquipeIndex() {
@@ -62,7 +67,12 @@ function EquipeIndex() {
             icon={Users}
             title="Aucun employé"
             description="Ajoutez votre premier employé pour commencer."
-            action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />Ajouter un employé</Button>}
+            action={
+              <Button onClick={() => setOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Ajouter un employé
+              </Button>
+            }
           />
         ) : (
           <table className="w-full text-sm min-w-[640px]">
@@ -90,9 +100,13 @@ function EquipeIndex() {
                   <td className="px-4 py-3 text-muted-foreground">{e.email ?? "—"}</td>
                   <td className="px-4 py-3 text-right">
                     {e.actif ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-green-100 text-green-800 text-xs">Actif</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-green-100 text-green-800 text-xs">
+                        Actif
+                      </span>
                     ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs">Sorti</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs">
+                        Sorti
+                      </span>
                     )}
                   </td>
                 </tr>
@@ -145,7 +159,16 @@ function NewEmployeeDialog({
       });
       toast.success("Employé ajouté");
       onOpenChange(false);
-      setForm({ prenom: "", nom: "", email: "", poste: "", type_contrat: "cdi", date_embauche: "", salaire_brut_mensuel: "", jours_conges_par_an: "25" });
+      setForm({
+        prenom: "",
+        nom: "",
+        email: "",
+        poste: "",
+        type_contrat: "cdi",
+        date_embauche: "",
+        salaire_brut_mensuel: "",
+        jours_conges_par_an: "25",
+      });
       onCreated();
     } catch (e: any) {
       toast.error(e.message ?? "Erreur");
@@ -157,7 +180,10 @@ function NewEmployeeDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button><Plus className="h-4 w-4 mr-2" />Ajouter un employé</Button>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Ajouter un employé
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
@@ -185,34 +211,59 @@ function NewEmployeeDialog({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Type de contrat</Label>
-              <Select value={form.type_contrat} onValueChange={(v) => setForm({ ...form, type_contrat: v as ContractType })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={form.type_contrat}
+                onValueChange={(v) => setForm({ ...form, type_contrat: v as ContractType })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {Object.entries(CONTRACT_TYPE_LABELS).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                    <SelectItem key={k} value={k}>
+                      {v}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
               <Label>Date d'embauche</Label>
-              <Input type="date" value={form.date_embauche} onChange={(e) => setForm({ ...form, date_embauche: e.target.value })} />
+              <Input
+                type="date"
+                value={form.date_embauche}
+                onChange={(e) => setForm({ ...form, date_embauche: e.target.value })}
+              />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Salaire brut mensuel (€)</Label>
-              <Input type="number" step="0.01" value={form.salaire_brut_mensuel} onChange={(e) => setForm({ ...form, salaire_brut_mensuel: e.target.value })} />
+              <Input
+                type="number"
+                step="0.01"
+                value={form.salaire_brut_mensuel}
+                onChange={(e) => setForm({ ...form, salaire_brut_mensuel: e.target.value })}
+              />
             </div>
             <div>
               <Label>Congés/an (jours)</Label>
-              <Input type="number" step="0.5" value={form.jours_conges_par_an} onChange={(e) => setForm({ ...form, jours_conges_par_an: e.target.value })} />
+              <Input
+                type="number"
+                step="0.5"
+                value={form.jours_conges_par_an}
+                onChange={(e) => setForm({ ...form, jours_conges_par_an: e.target.value })}
+              />
             </div>
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
-          <Button onClick={submit} disabled={saving}>{saving ? "…" : "Créer"}</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Annuler
+          </Button>
+          <Button onClick={submit} disabled={saving}>
+            {saving ? "…" : "Créer"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
