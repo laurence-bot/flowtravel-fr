@@ -166,7 +166,8 @@ function EquipeIndex() {
           contrat: emp.type_contrat,
           heures_contractuelles: compteur?.heures_contractuelles ?? 0,
           heures_realisees: compteur?.heures_realisees ?? 0,
-          solde: compteur?.solde ?? 0,
+          // Solde recalculé depuis heuresBrutes (UI) pour éviter les décalages avec la base
+          solde: (compteur?.heures_realisees ?? 0) - heuresBrutes,
           jours_conge: joursConge,
           jours_maladie: joursMaladie,
           heures_recup: heuresRecup,
