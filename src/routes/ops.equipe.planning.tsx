@@ -411,7 +411,7 @@ function PlanningPage() {
       </Link>
 
       <PageHeader
-        title="Planning"
+        title={`Planning — ${new Date(`${month}-01`).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}`}
         description="Vue mensuelle, compteurs d'heures et récupérations"
         action={
           <div className="flex items-center gap-2">
