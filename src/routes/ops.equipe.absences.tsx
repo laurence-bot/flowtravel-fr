@@ -185,14 +185,30 @@ function AbsencesPage() {
       </Link>
 
       <PageHeader
-        title="Demandes de congés"
-        description="Validation et saisie des absences"
+        title="Demandes de congés & récupérations"
+        description="Validation et saisie des absences et récupérations d'heures"
         action={
-          <Button onClick={() => setOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" /> Saisir une absence
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setRecupOpen(true)}>+ Demande récup</Button>
+            <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" /> Saisir une absence</Button>
+          </div>
         }
       />
+
+      <Tabs defaultValue="absences">
+        <TabsList>
+          <TabsTrigger value="absences">Absences</TabsTrigger>
+          <TabsTrigger value="recups">
+            Récupérations
+            {recups.filter(r => r.statut === "demande").length > 0 && (
+              <span className="ml-2 px-1.5 py-0.5 text-xs bg-amber-500 text-white rounded">
+                {recups.filter(r => r.statut === "demande").length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="absences" className="space-y-4 mt-4">
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
