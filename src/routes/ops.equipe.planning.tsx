@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/page-header";
 import {
-  listEmployees, listPlanning, upsertPlanning, deletePlanning,
+  listEmployees, listPlanning, upsertPlanning, deletePlanning, deletePlanningGroup,
   calcHeuresRealisees, upsertCompteur, listCompteurs, listRecupDemandes,
   createRecupDemande, approuverRecupDemande, refuserRecupDemande,
   alertesFinDeMois,
