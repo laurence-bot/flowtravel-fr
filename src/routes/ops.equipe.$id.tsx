@@ -317,7 +317,9 @@ function EmployeeDetail() {
                         key={dow}
                         type="button"
                         onClick={() => {
-                          const next = actif ? jours.filter((j) => j !== Number(dow)) : [...jours, Number(dow)].sort();
+                          const next = actif
+                            ? jours.filter((j: number) => j !== Number(dow))
+                            : [...jours, Number(dow)].sort((a: number, b: number) => a - b);
                           setEmployee({ ...employee, semaine_a_jours: next });
                         }}
                         className={`w-10 h-10 rounded-lg text-sm font-medium border transition-colors ${actif ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}
@@ -348,8 +350,8 @@ function EmployeeDetail() {
                           type="button"
                           onClick={() => {
                             const next = actif
-                              ? jours.filter((j) => j !== Number(dow))
-                              : [...jours, Number(dow)].sort();
+                              ? jours.filter((j: number) => j !== Number(dow))
+                              : [...jours, Number(dow)].sort((a: number, b: number) => a - b);
                             setEmployee({ ...employee, semaine_b_jours: next });
                           }}
                           className={`w-10 h-10 rounded-lg text-sm font-medium border transition-colors ${actif ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}
