@@ -22,6 +22,7 @@ import {
   listRecupDemandes,
   frenchHolidays,
   isJourOuvre,
+  isJourFerie,
   heuresContractuellesParJour,
   calcCompteurMensuel,
   createRecupDemande,
@@ -265,6 +266,8 @@ function PlanningPage() {
   const [compteurs, setCompteurs] = useState<CompteurHeures[]>([]);
   const [recups, setRecups] = useState<RecupDemande[]>([]);
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  // Jours fériés de l'année courante — recalculé si le mois change d'année
+  const holidays = frenchHolidays(Number(month.slice(0, 4)));
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
@@ -293,8 +296,6 @@ function PlanningPage() {
     setEmployees(actifs);
     setEntries(plan);
     setRecups(recs);
-    const year = Number(month.slice(0, 4));
-    const holidays = frenchHolidays(year);
     const joursOuvres = days.filter((d) => isJourOuvre(d, holidays));
     await Promise.all(
       actifs.map(async (emp) => {
@@ -687,17 +688,33 @@ function PlanningPage() {
                     return (
                       <th
                         key={d}
+                        title={isJourFerie(d, holidays) ? "Jour férié" : undefined}
                         className={[
                           "px-1 py-1 font-normal w-[52px] min-w-[52px] max-w-[52px] border-l",
                           isFirstOfWeek ? "border-l-2 border-l-border/60" : "border-border/40",
-                          wk ? "bg-muted/40 text-muted-foreground" : "",
+                          isJourFerie(d, holidays)
+                            ? "bg-amber-50 dark:bg-amber-950/20"
+                            : wk
+                              ? "bg-muted/40 text-muted-foreground"
+                              : "",
                           isToday ? "bg-primary/10" : "",
                         ].join(" ")}
                       >
-                        <div className={`text-[10px] uppercase ${isToday ? "text-primary font-semibold" : ""}`}>
+                        <div
+                          className={`text-[10px] uppercase ${isToday ? "text-primary font-semibold" : isJourFerie(d, holidays) ? "text-amber-600 dark:text-amber-400" : ""}`}
+                        >
                           {DAY_LABELS[dt.getDay()]}
                         </div>
-                        <div className={`text-sm font-medium ${isToday ? "text-primary" : ""}`}>{dt.getDate()}</div>
+                        <div
+                          className={`text-sm font-medium ${isToday ? "text-primary" : isJourFerie(d, holidays) ? "text-amber-600 dark:text-amber-400" : ""}`}
+                        >
+                          {dt.getDate()}
+                        </div>
+                        {isJourFerie(d, holidays) && (
+                          <div className="text-[8px] text-amber-500 font-medium leading-tight mt-0.5 truncate">
+                            Férié
+                          </div>
+                        )}
                       </th>
                     );
                   })}
@@ -728,15 +745,18 @@ function PlanningPage() {
                         return (
                           <td
                             key={d}
-                            onClick={() => !cells.length && openAdd(emp, d)}
+                            onClick={() => !cells.length && !isJourFerie(d, holidays) && openAdd(emp, d)}
+                            title={isJourFerie(d, holidays) ? "Jour férié" : undefined}
                             className={[
                               "align-top py-1.5 px-1 border-l transition-colors w-[52px] min-w-[52px] max-w-[52px]",
                               isFirstOfWeek ? "border-l-2 border-l-border/60" : "border-border/40",
-                              wk
-                                ? "bg-muted/15"
-                                : cells.length === 0
-                                  ? "hover:bg-muted/20 cursor-pointer"
-                                  : "cursor-default",
+                              isJourFerie(d, holidays)
+                                ? "bg-amber-50/60 dark:bg-amber-950/15 cursor-default"
+                                : wk
+                                  ? "bg-muted/15"
+                                  : cells.length === 0
+                                    ? "hover:bg-muted/20 cursor-pointer"
+                                    : "cursor-default",
                             ].join(" ")}
                           >
                             <div className="space-y-1">
