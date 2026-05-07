@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { RequireAuth } from "@/components/require-auth";
 import { useEffect, useState } from "react";
 import { Plus, Users, Settings as SettingsIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,11 +13,7 @@ import { listEmployees, createEmployee, CONTRACT_TYPE_LABELS, type Employee, typ
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/ops/equipe/")({
-  component: () => (
-    <RequireAuth>
-      <EquipeIndex />
-    </RequireAuth>
-  ),
+  component: EquipeIndex,
 });
 
 function EquipeIndex() {
