@@ -557,7 +557,7 @@ function PlanningPage() {
                                       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${tc.dot}`} />
                                       <span className="text-[10px] font-semibold tracking-wide">{tc.abbr}</span>
                                     </div>
-                                    {c.heure_debut && (
+                                    {c.heure_debut && c.type !== "deplacement" && c.type !== "formation" && (
                                       <div className="text-[9px] tabular-nums opacity-70">
                                         {c.heure_debut.slice(0,5)}–{(c.heure_fin ?? "").slice(0,5)}
                                       </div>
