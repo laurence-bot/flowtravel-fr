@@ -1,4 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { RequireAuth } from "@/components/require-auth";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/app-layout";
@@ -12,7 +13,11 @@ import { CheckCircle2, Circle, PlayCircle, FileText, ListChecks, Link2, BookOpen
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/coaching")({
-  component: CoachingPage,
+  component: () => (
+    <RequireAuth>
+      <CoachingPage />
+    </RequireAuth>
+  ),
 });
 
 type Ressource = {
@@ -65,7 +70,9 @@ function CoachingPage() {
 
   async function loadData() {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       router.navigate({ to: "/auth" });
       return;
@@ -86,7 +93,9 @@ function CoachingPage() {
   }
 
   async function setStatut(ressource: Ressource, statut: Progression["statut"]) {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return;
 
     const payload = {
@@ -161,7 +170,10 @@ function CoachingPage() {
               if (count === 0) return null;
               return (
                 <TabsTrigger key={c.id} value={c.id}>
-                  {c.label} <Badge variant="secondary" className="ml-2">{count}</Badge>
+                  {c.label}{" "}
+                  <Badge variant="secondary" className="ml-2">
+                    {count}
+                  </Badge>
                 </TabsTrigger>
               );
             })}
@@ -194,17 +206,15 @@ function CoachingPage() {
                                 <Icon className="w-4 h-4 text-muted-foreground" />
                                 <CardTitle className="text-base">{r.titre}</CardTitle>
                                 {r.obligatoire && (
-                                  <Badge variant="outline" className="text-xs">Essentiel</Badge>
+                                  <Badge variant="outline" className="text-xs">
+                                    Essentiel
+                                  </Badge>
                                 )}
                                 {r.duree_minutes && (
-                                  <span className="text-xs text-muted-foreground">
-                                    ~{r.duree_minutes} min
-                                  </span>
+                                  <span className="text-xs text-muted-foreground">~{r.duree_minutes} min</span>
                                 )}
                               </div>
-                              {r.description && (
-                                <CardDescription className="mt-1">{r.description}</CardDescription>
-                              )}
+                              {r.description && <CardDescription className="mt-1">{r.description}</CardDescription>}
                             </div>
                             <div className="flex gap-2">
                               <Button size="sm" variant="outline" onClick={() => setSelected(r)}>
@@ -236,9 +246,7 @@ function CoachingPage() {
               <>
                 <DialogHeader>
                   <DialogTitle>{selected.titre}</DialogTitle>
-                  {selected.description && (
-                    <DialogDescription>{selected.description}</DialogDescription>
-                  )}
+                  {selected.description && <DialogDescription>{selected.description}</DialogDescription>}
                 </DialogHeader>
                 <div className="prose prose-sm max-w-none dark:prose-invert mt-4">
                   {selected.contenu_md && (
@@ -257,7 +265,12 @@ function CoachingPage() {
                 </div>
                 <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
                   {progression[selected.id]?.statut !== "termine" ? (
-                    <Button onClick={() => { setStatut(selected, "termine"); setSelected(null); }}>
+                    <Button
+                      onClick={() => {
+                        setStatut(selected, "termine");
+                        setSelected(null);
+                      }}
+                    >
                       <CheckCircle2 className="w-4 h-4 mr-2" />
                       Marquer comme terminé
                     </Button>
