@@ -19,21 +19,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { formatEUR, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import {
-  suggestPaiementsForTransaction,
-  scoreTone,
-  type Suggestion,
-} from "@/lib/reconciliation";
-import {
-  Link2,
-  CheckCircle2,
-  XCircle,
-  EyeOff,
-  ArrowDownLeft,
-  ArrowUpRight,
-  Sparkles,
-  Search,
-} from "lucide-react";
+import { suggestPaiementsForTransaction, scoreTone, type Suggestion } from "@/lib/reconciliation";
+import { Link2, CheckCircle2, XCircle, EyeOff, ArrowDownLeft, ArrowUpRight, Sparkles, Search } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 
@@ -55,11 +42,12 @@ function RapprochementPage() {
 
   const [busy, setBusy] = useState<string | null>(null);
   const [manualPick, setManualPick] = useState<Record<string, string>>({});
+  const [filterCompte, setFilterCompte] = useState<string>("tous");
 
   const compteNom = (id: string) => comptes.find((c) => c.id === id)?.nom ?? "—";
 
   const aRapprocher = useMemo(
-    () => bankTx.filter((t) => t.statut === "nouveau"),
+    () => bankTx.filter((t) => t.statut === "nouveau" && (filterCompte === "tous" || t.compte_id === filterCompte)),
     [bankTx],
   );
 
@@ -103,7 +91,9 @@ function RapprochementPage() {
       return;
     }
     if (!isCoherent(tx, paiement)) {
-      toast.error("Sens incohérent : un crédit doit correspondre à un paiement client, un débit à un paiement fournisseur.");
+      toast.error(
+        "Sens incohérent : un crédit doit correspondre à un paiement client, un débit à un paiement fournisseur.",
+      );
       return;
     }
     setBusy(tx.id);
@@ -131,10 +121,7 @@ function RapprochementPage() {
       if (e2) throw e2;
 
       // 3. Marquer transaction comme rapprochée
-      const { error: e3 } = await supabase
-        .from("bank_transactions")
-        .update({ statut: "rapproche" })
-        .eq("id", tx.id);
+      const { error: e3 } = await supabase.from("bank_transactions").update({ statut: "rapproche" }).eq("id", tx.id);
       if (e3) throw e3;
 
       toast.success("Rapprochement validé");
@@ -188,10 +175,7 @@ function RapprochementPage() {
     if (!user) return;
     setBusy(tx.id);
     try {
-      const { error } = await supabase
-        .from("bank_transactions")
-        .update({ statut: "ignore" })
-        .eq("id", tx.id);
+      const { error } = await supabase.from("bank_transactions").update({ statut: "ignore" }).eq("id", tx.id);
       if (error) throw error;
       toast.success("Transaction ignorée");
       await refetchTx();
@@ -209,25 +193,31 @@ function RapprochementPage() {
         description="Liez automatiquement vos transactions bancaires aux paiements enregistrés."
       />
 
+      <Select value={filterCompte} onValueChange={setFilterCompte}>
+        <SelectTrigger className="w-56">
+          <SelectValue placeholder="Tous les comptes" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="tous">Tous les comptes</SelectItem>
+          {comptes.map((c) => (
+            <SelectItem key={c.id} value={c.id}>
+              {c.nom} · {BANQUE_LABELS[c.banque]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="p-5 border-border/60">
-          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            À rapprocher
-          </div>
+          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">À rapprocher</div>
           <div className="mt-2 text-xl font-semibold tabular">{aRapprocher.length}</div>
         </Card>
         <Card className="p-5 border-border/60">
-          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            Suggestions automatiques
-          </div>
-          <div className="mt-2 text-xl font-semibold tabular text-[color:var(--gold)]">
-            {totalSuggestions}
-          </div>
+          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Suggestions automatiques</div>
+          <div className="mt-2 text-xl font-semibold tabular text-[color:var(--gold)]">{totalSuggestions}</div>
         </Card>
         <Card className="p-5 border-border/60">
-          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            Paiements en attente
-          </div>
+          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Paiements en attente</div>
           <div className="mt-2 text-xl font-semibold tabular">{paiementsNonRapproches.length}</div>
         </Card>
       </section>
@@ -276,12 +266,7 @@ function RapprochementPage() {
                       {isCredit ? "+" : "−"}
                       {formatEUR(tx.montant)}
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => ignore(tx)}
-                      disabled={busy === tx.id}
-                    >
+                    <Button size="sm" variant="ghost" onClick={() => ignore(tx)} disabled={busy === tx.id}>
                       <EyeOff className="h-3.5 w-3.5 mr-1" />
                       Ignorer
                     </Button>
@@ -316,9 +301,7 @@ function RapprochementPage() {
                               </div>
                               <div className="text-sm">
                                 {s.contact?.nom ?? "Sans contact"}
-                                {s.dossier && (
-                                  <span className="text-muted-foreground"> · {s.dossier.titre}</span>
-                                )}
+                                {s.dossier && <span className="text-muted-foreground"> · {s.dossier.titre}</span>}
                               </div>
                               <div className="text-[11px] text-muted-foreground mt-1">{reason}</div>
                             </div>
@@ -347,9 +330,7 @@ function RapprochementPage() {
                     })}
                   </ul>
                 ) : (
-                  <div className="px-5 py-4 text-sm text-muted-foreground">
-                    Aucune suggestion automatique fiable.
-                  </div>
+                  <div className="px-5 py-4 text-sm text-muted-foreground">Aucune suggestion automatique fiable.</div>
                 )}
 
                 {/* Recherche manuelle */}
