@@ -37,7 +37,7 @@ type FactureClient = {
   type_facture: "acompte_1" | "acompte_2" | "solde" | "globale";
 };
 
-const TYPE_LABEL: Record<string, string> = {
+export const TYPE_LABEL: Record<string, string> = {
   acompte_1: "Acompte 1",
   acompte_2: "Acompte 2",
   solde: "Solde",
@@ -62,6 +62,7 @@ function FacturesClientsPage() {
   const { user } = useAuth();
   const [list, setList] = useState<FactureClient[]>([]);
   const [contacts, setContacts] = useState<Array<{ id: string; nom: string }>>([]);
+  const [dossiersList, setDossiersList] = useState<Array<{ id: string; titre: string }>>([]);
   const [filterStatut, setFilterStatut] = useState<string>("tous");
   const [filterDossier, setFilterDossier] = useState<string>("");
 
@@ -76,6 +77,10 @@ function FacturesClientsPage() {
       .from("contacts")
       .select("id,nom")
       .then(({ data }) => setContacts(data ?? []));
+    supabase
+      .from("dossiers")
+      .select("id,titre")
+      .then(({ data }) => setDossiersList(data ?? []));
   }, []);
 
   const setStatut = async (id: string, statut: FactureClient["statut"], current: FactureClient["statut"]) => {
@@ -106,6 +111,7 @@ function FacturesClientsPage() {
   const totalPayees = list.filter((f) => f.statut === "payee").reduce((s, f) => s + Number(f.montant_ttc), 0);
   const impayees = list.filter((f) => f.statut === "emise" && f.date_echeance && f.date_echeance < today);
   const clientLabel = (id: string | null) => contacts.find((c) => c.id === id)?.nom ?? "—";
+  const dossierLabel = (id: string | null) => dossiersList.find((d) => d.id === id)?.titre ?? null;
 
   return (
     <div className="space-y-6">
@@ -175,6 +181,7 @@ function FacturesClientsPage() {
               <TableHead>Type</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Client</TableHead>
+              <TableHead>Dossier</TableHead>
               <TableHead className="text-right">HT</TableHead>
               <TableHead className="text-right">TVA</TableHead>
               <TableHead className="text-right">TTC</TableHead>
@@ -217,6 +224,15 @@ function FacturesClientsPage() {
                       <div className="text-xs text-red-600 mt-0.5">
                         Échéance dépassée · {formatDate(f.date_echeance!)}
                       </div>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {f.dossier_id ? (
+                      <Link to="/dossiers/$id" params={{ id: f.dossier_id }} className="hover:underline">
+                        {dossierLabel(f.dossier_id) ?? "Voir →"}
+                      </Link>
+                    ) : (
+                      "—"
                     )}
                   </TableCell>
                   <TableCell className="text-right">{formatEUR(f.montant_ht)}</TableCell>
