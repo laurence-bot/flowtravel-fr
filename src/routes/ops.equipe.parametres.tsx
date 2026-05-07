@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { RequireAuth } from "@/components/require-auth";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Save, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,11 +10,7 @@ import { getHrSettings, upsertHrSettings, type HrSettings } from "@/lib/hr";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/ops/equipe/parametres")({
-  component: () => (
-    <RequireAuth>
-      <ParametresEquipe />
-    </RequireAuth>
-  ),
+  component: ParametresEquipe,
 });
 
 function ParametresEquipe() {
