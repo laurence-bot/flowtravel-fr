@@ -978,6 +978,7 @@ export type Database = {
           statut: Database["public"]["Enums"]["cotation_statut"]
           storytelling_intro: string | null
           tags_destination: string[]
+          taux_marge_cible: number | null
           taux_tva_marge: number
           titre: string
           updated_at: string
@@ -1020,6 +1021,7 @@ export type Database = {
           statut?: Database["public"]["Enums"]["cotation_statut"]
           storytelling_intro?: string | null
           tags_destination?: string[]
+          taux_marge_cible?: number | null
           taux_tva_marge?: number
           titre: string
           updated_at?: string
@@ -1062,6 +1064,7 @@ export type Database = {
           statut?: Database["public"]["Enums"]["cotation_statut"]
           storytelling_intro?: string | null
           tags_destination?: string[]
+          taux_marge_cible?: number | null
           taux_tva_marge?: number
           titre?: string
           updated_at?: string
