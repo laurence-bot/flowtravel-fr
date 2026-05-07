@@ -706,8 +706,8 @@ export type RecupDemande = {
   created_at: string;
 };
 
-/** Heures par jour créditées forfaitairement pour déplacement/formation (offert par l'agence, sans heures sup). */
-export const HEURES_FORFAIT_DEPLACEMENT_FORMATION = 7;
+// Déplacement et formation = présence normale, heures contractuelles habituelles.
+// Le type "déplacement" indique seulement que l'employé n'est pas à l'agence.
 
 /** Calcule les jours fériés français pour une année donnée (date YYYY-MM-DD). */
 export function frenchHolidays(year: number): Set<string> {
@@ -774,10 +774,10 @@ function dureeNetteEntry(e: PlanningEntry): number {
 /**
  * Détail d'un compteur mensuel pour un employé.
  * - base = jours ouvrés × heures/jour contractuelles
- * - travailReel = heures réelles travail/teletravail/reunion sur jours ouvrés
- * - depForm = 7h forfait par jour ouvré dep/formation (n'engendre pas d'heures sup)
- * - solde = travailReel - (base - depForm)
- * - heuresSup = max(0, travailReel - max(0, base - depForm))
+ * - travailReel = heures réelles pointées (travail, télétravail, réunion, déplacement, formation)
+ *   → déplacement/formation = présence normale, heures contractuelles si pas d'horaires saisis
+ * - solde = travailReel - base
+ * - heuresSup = max(0, solde)
  */
 export function calcCompteurMensuel(
   entries: PlanningEntry[],
@@ -787,47 +787,51 @@ export function calcCompteurMensuel(
   const ouvresSet = new Set(joursOuvres);
   const base = joursOuvres.length * heuresParJour;
   let travailReel = 0;
-  let depForm = 0;
   let heuresRecup = 0;
   for (const e of entries) {
-    if (e.type === "deplacement" || e.type === "formation") {
-      // Forfait 7h par jour ouvré couvert par la plage [date_start, date_end]
-      for (const d of planningEntryDays(e)) {
-        if (ouvresSet.has(d)) depForm += HEURES_FORFAIT_DEPLACEMENT_FORMATION;
+    if (["travail", "teletravail", "reunion", "deplacement", "formation"].includes(e.type)) {
+      // Tous ces types = présence au travail (lieu différent pour déplacement/formation)
+      // Si horaires saisis → on prend la durée réelle
+      // Si pas d'horaires (déplacement sur plusieurs jours) → heures contractuelles par jour
+      const duree = dureeNetteEntry(e);
+      if (e.type === "deplacement" || e.type === "formation") {
+        for (const d of planningEntryDays(e)) {
+          if (ouvresSet.has(d)) {
+            // Utiliser les horaires si saisis, sinon les heures contractuelles du jour
+            travailReel += duree > 0 && e.date_start === e.date_end ? duree : heuresParJour;
+          }
+        }
+      } else {
+        if (ouvresSet.has(e.date_start)) travailReel += duree;
       }
-    } else if (e.type === "travail" || e.type === "teletravail" || e.type === "reunion") {
-      // Ces types couvrent un seul jour (date_start === date_end).
-      if (ouvresSet.has(e.date_start)) travailReel += dureeNetteEntry(e);
     } else if (e.type === "recuperation") {
-      // Les récupérations consomment des heures sup : on les déduit du solde
+      // Les récupérations consomment des heures : on les déduit du solde positif
       if (ouvresSet.has(e.date_start)) heuresRecup += dureeNetteEntry(e);
     }
   }
-  const baseRestante = Math.max(0, base - depForm);
-  const realisees = travailReel + depForm;
-  // solde = heures travaillées - base + récups posées (les récups réduisent le solde positif)
-  const solde = Math.round((travailReel - baseRestante - heuresRecup) * 100) / 100;
-  const heuresSup = Math.round(Math.max(0, travailReel - baseRestante - heuresRecup) * 100) / 100;
+  const realisees = travailReel;
+  const solde = Math.round((travailReel - base - heuresRecup) * 100) / 100;
+  const heuresSup = Math.round(Math.max(0, travailReel - base - heuresRecup) * 100) / 100;
   return {
     base: Math.round(base * 100) / 100,
     travailReel: Math.round(travailReel * 100) / 100,
-    depForm: Math.round(depForm * 100) / 100,
+    depForm: 0, // conservé pour compatibilité
     realisees: Math.round(realisees * 100) / 100,
     solde,
     heuresSup,
   };
 }
 
-export function calcHeuresRealisees(entries: PlanningEntry[]): number {
-  // Conservé pour rétrocompatibilité : somme travail réel + forfait dep/form, tous jours confondus.
+export function calcHeuresRealisees(entries: PlanningEntry[], heuresParJour = 5.75): number {
+  // Déplacement/formation = présence normale → heures contractuelles si pas d'horaires saisis
   let total = 0;
   for (const e of entries) {
-    if (e.type === "deplacement" || e.type === "formation") {
-      total += HEURES_FORFAIT_DEPLACEMENT_FORMATION;
-      continue;
+    if (["travail", "teletravail", "reunion"].includes(e.type)) {
+      total += dureeNetteEntry(e);
+    } else if (e.type === "deplacement" || e.type === "formation") {
+      const duree = dureeNetteEntry(e);
+      total += duree > 0 ? duree : heuresParJour;
     }
-    if (e.type !== "travail" && e.type !== "teletravail" && e.type !== "reunion") continue;
-    total += dureeNetteEntry(e);
   }
   return Math.round(total * 100) / 100;
 }
