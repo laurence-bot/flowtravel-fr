@@ -30,7 +30,16 @@ function CongesPage() {
   const [open, setOpen] = useState(false);
   const [recupOpen, setRecupOpen] = useState(false);
   const [form, setForm] = useState({ type: "conge_paye" as AbsenceType, date_debut: "", date_fin: "", motif: "" });
-  const [recupForm, setRecupForm] = useState({ type: "heures" as RecupDemande["type"], heures_demandees: 1, date_souhaitee: "", motif: "" });
+  const [recupForm, setRecupForm] = useState({ date_souhaitee: "", heure_debut: "09:00", heure_fin: "12:00", motif: "" });
+
+  const recupHeures = (() => {
+    const { heure_debut, heure_fin } = recupForm;
+    if (!heure_debut || !heure_fin) return 0;
+    const [dh, dm] = heure_debut.split(":").map(Number);
+    const [fh, fm] = heure_fin.split(":").map(Number);
+    const min = (fh * 60 + fm) - (dh * 60 + dm);
+    return Math.max(0, min) / 60;
+  })();
 
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -52,22 +61,34 @@ function CongesPage() {
   };
 
   const submitRecup = async () => {
-    if (!emp || !recupForm.heures_demandees) return;
-    const mois = (recupForm.date_souhaitee || new Date().toISOString().slice(0, 10)).slice(0, 7);
+    if (!emp) return;
+    if (!recupForm.date_souhaitee) { toast.error("Date souhaitée requise"); return; }
+    if (!recupForm.heure_debut || !recupForm.heure_fin) { toast.error("Heures requises"); return; }
+    if (recupHeures <= 0) { toast.error("L'heure de fin doit être après l'heure de début"); return; }
+    if (!recupForm.motif.trim()) { toast.error("Motif requis"); return; }
+    const mois = recupForm.date_souhaitee.slice(0, 7);
     try {
       await createRecupDemande({
         employee_id: emp.id,
         mois,
-        type: recupForm.type,
-        heures_demandees: recupForm.heures_demandees,
-        date_souhaitee: recupForm.date_souhaitee || undefined,
-        motif: recupForm.motif || undefined,
+        type: "heures",
+        heures_demandees: Math.round(recupHeures * 100) / 100,
+        date_souhaitee: recupForm.date_souhaitee,
+        heure_debut: recupForm.heure_debut,
+        heure_fin: recupForm.heure_fin,
+        motif: recupForm.motif,
       });
       setRecupOpen(false);
-      setRecupForm({ type: "heures", heures_demandees: 1, date_souhaitee: "", motif: "" });
+      setRecupForm({ date_souhaitee: "", heure_debut: "09:00", heure_fin: "12:00", motif: "" });
       load();
       toast.success("Demande de récupération envoyée");
     } catch (e: any) { toast.error(e.message); }
+  };
+
+  const cancelRecup = async (id: string) => {
+    if (!confirm("Annuler cette demande ?")) return;
+    try { await annulerRecupDemande(id); load(); toast.success("Demande annulée"); }
+    catch (e: any) { toast.error(e.message); }
   };
 
   if (!emp) return <Card className="p-10 text-center">Aucune fiche employé liée à votre compte.</Card>;
