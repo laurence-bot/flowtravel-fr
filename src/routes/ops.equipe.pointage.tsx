@@ -4,6 +4,7 @@ import { ArrowLeft, Download } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "@/components/page-header";
 import {
   listTimeEntriesAgence,
@@ -26,6 +27,7 @@ function PointagePage() {
   const [planning, setPlanning] = useState<PlanningEntry[]>([]);
   const [from, setFrom] = useState(() => new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10));
   const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [filterEmp, setFilterEmp] = useState<string>("tous");
 
   const load = async () => {
     const [emps, te, pl] = await Promise.all([
@@ -96,6 +98,19 @@ function PointagePage() {
           <div className="flex gap-2 items-center">
             <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
             <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" />
+            <Select value={filterEmp} onValueChange={setFilterEmp}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Tous les employés" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tous">Tous les employés</SelectItem>
+                {employees.map((e) => (
+                  <SelectItem key={e.id} value={e.id}>
+                    {e.prenom} {e.nom}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button variant="outline" onClick={exportCsv}>
               <Download className="h-4 w-4 mr-2" />
               CSV
@@ -160,29 +175,57 @@ function PointagePage() {
 
       <Card className="p-0 overflow-hidden overflow-x-auto">
         <div className="px-4 py-3 border-b font-medium">Historique des pointages</div>
-        <table className="w-full text-sm min-w-[640px]">
-          <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="text-left px-4 py-3">Date / Heure</th>
-              <th className="text-left px-4 py-3">Employé</th>
-              <th className="text-left px-4 py-3">Événement</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((e) => {
-              const emp = empById(e.employee_id);
-              return (
-                <tr key={e.id} className="border-t">
-                  <td className="px-4 py-2 text-muted-foreground">{new Date(e.event_at).toLocaleString("fr-FR")}</td>
-                  <td className="px-4 py-2">
-                    {emp?.prenom} {emp?.nom}
-                  </td>
-                  <td className="px-4 py-2">{TIME_EVENT_LABELS[e.event_type]}</td>
+        {(() => {
+          const filtered = filterEmp === "tous" ? entries : entries.filter((e) => e.employee_id === filterEmp);
+          // Grouper par date
+          const byDate = new Map<string, typeof filtered>();
+          for (const e of [...filtered].sort((a, b) => b.event_at.localeCompare(a.event_at))) {
+            const d = e.event_at.slice(0, 10);
+            if (!byDate.has(d)) byDate.set(d, []);
+            byDate.get(d)!.push(e);
+          }
+          if (filtered.length === 0)
+            return <p className="p-10 text-center text-muted-foreground text-sm">Aucun pointage sur cette période.</p>;
+          return (
+            <table className="w-full text-sm min-w-[640px]">
+              <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="text-left px-4 py-3">Date</th>
+                  <th className="text-left px-4 py-3">Employé</th>
+                  <th className="text-left px-4 py-3">Événement</th>
+                  <th className="text-left px-4 py-3">Heure</th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {Array.from(byDate.entries()).map(([date, evts]) =>
+                  evts.map((e, i) => {
+                    const emp = empById(e.employee_id);
+                    return (
+                      <tr key={e.id} className="border-t">
+                        {i === 0 ? (
+                          <td className="px-4 py-2 text-muted-foreground font-medium" rowSpan={evts.length}>
+                            {new Date(date).toLocaleDateString("fr-FR", {
+                              weekday: "short",
+                              day: "numeric",
+                              month: "short",
+                            })}
+                          </td>
+                        ) : null}
+                        <td className="px-4 py-2">
+                          {emp?.prenom} {emp?.nom}
+                        </td>
+                        <td className="px-4 py-2">{TIME_EVENT_LABELS[e.event_type]}</td>
+                        <td className="px-4 py-2 tabular-nums text-muted-foreground">
+                          {new Date(e.event_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                        </td>
+                      </tr>
+                    );
+                  }),
+                )}
+              </tbody>
+            </table>
+          );
+        })()}
       </Card>
     </div>
   );
