@@ -9,29 +9,29 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useTable, type Contact } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useRole } from "@/hooks/use-role";
 import { usePageWriteAccess } from "@/hooks/use-page-write-access";
 import { formatEUR, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { logAudit } from "@/lib/audit";
 import {
-  DEMANDE_STATUT_LABELS, DEMANDE_STATUT_TONES, DEMANDE_CANAL_LABELS,
-  isSansReponse, joursDepuisContact,
-  type Demande, type DemandeStatut, type DemandeCanal,
+  DEMANDE_STATUT_LABELS,
+  DEMANDE_STATUT_TONES,
+  DEMANDE_CANAL_LABELS,
+  isSansReponse,
+  joursDepuisContact,
+  type Demande,
+  type DemandeStatut,
+  type DemandeCanal,
 } from "@/lib/demandes";
-import { Inbox, Plus, ChevronRight, AlertTriangle } from "lucide-react";
+import { Inbox, Plus, ChevronRight, AlertTriangle, TrendingUp, Target, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/demandes")({
@@ -80,6 +80,7 @@ export function StatutPill({ statut }: { statut: DemandeStatut }) {
 
 function DemandesPage() {
   const { user } = useAuth();
+  const { agenceId } = useRole();
   const { canWrite } = usePageWriteAccess();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: demandes, loading, refetch } = useTable<Demande>("demandes" as any);
@@ -108,13 +109,17 @@ function DemandesPage() {
   const [fDest, setFDest] = useState<string>("");
   const [fDate, setFDate] = useState<string>("");
 
-  const filtered = useMemo(() => demandes.filter((d) => {
-    if (fStatut !== "tous" && d.statut !== fStatut) return false;
-    if (fCanal !== "tous" && d.canal !== fCanal) return false;
-    if (fDest.trim() && !(d.destination ?? "").toLowerCase().includes(fDest.toLowerCase())) return false;
-    if (fDate && new Date(d.created_at).toISOString().slice(0, 10) < fDate) return false;
-    return true;
-  }), [demandes, fStatut, fCanal, fDest, fDate]);
+  const filtered = useMemo(
+    () =>
+      demandes.filter((d) => {
+        if (fStatut !== "tous" && d.statut !== fStatut) return false;
+        if (fCanal !== "tous" && d.canal !== fCanal) return false;
+        if (fDest.trim() && !(d.destination ?? "").toLowerCase().includes(fDest.toLowerCase())) return false;
+        if (fDate && (!d.date_depart_souhaitee || d.date_depart_souhaitee < fDate)) return false;
+        return true;
+      }),
+    [demandes, fStatut, fCanal, fDest, fDate],
+  );
 
   const alertes = demandes.filter((d) => isSansReponse(d) || d.statut === "a_relancer").length;
 
@@ -138,6 +143,7 @@ function DemandesPage() {
         .from("contacts")
         .insert({
           user_id: user.id,
+          agence_id: agenceId ?? null,
           type: "client",
           nom: parsed.data.nom_client,
           email: parsed.data.email || null,
@@ -194,13 +200,20 @@ function DemandesPage() {
     });
     setOpen(false);
     setForm({
-      nom_client: "", client_id: "", email: "", telephone: "", canal: "email",
-      destination: "", date_depart_souhaitee: "", date_retour_souhaitee: "",
-      budget: "", nombre_pax: "1", message_client: "", creer_client: false,
+      nom_client: "",
+      client_id: "",
+      email: "",
+      telephone: "",
+      canal: "email",
+      destination: "",
+      date_depart_souhaitee: "",
+      date_retour_souhaitee: "",
+      budget: "",
+      nombre_pax: "1",
+      message_client: "",
+      creer_client: false,
     });
-    toast.success(form.creer_client && !parsed.data.client_id
-      ? "Demande et client créés."
-      : "Demande créée.");
+    toast.success(form.creer_client && !parsed.data.client_id ? "Demande et client créés." : "Demande créée.");
     refetch();
   };
 
@@ -213,16 +226,23 @@ function DemandesPage() {
           canWrite && (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                <Button><Plus className="h-4 w-4 mr-2" /> Nouvelle demande</Button>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" /> Nouvelle demande
+                </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader><DialogTitle>Nouvelle demande</DialogTitle></DialogHeader>
+                <DialogHeader>
+                  <DialogTitle>Nouvelle demande</DialogTitle>
+                </DialogHeader>
                 <form onSubmit={submit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Nom du contact *</Label>
-                      <Input value={form.nom_client}
-                        onChange={(e) => setForm({ ...form, nom_client: e.target.value })} required />
+                      <Input
+                        value={form.nom_client}
+                        onChange={(e) => setForm({ ...form, nom_client: e.target.value })}
+                        required
+                      />
                     </div>
                     <div>
                       <Label>Client existant</Label>
@@ -235,7 +255,11 @@ function DemandesPage() {
                           <SelectValue placeholder={form.creer_client ? "Nouveau client" : "Optionnel"} />
                         </SelectTrigger>
                         <SelectContent>
-                          {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+                          {clients.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.nom}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -260,55 +284,79 @@ function DemandesPage() {
                     </div>
                     <div>
                       <Label>Email</Label>
-                      <Input type="email" value={form.email}
-                        onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                      <Input
+                        type="email"
+                        value={form.email}
+                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      />
                     </div>
                     <div>
                       <Label>Téléphone</Label>
-                      <Input value={form.telephone}
-                        onChange={(e) => setForm({ ...form, telephone: e.target.value })} />
+                      <Input value={form.telephone} onChange={(e) => setForm({ ...form, telephone: e.target.value })} />
                     </div>
                     <div>
                       <Label>Canal</Label>
-                      <Select value={form.canal}
-                        onValueChange={(v) => setForm({ ...form, canal: v as DemandeCanal })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                      <Select value={form.canal} onValueChange={(v) => setForm({ ...form, canal: v as DemandeCanal })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
-                          {(Object.keys(DEMANDE_CANAL_LABELS) as DemandeCanal[]).map((k) =>
-                            <SelectItem key={k} value={k}>{DEMANDE_CANAL_LABELS[k]}</SelectItem>)}
+                          {(Object.keys(DEMANDE_CANAL_LABELS) as DemandeCanal[]).map((k) => (
+                            <SelectItem key={k} value={k}>
+                              {DEMANDE_CANAL_LABELS[k]}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
                       <Label>Destination</Label>
-                      <Input value={form.destination}
-                        onChange={(e) => setForm({ ...form, destination: e.target.value })} />
+                      <Input
+                        value={form.destination}
+                        onChange={(e) => setForm({ ...form, destination: e.target.value })}
+                      />
                     </div>
                     <div>
                       <Label>Date départ</Label>
-                      <Input type="date" value={form.date_depart_souhaitee}
-                        onChange={(e) => setForm({ ...form, date_depart_souhaitee: e.target.value })} />
+                      <Input
+                        type="date"
+                        value={form.date_depart_souhaitee}
+                        onChange={(e) => setForm({ ...form, date_depart_souhaitee: e.target.value })}
+                      />
                     </div>
                     <div>
                       <Label>Date retour</Label>
-                      <Input type="date" value={form.date_retour_souhaitee}
-                        onChange={(e) => setForm({ ...form, date_retour_souhaitee: e.target.value })} />
+                      <Input
+                        type="date"
+                        value={form.date_retour_souhaitee}
+                        onChange={(e) => setForm({ ...form, date_retour_souhaitee: e.target.value })}
+                      />
                     </div>
                     <div>
                       <Label>Budget (€)</Label>
-                      <Input type="number" value={form.budget}
-                        onChange={(e) => setForm({ ...form, budget: e.target.value })} />
+                      <Input
+                        type="number"
+                        value={form.budget}
+                        onChange={(e) => setForm({ ...form, budget: e.target.value })}
+                      />
                     </div>
                     <div>
                       <Label>Nombre de pax</Label>
-                      <Input type="number" min={1} value={form.nombre_pax}
-                        onChange={(e) => setForm({ ...form, nombre_pax: e.target.value })} />
+                      <Input
+                        type="number"
+                        min={1}
+                        value={form.nombre_pax}
+                        onChange={(e) => setForm({ ...form, nombre_pax: e.target.value })}
+                      />
                     </div>
                   </div>
                   <div>
                     <Label>Message du client</Label>
-                    <Textarea rows={4} value={form.message_client}
-                      onChange={(e) => setForm({ ...form, message_client: e.target.value })} />
+                    <Textarea
+                      rows={4}
+                      value={form.message_client}
+                      onChange={(e) => setForm({ ...form, message_client: e.target.value })}
+                    />
                   </div>
                   <Button type="submit" disabled={submitting} className="w-full">
                     {submitting ? "Création…" : "Créer la demande"}
@@ -324,31 +372,95 @@ function DemandesPage() {
         <Card className="p-4 border-orange-500/30 bg-orange-500/5 flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 text-orange-600" />
           <div className="text-sm">
-            <span className="font-medium">{alertes} demande(s)</span> en attente de relance ou sans réponse depuis 5 jours.
+            <span className="font-medium">{alertes} demande(s)</span> en attente de relance ou sans réponse depuis 5
+            jours.
           </div>
         </Card>
       )}
+
+      {/* KPIs pipeline */}
+      {demandes.length > 0 &&
+        (() => {
+          const total = demandes.length;
+          const nouvelles = demandes.filter((d) => d.statut === "nouvelle").length;
+          const enCours = demandes.filter((d) => d.statut === "en_cours" || d.statut === "a_relancer").length;
+          const transformees = demandes.filter((d) => d.statut === "transformee_en_cotation").length;
+          const perdues = demandes.filter((d) => d.statut === "perdue").length;
+          const tauxConversion = total > 0 ? Math.round((transformees / total) * 100) : 0;
+          return (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card className="p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Nouvelles</span>
+                  <Inbox className="h-4 w-4 text-blue-500" />
+                </div>
+                <div className="text-2xl font-semibold tabular-nums">{nouvelles}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{enCours} en cours</div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Transformées</span>
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                </div>
+                <div className="text-2xl font-semibold tabular-nums text-emerald-600">{transformees}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">sur {total} demandes</div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Taux conversion</span>
+                  <TrendingUp className="h-4 w-4 text-violet-500" />
+                </div>
+                <div
+                  className={`text-2xl font-semibold tabular-nums ${tauxConversion >= 30 ? "text-emerald-600" : tauxConversion >= 15 ? "text-amber-600" : "text-red-500"}`}
+                >
+                  {tauxConversion}%
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">demande → cotation</div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Perdues</span>
+                  <XCircle className="h-4 w-4 text-red-400" />
+                </div>
+                <div className="text-2xl font-semibold tabular-nums text-muted-foreground">{perdues}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {total > 0 ? Math.round((perdues / total) * 100) : 0}% du total
+                </div>
+              </Card>
+            </div>
+          );
+        })()}
 
       <Card className="p-4 grid md:grid-cols-4 gap-3">
         <div>
           <Label className="text-xs">Statut</Label>
           <Select value={fStatut} onValueChange={setFStatut}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="tous">Tous</SelectItem>
-              {(Object.keys(DEMANDE_STATUT_LABELS) as DemandeStatut[]).map((s) =>
-                <SelectItem key={s} value={s}>{DEMANDE_STATUT_LABELS[s]}</SelectItem>)}
+              {(Object.keys(DEMANDE_STATUT_LABELS) as DemandeStatut[]).map((s) => (
+                <SelectItem key={s} value={s}>
+                  {DEMANDE_STATUT_LABELS[s]}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         <div>
           <Label className="text-xs">Canal</Label>
           <Select value={fCanal} onValueChange={setFCanal}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="tous">Tous</SelectItem>
-              {(Object.keys(DEMANDE_CANAL_LABELS) as DemandeCanal[]).map((s) =>
-                <SelectItem key={s} value={s}>{DEMANDE_CANAL_LABELS[s]}</SelectItem>)}
+              {(Object.keys(DEMANDE_CANAL_LABELS) as DemandeCanal[]).map((s) => (
+                <SelectItem key={s} value={s}>
+                  {DEMANDE_CANAL_LABELS[s]}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -357,7 +469,7 @@ function DemandesPage() {
           <Input placeholder="Filtrer…" value={fDest} onChange={(e) => setFDest(e.target.value)} />
         </div>
         <div>
-          <Label className="text-xs">Depuis le</Label>
+          <Label className="text-xs">Départ après le</Label>
           <Input type="date" value={fDate} onChange={(e) => setFDate(e.target.value)} />
         </div>
       </Card>
@@ -366,8 +478,11 @@ function DemandesPage() {
         {loading ? (
           <div className="p-10 text-sm text-muted-foreground text-center">Chargement…</div>
         ) : filtered.length === 0 ? (
-          <EmptyState icon={Inbox} title="Aucune demande"
-            description="Créez votre première demande pour démarrer le suivi commercial." />
+          <EmptyState
+            icon={Inbox}
+            title="Aucune demande"
+            description="Créez votre première demande pour démarrer le suivi commercial."
+          />
         ) : (
           <Table>
             <TableHeader>
@@ -398,19 +513,19 @@ function DemandesPage() {
                         ? `${d.date_depart_souhaitee}${d.date_retour_souhaitee ? ` → ${d.date_retour_souhaitee}` : ""}`
                         : "—"}
                     </TableCell>
-                    <TableCell className="text-right tabular">
-                      {d.budget ? formatEUR(d.budget) : "—"}
-                    </TableCell>
+                    <TableCell className="text-right tabular">{d.budget ? formatEUR(d.budget) : "—"}</TableCell>
                     <TableCell className="text-xs">{DEMANDE_CANAL_LABELS[d.canal]}</TableCell>
-                    <TableCell><StatutPill statut={d.statut} /></TableCell>
+                    <TableCell>
+                      <StatutPill statut={d.statut} />
+                    </TableCell>
                     <TableCell className="text-xs text-muted-foreground">{formatDate(d.created_at)}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {alerte ? (
-                        <span className="text-orange-600 font-medium">
-                          {joursDepuisContact(d)}j sans réponse
-                        </span>
+                        <span className="text-orange-600 font-medium">{joursDepuisContact(d)}j sans réponse</span>
+                      ) : d.dernier_contact_at ? (
+                        formatDate(d.dernier_contact_at)
                       ) : (
-                        d.dernier_contact_at ? formatDate(d.dernier_contact_at) : "—"
+                        "—"
                       )}
                     </TableCell>
                     <TableCell>
