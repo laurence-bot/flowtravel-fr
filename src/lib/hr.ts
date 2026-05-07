@@ -4,7 +4,7 @@ export type ContractType = "cdi" | "cdd" | "stage" | "alternance" | "freelance" 
 export type ContractStatut = "brouillon" | "a_signer" | "signe" | "archive" | "rompu";
 export type AbsenceType = "conge_paye" | "rtt" | "maladie" | "sans_solde" | "formation" | "recup" | "parental" | "autre";
 export type AbsenceStatut = "demande" | "approuvee" | "refusee" | "signee" | "annulee";
-export type PlanningType = "travail" | "teletravail" | "reunion" | "deplacement" | "formation" | "autre";
+export type PlanningType = "travail" | "teletravail" | "reunion" | "deplacement" | "formation" | "recuperation" | "autre";
 export type TimeEvent = "arrivee" | "pause_debut" | "pause_fin" | "sortie";
 export type EvaluationStatut = "a_completer" | "auto_eval_faite" | "entretien_fait" | "signee" | "cloturee";
 
@@ -19,7 +19,7 @@ export const ABSENCE_STATUT_LABELS: Record<AbsenceStatut, string> = {
   demande: "En attente", approuvee: "Approuvée", refusee: "Refusée", signee: "Signée", annulee: "Annulée",
 };
 export const PLANNING_TYPE_LABELS: Record<PlanningType, string> = {
-  travail: "Travail", teletravail: "Télétravail", reunion: "Réunion", deplacement: "Déplacement", formation: "Formation", autre: "Autre",
+  travail: "Travail", teletravail: "Télétravail", reunion: "Réunion", deplacement: "Déplacement", formation: "Formation", recuperation: "Récupération", autre: "Autre",
 };
 export const TIME_EVENT_LABELS: Record<TimeEvent, string> = {
   arrivee: "Arrivée", pause_debut: "Début pause", pause_fin: "Fin pause", sortie: "Sortie",
@@ -402,10 +402,13 @@ export type RecupDemande = {
   type: "journee" | "heures" | "report_exceptionnel";
   heures_demandees: number;
   date_souhaitee: string | null;
+  heure_debut: string | null;
+  heure_fin: string | null;
   motif: string | null;
-  statut: "demande" | "approuvee" | "refusee";
+  statut: "demande" | "approuvee" | "refusee" | "annulee";
   traite_par: string | null;
   traite_at: string | null;
+  planning_entry_id: string | null;
   created_at: string;
 };
 
@@ -586,6 +589,8 @@ export async function createRecupDemande(input: {
   type: RecupDemande["type"];
   heures_demandees: number;
   date_souhaitee?: string;
+  heure_debut?: string;
+  heure_fin?: string;
   motif?: string;
 }): Promise<RecupDemande> {
   const agence_id = await getMyAgenceId();
@@ -598,6 +603,8 @@ export async function createRecupDemande(input: {
       type: input.type,
       heures_demandees: input.heures_demandees,
       date_souhaitee: input.date_souhaitee ?? null,
+      heure_debut: input.heure_debut ?? null,
+      heure_fin: input.heure_fin ?? null,
       motif: input.motif ?? null,
       statut: "demande",
     })
@@ -643,9 +650,46 @@ export async function createRecupDemande(input: {
 
 export async function approuverRecupDemande(id: string): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
+  // Charger la demande pour récupérer date/heures
+  const { data: dem, error: e1 } = await supabase
+    .from("hr_recup_demandes" as any)
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (e1) throw e1;
+  const d = dem as any;
+  if (!d) throw new Error("Demande introuvable");
+
+  let planning_entry_id: string | null = null;
+  if (d.date_souhaitee) {
+    const employee = await getEmployee(d.employee_id);
+    const { data: ins, error: e2 } = await supabase
+      .from("hr_planning_entries")
+      .insert({
+        employee_id: d.employee_id,
+        agence_id: employee?.agence_id ?? null,
+        date_start: d.date_souhaitee,
+        date_end: d.date_souhaitee,
+        type: "recuperation",
+        heure_debut: d.heure_debut ?? null,
+        heure_fin: d.heure_fin ?? null,
+        note: d.motif ?? "Récupération",
+        created_by: user?.id ?? null,
+      } as any)
+      .select("id")
+      .single();
+    if (e2) throw e2;
+    planning_entry_id = (ins as any)?.id ?? null;
+  }
+
   const { error } = await supabase
     .from("hr_recup_demandes" as any)
-    .update({ statut: "approuvee", traite_par: user?.id ?? null, traite_at: new Date().toISOString() })
+    .update({
+      statut: "approuvee",
+      traite_par: user?.id ?? null,
+      traite_at: new Date().toISOString(),
+      planning_entry_id,
+    })
     .eq("id", id);
   if (error) throw error;
 }
@@ -656,6 +700,29 @@ export async function refuserRecupDemande(id: string): Promise<void> {
     .from("hr_recup_demandes" as any)
     .update({ statut: "refusee", traite_par: user?.id ?? null, traite_at: new Date().toISOString() })
     .eq("id", id);
+  if (error) throw error;
+}
+
+export async function annulerRecupDemande(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("hr_recup_demandes" as any)
+    .update({ statut: "annulee" })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteRecupDemande(id: string): Promise<void> {
+  // Supprimer l'entrée planning associée si présente
+  const { data: dem } = await supabase
+    .from("hr_recup_demandes" as any)
+    .select("planning_entry_id")
+    .eq("id", id)
+    .maybeSingle();
+  const peId = (dem as any)?.planning_entry_id;
+  if (peId) {
+    await supabase.from("hr_planning_entries").delete().eq("id", peId);
+  }
+  const { error } = await supabase.from("hr_recup_demandes" as any).delete().eq("id", id);
   if (error) throw error;
 }
 

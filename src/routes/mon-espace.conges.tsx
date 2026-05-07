@@ -9,11 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
-import { getEmployeeByUserId, listAbsences, createAbsence, ABSENCE_TYPE_LABELS, ABSENCE_STATUT_LABELS, type Employee, type Absence, type AbsenceType, computeWorkingDays, listRecupDemandes, createRecupDemande, type RecupDemande } from "@/lib/hr";
+import { getEmployeeByUserId, listAbsences, createAbsence, ABSENCE_TYPE_LABELS, ABSENCE_STATUT_LABELS, type Employee, type Absence, type AbsenceType, computeWorkingDays, listRecupDemandes, createRecupDemande, annulerRecupDemande, type RecupDemande } from "@/lib/hr";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-const RECUP_STATUT_LABELS: Record<RecupDemande["statut"], string> = { demande: "En attente", approuvee: "Approuvée", refusee: "Refusée" };
+const RECUP_STATUT_LABELS: Record<RecupDemande["statut"], string> = { demande: "En attente", approuvee: "Approuvée", refusee: "Refusée", annulee: "Annulée" };
 
 export const Route = createFileRoute("/mon-espace/conges")({
   beforeLoad: async () => {
@@ -30,7 +30,16 @@ function CongesPage() {
   const [open, setOpen] = useState(false);
   const [recupOpen, setRecupOpen] = useState(false);
   const [form, setForm] = useState({ type: "conge_paye" as AbsenceType, date_debut: "", date_fin: "", motif: "" });
-  const [recupForm, setRecupForm] = useState({ type: "heures" as RecupDemande["type"], heures_demandees: 1, date_souhaitee: "", motif: "" });
+  const [recupForm, setRecupForm] = useState({ date_souhaitee: "", heure_debut: "09:00", heure_fin: "12:00", motif: "" });
+
+  const recupHeures = (() => {
+    const { heure_debut, heure_fin } = recupForm;
+    if (!heure_debut || !heure_fin) return 0;
+    const [dh, dm] = heure_debut.split(":").map(Number);
+    const [fh, fm] = heure_fin.split(":").map(Number);
+    const min = (fh * 60 + fm) - (dh * 60 + dm);
+    return Math.max(0, min) / 60;
+  })();
 
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -52,22 +61,34 @@ function CongesPage() {
   };
 
   const submitRecup = async () => {
-    if (!emp || !recupForm.heures_demandees) return;
-    const mois = (recupForm.date_souhaitee || new Date().toISOString().slice(0, 10)).slice(0, 7);
+    if (!emp) return;
+    if (!recupForm.date_souhaitee) { toast.error("Date souhaitée requise"); return; }
+    if (!recupForm.heure_debut || !recupForm.heure_fin) { toast.error("Heures requises"); return; }
+    if (recupHeures <= 0) { toast.error("L'heure de fin doit être après l'heure de début"); return; }
+    if (!recupForm.motif.trim()) { toast.error("Motif requis"); return; }
+    const mois = recupForm.date_souhaitee.slice(0, 7);
     try {
       await createRecupDemande({
         employee_id: emp.id,
         mois,
-        type: recupForm.type,
-        heures_demandees: recupForm.heures_demandees,
-        date_souhaitee: recupForm.date_souhaitee || undefined,
-        motif: recupForm.motif || undefined,
+        type: "heures",
+        heures_demandees: Math.round(recupHeures * 100) / 100,
+        date_souhaitee: recupForm.date_souhaitee,
+        heure_debut: recupForm.heure_debut,
+        heure_fin: recupForm.heure_fin,
+        motif: recupForm.motif,
       });
       setRecupOpen(false);
-      setRecupForm({ type: "heures", heures_demandees: 1, date_souhaitee: "", motif: "" });
+      setRecupForm({ date_souhaitee: "", heure_debut: "09:00", heure_fin: "12:00", motif: "" });
       load();
       toast.success("Demande de récupération envoyée");
     } catch (e: any) { toast.error(e.message); }
+  };
+
+  const cancelRecup = async (id: string) => {
+    if (!confirm("Annuler cette demande ?")) return;
+    try { await annulerRecupDemande(id); load(); toast.success("Demande annulée"); }
+    catch (e: any) { toast.error(e.message); }
   };
 
   if (!emp) return <Card className="p-10 text-center">Aucune fiche employé liée à votre compte.</Card>;
@@ -119,15 +140,20 @@ function CongesPage() {
           <div className="px-4 py-3 border-b bg-muted/40 text-xs uppercase text-muted-foreground">Demandes de récupération</div>
           <table className="w-full text-sm">
             <thead className="bg-muted/20 text-xs uppercase text-muted-foreground">
-              <tr><th className="text-left px-4 py-2">Mois</th><th className="text-left px-4 py-2">Type</th><th className="text-left px-4 py-2">Heures</th><th className="text-left px-4 py-2">Date souhaitée</th><th className="text-left px-4 py-2">Statut</th></tr>
+              <tr><th className="text-left px-4 py-2">Date</th><th className="text-left px-4 py-2">Horaires</th><th className="text-left px-4 py-2">Heures</th><th className="text-left px-4 py-2">Motif</th><th className="text-left px-4 py-2">Statut</th><th className="text-right px-4 py-2"></th></tr>
             </thead>
             <tbody>{recups.map(r => (
               <tr key={r.id} className="border-t">
-                <td className="px-4 py-2">{r.mois}</td>
-                <td className="px-4 py-2">{r.type}</td>
+                <td className="px-4 py-2">{r.date_souhaitee ?? r.mois}</td>
+                <td className="px-4 py-2">{r.heure_debut && r.heure_fin ? `${r.heure_debut.slice(0,5)}–${r.heure_fin.slice(0,5)}` : "—"}</td>
                 <td className="px-4 py-2">{r.heures_demandees}h</td>
-                <td className="px-4 py-2">{r.date_souhaitee ?? "—"}</td>
+                <td className="px-4 py-2 max-w-[260px] truncate">{r.motif ?? "—"}</td>
                 <td className="px-4 py-2"><span className="text-xs px-2 py-0.5 rounded-full bg-muted">{RECUP_STATUT_LABELS[r.statut]}</span></td>
+                <td className="px-4 py-2 text-right">
+                  {r.statut === "demande" && (
+                    <Button size="sm" variant="ghost" onClick={() => cancelRecup(r.id)}>Annuler</Button>
+                  )}
+                </td>
               </tr>
             ))}</tbody>
           </table>
@@ -162,38 +188,29 @@ function CongesPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>Demander une récupération</DialogTitle></DialogHeader>
           <div className="grid gap-3">
-            <div><Label>Type</Label>
-              <Select value={recupForm.type} onValueChange={(v) => setRecupForm({ ...recupForm, type: v as RecupDemande["type"] })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="heures">Heures</SelectItem>
-                  <SelectItem value="journee">Journée</SelectItem>
-                  <SelectItem value="report_exceptionnel">Report exceptionnel</SelectItem>
-                </SelectContent>
-              </Select>
+            <div>
+              <Label>Date souhaitée *</Label>
+              <Input type="date" value={recupForm.date_souhaitee} onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Heures à récupérer</Label>
-                <Input
-                  type="number"
-                  min={0.25}
-                  step={0.25}
-                  value={recupForm.heures_demandees}
-                  onChange={(e) => setRecupForm({ ...recupForm, heures_demandees: Number(e.target.value) })}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {(() => {
-                    const v = Math.max(0, Math.round((recupForm.heures_demandees || 0) * 4) / 4);
-                    const h = Math.floor(v);
-                    const m = Math.round((v - h) * 60);
-                    return `${h}h ${m.toString().padStart(2, "0")} min`;
-                  })()}
-                </p>
+                <Label>Heure de début *</Label>
+                <Input type="time" step={900} value={recupForm.heure_debut} onChange={(e) => setRecupForm({ ...recupForm, heure_debut: e.target.value })} />
               </div>
-              <div><Label>Date souhaitée</Label><Input type="date" value={recupForm.date_souhaitee} onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })} /></div>
+              <div>
+                <Label>Heure de fin *</Label>
+                <Input type="time" step={900} value={recupForm.heure_fin} onChange={(e) => setRecupForm({ ...recupForm, heure_fin: e.target.value })} />
+              </div>
             </div>
-            <div><Label>Motif</Label><Textarea rows={3} value={recupForm.motif} onChange={(e) => setRecupForm({ ...recupForm, motif: e.target.value })} /></div>
+            <p className="text-xs text-muted-foreground">
+              Durée : {(() => {
+                const v = Math.max(0, recupHeures);
+                const h = Math.floor(v);
+                const m = Math.round((v - h) * 60);
+                return `${h}h ${m.toString().padStart(2, "0")} min`;
+              })()}
+            </p>
+            <div><Label>Motif *</Label><Textarea rows={3} value={recupForm.motif} onChange={(e) => setRecupForm({ ...recupForm, motif: e.target.value })} placeholder="Ex : rendez-vous médical, démarches administratives…" /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRecupOpen(false)}>Annuler</Button>

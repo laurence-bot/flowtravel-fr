@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Check, X, Plus } from "lucide-react";
+import { ArrowLeft, Check, X, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { PageHeader } from "@/components/page-header";
 import {
   listAbsences, approveAbsence, rejectAbsence, createAbsence,
   listEmployees, listRecupDemandes, createRecupDemande,
-  approuverRecupDemande, refuserRecupDemande,
+  approuverRecupDemande, refuserRecupDemande, deleteRecupDemande,
   ABSENCE_TYPE_LABELS, ABSENCE_STATUT_LABELS,
   type Absence, type Employee, type AbsenceType, type AbsenceStatut, type RecupDemande,
 } from "@/lib/hr";
@@ -60,7 +60,7 @@ function AbsencesPage() {
 
   const [recups, setRecups] = useState<RecupDemande[]>([]);
   const [recupOpen, setRecupOpen] = useState(false);
-  const [recupForm, setRecupForm] = useState({ employee_id: "", heures_demandees: "7", date_souhaitee: "", motif: "" });
+  const [recupForm, setRecupForm] = useState({ employee_id: "", date_souhaitee: "", heure_debut: "09:00", heure_fin: "12:00", motif: "" });
 
   const reload = async () => {
     setLoading(true);
@@ -79,22 +79,40 @@ function AbsencesPage() {
 
   useEffect(() => { reload(); }, []);
 
+  const recupHeures = (() => {
+    if (!recupForm.heure_debut || !recupForm.heure_fin) return 0;
+    const [dh, dm] = recupForm.heure_debut.split(":").map(Number);
+    const [fh, fm] = recupForm.heure_fin.split(":").map(Number);
+    return Math.max(0, (fh * 60 + fm) - (dh * 60 + dm)) / 60;
+  })();
+
   const saveRecup = async () => {
-    if (!recupForm.employee_id || !recupForm.heures_demandees) { toast.error("Champs requis"); return; }
+    if (!recupForm.employee_id) { toast.error("Employé requis"); return; }
+    if (!recupForm.date_souhaitee) { toast.error("Date souhaitée requise"); return; }
+    if (recupHeures <= 0) { toast.error("Horaires invalides"); return; }
+    if (!recupForm.motif.trim()) { toast.error("Motif requis"); return; }
     try {
       await createRecupDemande({
         employee_id: recupForm.employee_id,
-        mois: new Date().toISOString().slice(0, 7),
+        mois: recupForm.date_souhaitee.slice(0, 7),
         type: "heures",
-        heures_demandees: Number(recupForm.heures_demandees),
-        date_souhaitee: recupForm.date_souhaitee || undefined,
-        motif: recupForm.motif || undefined,
+        heures_demandees: Math.round(recupHeures * 100) / 100,
+        date_souhaitee: recupForm.date_souhaitee,
+        heure_debut: recupForm.heure_debut,
+        heure_fin: recupForm.heure_fin,
+        motif: recupForm.motif,
       });
       toast.success("Demande créée");
       setRecupOpen(false);
-      setRecupForm({ employee_id: "", heures_demandees: "7", date_souhaitee: "", motif: "" });
+      setRecupForm({ employee_id: "", date_souhaitee: "", heure_debut: "09:00", heure_fin: "12:00", motif: "" });
       reload();
     } catch (e: any) { toast.error(e.message); }
+  };
+
+  const handleDeleteRecup = async (id: string) => {
+    if (!confirm("Supprimer définitivement cette demande ?\nL'entrée planning associée sera également supprimée.")) return;
+    try { await deleteRecupDemande(id); toast.success("Demande supprimée"); reload(); }
+    catch (e: any) { toast.error(e.message); }
   };
 
   const filtered = items.filter(a => {
@@ -327,8 +345,9 @@ function AbsencesPage() {
                 <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="text-left px-4 py-3">Employé</th>
+                    <th className="text-left px-4 py-3">Date</th>
+                    <th className="text-left px-4 py-3">Horaires</th>
                     <th className="text-right px-4 py-3">Heures</th>
-                    <th className="text-left px-4 py-3">Date souhaitée</th>
                     <th className="text-left px-4 py-3">Motif</th>
                     <th className="text-left px-4 py-3">Statut</th>
                     <th className="text-right px-4 py-3">Actions</th>
@@ -337,34 +356,39 @@ function AbsencesPage() {
                 <tbody>
                   {recups.map(r => {
                     const emp = empMap[r.employee_id];
+                    const statutLabel = r.statut === "approuvee" ? "Approuvée" : r.statut === "refusee" ? "Refusée" : r.statut === "annulee" ? "Annulée" : "En attente";
+                    const statutClass = r.statut === "approuvee" ? "bg-green-100 text-green-700"
+                      : r.statut === "refusee" ? "bg-red-100 text-red-600"
+                      : r.statut === "annulee" ? "bg-zinc-100 text-zinc-500"
+                      : "bg-amber-100 text-amber-700";
                     return (
                       <tr key={r.id} className="border-t">
                         <td className="px-4 py-3">{emp ? `${emp.prenom} ${emp.nom}` : "—"}</td>
+                        <td className="px-4 py-3">{r.date_souhaitee ?? r.mois}</td>
+                        <td className="px-4 py-3">{r.heure_debut && r.heure_fin ? `${r.heure_debut.slice(0,5)}–${r.heure_fin.slice(0,5)}` : "—"}</td>
                         <td className="px-4 py-3 text-right">{r.heures_demandees}h</td>
-                        <td className="px-4 py-3">{r.date_souhaitee ?? "—"}</td>
                         <td className="px-4 py-3 max-w-[240px] truncate">{r.motif ?? "—"}</td>
                         <td className="px-4 py-3">
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            r.statut === "approuvee" ? "bg-green-100 text-green-700" :
-                            r.statut === "refusee" ? "bg-red-100 text-red-600" :
-                            "bg-amber-100 text-amber-700"
-                          }`}>
-                            {r.statut === "approuvee" ? "Approuvée" : r.statut === "refusee" ? "Refusée" : "En attente"}
-                          </span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${statutClass}`}>{statutLabel}</span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {r.statut === "demande" && (
-                            <div className="flex gap-1 justify-end">
-                              <Button size="sm" onClick={async () => {
-                                try { await approuverRecupDemande(r.id); toast.success("Approuvée"); reload(); }
-                                catch (e: any) { toast.error(e.message); }
-                              }}><Check className="h-3 w-3" /></Button>
-                              <Button size="sm" variant="outline" onClick={async () => {
-                                try { await refuserRecupDemande(r.id); toast.success("Refusée"); reload(); }
-                                catch (e: any) { toast.error(e.message); }
-                              }}><X className="h-3 w-3" /></Button>
-                            </div>
-                          )}
+                          <div className="flex gap-1 justify-end">
+                            {r.statut === "demande" && (
+                              <>
+                                <Button size="sm" onClick={async () => {
+                                  try { await approuverRecupDemande(r.id); toast.success("Approuvée — entrée ajoutée au planning"); reload(); }
+                                  catch (e: any) { toast.error(e.message); }
+                                }}><Check className="h-3 w-3" /></Button>
+                                <Button size="sm" variant="outline" onClick={async () => {
+                                  try { await refuserRecupDemande(r.id); toast.success("Refusée"); reload(); }
+                                  catch (e: any) { toast.error(e.message); }
+                                }}><X className="h-3 w-3" /></Button>
+                              </>
+                            )}
+                            <Button size="sm" variant="ghost" onClick={() => handleDeleteRecup(r.id)} title="Supprimer">
+                              <Trash2 className="h-3 w-3 text-red-600" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -466,19 +490,31 @@ function AbsencesPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Date souhaitée *</Label>
+              <Input type="date" value={recupForm.date_souhaitee} onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })} />
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Heures demandées</Label>
-                <Input type="number" step="0.5" value={recupForm.heures_demandees} onChange={(e) => setRecupForm({ ...recupForm, heures_demandees: e.target.value })} />
+                <Label>Heure de début *</Label>
+                <Input type="time" step={900} value={recupForm.heure_debut} onChange={(e) => setRecupForm({ ...recupForm, heure_debut: e.target.value })} />
               </div>
               <div>
-                <Label>Date souhaitée</Label>
-                <Input type="date" value={recupForm.date_souhaitee} onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })} />
+                <Label>Heure de fin *</Label>
+                <Input type="time" step={900} value={recupForm.heure_fin} onChange={(e) => setRecupForm({ ...recupForm, heure_fin: e.target.value })} />
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Durée calculée : {(() => {
+                const v = Math.max(0, recupHeures);
+                const h = Math.floor(v);
+                const m = Math.round((v - h) * 60);
+                return `${h}h ${m.toString().padStart(2, "0")} min`;
+              })()}
+            </p>
             <div>
-              <Label>Motif</Label>
-              <Textarea rows={2} value={recupForm.motif} onChange={(e) => setRecupForm({ ...recupForm, motif: e.target.value })} />
+              <Label>Motif *</Label>
+              <Textarea rows={2} value={recupForm.motif} onChange={(e) => setRecupForm({ ...recupForm, motif: e.target.value })} required />
             </div>
           </div>
           <DialogFooter>
