@@ -173,7 +173,24 @@ function CongesPage() {
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Heures</Label><Input type="number" min={0.5} step={0.5} value={recupForm.heures_demandees} onChange={(e) => setRecupForm({ ...recupForm, heures_demandees: Number(e.target.value) })} /></div>
+              <div>
+                <Label>Heures à récupérer</Label>
+                <Input
+                  type="number"
+                  min={0.25}
+                  step={0.25}
+                  value={recupForm.heures_demandees}
+                  onChange={(e) => setRecupForm({ ...recupForm, heures_demandees: Number(e.target.value) })}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {(() => {
+                    const v = Math.max(0, Math.round((recupForm.heures_demandees || 0) * 4) / 4);
+                    const h = Math.floor(v);
+                    const m = Math.round((v - h) * 60);
+                    return `${h}h ${m.toString().padStart(2, "0")} min`;
+                  })()}
+                </p>
+              </div>
               <div><Label>Date souhaitée</Label><Input type="date" value={recupForm.date_souhaitee} onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })} /></div>
             </div>
             <div><Label>Motif</Label><Textarea rows={3} value={recupForm.motif} onChange={(e) => setRecupForm({ ...recupForm, motif: e.target.value })} /></div>
