@@ -111,14 +111,14 @@ function CongesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card className="p-4"><div className="text-xs uppercase text-muted-foreground">Congés payés restants</div><div className="text-3xl font-display">{cpRest}</div></Card>
         <Card className="p-4"><div className="text-xs uppercase text-muted-foreground">RTT restants</div><div className="text-3xl font-display">{rttRest}</div></Card>
       </div>
 
       <Card className="p-0 overflow-hidden overflow-x-auto">
         {items.length === 0 ? <div className="p-10 text-center text-muted-foreground">Aucune demande</div> :
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
               <tr><th className="text-left px-4 py-3">Type</th><th className="text-left px-4 py-3">Du</th><th className="text-left px-4 py-3">Au</th><th className="text-left px-4 py-3">Jours</th><th className="text-left px-4 py-3">Statut</th></tr>
             </thead>
@@ -138,7 +138,7 @@ function CongesPage() {
       {recups.length > 0 && (
         <Card className="p-0 overflow-hidden overflow-x-auto">
           <div className="px-4 py-3 border-b bg-muted/40 text-xs uppercase text-muted-foreground">Demandes de récupération</div>
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-muted/20 text-xs uppercase text-muted-foreground">
               <tr><th className="text-left px-4 py-2">Date</th><th className="text-left px-4 py-2">Horaires</th><th className="text-left px-4 py-2">Heures</th><th className="text-left px-4 py-2">Motif</th><th className="text-left px-4 py-2">Statut</th><th className="text-right px-4 py-2"></th></tr>
             </thead>

@@ -65,7 +65,7 @@ function EquipeIndex() {
             action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />Ajouter un employé</Button>}
           />
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="text-left px-4 py-3">Nom</th>
@@ -164,7 +164,7 @@ function NewEmployeeDialog({
           <DialogTitle>Nouvel employé</DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Prénom *</Label>
               <Input value={form.prenom} onChange={(e) => setForm({ ...form, prenom: e.target.value })} />
@@ -182,7 +182,7 @@ function NewEmployeeDialog({
             <Label>Poste</Label>
             <Input value={form.poste} onChange={(e) => setForm({ ...form, poste: e.target.value })} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Type de contrat</Label>
               <Select value={form.type_contrat} onValueChange={(v) => setForm({ ...form, type_contrat: v as ContractType })}>
@@ -199,7 +199,7 @@ function NewEmployeeDialog({
               <Input type="date" value={form.date_embauche} onChange={(e) => setForm({ ...form, date_embauche: e.target.value })} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Salaire brut mensuel (€)</Label>
               <Input type="number" step="0.01" value={form.salaire_brut_mensuel} onChange={(e) => setForm({ ...form, salaire_brut_mensuel: e.target.value })} />

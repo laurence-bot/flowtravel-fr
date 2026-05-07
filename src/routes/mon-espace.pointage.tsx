@@ -65,7 +65,7 @@ function PointageEmployeePage() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Link to="/mon-espace/conges"><Card className="p-4 hover:bg-muted/40 cursor-pointer"><Calendar className="h-5 w-5 mb-2" /><div className="font-medium">Mes congés</div></Card></Link>
         <Link to="/mon-espace/contrats"><Card className="p-4 hover:bg-muted/40 cursor-pointer"><FileText className="h-5 w-5 mb-2" /><div className="font-medium">Mes contrats</div></Card></Link>
         <Link to="/mon-espace/evaluation"><Card className="p-4 hover:bg-muted/40 cursor-pointer"><Award className="h-5 w-5 mb-2" /><div className="font-medium">Mon évaluation</div></Card></Link>

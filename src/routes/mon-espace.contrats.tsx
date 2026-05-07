@@ -29,7 +29,7 @@ function MyContracts() {
       <h1 className="font-display text-3xl">Mes contrats</h1>
       <Card className="p-0 overflow-hidden overflow-x-auto">
         {items.length === 0 ? <div className="p-10 text-center text-muted-foreground">Aucun contrat</div> :
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
               <tr><th className="text-left px-4 py-3">Titre</th><th className="text-left px-4 py-3">Statut</th><th className="text-right px-4 py-3">Action</th></tr>
             </thead>

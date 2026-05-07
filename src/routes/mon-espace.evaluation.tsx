@@ -60,7 +60,7 @@ function MyEval() {
 
       {items.length > 1 && <Card className="p-0 overflow-hidden overflow-x-auto">
         <div className="p-4 border-b font-medium">Historique</div>
-        <table className="w-full text-sm">
+        <table className="w-full text-sm min-w-[640px]">
           <tbody>{items.map(e => (
             <tr key={e.id} className="border-t"><td className="px-4 py-2">{e.annee}</td><td className="px-4 py-2 text-muted-foreground">{e.statut}</td><td className="px-4 py-2 text-right">{e.note_globale ?? "—"}</td></tr>
           ))}</tbody>

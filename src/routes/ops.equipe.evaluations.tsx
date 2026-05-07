@@ -39,7 +39,7 @@ function EvalsPage() {
 
       <Card className="p-0 overflow-hidden overflow-x-auto">
         {items.length === 0 ? <div className="p-10 text-center text-muted-foreground">Aucune évaluation</div> :
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
               <tr><th className="text-left px-4 py-3">Année</th><th className="text-left px-4 py-3">Employé</th><th className="text-left px-4 py-3">Statut</th><th className="text-left px-4 py-3">Note</th></tr>
             </thead>
