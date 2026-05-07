@@ -140,15 +140,20 @@ function CongesPage() {
           <div className="px-4 py-3 border-b bg-muted/40 text-xs uppercase text-muted-foreground">Demandes de récupération</div>
           <table className="w-full text-sm">
             <thead className="bg-muted/20 text-xs uppercase text-muted-foreground">
-              <tr><th className="text-left px-4 py-2">Mois</th><th className="text-left px-4 py-2">Type</th><th className="text-left px-4 py-2">Heures</th><th className="text-left px-4 py-2">Date souhaitée</th><th className="text-left px-4 py-2">Statut</th></tr>
+              <tr><th className="text-left px-4 py-2">Date</th><th className="text-left px-4 py-2">Horaires</th><th className="text-left px-4 py-2">Heures</th><th className="text-left px-4 py-2">Motif</th><th className="text-left px-4 py-2">Statut</th><th className="text-right px-4 py-2"></th></tr>
             </thead>
             <tbody>{recups.map(r => (
               <tr key={r.id} className="border-t">
-                <td className="px-4 py-2">{r.mois}</td>
-                <td className="px-4 py-2">{r.type}</td>
+                <td className="px-4 py-2">{r.date_souhaitee ?? r.mois}</td>
+                <td className="px-4 py-2">{r.heure_debut && r.heure_fin ? `${r.heure_debut.slice(0,5)}–${r.heure_fin.slice(0,5)}` : "—"}</td>
                 <td className="px-4 py-2">{r.heures_demandees}h</td>
-                <td className="px-4 py-2">{r.date_souhaitee ?? "—"}</td>
+                <td className="px-4 py-2 max-w-[260px] truncate">{r.motif ?? "—"}</td>
                 <td className="px-4 py-2"><span className="text-xs px-2 py-0.5 rounded-full bg-muted">{RECUP_STATUT_LABELS[r.statut]}</span></td>
+                <td className="px-4 py-2 text-right">
+                  {r.statut === "demande" && (
+                    <Button size="sm" variant="ghost" onClick={() => cancelRecup(r.id)}>Annuler</Button>
+                  )}
+                </td>
               </tr>
             ))}</tbody>
           </table>
