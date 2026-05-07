@@ -16,6 +16,7 @@ import {
   CONTRACT_TYPE_LABELS,
   type Employee,
   type ContractType,
+  type RythmeType,
 } from "@/lib/hr";
 import { toast } from "sonner";
 
@@ -233,6 +234,131 @@ function EmployeeDetail() {
                   onChange={(e) => setEmployee({ ...employee, notes: e.target.value })}
                 />
               </Field>
+            </div>
+          </Card>
+
+          {/* Paramètres horaires */}
+          <Card className="p-6 space-y-4">
+            <h3 className="font-medium text-sm uppercase tracking-wider text-muted-foreground">Horaires & Rythme</h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Heures nettes / jour">
+                <Input
+                  type="number"
+                  step="0.25"
+                  value={employee.heures_par_jour ?? 7.5}
+                  onChange={(e) => setEmployee({ ...employee, heures_par_jour: Number(e.target.value) || null })}
+                />
+              </Field>
+              <Field label="Pause repas (minutes)">
+                <Select
+                  value={String(employee.pause_minutes ?? 30)}
+                  onValueChange={(v) => setEmployee({ ...employee, pause_minutes: Number(v) })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Pas de pause</SelectItem>
+                    <SelectItem value="30">30 min</SelectItem>
+                    <SelectItem value="45">45 min</SelectItem>
+                    <SelectItem value="60">1 heure</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Rythme de semaine">
+                <Select
+                  value={employee.rythme_semaine ?? "fixe"}
+                  onValueChange={(v) => setEmployee({ ...employee, rythme_semaine: v as RythmeType })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fixe">Fixe (mêmes jours chaque semaine)</SelectItem>
+                    <SelectItem value="ab">Alternance A / B</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              {employee.rythme_semaine === "ab" && (
+                <Field label="Semaine de référence (ISO)">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={53}
+                    value={employee.semaine_ref_iso ?? ""}
+                    placeholder="Ex: 19 pour que S19 = semaine A"
+                    onChange={(e) =>
+                      setEmployee({ ...employee, semaine_ref_iso: e.target.value ? Number(e.target.value) : null })
+                    }
+                  />
+                </Field>
+              )}
+            </div>
+
+            {/* Jours travaillés */}
+            <div className="space-y-3">
+              <div>
+                <div className="text-xs font-medium text-muted-foreground mb-2">
+                  {employee.rythme_semaine === "ab" ? "Jours travaillés — Semaine A" : "Jours travaillés"}
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    ["L", 1],
+                    ["M", 2],
+                    ["Me", 3],
+                    ["J", 4],
+                    ["V", 5],
+                    ["S", 6],
+                  ].map(([label, dow]) => {
+                    const jours = employee.semaine_a_jours ?? [1, 2, 3, 4, 5];
+                    const actif = jours.includes(dow as number);
+                    return (
+                      <button
+                        key={dow}
+                        type="button"
+                        onClick={() => {
+                          const next = actif ? jours.filter((j) => j !== dow) : [...jours, dow as number].sort();
+                          setEmployee({ ...employee, semaine_a_jours: next });
+                        }}
+                        className={`w-10 h-10 rounded-lg text-sm font-medium border transition-colors ${actif ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {employee.rythme_semaine === "ab" && (
+                <div>
+                  <div className="text-xs font-medium text-muted-foreground mb-2">Jours travaillés — Semaine B</div>
+                  <div className="flex gap-2 flex-wrap">
+                    {[
+                      ["L", 1],
+                      ["M", 2],
+                      ["Me", 3],
+                      ["J", 4],
+                      ["V", 5],
+                      ["S", 6],
+                    ].map(([label, dow]) => {
+                      const jours = employee.semaine_b_jours ?? [1, 2, 4, 5];
+                      const actif = jours.includes(dow as number);
+                      return (
+                        <button
+                          key={dow}
+                          type="button"
+                          onClick={() => {
+                            const next = actif ? jours.filter((j) => j !== dow) : [...jours, dow as number].sort();
+                            setEmployee({ ...employee, semaine_b_jours: next });
+                          }}
+                          className={`w-10 h-10 rounded-lg text-sm font-medium border transition-colors ${actif ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
         </TabsContent>
