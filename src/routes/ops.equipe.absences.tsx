@@ -79,22 +79,40 @@ function AbsencesPage() {
 
   useEffect(() => { reload(); }, []);
 
+  const recupHeures = (() => {
+    if (!recupForm.heure_debut || !recupForm.heure_fin) return 0;
+    const [dh, dm] = recupForm.heure_debut.split(":").map(Number);
+    const [fh, fm] = recupForm.heure_fin.split(":").map(Number);
+    return Math.max(0, (fh * 60 + fm) - (dh * 60 + dm)) / 60;
+  })();
+
   const saveRecup = async () => {
-    if (!recupForm.employee_id || !recupForm.heures_demandees) { toast.error("Champs requis"); return; }
+    if (!recupForm.employee_id) { toast.error("Employé requis"); return; }
+    if (!recupForm.date_souhaitee) { toast.error("Date souhaitée requise"); return; }
+    if (recupHeures <= 0) { toast.error("Horaires invalides"); return; }
+    if (!recupForm.motif.trim()) { toast.error("Motif requis"); return; }
     try {
       await createRecupDemande({
         employee_id: recupForm.employee_id,
-        mois: new Date().toISOString().slice(0, 7),
+        mois: recupForm.date_souhaitee.slice(0, 7),
         type: "heures",
-        heures_demandees: Number(recupForm.heures_demandees),
-        date_souhaitee: recupForm.date_souhaitee || undefined,
-        motif: recupForm.motif || undefined,
+        heures_demandees: Math.round(recupHeures * 100) / 100,
+        date_souhaitee: recupForm.date_souhaitee,
+        heure_debut: recupForm.heure_debut,
+        heure_fin: recupForm.heure_fin,
+        motif: recupForm.motif,
       });
       toast.success("Demande créée");
       setRecupOpen(false);
-      setRecupForm({ employee_id: "", heures_demandees: "7", date_souhaitee: "", motif: "" });
+      setRecupForm({ employee_id: "", date_souhaitee: "", heure_debut: "09:00", heure_fin: "12:00", motif: "" });
       reload();
     } catch (e: any) { toast.error(e.message); }
+  };
+
+  const handleDeleteRecup = async (id: string) => {
+    if (!confirm("Supprimer définitivement cette demande ?\nL'entrée planning associée sera également supprimée.")) return;
+    try { await deleteRecupDemande(id); toast.success("Demande supprimée"); reload(); }
+    catch (e: any) { toast.error(e.message); }
   };
 
   const filtered = items.filter(a => {
