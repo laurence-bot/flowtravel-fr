@@ -1,8 +1,9 @@
 // Calculateur de marge pour fixer le prix de vente d'une cotation.
 // Deux modes : % marge nette sur CA, ou montant fixe en €.
 // Intègre la TVA sur marge (régime UE) si applicable.
+// Le taux saisi est persisté via onTauxChange pour être sauvegardé en base.
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Calculator, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,14 +16,21 @@ type Props = {
   coutTotal: number;
   regimeTva: "marge_ue" | "hors_ue";
   tauxTvaMarge: number;
+  /** Taux de marge cible déjà enregistré (pour pré-remplir). */
+  tauxMargeCible?: number | null;
   /** Appelé lorsque l'utilisateur applique le calcul. */
-  onApply: (params: { prixHt: number; prixTtc: number }) => void;
+  onApply: (params: { prixHt: number; prixTtc: number; tauxMargeCible: number | null }) => void;
 };
 
-export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }: Props) {
+export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, tauxMargeCible, onApply }: Props) {
   const [mode, setMode] = useState<Mode>("pct_ca");
-  const [pctCa, setPctCa] = useState<number>(25);
+  const [pctCa, setPctCa] = useState<number>(tauxMargeCible ?? 25);
   const [montant, setMontant] = useState<number>(2000);
+
+  // Mettre à jour si la cotation change (navigation entre cotations)
+  useEffect(() => {
+    if (tauxMargeCible != null) setPctCa(tauxMargeCible);
+  }, [tauxMargeCible]);
 
   const result = useMemo(() => {
     const cout = Math.max(0, coutTotal);
@@ -41,9 +49,7 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }:
           const margeNette = alpha * prixTtc;
           const margeBrute = prixTtc - cout;
           const tvaMarge =
-            regimeTva === "marge_ue" && margeBrute > 0
-              ? margeBrute - margeBrute / (1 + tauxTvaMarge / 100)
-              : 0;
+            regimeTva === "marge_ue" && margeBrute > 0 ? margeBrute - margeBrute / (1 + tauxTvaMarge / 100) : 0;
           const next = cout + margeNette + tvaMarge;
           if (Math.abs(next - prixTtc) < 0.01) break;
           prixTtc = next;
@@ -60,9 +66,7 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }:
 
     const margeBrute = prixTtc - cout;
     const tvaSurMarge =
-      regimeTva === "marge_ue" && margeBrute > 0
-        ? margeBrute - margeBrute / (1 + tauxTvaMarge / 100)
-        : 0;
+      regimeTva === "marge_ue" && margeBrute > 0 ? margeBrute - margeBrute / (1 + tauxTvaMarge / 100) : 0;
     const margeNette = margeBrute - tvaSurMarge;
     const margeNettePct = prixTtc > 0 ? (margeNette / prixTtc) * 100 : 0;
     const prixHt = prixTtc - tvaSurMarge;
@@ -85,13 +89,11 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }:
         <div className="text-sm font-semibold">Calculateur de marge</div>
         <div className="ml-auto text-xs text-muted-foreground">
           Coût fournisseurs : <span className="font-medium text-foreground">{formatEUR(coutTotal)}</span>
-          {regimeTva === "marge_ue" && (
-            <> · TVA marge {tauxTvaMarge}%</>
-          )}
+          {regimeTva === "marge_ue" && <> · TVA marge {tauxTvaMarge}%</>}
         </div>
       </div>
 
-      {/* Body : input + result */}
+      {/* Body */}
       <div className="p-4 space-y-4">
         <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>
           <TabsList className="grid w-full grid-cols-2">
@@ -103,9 +105,7 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }:
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
           <div>
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              {mode === "pct_ca"
-                ? "Marge nette souhaitée (%)"
-                : "Marge nette souhaitée (€)"}
+              {mode === "pct_ca" ? "Marge nette souhaitée (%)" : "Marge nette souhaitée (€)"}
             </label>
             {mode === "pct_ca" ? (
               <div className="relative mt-1">
@@ -134,11 +134,9 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }:
 
           <div className="rounded-lg bg-primary/5 border border-primary/20 px-4 py-3">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Prix de vente TTC
+              Prix de vente TTC calculé
             </div>
-            <div className="mt-1 text-2xl font-bold tabular text-primary">
-              {formatEUR(result.prixTtc)}
-            </div>
+            <div className="mt-1 text-2xl font-bold tabular text-primary">{formatEUR(result.prixTtc)}</div>
           </div>
         </div>
 
@@ -152,9 +150,7 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }:
             <div className="text-muted-foreground">Marge nette</div>
             <div className="font-semibold tabular text-sm mt-0.5 text-[color:var(--margin,inherit)]">
               {formatEUR(result.margeNette)}{" "}
-              <span className="text-muted-foreground font-normal">
-                ({result.margeNettePct.toFixed(1)}%)
-              </span>
+              <span className="text-muted-foreground font-normal">({result.margeNettePct.toFixed(1)}%)</span>
             </div>
           </div>
           <div>
@@ -167,7 +163,13 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, onApply }:
 
         <Button
           className="w-full"
-          onClick={() => onApply({ prixHt: result.prixHt, prixTtc: result.prixTtc })}
+          onClick={() =>
+            onApply({
+              prixHt: result.prixHt,
+              prixTtc: result.prixTtc,
+              tauxMargeCible: mode === "pct_ca" ? pctCa : null,
+            })
+          }
         >
           <Sparkles className="h-4 w-4 mr-2" />
           Appliquer ce prix de vente
