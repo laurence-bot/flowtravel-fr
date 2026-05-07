@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { RequireAuth } from "@/components/require-auth";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Plus, Briefcase, Trash2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,11 +11,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
-import { listEmployees, listJobDescriptions, createJobDescription, deleteJobDescription, type Employee, type JobDescription } from "@/lib/hr";
+import {
+  listEmployees,
+  listJobDescriptions,
+  createJobDescription,
+  deleteJobDescription,
+  type Employee,
+  type JobDescription,
+} from "@/lib/hr";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/ops/equipe/fiches-poste")({
-  component: FichesPostePage,
+  component: () => (
+    <RequireAuth>
+      <FichesPostePage />
+    </RequireAuth>
+  ),
 });
 
 function FichesPostePage() {
@@ -23,8 +35,13 @@ function FichesPostePage() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
-    employee_id: "", intitule: "", missions: "", competences_attendues: "",
-    objectifs: "", kpi: "", date_application: new Date().toISOString().slice(0, 10),
+    employee_id: "",
+    intitule: "",
+    missions: "",
+    competences_attendues: "",
+    objectifs: "",
+    kpi: "",
+    date_application: new Date().toISOString().slice(0, 10),
   });
 
   const load = async () => {
@@ -37,7 +54,9 @@ function FichesPostePage() {
       setLoading(false);
     }
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const submit = async () => {
     if (!form.employee_id || !form.intitule) {
@@ -67,7 +86,7 @@ function FichesPostePage() {
   };
 
   const empName = (id: string) => {
-    const e = employees.find(e => e.id === id);
+    const e = employees.find((e) => e.id === id);
     return e ? `${e.prenom} ${e.nom}` : "—";
   };
 
@@ -75,7 +94,10 @@ function FichesPostePage() {
 
   return (
     <div className="space-y-6">
-      <Link to="/ops/equipe" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        to="/ops/equipe"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="h-4 w-4" /> Retour à l'équipe
       </Link>
 
@@ -103,16 +125,49 @@ function FichesPostePage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-display text-lg">{f.intitule}</h3>
                     <Badge variant="secondary">v{f.version}</Badge>
-                    {f.est_active && <Badge className="bg-green-100 text-green-800 border-green-300"><Check className="h-3 w-3 mr-1" />Active</Badge>}
+                    {f.est_active && (
+                      <Badge className="bg-green-100 text-green-800 border-green-300">
+                        <Check className="h-3 w-3 mr-1" />
+                        Active
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground mt-0.5">
                     {empName(f.employee_id)}
-                    {f.date_application && <> · Applicable depuis le {new Date(f.date_application).toLocaleDateString("fr-FR")}</>}
+                    {f.date_application && (
+                      <> · Applicable depuis le {new Date(f.date_application).toLocaleDateString("fr-FR")}</>
+                    )}
                   </p>
-                  {f.missions && <div className="mt-3"><div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">Missions</div><p className="text-sm whitespace-pre-line">{f.missions}</p></div>}
-                  {f.competences_attendues && <div className="mt-3"><div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">Compétences</div><p className="text-sm whitespace-pre-line">{f.competences_attendues}</p></div>}
-                  {f.objectifs && <div className="mt-3"><div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">Objectifs</div><p className="text-sm whitespace-pre-line">{f.objectifs}</p></div>}
-                  {f.kpi && <div className="mt-3"><div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">KPI</div><p className="text-sm whitespace-pre-line">{f.kpi}</p></div>}
+                  {f.missions && (
+                    <div className="mt-3">
+                      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                        Missions
+                      </div>
+                      <p className="text-sm whitespace-pre-line">{f.missions}</p>
+                    </div>
+                  )}
+                  {f.competences_attendues && (
+                    <div className="mt-3">
+                      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                        Compétences
+                      </div>
+                      <p className="text-sm whitespace-pre-line">{f.competences_attendues}</p>
+                    </div>
+                  )}
+                  {f.objectifs && (
+                    <div className="mt-3">
+                      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                        Objectifs
+                      </div>
+                      <p className="text-sm whitespace-pre-line">{f.objectifs}</p>
+                    </div>
+                  )}
+                  {f.kpi && (
+                    <div className="mt-3">
+                      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">KPI</div>
+                      <p className="text-sm whitespace-pre-line">{f.kpi}</p>
+                    </div>
+                  )}
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => handleDelete(f.id)}>
                   <Trash2 className="h-4 w-4 text-destructive" />
@@ -125,38 +180,66 @@ function FichesPostePage() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>Nouvelle fiche de poste</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Nouvelle fiche de poste</DialogTitle>
+          </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Employé *</Label>
                 <Select value={form.employee_id} onValueChange={(v) => setForm({ ...form, employee_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Choisir…" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir…" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}
+                    {employees.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.prenom} {e.nom}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
                 <Label>Date d'application</Label>
-                <Input type="date" value={form.date_application} onChange={(e) => setForm({ ...form, date_application: e.target.value })} />
+                <Input
+                  type="date"
+                  value={form.date_application}
+                  onChange={(e) => setForm({ ...form, date_application: e.target.value })}
+                />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label>Intitulé du poste *</Label>
-              <Input value={form.intitule} onChange={(e) => setForm({ ...form, intitule: e.target.value })} placeholder="Conseiller voyages senior" />
+              <Input
+                value={form.intitule}
+                onChange={(e) => setForm({ ...form, intitule: e.target.value })}
+                placeholder="Conseiller voyages senior"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Missions principales</Label>
-              <Textarea rows={4} value={form.missions} onChange={(e) => setForm({ ...form, missions: e.target.value })} />
+              <Textarea
+                rows={4}
+                value={form.missions}
+                onChange={(e) => setForm({ ...form, missions: e.target.value })}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Compétences attendues</Label>
-              <Textarea rows={3} value={form.competences_attendues} onChange={(e) => setForm({ ...form, competences_attendues: e.target.value })} />
+              <Textarea
+                rows={3}
+                value={form.competences_attendues}
+                onChange={(e) => setForm({ ...form, competences_attendues: e.target.value })}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Objectifs annuels</Label>
-              <Textarea rows={3} value={form.objectifs} onChange={(e) => setForm({ ...form, objectifs: e.target.value })} />
+              <Textarea
+                rows={3}
+                value={form.objectifs}
+                onChange={(e) => setForm({ ...form, objectifs: e.target.value })}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>KPI / Indicateurs</Label>
@@ -164,7 +247,9 @@ function FichesPostePage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Annuler
+            </Button>
             <Button onClick={submit}>Créer la fiche</Button>
           </DialogFooter>
         </DialogContent>
