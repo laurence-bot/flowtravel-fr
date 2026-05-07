@@ -25,6 +25,7 @@ import {
   isJourFerie,
   heuresContractuellesParJour,
   calcCompteurMensuel,
+  estJourTravaille,
   createRecupDemande,
   approuverRecupDemande,
   refuserRecupDemande,
@@ -301,7 +302,7 @@ function PlanningPage() {
       actifs.map(async (emp) => {
         const empEntries = plan.filter((e) => e.employee_id === emp.id);
         const hParJour = heuresContractuellesParJour(emp);
-        const c = calcCompteurMensuel(empEntries, joursOuvres, hParJour);
+        const c = calcCompteurMensuel(empEntries, joursOuvres, hParJour, emp);
         await upsertCompteur(emp.id, month, c.realisees, c.base);
       }),
     );
