@@ -27,6 +27,13 @@ import {
   type AbsenceStatut,
   type RecupDemande,
 } from "@/lib/hr";
+
+// Calcule les jours pris par type pour un employé
+function soldeCp(absences: Absence[], empId: string, type: "conge_paye" | "rtt"): number {
+  return absences
+    .filter((a) => a.employee_id === empId && a.type === type && (a.statut === "approuvee" || a.statut === "signee"))
+    .reduce((s, a) => s + Number(a.nb_jours ?? 0), 0);
+}
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -357,6 +364,7 @@ function AbsencesPage() {
                     <th className="text-left px-4 py-3">Du</th>
                     <th className="text-left px-4 py-3">Au</th>
                     <th className="text-left px-4 py-3">Jours</th>
+                    <th className="text-left px-4 py-3">Solde CP / RTT</th>
                     <th className="text-left px-4 py-3">Motif</th>
                     <th className="text-left px-4 py-3">Statut</th>
                     <th className="text-right px-4 py-3">Actions</th>
@@ -372,6 +380,21 @@ function AbsencesPage() {
                         <td className="px-4 py-3">{a.date_debut}</td>
                         <td className="px-4 py-3">{a.date_fin}</td>
                         <td className="px-4 py-3">{a.nb_jours ?? "—"}</td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                          {(() => {
+                            const emp2 = allEmployees.find((e) => e.id === a.employee_id);
+                            if (!emp2) return "—";
+                            const cpPris = soldeCp(items, a.employee_id, "conge_paye");
+                            const rttPris = soldeCp(items, a.employee_id, "rtt");
+                            const cpRest = (emp2.jours_conges_par_an ?? 0) - cpPris;
+                            const rttRest = (emp2.jours_rtt_par_an ?? 0) - rttPris;
+                            return (
+                              <span className={cpRest < 0 ? "text-red-500 font-medium" : ""}>
+                                CP {cpRest}j · RTT {rttRest}j
+                              </span>
+                            );
+                          })()}
+                        </td>
                         <td className="px-4 py-3 max-w-[200px] truncate">{a.motif ?? "—"}</td>
                         <td className="px-4 py-3">
                           <span className={`text-xs px-2 py-0.5 rounded-full ${STATUT_COLORS[a.statut]}`}>
@@ -483,7 +506,25 @@ function AbsencesPage() {
                                   onClick={async () => {
                                     try {
                                       await approuverRecupDemande(r.id);
-                                      toast.success("Approuvée — entrée ajoutée au planning");
+                                      // Notifier l'agent par email
+                                      const emp = empMap[r.employee_id];
+                                      if (emp?.email) {
+                                        await sendTransactionalEmail({
+                                          templateName: "agent-event",
+                                          recipientEmail: emp.email,
+                                          idempotencyKey: `recup-approved-${r.id}`,
+                                          templateData: {
+                                            agent_prenom: emp.prenom,
+                                            event_label: "Récupération approuvée",
+                                            titre: `${r.heures_demandees}h le ${r.date_souhaitee ?? r.mois}`,
+                                            details:
+                                              r.heure_debut && r.heure_fin
+                                                ? `Créneaux : ${r.heure_debut.slice(0, 5)} – ${r.heure_fin.slice(0, 5)}. Cette période est maintenant bloquée dans votre planning.`
+                                                : "Cette période est maintenant bloquée dans votre planning.",
+                                          },
+                                        });
+                                      }
+                                      toast.success("Approuvée — agent notifié et planning mis à jour");
                                       reload();
                                     } catch (e: any) {
                                       toast.error(e.message);
@@ -498,7 +539,23 @@ function AbsencesPage() {
                                   onClick={async () => {
                                     try {
                                       await refuserRecupDemande(r.id);
-                                      toast.success("Refusée");
+                                      // Notifier l'agent par email
+                                      const emp = empMap[r.employee_id];
+                                      if (emp?.email) {
+                                        await sendTransactionalEmail({
+                                          templateName: "agent-event",
+                                          recipientEmail: emp.email,
+                                          idempotencyKey: `recup-refused-${r.id}`,
+                                          templateData: {
+                                            agent_prenom: emp.prenom,
+                                            event_label: "Demande de récupération refusée",
+                                            titre: `${r.heures_demandees}h le ${r.date_souhaitee ?? r.mois}`,
+                                            details:
+                                              "Votre demande de récupération d'heures n'a pas pu être accordée. Contactez votre responsable pour plus d'informations.",
+                                          },
+                                        });
+                                      }
+                                      toast.success("Refusée — agent notifié");
                                       reload();
                                     } catch (e: any) {
                                       toast.error(e.message);
