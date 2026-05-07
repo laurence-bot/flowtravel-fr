@@ -484,16 +484,28 @@ function AbsencesPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Date souhaitée *</Label>
+              <Input type="date" value={recupForm.date_souhaitee} onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })} />
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Heures demandées</Label>
-                <Input type="number" step="0.5" value={recupForm.heures_demandees} onChange={(e) => setRecupForm({ ...recupForm, heures_demandees: e.target.value })} />
+                <Label>Heure de début *</Label>
+                <Input type="time" step={900} value={recupForm.heure_debut} onChange={(e) => setRecupForm({ ...recupForm, heure_debut: e.target.value })} />
               </div>
               <div>
-                <Label>Date souhaitée</Label>
-                <Input type="date" value={recupForm.date_souhaitee} onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })} />
+                <Label>Heure de fin *</Label>
+                <Input type="time" step={900} value={recupForm.heure_fin} onChange={(e) => setRecupForm({ ...recupForm, heure_fin: e.target.value })} />
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Durée calculée : {(() => {
+                const v = Math.max(0, recupHeures);
+                const h = Math.floor(v);
+                const m = Math.round((v - h) * 60);
+                return `${h}h ${m.toString().padStart(2, "0")} min`;
+              })()}
+            </p>
             <div>
               <Label>Motif</Label>
               <Textarea rows={2} value={recupForm.motif} onChange={(e) => setRecupForm({ ...recupForm, motif: e.target.value })} />
