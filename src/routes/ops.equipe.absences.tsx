@@ -58,12 +58,17 @@ function AbsencesPage() {
   const [filterEmp, setFilterEmp] = useState("tous");
   const [filterStatut, setFilterStatut] = useState("tous");
 
+  const [recups, setRecups] = useState<RecupDemande[]>([]);
+  const [recupOpen, setRecupOpen] = useState(false);
+  const [recupForm, setRecupForm] = useState({ employee_id: "", heures_demandees: "7", date_souhaitee: "", motif: "" });
+
   const reload = async () => {
     setLoading(true);
     try {
-      const [data, emps] = await Promise.all([listAbsences(), listEmployees()]);
+      const [data, emps, recs] = await Promise.all([listAbsences(), listEmployees(), listRecupDemandes()]);
       setItems(data);
       setAllEmployees(emps);
+      setRecups(recs);
       const map: EmpMap = {};
       emps.forEach(e => { map[e.id] = { prenom: e.prenom, nom: e.nom, email: e.email }; });
       setEmpMap(map);
@@ -73,6 +78,24 @@ function AbsencesPage() {
   };
 
   useEffect(() => { reload(); }, []);
+
+  const saveRecup = async () => {
+    if (!recupForm.employee_id || !recupForm.heures_demandees) { toast.error("Champs requis"); return; }
+    try {
+      await createRecupDemande({
+        employee_id: recupForm.employee_id,
+        mois: new Date().toISOString().slice(0, 7),
+        type: "heures",
+        heures_demandees: Number(recupForm.heures_demandees),
+        date_souhaitee: recupForm.date_souhaitee || undefined,
+        motif: recupForm.motif || undefined,
+      });
+      toast.success("Demande créée");
+      setRecupOpen(false);
+      setRecupForm({ employee_id: "", heures_demandees: "7", date_souhaitee: "", motif: "" });
+      reload();
+    } catch (e: any) { toast.error(e.message); }
+  };
 
   const filtered = items.filter(a => {
     if (filterEmp !== "tous" && a.employee_id !== filterEmp) return false;
