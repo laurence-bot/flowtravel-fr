@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/demandes/$id")({
+export const Route = createFileRoute("/mariages")({
   component: () => (
     <RequireAuth>
       <DemandeDetail />

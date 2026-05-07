@@ -12,7 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { formatDate } from "@/lib/format";
-import { Plus, Copy, Check, FileSignature } from "lucide-react";
+import { Plus, Copy, Check, FileSignature, AlertCircle } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/bulletins")({
@@ -38,7 +39,9 @@ type Bulletin = {
 function BulletinsPage() {
   const { user } = useAuth();
   const [list, setList] = useState<Bulletin[]>([]);
-  const [cotations, setCotations] = useState<Array<{ id: string; titre: string; client_id: string | null; dossier_id: string | null }>>([]);
+  const [cotations, setCotations] = useState<
+    Array<{ id: string; titre: string; client_id: string | null; dossier_id: string | null }>
+  >([]);
   const [contacts, setContacts] = useState<Array<{ id: string; nom: string }>>([]);
   const [open, setOpen] = useState(false);
   const [cotationId, setCotationId] = useState("");
@@ -52,8 +55,15 @@ function BulletinsPage() {
 
   useEffect(() => {
     refetch();
-    supabase.from("cotations").select("id,titre,client_id,dossier_id").order("created_at", { ascending: false }).then(({ data }) => setCotations(data ?? []));
-    supabase.from("contacts").select("id,nom").then(({ data }) => setContacts(data ?? []));
+    supabase
+      .from("cotations")
+      .select("id,titre,client_id,dossier_id")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setCotations(data ?? []));
+    supabase
+      .from("contacts")
+      .select("id,nom")
+      .then(({ data }) => setContacts(data ?? []));
   }, []);
 
   const create = async () => {
@@ -95,46 +105,55 @@ function BulletinsPage() {
   const clientLabel = (id: string | null) => contacts.find((c) => c.id === id)?.nom ?? "—";
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-serif">Bulletins d'inscription</h1>
-          <p className="text-sm text-muted-foreground">Envoyez un lien à votre client pour signature digitale.</p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4 mr-2" />Nouveau bulletin</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Créer un bulletin</DialogTitle></DialogHeader>
-            <div className="space-y-3 py-2">
-              <div>
-                <Label>Devis lié</Label>
-                <Select value={cotationId} onValueChange={setCotationId}>
-                  <SelectTrigger><SelectValue placeholder="Choisir un devis…" /></SelectTrigger>
-                  <SelectContent>
-                    {cotations.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.titre}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+    <div className="space-y-6">
+      <PageHeader
+        title="Bulletins d'inscription"
+        description="Envoyez un lien à votre client pour signature digitale."
+        action={
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Nouveau bulletin
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Créer un bulletin</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 py-2">
+                <div>
+                  <Label>Devis lié</Label>
+                  <Select value={cotationId} onValueChange={setCotationId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choisir un devis…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cotations.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.titre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Conditions (optionnel)</Label>
+                  <textarea
+                    className="w-full min-h-[120px] rounded-md border border-input bg-background p-2 text-sm"
+                    value={conditions}
+                    onChange={(e) => setConditions(e.target.value)}
+                    placeholder="Texte des conditions générales spécifiques à ce bulletin (sinon les CGV de l'agence sont utilisées)."
+                  />
+                </div>
               </div>
-              <div>
-                <Label>Conditions (optionnel)</Label>
-                <textarea
-                  className="w-full min-h-[120px] rounded-md border border-input bg-background p-2 text-sm"
-                  value={conditions}
-                  onChange={(e) => setConditions(e.target.value)}
-                  placeholder="Texte des conditions générales spécifiques à ce bulletin (sinon les CGV de l'agence sont utilisées)."
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button onClick={create}>Créer et copier le lien</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+              <DialogFooter>
+                <Button onClick={create}>Créer et copier le lien</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
       <Card>
         <Table>
@@ -150,18 +169,30 @@ function BulletinsPage() {
           </TableHeader>
           <TableBody>
             {list.length === 0 && (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                <FileSignature className="w-8 h-8 mx-auto mb-2 opacity-50" />Aucun bulletin pour l'instant
-              </TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <FileSignature className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  Aucun bulletin pour l'instant
+                </TableCell>
+              </TableRow>
             )}
             {list.map((b) => (
               <TableRow key={b.id}>
                 <TableCell>{cotationLabel(b.cotation_id)}</TableCell>
                 <TableCell>{b.signataire_nom ?? clientLabel(b.client_id)}</TableCell>
                 <TableCell>
-                  <Badge variant={b.statut === "signe" ? "default" : b.statut === "annule" ? "destructive" : "secondary"}>
-                    {b.statut === "signe" ? "Signé" : b.statut === "annule" ? "Annulé" : "À signer"}
-                  </Badge>
+                  {b.statut === "a_signer" && new Date(b.expires_at) < new Date() ? (
+                    <Badge variant="destructive" className="gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Expiré
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant={b.statut === "signe" ? "default" : b.statut === "annule" ? "destructive" : "secondary"}
+                    >
+                      {b.statut === "signe" ? "Signé" : b.statut === "annule" ? "Annulé" : "À signer"}
+                    </Badge>
+                  )}
                 </TableCell>
                 <TableCell>{b.signed_at ? formatDate(b.signed_at) : "—"}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">{formatDate(b.expires_at)}</TableCell>
@@ -170,8 +201,40 @@ function BulletinsPage() {
                     {copied === b.token ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
                     Copier le lien
                   </Button>
+                  {b.statut === "a_signer" && new Date(b.expires_at) < new Date() && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        if (!user) return;
+                        const { data, error } = await supabase
+                          .from("bulletins")
+                          .insert({
+                            user_id: user.id,
+                            cotation_id: b.cotation_id,
+                            client_id: b.client_id,
+                            dossier_id: null,
+                            conditions_text: null,
+                          })
+                          .select()
+                          .single();
+                        if (error) {
+                          toast.error(error.message);
+                          return;
+                        }
+                        toast.success("Bulletin renouvelé");
+                        refetch();
+                        navigator.clipboard.writeText(`${window.location.origin}/bulletin/${data.token}`);
+                        toast.message("Nouveau lien copié");
+                      }}
+                    >
+                      Renouveler
+                    </Button>
+                  )}
                   <Button size="sm" variant="ghost" asChild>
-                    <a href={`/bulletin/${b.token}`} target="_blank" rel="noreferrer">Ouvrir</a>
+                    <a href={`/bulletin/${b.token}`} target="_blank" rel="noreferrer">
+                      Ouvrir
+                    </a>
                   </Button>
                 </TableCell>
               </TableRow>
