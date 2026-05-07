@@ -87,6 +87,13 @@ export type Employee = {
   notes: string | null;
   actif: boolean;
   created_at: string;
+  // Paramètres horaires — optionnels (ajoutés par migration SQL)
+  heures_par_jour?: number | null;
+  pause_minutes?: number | null;
+  rythme_semaine?: RythmeType | null;
+  semaine_a_jours?: number[] | null;
+  semaine_b_jours?: number[] | null;
+  semaine_ref_iso?: number | null;
 };
 
 export type Contract = {
@@ -760,7 +767,9 @@ export function isJourOuvre(dateIso: string, holidays?: Set<string>): boolean {
 }
 
 /** Heures contractuelles par jour — lit depuis l'employé, sinon 7.5h. */
-export function heuresContractuellesParJour(emp?: Pick<Employee, "type_contrat" | "heures_par_jour"> | null): number {
+export function heuresContractuellesParJour(
+  emp?: (Pick<Employee, "type_contrat"> & { heures_par_jour?: number | null }) | null,
+): number {
   return emp?.heures_par_jour ?? 7.5;
 }
 
