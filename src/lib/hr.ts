@@ -589,6 +589,8 @@ export async function createRecupDemande(input: {
   type: RecupDemande["type"];
   heures_demandees: number;
   date_souhaitee?: string;
+  heure_debut?: string;
+  heure_fin?: string;
   motif?: string;
 }): Promise<RecupDemande> {
   const agence_id = await getMyAgenceId();
@@ -601,6 +603,8 @@ export async function createRecupDemande(input: {
       type: input.type,
       heures_demandees: input.heures_demandees,
       date_souhaitee: input.date_souhaitee ?? null,
+      heure_debut: input.heure_debut ?? null,
+      heure_fin: input.heure_fin ?? null,
       motif: input.motif ?? null,
       statut: "demande",
     })
@@ -646,9 +650,46 @@ export async function createRecupDemande(input: {
 
 export async function approuverRecupDemande(id: string): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
+  // Charger la demande pour récupérer date/heures
+  const { data: dem, error: e1 } = await supabase
+    .from("hr_recup_demandes" as any)
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (e1) throw e1;
+  const d = dem as any;
+  if (!d) throw new Error("Demande introuvable");
+
+  let planning_entry_id: string | null = null;
+  if (d.date_souhaitee) {
+    const employee = await getEmployee(d.employee_id);
+    const { data: ins, error: e2 } = await supabase
+      .from("hr_planning_entries")
+      .insert({
+        employee_id: d.employee_id,
+        agence_id: employee?.agence_id ?? null,
+        date_start: d.date_souhaitee,
+        date_end: d.date_souhaitee,
+        type: "recuperation",
+        heure_debut: d.heure_debut ?? null,
+        heure_fin: d.heure_fin ?? null,
+        note: d.motif ?? "Récupération",
+        created_by: user?.id ?? null,
+      } as any)
+      .select("id")
+      .single();
+    if (e2) throw e2;
+    planning_entry_id = (ins as any)?.id ?? null;
+  }
+
   const { error } = await supabase
     .from("hr_recup_demandes" as any)
-    .update({ statut: "approuvee", traite_par: user?.id ?? null, traite_at: new Date().toISOString() })
+    .update({
+      statut: "approuvee",
+      traite_par: user?.id ?? null,
+      traite_at: new Date().toISOString(),
+      planning_entry_id,
+    })
     .eq("id", id);
   if (error) throw error;
 }
@@ -659,6 +700,29 @@ export async function refuserRecupDemande(id: string): Promise<void> {
     .from("hr_recup_demandes" as any)
     .update({ statut: "refusee", traite_par: user?.id ?? null, traite_at: new Date().toISOString() })
     .eq("id", id);
+  if (error) throw error;
+}
+
+export async function annulerRecupDemande(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("hr_recup_demandes" as any)
+    .update({ statut: "annulee" })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteRecupDemande(id: string): Promise<void> {
+  // Supprimer l'entrée planning associée si présente
+  const { data: dem } = await supabase
+    .from("hr_recup_demandes" as any)
+    .select("planning_entry_id")
+    .eq("id", id)
+    .maybeSingle();
+  const peId = (dem as any)?.planning_entry_id;
+  if (peId) {
+    await supabase.from("hr_planning_entries").delete().eq("id", peId);
+  }
+  const { error } = await supabase.from("hr_recup_demandes" as any).delete().eq("id", id);
   if (error) throw error;
 }
 
