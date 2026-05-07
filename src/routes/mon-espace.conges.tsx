@@ -9,11 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
-import { getEmployeeByUserId, listAbsences, createAbsence, ABSENCE_TYPE_LABELS, ABSENCE_STATUT_LABELS, type Employee, type Absence, type AbsenceType, computeWorkingDays, listRecupDemandes, createRecupDemande, type RecupDemande } from "@/lib/hr";
+import { getEmployeeByUserId, listAbsences, createAbsence, ABSENCE_TYPE_LABELS, ABSENCE_STATUT_LABELS, type Employee, type Absence, type AbsenceType, computeWorkingDays, listRecupDemandes, createRecupDemande, annulerRecupDemande, type RecupDemande } from "@/lib/hr";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-const RECUP_STATUT_LABELS: Record<RecupDemande["statut"], string> = { demande: "En attente", approuvee: "Approuvée", refusee: "Refusée" };
+const RECUP_STATUT_LABELS: Record<RecupDemande["statut"], string> = { demande: "En attente", approuvee: "Approuvée", refusee: "Refusée", annulee: "Annulée" };
 
 export const Route = createFileRoute("/mon-espace/conges")({
   beforeLoad: async () => {
