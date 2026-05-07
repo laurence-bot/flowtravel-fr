@@ -261,12 +261,13 @@ function PlanningPage() {
   };
 
   const openEdit = (entry: PlanningEntry, emp: Employee) => {
-    setSelectedCell({ emp, date: entry.date_jour });
+    setSelectedCell({ emp, date: entry.date_start });
     setForm({
       ...EMPTY_FORM,
       editId: entry.id,
       employee_id: entry.employee_id,
-      date_debut: entry.date_jour,
+      date_debut: entry.date_start,
+      date_fin: entry.date_end !== entry.date_start ? entry.date_end : "",
       type: entry.type,
       heure_debut: entry.heure_debut ?? "09:00",
       heure_fin: entry.heure_fin ?? "17:30",
@@ -284,9 +285,11 @@ function PlanningPage() {
     try {
       if (form.editId) {
         await deletePlanning(form.editId);
+        const isRangeEdit = (form.type === "deplacement" || form.type === "formation") && form.date_fin && form.date_fin >= form.date_debut;
         await upsertPlanning({
           employee_id: empId,
-          date_jour: form.date_debut,
+          date_start: form.date_debut,
+          date_end: isRangeEdit ? form.date_fin : form.date_debut,
           type: form.type,
           heure_debut: form.heure_debut || null,
           heure_fin: form.heure_fin || null,
