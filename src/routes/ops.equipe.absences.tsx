@@ -507,8 +507,8 @@ function AbsencesPage() {
               })()}
             </p>
             <div>
-              <Label>Motif</Label>
-              <Textarea rows={2} value={recupForm.motif} onChange={(e) => setRecupForm({ ...recupForm, motif: e.target.value })} />
+              <Label>Motif *</Label>
+              <Textarea rows={2} value={recupForm.motif} onChange={(e) => setRecupForm({ ...recupForm, motif: e.target.value })} required />
             </div>
           </div>
           <DialogFooter>
