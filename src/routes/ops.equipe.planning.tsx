@@ -517,7 +517,7 @@ function PlanningPage() {
                       <th
                         key={d}
                         className={[
-                          "px-1 py-1 font-normal min-w-[44px] border-l",
+                          "px-1 py-1 font-normal w-[52px] min-w-[52px] max-w-[52px] border-l",
                           isFirstOfWeek ? "border-l-2 border-l-border/60" : "border-border/40",
                           wk ? "bg-muted/40 text-muted-foreground" : "",
                           isToday ? "bg-primary/10" : "",
@@ -557,7 +557,7 @@ function PlanningPage() {
                             key={d}
                             onClick={() => !cells.length && openAdd(emp, d)}
                             className={[
-                              "align-top py-1.5 px-1 border-l transition-colors",
+                              "align-top py-1.5 px-1 border-l transition-colors w-[52px] min-w-[52px] max-w-[52px]",
                               isFirstOfWeek ? "border-l-2 border-l-border/60" : "border-border/40",
                               wk ? "bg-muted/15" : cells.length === 0 ? "hover:bg-muted/20 cursor-pointer" : "cursor-default",
                             ].join(" ")}
@@ -573,12 +573,12 @@ function PlanningPage() {
                                     className={`w-full text-left px-1.5 py-0.5 rounded border ${tc.badge} hover:ring-1 hover:ring-foreground/20`}
                                     title={c.note ?? PLANNING_TYPE_LABELS[c.type]}
                                   >
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-1 min-w-0">
                                       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${tc.dot}`} />
-                                      <span className="text-[10px] font-semibold tracking-wide">{tc.abbr}</span>
+                                      <span className="text-[10px] font-semibold tracking-wide truncate">{tc.abbr}</span>
                                     </div>
                                     {c.heure_debut && c.type !== "deplacement" && c.type !== "formation" && (
-                                      <div className="text-[9px] tabular-nums opacity-70">
+                                      <div className="text-[9px] tabular-nums opacity-70 truncate">
                                         {c.heure_debut.slice(0,5)}–{(c.heure_fin ?? "").slice(0,5)}
                                       </div>
                                     )}
