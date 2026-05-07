@@ -915,7 +915,7 @@ function PlanningPage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {actionEntry && `${actionEntry.emp.prenom} · ${actionEntry.entry.date_jour}`}
+              {actionEntry && `${actionEntry.emp.prenom} · ${actionEntry.entry.date_start}${actionEntry.entry.date_end !== actionEntry.entry.date_start ? ` → ${actionEntry.entry.date_end}` : ""}`}
             </DialogTitle>
           </DialogHeader>
           {actionEntry && (
