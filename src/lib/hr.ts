@@ -4,7 +4,7 @@ export type ContractType = "cdi" | "cdd" | "stage" | "alternance" | "freelance" 
 export type ContractStatut = "brouillon" | "a_signer" | "signe" | "archive" | "rompu";
 export type AbsenceType = "conge_paye" | "rtt" | "maladie" | "sans_solde" | "formation" | "recup" | "parental" | "autre";
 export type AbsenceStatut = "demande" | "approuvee" | "refusee" | "signee" | "annulee";
-export type PlanningType = "travail" | "teletravail" | "reunion" | "deplacement" | "formation" | "autre";
+export type PlanningType = "travail" | "teletravail" | "reunion" | "deplacement" | "formation" | "recuperation" | "autre";
 export type TimeEvent = "arrivee" | "pause_debut" | "pause_fin" | "sortie";
 export type EvaluationStatut = "a_completer" | "auto_eval_faite" | "entretien_fait" | "signee" | "cloturee";
 
@@ -19,7 +19,7 @@ export const ABSENCE_STATUT_LABELS: Record<AbsenceStatut, string> = {
   demande: "En attente", approuvee: "Approuvée", refusee: "Refusée", signee: "Signée", annulee: "Annulée",
 };
 export const PLANNING_TYPE_LABELS: Record<PlanningType, string> = {
-  travail: "Travail", teletravail: "Télétravail", reunion: "Réunion", deplacement: "Déplacement", formation: "Formation", autre: "Autre",
+  travail: "Travail", teletravail: "Télétravail", reunion: "Réunion", deplacement: "Déplacement", formation: "Formation", recuperation: "Récupération", autre: "Autre",
 };
 export const TIME_EVENT_LABELS: Record<TimeEvent, string> = {
   arrivee: "Arrivée", pause_debut: "Début pause", pause_fin: "Fin pause", sortie: "Sortie",
