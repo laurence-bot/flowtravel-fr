@@ -50,6 +50,9 @@ function PaiementsPage() {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [filter, setFilter] = useState<"all" | "paiement_client" | "paiement_fournisseur">("all");
+  const [filterDu, setFilterDu] = useState("");
+  const [filterAu, setFilterAu] = useState("");
+  const [filterDossier, setFilterDossier] = useState("");
 
   const today = new Date().toISOString().slice(0, 10);
   const [form, setForm] = useState({
@@ -63,10 +66,17 @@ function PaiementsPage() {
   });
   const [fx, setFx] = useState<FxFieldValue>(emptyFxValue());
 
-  const filtered = paiements.filter((p) => filter === "all" || p.type === filter);
-  const totalEncaisse = paiements
-    .filter((p) => p.type === "paiement_client")
-    .reduce((s, p) => s + paiementEUR(p), 0);
+  const filtered = paiements.filter((p) => {
+    if (filter !== "all" && p.type !== filter) return false;
+    if (filterDu && p.date < filterDu) return false;
+    if (filterAu && p.date > filterAu) return false;
+    if (filterDossier) {
+      const d = dossiers.find((d) => d.id === p.dossier_id);
+      if (!d || !d.titre.toLowerCase().includes(filterDossier.toLowerCase())) return false;
+    }
+    return true;
+  });
+  const totalEncaisse = paiements.filter((p) => p.type === "paiement_client").reduce((s, p) => s + paiementEUR(p), 0);
   const totalDecaisse = paiements
     .filter((p) => p.type === "paiement_fournisseur")
     .reduce((s, p) => s + paiementEUR(p), 0);
@@ -85,17 +95,21 @@ function PaiementsPage() {
       return;
     }
     setSubmitting(true);
-    const { data: inserted, error } = await supabase.from("paiements").insert({
-      user_id: user.id,
-      type: parsed.data.type,
-      date: parsed.data.date,
-      methode: parsed.data.methode,
-      source: parsed.data.source,
-      dossier_id: parsed.data.dossier_id || null,
-      personne_id: parsed.data.personne_id || null,
-      compte_id: parsed.data.compte_id,
-      ...fxDb,
-    }).select().single();
+    const { data: inserted, error } = await supabase
+      .from("paiements")
+      .insert({
+        user_id: user.id,
+        type: parsed.data.type,
+        date: parsed.data.date,
+        methode: parsed.data.methode,
+        source: parsed.data.source,
+        dossier_id: parsed.data.dossier_id || null,
+        personne_id: parsed.data.personne_id || null,
+        compte_id: parsed.data.compte_id,
+        ...fxDb,
+      })
+      .select()
+      .single();
     setSubmitting(false);
     if (error) return toast.error(error.message);
     await logAudit({
@@ -179,7 +193,9 @@ function PaiementsPage() {
             <div className="space-y-2">
               <Label>Méthode</Label>
               <Select value={form.methode} onValueChange={(v: Paiement["methode"]) => setForm({ ...form, methode: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="virement">Virement</SelectItem>
                   <SelectItem value="carte">Carte</SelectItem>
@@ -190,7 +206,9 @@ function PaiementsPage() {
             <div className="space-y-2">
               <Label>Source</Label>
               <Select value={form.source} onValueChange={(v: Paiement["source"]) => setForm({ ...form, source: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="manuel">Saisie manuelle</SelectItem>
                   <SelectItem value="banque">Banque</SelectItem>
@@ -202,7 +220,9 @@ function PaiementsPage() {
           <div className="space-y-2">
             <Label>{form.type === "paiement_client" ? "Client" : "Fournisseur"}</Label>
             <Select value={form.personne_id} onValueChange={(v) => setForm({ ...form, personne_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Optionnel" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Optionnel" />
+              </SelectTrigger>
               <SelectContent>
                 {personnesFiltrees.length === 0 && (
                   <div className="px-2 py-2 text-sm text-muted-foreground">
@@ -210,7 +230,9 @@ function PaiementsPage() {
                   </div>
                 )}
                 {personnesFiltrees.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nom}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -219,27 +241,33 @@ function PaiementsPage() {
           <div className="space-y-2">
             <Label>Dossier rattaché</Label>
             <Select value={form.dossier_id} onValueChange={(v) => setForm({ ...form, dossier_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Optionnel" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Optionnel" />
+              </SelectTrigger>
               <SelectContent>
-                {dossiers.length === 0 && (
-                  <div className="px-2 py-2 text-sm text-muted-foreground">Aucun dossier.</div>
-                )}
+                {dossiers.length === 0 && <div className="px-2 py-2 text-sm text-muted-foreground">Aucun dossier.</div>}
                 {dossiers.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>{d.titre}</SelectItem>
+                  <SelectItem key={d.id} value={d.id}>
+                    {d.titre}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label>Compte impacté <span className="text-destructive">*</span></Label>
+            <Label>
+              Compte impacté <span className="text-destructive">*</span>
+            </Label>
             <Select value={form.compte_id} onValueChange={(v) => setForm({ ...form, compte_id: v })}>
               <SelectTrigger>
                 <SelectValue placeholder={comptes.length === 0 ? "Créez d'abord un compte" : "Choisir le compte"} />
               </SelectTrigger>
               <SelectContent>
                 {comptes.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nom}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -270,7 +298,9 @@ function PaiementsPage() {
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="p-5 border-border/60">
           <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Encaissements</div>
-          <div className="mt-2 text-xl font-semibold tabular text-[color:var(--revenue)]">+{formatEUR(totalEncaisse)}</div>
+          <div className="mt-2 text-xl font-semibold tabular text-[color:var(--revenue)]">
+            +{formatEUR(totalEncaisse)}
+          </div>
         </Card>
         <Card className="p-5 border-border/60">
           <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Décaissements</div>
@@ -282,17 +312,34 @@ function PaiementsPage() {
         </Card>
       </section>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         {(["all", "paiement_client", "paiement_fournisseur"] as const).map((t) => (
-          <Button
-            key={t}
-            variant={filter === t ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilter(t)}
-          >
+          <Button key={t} variant={filter === t ? "default" : "outline"} size="sm" onClick={() => setFilter(t)}>
             {t === "all" ? "Tous" : t === "paiement_client" ? "Encaissements" : "Décaissements"}
           </Button>
         ))}
+        <div className="flex gap-2 ml-auto">
+          <Input
+            type="date"
+            value={filterDu}
+            onChange={(e) => setFilterDu(e.target.value)}
+            className="h-8 w-36 text-xs"
+            placeholder="Du"
+          />
+          <Input
+            type="date"
+            value={filterAu}
+            onChange={(e) => setFilterAu(e.target.value)}
+            className="h-8 w-36 text-xs"
+            placeholder="Au"
+          />
+          <Input
+            value={filterDossier}
+            onChange={(e) => setFilterDossier(e.target.value)}
+            className="h-8 w-40 text-xs"
+            placeholder="Dossier…"
+          />
+        </div>
       </div>
 
       <Card className="border-border/60 overflow-hidden">
@@ -345,7 +392,10 @@ function PaiementsPage() {
                   <TableCell className="capitalize text-muted-foreground">{p.methode}</TableCell>
                   <TableCell>
                     {p.statut_rapprochement === "rapproche" ? (
-                      <Badge variant="outline" className="bg-[color:var(--margin)]/12 text-[color:var(--margin)] border-[color:var(--margin)]/25">
+                      <Badge
+                        variant="outline"
+                        className="bg-[color:var(--margin)]/12 text-[color:var(--margin)] border-[color:var(--margin)]/25"
+                      >
                         Rapproché
                       </Badge>
                     ) : (
