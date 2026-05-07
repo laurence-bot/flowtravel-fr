@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { RequireAuth } from "@/components/require-auth";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Trash2, Copy, AlertTriangle, Check, X, Pencil } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -39,13 +38,7 @@ import {
 } from "@/lib/hr";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/ops/equipe/planning")({
-  component: () => (
-    <RequireAuth>
-      <PlanningPage />
-    </RequireAuth>
-  ),
-});
+export const Route = createFileRoute("/ops/equipe/planning")({ component: PlanningPage });
 
 const TYPE_COLORS: Record<PlanningType, { badge: string; dot: string; abbr: string }> = {
   travail: { badge: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500", abbr: "TRA" },
