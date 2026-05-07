@@ -10,10 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PageHeader } from "@/components/page-header";
 import {
   listAbsences, approveAbsence, rejectAbsence, createAbsence,
-  listEmployees,
+  listEmployees, listRecupDemandes, createRecupDemande,
+  approuverRecupDemande, refuserRecupDemande,
   ABSENCE_TYPE_LABELS, ABSENCE_STATUT_LABELS,
-  type Absence, type Employee, type AbsenceType, type AbsenceStatut,
+  type Absence, type Employee, type AbsenceType, type AbsenceStatut, type RecupDemande,
 } from "@/lib/hr";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { sendTransactionalEmail } from "@/lib/email/send";
 import { toast } from "sonner";
