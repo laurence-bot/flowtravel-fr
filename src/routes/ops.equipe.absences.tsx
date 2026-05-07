@@ -11,7 +11,7 @@ import { PageHeader } from "@/components/page-header";
 import {
   listAbsences, approveAbsence, rejectAbsence, createAbsence,
   listEmployees, listRecupDemandes, createRecupDemande,
-  approuverRecupDemande, refuserRecupDemande,
+  approuverRecupDemande, refuserRecupDemande, deleteRecupDemande,
   ABSENCE_TYPE_LABELS, ABSENCE_STATUT_LABELS,
   type Absence, type Employee, type AbsenceType, type AbsenceStatut, type RecupDemande,
 } from "@/lib/hr";
