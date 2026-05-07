@@ -402,10 +402,13 @@ export type RecupDemande = {
   type: "journee" | "heures" | "report_exceptionnel";
   heures_demandees: number;
   date_souhaitee: string | null;
+  heure_debut: string | null;
+  heure_fin: string | null;
   motif: string | null;
-  statut: "demande" | "approuvee" | "refusee";
+  statut: "demande" | "approuvee" | "refusee" | "annulee";
   traite_par: string | null;
   traite_at: string | null;
+  planning_entry_id: string | null;
   created_at: string;
 };
 
