@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { RequireAuth } from "@/components/require-auth";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Upload, X, FileText, Send, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,13 +33,7 @@ import { sendTransactionalEmail } from "@/lib/email/send";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/ops/equipe/contrats")({
-  component: () => (
-    <RequireAuth>
-      <ContractsPage />
-    </RequireAuth>
-  ),
-});
+export const Route = createFileRoute("/ops/equipe/contrats")({ component: ContractsPage });
 
 const STATUT_COLORS: Record<string, string> = {
   brouillon: "bg-zinc-100 text-zinc-600",
