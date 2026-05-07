@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { RequireAuth } from "@/components/require-auth";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -42,7 +43,11 @@ export const Route = createFileRoute("/qa")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: QaPage,
+  component: () => (
+    <RequireAuth>
+      <QaPage />
+    </RequireAuth>
+  ),
 });
 
 const DEMO_EMAIL = "qa-clean@flowtravel.test";
@@ -170,7 +175,9 @@ function QaPage() {
         try {
           allDetails[k] = await getStepDetails(k, state);
           allOpen[k] = true;
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       }
       setDetails(allDetails);
       setOpenDetails(allOpen);
@@ -234,7 +241,9 @@ function QaPage() {
               </>
             ) : (
               <Link to="/auth">
-                <Button variant="ghost" size="sm">Se connecter</Button>
+                <Button variant="ghost" size="sm">
+                  Se connecter
+                </Button>
               </Link>
             )}
           </div>
@@ -248,8 +257,8 @@ function QaPage() {
           </div>
           <h1 className="font-display text-4xl mt-3">Tester Flow Travel étape par étape</h1>
           <p className="text-muted-foreground mt-3 max-w-2xl">
-            Connectez-vous, puis déroulez le scénario d'une vente complète à votre rythme.
-            À chaque étape, ouvrez la page concernée pour voir le résultat dans l'application.
+            Connectez-vous, puis déroulez le scénario d'une vente complète à votre rythme. À chaque étape, ouvrez la
+            page concernée pour voir le résultat dans l'application.
           </p>
         </div>
 
@@ -280,18 +289,10 @@ function QaPage() {
               </div>
               <div className="space-y-2">
                 <Label>Mot de passe</Label>
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+                <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
               <Button type="submit" disabled={busy}>
-                {busy ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <LogIn className="h-4 w-4 mr-2" />
-                )}
+                {busy ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <LogIn className="h-4 w-4 mr-2" />}
                 Se connecter / créer le compte démo
               </Button>
             </form>
@@ -305,10 +306,8 @@ function QaPage() {
               <h2 className="font-display text-xl">Mode pas à pas</h2>
               <p className="text-sm text-muted-foreground mt-1">
                 Lancez chaque étape une par une. Étape{" "}
-                <span className="font-medium text-foreground">
-                  {Math.min(currentIdx + 1, QA_STEPS.length)}
-                </span>{" "}
-                / {QA_STEPS.length}
+                <span className="font-medium text-foreground">{Math.min(currentIdx + 1, QA_STEPS.length)}</span> /{" "}
+                {QA_STEPS.length}
               </p>
             </div>
             <div className="flex gap-2 flex-wrap">
@@ -337,9 +336,7 @@ function QaPage() {
                 Prochaine étape
               </div>
               <h3 className="font-display text-lg">{currentStep.label}</h3>
-              <p className="text-sm text-muted-foreground mt-2">
-                {currentStep.description}
-              </p>
+              <p className="text-sm text-muted-foreground mt-2">{currentStep.description}</p>
               <div className="flex gap-2 mt-4 flex-wrap">
                 <Button onClick={runOneStep} disabled={!session || stepBusy}>
                   {stepBusy ? (
@@ -350,12 +347,7 @@ function QaPage() {
                   Lancer cette étape
                 </Button>
                 {currentIdx > 0 && steps[currentIdx - 1]?.viewRoute && (
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      navigate({ to: steps[currentIdx - 1].viewRoute! as any })
-                    }
-                  >
+                  <Button variant="outline" onClick={() => navigate({ to: steps[currentIdx - 1].viewRoute! as any })}>
                     <Eye className="h-4 w-4 mr-2" />
                     Voir le résultat précédent
                   </Button>
@@ -373,10 +365,18 @@ function QaPage() {
                 Explorez librement l'application avec les données générées.
               </p>
               <div className="flex gap-2 mt-3 flex-wrap">
-                <Button size="sm" onClick={() => navigate({ to: "/app" })}>Dashboard</Button>
-                <Button size="sm" variant="outline" onClick={() => navigate({ to: "/cotations" })}>Cotations</Button>
-                <Button size="sm" variant="outline" onClick={() => navigate({ to: "/dossiers" })}>Dossiers</Button>
-                <Button size="sm" variant="outline" onClick={() => navigate({ to: "/rapprochement" })}>Rapprochement</Button>
+                <Button size="sm" onClick={() => navigate({ to: "/app" })}>
+                  Dashboard
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => navigate({ to: "/cotations" })}>
+                  Cotations
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => navigate({ to: "/dossiers" })}>
+                  Dossiers
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => navigate({ to: "/rapprochement" })}>
+                  Rapprochement
+                </Button>
               </div>
             </div>
           )}
@@ -399,12 +399,8 @@ function QaPage() {
                     <span className="mt-0.5">
                       {s.status === "ok" && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
                       {s.status === "ko" && <XCircle className="h-4 w-4 text-destructive" />}
-                      {s.status === "running" && (
-                        <Loader2 className="h-4 w-4 animate-spin text-[color:var(--gold)]" />
-                      )}
-                      {s.status === "pending" && (
-                        <Circle className="h-4 w-4 text-muted-foreground/40" />
-                      )}
+                      {s.status === "running" && <Loader2 className="h-4 w-4 animate-spin text-[color:var(--gold)]" />}
+                      {s.status === "pending" && <Circle className="h-4 w-4 text-muted-foreground/40" />}
                     </span>
                     <div className="flex-1 min-w-0">
                       <div
@@ -418,19 +414,13 @@ function QaPage() {
                       >
                         {s.label}
                       </div>
-                      {s.detail && (
-                        <div className="text-[11px] text-muted-foreground mt-0.5">
-                          {s.detail}
-                        </div>
-                      )}
+                      {s.detail && <div className="text-[11px] text-muted-foreground mt-0.5">{s.detail}</div>}
                     </div>
                     {s.status === "ok" && d && (
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() =>
-                          setOpenDetails((prev) => ({ ...prev, [s.key]: !prev[s.key] }))
-                        }
+                        onClick={() => setOpenDetails((prev) => ({ ...prev, [s.key]: !prev[s.key] }))}
                         className="shrink-0 h-7 text-xs"
                       >
                         {isOpen ? "Masquer" : "Détails"}
@@ -485,9 +475,7 @@ function QaPage() {
                               <dt className="text-muted-foreground">{f.label}</dt>
                               <dd
                                 className={
-                                  f.mono
-                                    ? "font-mono text-foreground text-right"
-                                    : "text-foreground text-right"
+                                  f.mono ? "font-mono text-foreground text-right" : "text-foreground text-right"
                                 }
                               >
                                 {f.value}
@@ -498,18 +486,14 @@ function QaPage() {
                       )}
                       {d.groups?.map((g, gi) => (
                         <div key={gi} className="rounded-md bg-background/60 border border-border/40 p-3">
-                          <div className="text-xs font-semibold text-[color:var(--gold)] mb-2">
-                            {g.title}
-                          </div>
+                          <div className="text-xs font-semibold text-[color:var(--gold)] mb-2">{g.title}</div>
                           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-xs">
                             {g.fields.map((f, i) => (
                               <div key={i} className="flex justify-between gap-3 border-b border-border/30 py-1">
                                 <dt className="text-muted-foreground">{f.label}</dt>
                                 <dd
                                   className={
-                                    f.mono
-                                      ? "font-mono text-foreground text-right"
-                                      : "text-foreground text-right"
+                                    f.mono ? "font-mono text-foreground text-right" : "text-foreground text-right"
                                   }
                                 >
                                   {f.value}
@@ -530,15 +514,9 @@ function QaPage() {
         {/* Mode auto */}
         <Card className="p-6 border-border/60">
           <h2 className="font-display text-xl mb-2">Ou tout lancer d'un coup</h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            Exécute les 13 étapes en ~5 secondes (mode démo rapide).
-          </p>
+          <p className="text-sm text-muted-foreground mb-4">Exécute les 13 étapes en ~5 secondes (mode démo rapide).</p>
           <Button onClick={launchAuto} disabled={!session || running} variant="outline">
-            {running ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <PlayCircle className="h-4 w-4 mr-2" />
-            )}
+            {running ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <PlayCircle className="h-4 w-4 mr-2" />}
             Lancer le scénario complet
           </Button>
           {autoSteps.length > 0 && (
@@ -547,12 +525,8 @@ function QaPage() {
                 <li key={s.key} className="flex items-center gap-2">
                   {s.status === "ok" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
                   {s.status === "ko" && <XCircle className="h-3.5 w-3.5 text-destructive" />}
-                  {s.status === "running" && (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-[color:var(--gold)]" />
-                  )}
-                  {s.status === "pending" && (
-                    <Circle className="h-3.5 w-3.5 text-muted-foreground/40" />
-                  )}
+                  {s.status === "running" && <Loader2 className="h-3.5 w-3.5 animate-spin text-[color:var(--gold)]" />}
+                  {s.status === "pending" && <Circle className="h-3.5 w-3.5 text-muted-foreground/40" />}
                   <span className="text-muted-foreground">{s.label}</span>
                 </li>
               ))}
