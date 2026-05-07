@@ -752,13 +752,13 @@ export function isJourFerie(dateIso: string, holidays?: Set<string>): boolean {
 
 export function isJourOuvre(dateIso: string, holidays?: Set<string>): boolean {
   const day = new Date(`${dateIso}T00:00:00Z`).getUTCDay();
-  if (day === 0 || day === 6) return false;
+  if (day === 0) return false; // dimanche uniquement — le samedi est ouvré
   return !isJourFerie(dateIso, holidays);
 }
 
-/** Heures contractuelles par jour pour un employé (par défaut 7h pour 35h/semaine). */
+/** Heures contractuelles par jour (35h/sem sur 6 jours ouvrés lun-sam = 35/6 ≈ 5.83h). */
 export function heuresContractuellesParJour(_emp?: Pick<Employee, "type_contrat"> | null): number {
-  return 7;
+  return Math.round((35 / 6) * 100) / 100; // 5.83h
 }
 
 function dureeNetteEntry(e: PlanningEntry): number {
