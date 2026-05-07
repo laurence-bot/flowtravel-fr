@@ -23,13 +23,13 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/ops/equipe/planning")({ component: PlanningPage });
 
-const TYPE_COLORS: Record<PlanningType, { badge: string; dot: string }> = {
-  travail:     { badge: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
-  teletravail: { badge: "bg-sky-50 text-sky-700 border-sky-200",            dot: "bg-sky-500" },
-  reunion:     { badge: "bg-violet-50 text-violet-700 border-violet-200",   dot: "bg-violet-500" },
-  deplacement: { badge: "bg-orange-50 text-orange-700 border-orange-200",   dot: "bg-orange-500" },
-  formation:   { badge: "bg-amber-50 text-amber-700 border-amber-200",      dot: "bg-amber-500" },
-  autre:       { badge: "bg-zinc-50 text-zinc-500 border-zinc-200",         dot: "bg-zinc-400" },
+const TYPE_COLORS: Record<PlanningType, { badge: string; dot: string; abbr: string }> = {
+  travail:     { badge: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500", abbr: "TRA" },
+  teletravail: { badge: "bg-sky-50 text-sky-700 border-sky-200",            dot: "bg-sky-500",     abbr: "TLT" },
+  reunion:     { badge: "bg-violet-50 text-violet-700 border-violet-200",   dot: "bg-violet-500",  abbr: "RÉU" },
+  deplacement: { badge: "bg-orange-50 text-orange-700 border-orange-200",   dot: "bg-orange-500",  abbr: "DÉP" },
+  formation:   { badge: "bg-amber-50 text-amber-700 border-amber-200",      dot: "bg-amber-500",   abbr: "FOR" },
+  autre:       { badge: "bg-zinc-50 text-zinc-500 border-zinc-200",         dot: "bg-zinc-400",    abbr: "AUT" },
 };
 
 const DAY_LABELS = ["D", "L", "M", "M", "J", "V", "S"];
