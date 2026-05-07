@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { RequireAuth } from "@/components/require-auth";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Download } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -19,13 +18,7 @@ import {
 } from "@/lib/hr";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/ops/equipe/pointage")({
-  component: () => (
-    <RequireAuth>
-      <PointagePage />
-    </RequireAuth>
-  ),
-});
+export const Route = createFileRoute("/ops/equipe/pointage")({ component: PointagePage });
 
 function PointagePage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
