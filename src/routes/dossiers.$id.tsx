@@ -7,12 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useTable, type Contact, type Dossier, type Paiement, type Facture } from "@/hooks/use-data";
 import { useAgents, agentLabel } from "@/hooks/use-agents";
@@ -23,7 +19,18 @@ import { formatMoney } from "@/lib/fx";
 import { computeDossierFinance, paiementEUR, factureEUR } from "@/lib/finance";
 import { FxFieldGroup, fxValueToDb, emptyFxValue, type FxFieldValue } from "@/components/fx-field-group";
 import { StatutBadge } from "@/components/statut-badge";
-import { ArrowLeft, Trash2, User, Receipt, ArrowDownLeft, ArrowUpRight, Plus, Users as UsersIcon, FileSignature, Mail } from "lucide-react";
+import {
+  ArrowLeft,
+  Trash2,
+  User,
+  Receipt,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Plus,
+  Users as UsersIcon,
+  FileSignature,
+  Mail,
+} from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 import { DossierTasksBlock } from "@/components/dossier-tasks-block";
@@ -77,25 +84,35 @@ function DossierDetail() {
   const [triggering, setTriggering] = useState(false);
 
   useEffect(() => {
-    supabase.from("dossiers").select("*").eq("id", id).maybeSingle().then(({ data }) => {
-      if (!data) setNotFound(true);
-      else setDossier(data as Dossier);
-    });
+    supabase
+      .from("dossiers")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data) setNotFound(true);
+        else setDossier(data as Dossier);
+      });
     // Récupère la cotation associée + un éventuel bulletin
-    supabase.from("cotations").select("id").eq("dossier_id", id).maybeSingle().then(({ data }) => {
-      if (data?.id) {
-        setCotationId(data.id);
-        supabase
-          .from("bulletins")
-          .select("token,statut")
-          .eq("cotation_id", data.id)
-          .in("statut", ["a_signer", "signe"])
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle()
-          .then(({ data: b }) => setBulletinExists(b ?? null));
-      }
-    });
+    supabase
+      .from("cotations")
+      .select("id")
+      .eq("dossier_id", id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.id) {
+          setCotationId(data.id);
+          supabase
+            .from("bulletins")
+            .select("token,statut")
+            .eq("cotation_id", data.id)
+            .in("statut", ["a_signer", "signe"])
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+            .then(({ data: b }) => setBulletinExists(b ?? null));
+        }
+      });
   }, [id]);
 
   const handleTriggerBulletin = async () => {
@@ -146,6 +163,19 @@ function DossierDetail() {
   const supprimer = async () => {
     if (!dossier) return;
     if (!confirm("Supprimer ce dossier ? Cette action est irréversible.")) return;
+
+    // Remettre la cotation liée dans un état cohérent avant suppression
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: cotError } = await (supabase as any)
+      .from("cotations")
+      .update({ statut: "envoyee", dossier_id: null })
+      .eq("dossier_id", dossier.id)
+      .eq("statut", "transformee_en_dossier");
+    if (cotError) {
+      toast.error(`Impossible de délier la cotation : ${cotError.message}`);
+      return;
+    }
+
     const { error } = await supabase.from("dossiers").delete().eq("id", dossier.id);
     if (error) return toast.error(error.message);
     await logAudit({
@@ -163,7 +193,10 @@ function DossierDetail() {
   return (
     <div className="space-y-8">
       <EditLockBanner lock={editLock} />
-      <Link to="/dossiers" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
+      <Link
+        to="/dossiers"
+        className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5"
+      >
         <ArrowLeft className="h-4 w-4" />
         Retour aux dossiers
       </Link>
@@ -187,11 +220,15 @@ function DossierDetail() {
             <UsersIcon className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">Agent :</span>
             <Select value={dossier.agent_id ?? ""} onValueChange={reassignAgent}>
-              <SelectTrigger className="h-7 w-[200px] text-xs"><SelectValue placeholder="Non assigné" /></SelectTrigger>
+              <SelectTrigger className="h-7 w-[200px] text-xs">
+                <SelectValue placeholder="Non assigné" />
+              </SelectTrigger>
               <SelectContent>
                 {agents.map((a) => (
                   <SelectItem key={a.user_id} value={a.user_id}>
-                    {agentLabel(a)}{a.user_id === user?.id ? " (moi)" : ""}{!a.actif ? " · inactif" : ""}
+                    {agentLabel(a)}
+                    {a.user_id === user?.id ? " (moi)" : ""}
+                    {!a.actif ? " · inactif" : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -216,7 +253,9 @@ function DossierDetail() {
         </Card>
         <Card className="p-5 border-border/60">
           <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Marge</div>
-          <div className={`mt-2 text-2xl font-semibold tabular ${f.marge >= 0 ? "text-[color:var(--margin)]" : "text-destructive"}`}>
+          <div
+            className={`mt-2 text-2xl font-semibold tabular ${f.marge >= 0 ? "text-[color:var(--margin)]" : "text-destructive"}`}
+          >
             {formatEUR(f.marge)}
           </div>
           {f.prixVente > 0 && (
@@ -226,7 +265,9 @@ function DossierDetail() {
         <Card className="p-5 border-border/60">
           <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Reste à encaisser</div>
           <div className="mt-2 text-2xl font-semibold tabular">{formatEUR(f.resteAEncaisser)}</div>
-          <div className="text-xs text-muted-foreground mt-1">Reste à payer fourn. : {formatEUR(f.resteAPayerFournisseur)}</div>
+          <div className="text-xs text-muted-foreground mt-1">
+            Reste à payer fourn. : {formatEUR(f.resteAPayerFournisseur)}
+          </div>
         </Card>
       </section>
 
@@ -259,7 +300,9 @@ function DossierDetail() {
           </div>
           <div className="col-span-2 md:col-span-2">
             <div className="text-xs text-muted-foreground">Marge nette (après TVA)</div>
-            <div className={`tabular text-lg font-semibold mt-1 ${f.margeNette >= 0 ? "text-[color:var(--margin)]" : "text-destructive"}`}>
+            <div
+              className={`tabular text-lg font-semibold mt-1 ${f.margeNette >= 0 ? "text-[color:var(--margin)]" : "text-destructive"}`}
+            >
               {formatEUR(f.margeNette)}
               {f.prixVente > 0 && (
                 <span className="text-xs text-muted-foreground font-normal ml-2">
@@ -366,8 +409,7 @@ function DossierDetail() {
                   </p>
                 ) : (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Dès le 1ᵉʳ acompte reçu, déclenchez l'envoi du bulletin pré-signé au client
-                    pour signature en ligne.
+                    Dès le 1ᵉʳ acompte reçu, déclenchez l'envoi du bulletin pré-signé au client pour signature en ligne.
                   </p>
                 )}
               </div>
@@ -463,7 +505,10 @@ function PaiementBloc({
                   <TableCell className="text-sm text-muted-foreground">{personne?.nom ?? "—"}</TableCell>
                   <TableCell className="capitalize text-sm text-muted-foreground">{p.methode}</TableCell>
                   <TableCell className={`text-right tabular font-medium ${colorClass}`}>
-                    <div>{sign}{formatEUR(paiementEUR(p))}</div>
+                    <div>
+                      {sign}
+                      {formatEUR(paiementEUR(p))}
+                    </div>
                     {p.devise !== "EUR" && (
                       <div className="text-[11px] text-muted-foreground font-normal mt-0.5">
                         {formatMoney(p.montant_devise ?? 0, p.devise)} @ {Number(p.taux_change).toFixed(4)}
@@ -486,7 +531,10 @@ const factureSchema = z.object({
 });
 
 function NewFactureDialog({
-  dossierId, userId, fournisseurs, onDone,
+  dossierId,
+  userId,
+  fournisseurs,
+  onDone,
 }: {
   dossierId: string;
   userId?: string;
@@ -515,14 +563,18 @@ function NewFactureDialog({
       return;
     }
     setSaving(true);
-    const { data: inserted, error } = await supabase.from("factures_fournisseurs").insert({
-      user_id: userId,
-      dossier_id: dossierId,
-      fournisseur_id: parsed.data.fournisseur_id || null,
-      date_echeance: parsed.data.date_echeance || null,
-      paye: false,
-      ...fxDb,
-    }).select().single();
+    const { data: inserted, error } = await supabase
+      .from("factures_fournisseurs")
+      .insert({
+        user_id: userId,
+        dossier_id: dossierId,
+        fournisseur_id: parsed.data.fournisseur_id || null,
+        date_echeance: parsed.data.date_echeance || null,
+        paye: false,
+        ...fxDb,
+      })
+      .select()
+      .single();
     setSaving(false);
     if (error) return toast.error(error.message);
     await logAudit({
@@ -556,13 +608,17 @@ function NewFactureDialog({
           <div className="space-y-2">
             <Label>Fournisseur</Label>
             <Select value={form.fournisseur_id} onValueChange={(v) => setForm({ ...form, fournisseur_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Optionnel" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Optionnel" />
+              </SelectTrigger>
               <SelectContent>
                 {fournisseurs.length === 0 && (
                   <div className="px-2 py-2 text-sm text-muted-foreground">Aucun fournisseur.</div>
                 )}
                 {fournisseurs.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nom}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
