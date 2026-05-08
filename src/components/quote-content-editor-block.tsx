@@ -4,13 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { ImagePicker } from "@/components/image-picker";
@@ -43,12 +37,7 @@ import {
   type FlightOptionLite,
   type FlightSegmentLite,
 } from "@/lib/itinerary-from-flights";
-import {
-  buildJourSyncPlan,
-  duplicateLineKey,
-  normKey,
-  type SyncJour,
-} from "@/lib/cotation-sync";
+import { buildJourSyncPlan, duplicateLineKey, normKey, type SyncJour } from "@/lib/cotation-sync";
 import { extractProgramFromFile, insertJours, insertLignes, purgeEtReinserer } from "@/lib/program-import";
 import {
   AlertDialog,
@@ -142,10 +131,7 @@ export function QuoteContentEditorBlock({
     setGenInclusLoading(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const optsRes = await (supabase as any)
-        .from("flight_options")
-        .select("id")
-        .eq("cotation_id", cotationId);
+      const optsRes = await (supabase as any).from("flight_options").select("id").eq("cotation_id", cotationId);
       const optionIds = ((optsRes.data ?? []) as Array<{ id: string }>).map((v) => v.id);
 
       let segments: Array<{ aeroport_depart: string; aeroport_arrivee: string }> = [];
@@ -161,9 +147,7 @@ export function QuoteContentEditorBlock({
       const hasVolInternational = segments.some(
         (s) => s.aeroport_depart.slice(0, 2) !== s.aeroport_arrivee.slice(0, 2),
       );
-      const hasVolDomestique = segments.some(
-        (s) => s.aeroport_depart.slice(0, 2) === s.aeroport_arrivee.slice(0, 2),
-      );
+      const hasVolDomestique = segments.some((s) => s.aeroport_depart.slice(0, 2) === s.aeroport_arrivee.slice(0, 2));
 
       const { inclus_text, non_inclus_text } = generateInclusText({
         jours: jours.map((j) => ({
@@ -276,10 +260,7 @@ export function QuoteContentEditorBlock({
     setHeroUrl(url);
     setSavingHero(true);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from("cotations")
-      .update({ hero_image_url: url })
-      .eq("id", cotationId);
+    const { error } = await (supabase as any).from("cotations").update({ hero_image_url: url }).eq("id", cotationId);
     setSavingHero(false);
     if (error) toast.error(error.message);
     else toast.success("Image principale mise à jour.");
@@ -322,10 +303,7 @@ export function QuoteContentEditorBlock({
   };
 
   // Suit toutes les image_url déjà utilisées dans les jours
-  const usedPhotoUrls = useMemo(
-    () => new Set(jours.map((j) => j.image_url).filter(Boolean) as string[]),
-    [jours],
-  );
+  const usedPhotoUrls = useMemo(() => new Set(jours.map((j) => j.image_url).filter(Boolean) as string[]), [jours]);
 
   const addJour = async () => {
     const ordre = jours.length > 0 ? Math.max(...jours.map((j) => j.ordre)) + 1 : 1;
@@ -357,10 +335,7 @@ export function QuoteContentEditorBlock({
   const updateJour = async (id: string, patch: Partial<CotationJour>) => {
     setJours((prev) => prev.map((j) => (j.id === id ? { ...j, ...patch } : j)));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from("cotation_jours")
-      .update(patch)
-      .eq("id", id);
+    const { error } = await (supabase as any).from("cotation_jours").update(patch).eq("id", id);
     if (error) toast.error(error.message);
   };
 
@@ -391,10 +366,7 @@ export function QuoteContentEditorBlock({
     // Persist tous les nouveaux ordres en parallèle
     const updates = reordered.map((j) =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
-        .from("cotation_jours")
-        .update({ ordre: j.ordre })
-        .eq("id", j.id),
+      (supabase as any).from("cotation_jours").update({ ordre: j.ordre }).eq("id", j.id),
     );
     const results = await Promise.all(updates);
     const failed = results.find((r) => r.error);
@@ -444,8 +416,8 @@ export function QuoteContentEditorBlock({
 
       const seenJours = new Map<string, string>(); // key → id (on garde le premier)
       const jourIds: string[] = [];
-      const sortedJours = [...((joursData ?? []) as SyncJour[])].sort(
-        (a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? "")
+      const sortedJours = [...((joursData ?? []) as SyncJour[])].sort((a, b) =>
+        (a.created_at ?? "").localeCompare(b.created_at ?? ""),
       );
       for (const j of sortedJours) {
         const key = `${j.date_jour ?? ""}|${normKey(j.titre).slice(0, 80)}`;
@@ -466,7 +438,11 @@ export function QuoteContentEditorBlock({
       const seenLines = new Set<string>();
       const lineIds: string[] = [];
       for (const l of (lignesData ?? []) as Array<{
-        id: string; prestation: string | null; montant_devise: number | null; devise: string | null; nom_fournisseur: string | null;
+        id: string;
+        prestation: string | null;
+        montant_devise: number | null;
+        devise: string | null;
+        nom_fournisseur: string | null;
       }>) {
         const key = duplicateLineKey(l);
         if (seenLines.has(key)) lineIds.push(l.id);
@@ -475,10 +451,7 @@ export function QuoteContentEditorBlock({
       let removedLines = 0;
       if (lineIds.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await (supabase as any)
-          .from("cotation_lignes_fournisseurs")
-          .delete()
-          .in("id", lineIds);
+        const { error } = await (supabase as any).from("cotation_lignes_fournisseurs").delete().in("id", lineIds);
         if (error) throw error;
         removedLines = lineIds.length;
       }
@@ -504,7 +477,9 @@ export function QuoteContentEditorBlock({
     });
 
     if (joursAvecHotel.length === 0) {
-      toast.info("Aucun hôtel à enrichir. Saisissez le nom de l'hôtel dans chaque jour pour déclencher l'enrichissement.");
+      toast.info(
+        "Aucun hôtel à enrichir. Saisissez le nom de l'hôtel dans chaque jour pour déclencher l'enrichissement.",
+      );
       return;
     }
     setEnrichLoading(true);
@@ -521,12 +496,18 @@ export function QuoteContentEditorBlock({
             );
             hotelNom = match?.[1]?.trim();
           }
-          if (!hotelNom) { failed++; continue; }
+          if (!hotelNom) {
+            failed++;
+            continue;
+          }
 
           const { data, error } = await supabase.functions.invoke("enrich-hotel", {
             body: { hotel_nom: hotelNom, lieu: jour.lieu ?? destination ?? null },
           });
-          if (error || !data) { failed++; continue; }
+          if (error || !data) {
+            failed++;
+            continue;
+          }
 
           const patch: Partial<CotationJour> = {};
           if (data.hotel_nom_confirme) patch.hotel_nom = data.hotel_nom_confirme;
@@ -543,7 +524,8 @@ export function QuoteContentEditorBlock({
         }
       }
       if (enriched > 0) toast.success(`${enriched} hôtel(s) enrichi(s).`);
-      if (failed > 0) toast.warning(`${failed} hôtel(s) non trouvé(s) — saisissez le nom manuellement dans le champ hôtel du jour.`);
+      if (failed > 0)
+        toast.warning(`${failed} hôtel(s) non trouvé(s) — saisissez le nom manuellement dans le champ hôtel du jour.`);
       if (enriched === 0 && failed === 0) toast.info("Aucun hôtel détecté. Saisissez les noms manuellement.");
     } finally {
       setEnrichLoading(false);
@@ -561,10 +543,15 @@ export function QuoteContentEditorBlock({
       .eq("cotation_id", cotationId)
       .order("ordre", { ascending: true });
 
-    const joursWithout = ((freshJours ?? []) as Array<{
-      id: string; titre: string; lieu: string | null;
-      description: string | null; image_url: string | null;
-    }>).filter((j) => !j.image_url);
+    const joursWithout = (
+      (freshJours ?? []) as Array<{
+        id: string;
+        titre: string;
+        lieu: string | null;
+        description: string | null;
+        image_url: string | null;
+      }>
+    ).filter((j) => !j.image_url);
 
     if (joursWithout.length === 0) {
       toast.info("Tous les jours ont déjà une photo.");
@@ -576,9 +563,7 @@ export function QuoteContentEditorBlock({
     let failed = 0;
 
     const sessionUsedUrls = new Set<string>(
-      ((freshJours ?? []) as Array<{ image_url: string | null }>)
-        .map((j) => j.image_url)
-        .filter(Boolean) as string[]
+      ((freshJours ?? []) as Array<{ image_url: string | null }>).map((j) => j.image_url).filter(Boolean) as string[],
     );
 
     try {
@@ -593,7 +578,10 @@ export function QuoteContentEditorBlock({
               excludeIds: [...sessionUsedUrls],
             },
           });
-          if (!r.ok) { failed++; continue; }
+          if (!r.ok) {
+            failed++;
+            continue;
+          }
 
           if (sessionUsedUrls.has(r.photo.url) || sessionUsedUrls.has(r.photo.full)) {
             failed++;
@@ -606,7 +594,10 @@ export function QuoteContentEditorBlock({
           const { error: upErr } = await supabase.storage
             .from("quote-images")
             .upload(path, blob, { cacheControl: "3600", upsert: false, contentType: "image/jpeg" });
-          if (upErr) { failed++; continue; }
+          if (upErr) {
+            failed++;
+            continue;
+          }
 
           const { data: pubData } = supabase.storage.from("quote-images").getPublicUrl(path);
 
@@ -620,7 +611,9 @@ export function QuoteContentEditorBlock({
           });
           done++;
           await new Promise((res2) => setTimeout(res2, 800));
-        } catch { failed++; }
+        } catch {
+          failed++;
+        }
       }
       if (done > 0) toast.success(`${done} photo(s) ajoutée(s).`);
       if (failed > 0) toast.warning(`${failed} jour(s) sans photo unique — essayez l'onglet Unsplash manuellement.`);
@@ -687,7 +680,22 @@ export function QuoteContentEditorBlock({
         const sorted = [...segments].sort((a, b) => a.ordre - b.ordre);
         newDepart = sorted[0]?.date_depart ?? refVol.date_depart ?? newDepart;
         newRetour = sorted[sorted.length - 1]?.date_arrivee ?? refVol.date_retour ?? newRetour;
-        generated = buildItineraryFromFlights(refVol, segments, newDepart, newRetour);
+
+        // Charger aussi les segments des vols annexes (domestiques stockés en option séparée)
+        // pour que enrichVolsDomestiques enrichisse les bons jours d'itinéraire.
+        const otherVolIds = vols.filter((v) => v.id !== refVol.id).map((v) => v.id);
+        let extraSegments: FlightSegmentLite[] = [];
+        if (otherVolIds.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: extraSegs } = await (supabase as any)
+            .from("flight_segments")
+            .select("*")
+            .in("flight_option_id", otherVolIds)
+            .order("ordre", { ascending: true });
+          extraSegments = (extraSegs ?? []) as FlightSegmentLite[];
+        }
+
+        generated = buildItineraryFromFlights(refVol, [...segments, ...extraSegments], newDepart, newRetour);
         if (newDepart && newRetour) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { error: cotErr } = await (supabase as any)
@@ -793,19 +801,18 @@ export function QuoteContentEditorBlock({
         removedDups = dupIds.length;
       }
 
-      const msgParts = [
-        `${plan.targetCount} jour${plan.targetCount > 1 ? "s" : ""} synchronisé(s)`,
-      ];
+      const msgParts = [`${plan.targetCount} jour${plan.targetCount > 1 ? "s" : ""} synchronisé(s)`];
       if (plan.deleteIds.length > 0) msgParts.push(`${plan.deleteIds.length} jour(s) doublon/en trop supprimé(s)`);
       if (plan.inserts.length > 0) msgParts.push(`${plan.inserts.length} jour(s) ajouté(s)`);
-      if (importedPdfJours > 0 || importedPdfLines > 0) msgParts.push(`${importedPdfJours} jour(s) PDF et ${importedPdfLines} ligne(s) PDF importé(s)`);
-      if (skippedPdfJours > 0 || skippedPdfLines > 0) msgParts.push(`${skippedPdfJours + skippedPdfLines} doublon(s) PDF ignoré(s)`);
+      if (importedPdfJours > 0 || importedPdfLines > 0)
+        msgParts.push(`${importedPdfJours} jour(s) PDF et ${importedPdfLines} ligne(s) PDF importé(s)`);
+      if (skippedPdfJours > 0 || skippedPdfLines > 0)
+        msgParts.push(`${skippedPdfJours + skippedPdfLines} doublon(s) PDF ignoré(s)`);
       if (removedDups > 0) msgParts.push(`${removedDups} ligne(s) doublon retirée(s)`);
       if (plan.conflicts.length > 0) toast.warning(`Synchronisé avec alertes — ${plan.conflicts.join(" ")}`);
       toast.success(`Synchronisation OK — ${msgParts.join(", ")}.`);
       await loadJours();
       onDataChanged?.();
-
     } catch (e) {
       console.error("[resync dates] erreur:", e);
       toast.error(e instanceof Error ? e.message : "Erreur de resynchronisation.");
@@ -856,12 +863,7 @@ export function QuoteContentEditorBlock({
         return;
       }
 
-      const generated = buildItineraryFromFlights(
-        refVol,
-        segments,
-        dateDepart ?? null,
-        dateRetour ?? null,
-      );
+      const generated = buildItineraryFromFlights(refVol, segments, dateDepart ?? null, dateRetour ?? null);
       if (generated.length === 0) {
         toast.error("Impossible de calculer les dates depuis les vols.");
         return;
@@ -869,10 +871,7 @@ export function QuoteContentEditorBlock({
 
       // 2. Effacer les jours existants
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: delErr } = await (supabase as any)
-        .from("cotation_jours")
-        .delete()
-        .eq("cotation_id", cotationId);
+      const { error: delErr } = await (supabase as any).from("cotation_jours").delete().eq("cotation_id", cotationId);
       if (delErr) throw delErr;
 
       // 3. Insérer les nouveaux jours
@@ -886,9 +885,7 @@ export function QuoteContentEditorBlock({
         date_jour: g.date_jour,
       }));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: insErr } = await (supabase as any)
-        .from("cotation_jours")
-        .insert(payload);
+      const { error: insErr } = await (supabase as any).from("cotation_jours").insert(payload);
       if (insErr) throw insErr;
 
       toast.success(`${generated.length} jours générés depuis les vols.`);
@@ -990,11 +987,7 @@ export function QuoteContentEditorBlock({
                 disabled={cleanLoading}
                 title="Supprime en masse les doublons de jours et de lignes prix"
               >
-                {cleanLoading ? (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                ) : (
-                  <Trash2 className="h-4 w-4 mr-1" />
-                )}
+                {cleanLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}
                 Doublons
               </Button>
               <Button
@@ -1050,11 +1043,7 @@ export function QuoteContentEditorBlock({
                     : "Ajoutez d'abord les vols pour activer cette option"
                 }
               >
-                {regenLoading ? (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                ) : (
-                  <Plane className="h-4 w-4 mr-1" />
-                )}
+                {regenLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plane className="h-4 w-4 mr-1" />}
                 {jours.length === 0 ? "Générer" : "Depuis les vols"}
               </Button>
               <Button size="sm" variant="outline" onClick={addJour}>
@@ -1068,8 +1057,8 @@ export function QuoteContentEditorBlock({
           <div className="text-xs text-muted-foreground bg-muted/50 border border-dashed rounded p-3 flex items-start gap-2">
             <Plane className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[color:var(--gold)]" />
             <div>
-              <strong>Les vols définissent la structure du voyage.</strong> Saisissez d'abord
-              vos vols (option vol + segments) puis cliquez sur <em>« Générer depuis les vols »</em>
+              <strong>Les vols définissent la structure du voyage.</strong> Saisissez d'abord vos vols (option vol +
+              segments) puis cliquez sur <em>« Générer depuis les vols »</em>
               pour construire automatiquement le calendrier jour par jour.
             </div>
           </div>
@@ -1082,15 +1071,8 @@ export function QuoteContentEditorBlock({
             Aucun jour défini. Ajoutez-en pour construire l'itinéraire.
           </div>
         ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={jours.map((j) => j.id)}
-              strategy={verticalListSortingStrategy}
-            >
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={jours.map((j) => j.id)} strategy={verticalListSortingStrategy}>
               <div className="space-y-3">
                 {jours.map((j, idx) => (
                   <SortableJour
@@ -1146,14 +1128,14 @@ export function QuoteContentEditorBlock({
               value={inclus}
               onChange={(e) => setInclus(e.target.value)}
               onBlur={saveInclus}
-              placeholder={"• Vols internationaux aller-retour\n• Hébergement en chambre double\n• Transferts privés\n• Guide francophone…"}
+              placeholder={
+                "• Vols internationaux aller-retour\n• Hébergement en chambre double\n• Transferts privés\n• Guide francophone…"
+              }
               rows={10}
               disabled={!canWrite}
               className="text-sm font-mono"
             />
-            <p className="text-[10px] text-muted-foreground">
-              Format libre — une ligne par item, commencez par • ou -
-            </p>
+            <p className="text-[10px] text-muted-foreground">Format libre — une ligne par item, commencez par • ou -</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="non-inclus" className="text-sm font-medium">
@@ -1164,7 +1146,9 @@ export function QuoteContentEditorBlock({
               value={nonInclus}
               onChange={(e) => setNonInclus(e.target.value)}
               onBlur={saveNonInclus}
-              placeholder={"• Visa et formalités administratives\n• Assurance voyage\n• Repas non mentionnés\n• Boissons\n• Pourboires\n• Dépenses personnelles…"}
+              placeholder={
+                "• Visa et formalités administratives\n• Assurance voyage\n• Repas non mentionnés\n• Boissons\n• Pourboires\n• Dépenses personnelles…"
+              }
               rows={10}
               disabled={!canWrite}
               className="text-sm font-mono"
@@ -1185,9 +1169,9 @@ export function QuoteContentEditorBlock({
               Régénérer l'itinéraire depuis les vols ?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Des jours existent déjà avec du contenu (textes, photos, lieux). La régénération
-              va <strong>supprimer tous les jours actuels</strong> et reconstruire un nouveau
-              squelette à partir des dates de vol. Vos textes et images seront perdus.
+              Des jours existent déjà avec du contenu (textes, photos, lieux). La régénération va{" "}
+              <strong>supprimer tous les jours actuels</strong> et reconstruire un nouveau squelette à partir des dates
+              de vol. Vos textes et images seront perdus.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1222,14 +1206,7 @@ function SortableJour(props: {
   onDelete: () => void;
 }) {
   const { jour } = props;
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: jour.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: jour.id });
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -1240,11 +1217,7 @@ function SortableJour(props: {
 
   return (
     <div ref={setNodeRef} style={style}>
-      <JourEditor
-        {...props}
-        dragHandleProps={{ ...attributes, ...listeners }}
-        isDragging={isDragging}
-      />
+      <JourEditor {...props} dragHandleProps={{ ...attributes, ...listeners }} isDragging={isDragging} />
     </div>
   );
 }
@@ -1288,16 +1261,10 @@ function JourEditor({
   useEffect(() => {
     if (jour.inclusions && Object.keys(jour.inclusions).length > 0) {
       // Si vol domestique détecté et titre ne le mentionne pas → enrichit le titre
-      if (
-        jour.inclusions.vol_domestique === true &&
-        !jour.titre.toLowerCase().includes("vol") &&
-        canWrite
-      ) {
+      if (jour.inclusions.vol_domestique === true && !jour.titre.toLowerCase().includes("vol") && canWrite) {
         const titreParts = jour.titre.split(/\s*[-–—]\s*/);
         if (titreParts.length >= 2) {
-          const newTitre = titreParts
-            .map((part, idx) => (idx === 1 ? `${part} (vol domestique)` : part))
-            .join(" - ");
+          const newTitre = titreParts.map((part, idx) => (idx === 1 ? `${part} (vol domestique)` : part)).join(" - ");
           if (newTitre !== jour.titre) {
             setTitre(newTitre);
             onUpdate({ titre: newTitre });
@@ -1338,7 +1305,15 @@ function JourEditor({
         { titre: `${lieu || jour.lieu || ""} landscape`.trim(), lieu: null as string | null },
       ];
 
-      let chosenPhoto: { id: string; url: string; full: string; thumb: string; alt: string; author: string; credit: string } | null = null;
+      let chosenPhoto: {
+        id: string;
+        url: string;
+        full: string;
+        thumb: string;
+        alt: string;
+        author: string;
+        credit: string;
+      } | null = null;
 
       for (const q of queries) {
         const r = await suggestPhoto({
@@ -1352,8 +1327,7 @@ function JourEditor({
         });
         if (!r.ok) continue;
 
-        const isDuplicate =
-          usedPhotoUrls.has(r.photo.url) || usedPhotoUrls.has(r.photo.full);
+        const isDuplicate = usedPhotoUrls.has(r.photo.url) || usedPhotoUrls.has(r.photo.full);
 
         if (!isDuplicate) {
           chosenPhoto = r.photo;
@@ -1363,7 +1337,9 @@ function JourEditor({
       }
 
       if (!chosenPhoto) {
-        toast.warning("Toutes les photos suggérées sont déjà utilisées — ouvrez l'onglet Unsplash pour choisir manuellement.");
+        toast.warning(
+          "Toutes les photos suggérées sont déjà utilisées — ouvrez l'onglet Unsplash pour choisir manuellement.",
+        );
         return;
       }
 
@@ -1441,9 +1417,7 @@ function JourEditor({
   const canAddMore = galleryCount < MAX_GALLERY;
 
   return (
-    <div
-      className={`border rounded-md bg-card/50 ${isDragging ? "shadow-lg ring-2 ring-primary/40" : ""}`}
-    >
+    <div className={`border rounded-md bg-card/50 ${isDragging ? "shadow-lg ring-2 ring-primary/40" : ""}`}>
       {/* HEADER */}
       <div className="flex items-center gap-2 p-3">
         <button
@@ -1473,7 +1447,12 @@ function JourEditor({
         )}
         {canWrite && (
           <>
-            <Button size="icon" variant="ghost" onClick={() => setOpen(!open)} aria-label={open ? "Replier" : "Déplier"}>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setOpen(!open)}
+              aria-label={open ? "Replier" : "Déplier"}
+            >
               {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
             <Button size="icon" variant="ghost" onClick={onDelete} className="text-destructive" aria-label="Supprimer">
@@ -1502,7 +1481,7 @@ function JourEditor({
                 onChange={(url, meta) =>
                   onUpdate({
                     image_url: url,
-                    image_credit: url ? meta?.credit ?? null : null,
+                    image_credit: url ? (meta?.credit ?? null) : null,
                   })
                 }
                 userId={userId}
@@ -1513,9 +1492,7 @@ function JourEditor({
                 disabled={!canWrite}
               />
               {jour.image_credit && (
-                <div className="text-[10px] text-muted-foreground mt-1 italic">
-                  {jour.image_credit}
-                </div>
+                <div className="text-[10px] text-muted-foreground mt-1 italic">{jour.image_credit}</div>
               )}
             </div>
 
@@ -1647,24 +1624,13 @@ function JourEditor({
                   </div>
                 ))}
                 {canAddMore && canWrite && (
-                  <GalleryAddSlot
-                    userId={userId}
-                    cotationId={cotationId}
-                    jourId={jour.id}
-                    onAdd={addToGallery}
-                  />
+                  <GalleryAddSlot userId={userId} cotationId={cotationId} jourId={jour.id} onAdd={addToGallery} />
                 )}
               </div>
             </div>
 
             {/* HOTEL */}
-            <HotelBlock
-              jour={jour}
-              canWrite={canWrite}
-              userId={userId}
-              cotationId={cotationId}
-              onUpdate={onUpdate}
-            />
+            <HotelBlock jour={jour} canWrite={canWrite} userId={userId} cotationId={cotationId} onUpdate={onUpdate} />
 
             {/* INCLUSIONS */}
             <div className="space-y-2 pt-2 border-t">
@@ -1690,10 +1656,7 @@ function JourEditor({
                   </Button>
                 )}
               </div>
-              <InclusionToggles
-                inclusions={inclusions}
-                onChange={canWrite ? saveInclusions : () => {}}
-              />
+              <InclusionToggles inclusions={inclusions} onChange={canWrite ? saveInclusions : () => {}} />
             </div>
           </div>
         </div>
@@ -1818,9 +1781,15 @@ function AiRefineDialog({
             disabled={generating}
           >
             {generating ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Génération…</>
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Génération…
+              </>
             ) : (
-              <><Sparkles className="h-4 w-4 mr-2" />Générer</>
+              <>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Générer
+              </>
             )}
           </Button>
         </DialogFooter>
@@ -1866,9 +1835,7 @@ function HotelBlock({
 
   return (
     <div className="border-t mt-3 pt-3 space-y-2">
-      <Label className="text-xs flex items-center gap-1">
-        🏨 Hôtel de la nuit (optionnel)
-      </Label>
+      <Label className="text-xs flex items-center gap-1">🏨 Hôtel de la nuit (optionnel)</Label>
       <div className="grid sm:grid-cols-[1fr_auto] gap-2">
         <Input
           value={nom}
@@ -1921,9 +1888,7 @@ function HotelBlock({
         <Input
           value={photo}
           onChange={(e) => setPhoto(e.target.value)}
-          onBlur={() =>
-            photo !== (jour.hotel_photo_url ?? "") && onUpdate({ hotel_photo_url: photo || null })
-          }
+          onBlur={() => photo !== (jour.hotel_photo_url ?? "") && onUpdate({ hotel_photo_url: photo || null })}
           placeholder="URL photo (clic-droit > copier l'image)"
           disabled={!canWrite}
           className="h-8 text-sm"
