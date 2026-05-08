@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useRole } from "@/hooks/use-role";
 import { formatDate } from "@/lib/format";
 import { BookOpen, Plus, Copy, Check, Eye } from "lucide-react";
 import { toast } from "sonner";
@@ -41,6 +42,7 @@ type Carnet = {
 
 function CarnetsPage() {
   const { user } = useAuth();
+  const { agenceId } = useRole();
   const [list, setList] = useState<Carnet[]>([]);
   const [dossiers, setDossiers] = useState<Array<{ id: string; titre: string; client_id: string | null }>>([]);
   const [open, setOpen] = useState(false);
@@ -54,11 +56,9 @@ function CarnetsPage() {
 
   useEffect(() => {
     refetch();
-    supabase
-      .from("dossiers")
-      .select("id,titre,client_id")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => setDossiers(data ?? []));
+    const query = supabase.from("dossiers").select("id,titre,client_id").order("created_at", { ascending: false });
+    if (agenceId) query.eq("agence_id", agenceId);
+    query.then(({ data }) => setDossiers(data ?? []));
   }, []);
 
   const create = async (titre: string, dossierId: string, destination: string) => {
@@ -66,6 +66,7 @@ function CarnetsPage() {
     const dossier = dossiers.find((d) => d.id === dossierId);
     const { error } = await supabase.from("carnets").insert({
       user_id: user.id,
+      agence_id: agenceId ?? null,
       titre,
       destination: destination || null,
       dossier_id: dossierId || null,
