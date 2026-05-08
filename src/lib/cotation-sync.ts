@@ -66,7 +66,9 @@ export function isPlaceholderTitle(titre: string | null | undefined): boolean {
   return /^j(?:our)?\s*\d{1,3}(?:\s*(?:a completer|destination|bali|java|votre destination))?$/.test(t);
 }
 
-export function dayContentScore(j: Pick<SyncJour, "titre" | "description" | "lieu" | "image_url" | "gallery_urls" | "hotel_nom">): number {
+export function dayContentScore(
+  j: Pick<SyncJour, "titre" | "description" | "lieu" | "image_url" | "gallery_urls" | "hotel_nom">,
+): number {
   let score = 0;
   if (j.description?.trim()) score += Math.min(80, j.description.trim().length / 6);
   if (j.lieu?.trim()) score += 8;
@@ -88,7 +90,11 @@ function addDays(date: string, offset: number): string | null {
   return new Date(t).toISOString().slice(0, 10);
 }
 
-function buildFallbackTargets(start: string | null | undefined, end: string | null | undefined, minimumCount: number): GeneratedDay[] {
+function buildFallbackTargets(
+  start: string | null | undefined,
+  end: string | null | undefined,
+  minimumCount: number,
+): GeneratedDay[] {
   const targets: GeneratedDay[] = [];
   if (start && end) {
     const s = new Date(`${start}T00:00:00`);
@@ -156,9 +162,10 @@ export function buildJourSyncPlan(params: {
     if (ao !== 0) return ao;
     return (a.created_at ?? "").localeCompare(b.created_at ?? "");
   });
-  const targets = params.generatedFromFlights.length > 0
-    ? params.generatedFromFlights
-    : buildFallbackTargets(params.fallbackStart, params.fallbackEnd, orderedExisting.length);
+  const targets =
+    params.generatedFromFlights.length > 0
+      ? params.generatedFromFlights
+      : buildFallbackTargets(params.fallbackStart, params.fallbackEnd, orderedExisting.length);
 
   const used = new Set<string>();
   const selectedByTarget: SyncJour[] = [];
@@ -170,7 +177,8 @@ export function buildJourSyncPlan(params: {
   if (params.generatedFromFlights.length > 0 && existingDates.length > 0) {
     const targetDates = new Set(targets.map((t) => t.date_jour));
     const outside = existingDates.filter((d) => !targetDates.has(d));
-    if (outside.length > 0) conflicts.push(`${outside.length} date(s) du programme PDF ne correspondent pas aux dates des vols.`);
+    if (outside.length > 0)
+      conflicts.push(`${outside.length} date(s) du programme PDF ne correspondent pas aux dates des vols.`);
   }
   if (params.generatedFromFlights.length > 0 && orderedExisting.length > targets.length) {
     conflicts.push(`${orderedExisting.length - targets.length} jour(s) en trop détecté(s) par rapport aux vols.`);
@@ -181,8 +189,15 @@ export function buildJourSyncPlan(params: {
   // titre contient "arrivée"), soit le premier jour non-vol.
   let pdfDayOffset = 0;
   if (params.generatedFromFlights.length > 0) {
+    // Le jour d'arrivée à destination (pour le PDF) est le premier jour marqué
+    // "Arrivée" mais qui n'est PAS un transit (nuit en escale hors réceptif).
+    // On exclut les titres "ARRIVÉE XXX — Nuit en transit" générés par enrichTransit.
     const arrivalIdx = targets.findIndex(
-      (t) => t.isFlightDay && /arriv/i.test(t.titre ?? "")
+      (t) =>
+        t.isFlightDay &&
+        /arriv/i.test(t.titre ?? "") &&
+        !/transit/i.test(t.titre ?? "") &&
+        !/nuit en transit/i.test(t.titre ?? ""),
     );
     if (arrivalIdx >= 0) {
       pdfDayOffset = arrivalIdx;
@@ -228,30 +243,29 @@ export function buildJourSyncPlan(params: {
     selectedByTarget.push(selected);
     const keepExistingTitle =
       !!selected.titre?.trim() &&
-      (!isPlaceholderTitle(selected.titre) ||
-        selected.titre.toLowerCase().includes("vol domestique"));
+      (!isPlaceholderTitle(selected.titre) || selected.titre.toLowerCase().includes("vol domestique"));
     // Jour d'arrivée = isFlightDay mais on garde le contenu PDF si présent
     const isArrivalDay = target.isFlightDay && /arriv/i.test(target.titre ?? "");
     const targetMentionsVolDom =
-      !!target.titre &&
-      (/vol\s+domestique/i.test(target.titre) || /vol\s+int[eé]rieur/i.test(target.titre));
+      !!target.titre && (/vol\s+domestique/i.test(target.titre) || /vol\s+int[eé]rieur/i.test(target.titre));
     const titre = targetMentionsVolDom
       ? target.titre
       : target.isFlightDay && !isArrivalDay
         ? target.titre
         : keepExistingTitle
-          ? selected.titre ?? target.titre ?? `Jour ${ordre}`
+          ? (selected.titre ?? target.titre ?? `Jour ${ordre}`)
           : target.titre || `Jour ${ordre}`;
-    const description = target.isFlightDay && !isArrivalDay
-      ? joinUnique([target.description, selected.description])
-      : joinUnique([selected.description, target.description]);
+    const description =
+      target.isFlightDay && !isArrivalDay
+        ? joinUnique([target.description, selected.description])
+        : joinUnique([selected.description, target.description]);
     updates.push({
       id: selected.id,
       patch: {
         ordre,
         date_jour: target.date_jour ?? selected.date_jour ?? null,
         titre,
-        lieu: selected.lieu?.trim() ? selected.lieu : target.lieu ?? null,
+        lieu: selected.lieu?.trim() ? selected.lieu : (target.lieu ?? null),
         description,
       },
     });
@@ -269,7 +283,9 @@ export function buildJourSyncPlan(params: {
     }
   }
   if (preservedExtraCount > 0) {
-    conflicts.push(`${preservedExtraCount} jour(s) avec texte ont été conservés hors synchronisation pour éviter une perte de contenu.`);
+    conflicts.push(
+      `${preservedExtraCount} jour(s) avec texte ont été conservés hors synchronisation pour éviter une perte de contenu.`,
+    );
   }
 
   return { updates, inserts, deleteIds, targetCount: targets.length, conflicts, preservedExtraCount };
