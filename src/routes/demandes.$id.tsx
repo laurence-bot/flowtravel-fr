@@ -133,16 +133,32 @@ function DemandeDetail() {
   const remettreEnCoursSiCotationSupprimee = async () => {
     if (!user) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: linked, error: linkedError } = await (supabase as any)
+    const sb = supabase as any;
+
+    // Récupérer toutes les cotations encore liées à cette demande
+    const { data: linked, error: linkedError } = await sb
       .from("cotations")
-      .select("id")
-      .eq("demande_id", demande.id)
-      .limit(1);
+      .select("id, statut")
+      .eq("demande_id", demande.id);
+
     if (linkedError) return toast.error(linkedError.message);
-    if ((linked ?? []).length > 0) {
-      toast.error("Une cotation existe encore pour cette demande.");
+
+    const remainingCotations = linked ?? [];
+
+    // Si des cotations transformées en dossier existent, on ne peut pas forcer
+    const hasDossier = remainingCotations.some((c: { statut: string }) => c.statut === "transformee_en_dossier");
+    if (hasDossier) {
+      toast.error("Impossible : une cotation liée a déjà été transformée en dossier.");
       return;
     }
+
+    // Détacher toutes les cotations restantes (elles existent mais ne bloquent plus la demande)
+    if (remainingCotations.length > 0) {
+      const ids = remainingCotations.map((c: { id: string }) => c.id);
+      const { error: detachError } = await sb.from("cotations").update({ demande_id: null }).in("id", ids);
+      if (detachError) return toast.error(detachError.message);
+    }
+
     await updateStatut("en_cours");
   };
 
@@ -217,6 +233,7 @@ function DemandeDetail() {
       .from("cotations")
       .insert({
         user_id: user.id,
+        agence_id: agenceId ?? null,
         client_id: clientId,
         titre: transformTitre || `Voyage ${demande.nom_client}`,
         destination: demande.destination,
@@ -423,7 +440,7 @@ function DemandeDetail() {
         <Card className="p-5 space-y-3 border-orange-500/30 bg-orange-500/5">
           <h3 className="font-display text-lg">Statut bloqué</h3>
           <p className="text-sm text-muted-foreground">
-            Si la cotation liée a été supprimée, cette action remet la demande en cours.
+            Remet la demande en cours et détache les cotations encore liées (sauf celles transformées en dossier).
           </p>
           <Button variant="outline" size="sm" onClick={remettreEnCoursSiCotationSupprimee}>
             <RefreshCw className="h-4 w-4 mr-2" />
