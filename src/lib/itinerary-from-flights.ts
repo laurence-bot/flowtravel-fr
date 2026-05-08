@@ -4,7 +4,7 @@
 // "Départ de Marseille à HH:MM avec X, escale à Y de … à …, arrivée à Z le lendemain".
 // Si le vol arrive le lendemain, le J1 est marqué "Nuit en vol — Arrivée à destination le …".
 
-import { iataToCity } from "@/lib/iata";
+import { iataToCity, IATA_COUNTRY } from "@/lib/iata";
 import { airlineName } from "@/lib/airlines";
 import { analyserConnexionVol, type VolPoint } from "@/lib/flight-connections";
 
@@ -100,10 +100,7 @@ const fmtDateLong = (d: string): string => {
 };
 
 /** Génère le texte narratif d'un trajet (aller ou retour) à partir de ses segments. */
-export function buildFlightNarrative(
-  segs: FlightSegmentLite[],
-  fallbackCompagnie: string | null,
-): string {
+export function buildFlightNarrative(segs: FlightSegmentLite[], fallbackCompagnie: string | null): string {
   if (segs.length === 0) return "";
   const first = segs[0];
   const last = segs[segs.length - 1];
@@ -137,17 +134,14 @@ export function buildFlightNarrative(
       escaleDuree = m > 0 ? ` (${h}h${String(m).padStart(2, "0")})` : ` (${h}h)`;
     }
     const heuresEscale =
-      cur.heure_arrivee && nxt.heure_depart
-        ? ` de ${fmtTime(cur.heure_arrivee)} à ${fmtTime(nxt.heure_depart)}`
-        : "";
+      cur.heure_arrivee && nxt.heure_depart ? ` de ${fmtTime(cur.heure_arrivee)} à ${fmtTime(nxt.heure_depart)}` : "";
     parts.push(`Escale à ${villeEscale}${heuresEscale}${escaleDuree}.`);
   }
 
   // Détection nuit en vol
   const departDate = first.date_depart;
   const arriveeDate = last.date_arrivee;
-  const isNightFlight =
-    departDate && arriveeDate && departDate !== arriveeDate;
+  const isNightFlight = departDate && arriveeDate && departDate !== arriveeDate;
 
   if (isNightFlight) {
     parts.push(`Nuit à bord.`);
@@ -155,9 +149,7 @@ export function buildFlightNarrative(
 
   // Phrase d'arrivée
   if (arriveeDate && last.heure_arrivee) {
-    parts.push(
-      `Arrivée à ${villeArrivee} le ${fmtDateLong(arriveeDate)} à ${fmtTime(last.heure_arrivee)}.`,
-    );
+    parts.push(`Arrivée à ${villeArrivee} le ${fmtDateLong(arriveeDate)} à ${fmtTime(last.heure_arrivee)}.`);
   } else {
     parts.push(`Arrivée à ${villeArrivee}.`);
   }
@@ -195,8 +187,7 @@ export function buildItineraryFromFlights(
 ): GeneratedDay[] {
   const { outbound, inbound } = splitOutboundReturn(segments);
 
-  const startDate =
-    outbound[0]?.date_depart || vol.date_depart || fallbackDepart || null;
+  const startDate = outbound[0]?.date_depart || vol.date_depart || fallbackDepart || null;
   const endDate =
     inbound[inbound.length - 1]?.date_arrivee ||
     outbound[outbound.length - 1]?.date_arrivee ||
@@ -209,12 +200,8 @@ export function buildItineraryFromFlights(
   const dates = daysBetween(startDate, endDate);
   if (dates.length === 0) return [];
 
-  const villeDestination =
-    outbound.length > 0
-      ? iataToCity(outbound[outbound.length - 1].aeroport_arrivee)
-      : null;
-  const villeOrigine =
-    outbound.length > 0 ? iataToCity(outbound[0].aeroport_depart) : null;
+  const villeDestination = outbound.length > 0 ? iataToCity(outbound[outbound.length - 1].aeroport_arrivee) : null;
+  const villeOrigine = outbound.length > 0 ? iataToCity(outbound[0].aeroport_depart) : null;
 
   const outboundNarr = buildFlightNarrative(outbound, vol.compagnie);
   const inboundNarr = buildFlightNarrative(inbound, vol.compagnie);
@@ -239,9 +226,7 @@ export function buildItineraryFromFlights(
       isFlightDay = true;
     } else if (isLast && inbound.length > 0) {
       titre = `Vol retour vers ${
-        inbound[inbound.length - 1]
-          ? iataToCity(inbound[inbound.length - 1].aeroport_arrivee)
-          : "votre ville"
+        inbound[inbound.length - 1] ? iataToCity(inbound[inbound.length - 1].aeroport_arrivee) : "votre ville"
       }`;
       description = inboundNarr || null;
       lieu = villeDestination;
@@ -262,19 +247,22 @@ export function buildItineraryFromFlights(
     };
   });
 
-  // Si le vol aller arrive le lendemain (nuit en vol), le J2 marque l'arrivée.
-  if (isOvernightOutbound && days.length >= 2 && arrDate) {
-    const j2 = days[1];
-    if (!j2.isFlightDay) {
-      j2.titre = `Arrivée à ${villeDestination ?? "destination"}`;
-      j2.isFlightDay = true;
-      j2.description =
+  // Si le vol aller arrive après la date de départ (nuit en vol ou 2+ nuits),
+  // on cherche le jour correspondant à la date d'arrivée réelle — pas forcément days[1].
+  if (isOvernightOutbound && arrDate) {
+    const arrivalDay = days.find((d) => d.date_jour === arrDate);
+    if (arrivalDay && !arrivalDay.isFlightDay) {
+      arrivalDay.titre = `Arrivée à ${villeDestination ?? "destination"}`;
+      arrivalDay.isFlightDay = true;
+      arrivalDay.description =
         `Arrivée à ${villeDestination ?? "destination"} le ${fmtDateLong(arrDate)}` +
         (outbound[outbound.length - 1]?.heure_arrivee
           ? ` à ${fmtTime(outbound[outbound.length - 1].heure_arrivee)}`
           : "") +
         `.`;
     }
+    // Les jours intermédiaires (entre départ et arrivée, hors escales) restent
+    // en "Vol vers..." ou transit — pas de titre d'arrivée prématuré.
   }
 
   // Détection automatique des transits entre segments (escales longues / nuits hors réceptif).
@@ -303,6 +291,8 @@ export function buildItineraryFromFlights(
       if (!conn.jourDedie) continue;
       const target = days.find((d) => d.date_jour === cur.date_arrivee);
       if (!target) continue;
+      // Ne pas écraser un jour d'arrivée à destination déjà correctement typé
+      if (target.isFlightDay && /arriv/i.test(target.titre ?? "")) continue;
       target.titre = conn.titreJour || target.titre;
       target.lieu = conn.ville;
       target.isFlightDay = true;
@@ -317,8 +307,12 @@ export function buildItineraryFromFlights(
   const enrichVolsDomestiques = (segs: FlightSegmentLite[]) => {
     for (const seg of segs) {
       if (!seg.date_depart || !seg.numero_vol) continue;
-      const isDomestic =
-        seg.aeroport_depart.slice(0, 2) === seg.aeroport_arrivee.slice(0, 2);
+
+      // Détection pays via table IATA_COUNTRY — fiable pour tous les pays
+      // (l'heuristique 2-lettres échoue p.ex. pour l'Indonésie : CGK≠YIA≠DPS)
+      const paysDepart = IATA_COUNTRY[seg.aeroport_depart.toUpperCase()];
+      const paysArrivee = IATA_COUNTRY[seg.aeroport_arrivee.toUpperCase()];
+      const isDomestic = paysDepart && paysArrivee && paysDepart === paysArrivee;
       if (!isDomestic) continue;
 
       const target = days.find((d) => d.date_jour === seg.date_depart);
@@ -333,10 +327,10 @@ export function buildItineraryFromFlights(
         if (titreActuel.toLowerCase().includes(villeDepart.toLowerCase())) {
           target.titre = titreActuel.replace(
             new RegExp(villeDepart, "i"),
-            `${villeDepart} - ${villeArrivee} (vol domestique)`,
+            `${villeDepart} - ${villeArrivee} (vol domestique${volRef})`,
           );
         } else {
-          target.titre = `${titreActuel} — Vol domestique${volRef}`;
+          target.titre = `${titreActuel} — Vol domestique vers ${villeArrivee}${volRef}`;
         }
       }
     }
@@ -346,4 +340,3 @@ export function buildItineraryFromFlights(
 
   return days;
 }
-
