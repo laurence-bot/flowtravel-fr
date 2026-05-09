@@ -429,3 +429,70 @@ export function formatSegmentLabel(seg: FlightSegment): string {
   const offset = seg.arrivalDayOffset > 0 ? ` +${seg.arrivalDayOffset}` : "";
   return `${seg.airline} ${seg.flightNumber} · ${seg.origin} → ${seg.destination} · ${seg.departureTime} – ${seg.arrivalTime}${offset}`;
 }
+
+// ---------------------------------------------------------------------------
+// Compatibilité — itinerary-from-flights.ts
+// Ces types et fonctions étaient dans l'ancienne version de ce fichier.
+// On les conserve ici pour ne pas casser les imports existants.
+// ---------------------------------------------------------------------------
+
+/**
+ * Point de connexion entre deux vols (escale ou transit).
+ * Utilisé par analyserConnexionVol.
+ */
+export interface VolPoint {
+  ville: string;
+  codeIATA: string;
+  dateArrivee: string; // ISO YYYY-MM-DD
+  heureArrivee: string; // HH:MM
+  dateDepart: string; // ISO YYYY-MM-DD
+  heureDepart: string; // HH:MM
+}
+
+export interface ConnexionVol {
+  /** Ville de l'escale */
+  ville: string;
+  /** Durée de connexion en minutes */
+  dureeMinutes: number;
+  /** Durée formatée en heures (ex: "14.25") */
+  dureeHeures: string;
+  /**
+   * true si la durée justifie un jour dédié dans l'itinéraire
+   * (seuil : > 8h ou nuit sur place)
+   */
+  jourDedie: boolean;
+  /** Titre suggéré pour ce jour (ex: "Transit Istanbul") */
+  titreJour: string;
+  /** Alerte si connexion trop courte (< 90 min) */
+  alerte: string | null;
+}
+
+/**
+ * Analyse une connexion entre deux vols et détermine si elle mérite
+ * un jour dédié dans l'itinéraire (escale longue ou nuit sur place).
+ *
+ * Seuils :
+ *  - < 90 min  → connexion courte, alerte
+ *  - < 8h      → transit court, pas de jour dédié
+ *  - ≥ 8h      → jour dédié (stopover)
+ *  - nuit (dateArrivee ≠ dateDepart) → toujours jour dédié
+ */
+export function analyserConnexionVol(a: VolPoint, b: VolPoint): ConnexionVol {
+  // Calcul de la durée en minutes
+  const arrive = new Date(`${a.dateDepart}T${a.heureDepart}:00Z`);
+  const depart = new Date(`${b.dateDepart}T${b.heureDepart}:00Z`);
+  const dureeMinutes = Math.round((depart.getTime() - arrive.getTime()) / 60000);
+
+  const dureeHeures = (dureeMinutes / 60).toFixed(2);
+  const nuitSurPlace = a.dateArrivee !== b.dateDepart;
+  const jourDedie = nuitSurPlace || dureeMinutes >= 8 * 60;
+
+  const alerte =
+    dureeMinutes < 90
+      ? `Connexion très courte (${dureeMinutes} min) à ${a.ville} — risque de correspondance manquée.`
+      : null;
+
+  const titreJour = jourDedie ? `Transit ${a.ville}` : "";
+
+  return { ville: a.ville, dureeMinutes, dureeHeures, jourDedie, titreJour, alerte };
+}
