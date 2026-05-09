@@ -50,7 +50,7 @@ export interface LigneExtraite {
   quantite?: number | null;
   montant_devise: number;
   devise: string;
-  mode_tarifaire?: "par_personne" | "forfait" | null;
+  mode_tarifaire?: "par_personne" | "global" | null;
   jour_ordre?: number | null;
 }
 
@@ -243,7 +243,7 @@ export async function insertLignes(
         quantite: l.quantite ?? 1,
         montant_devise: l.montant_devise,
         devise: l.devise,
-        mode_tarifaire: l.mode_tarifaire ?? "forfait",
+        mode_tarifaire: l.mode_tarifaire === "par_personne" ? "par_personne" : "global",
       });
     }
 
