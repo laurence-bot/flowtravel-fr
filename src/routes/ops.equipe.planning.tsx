@@ -290,6 +290,9 @@ function PlanningPage() {
 
   const load = async () => {
     const days = daysInMonth(month);
+    // Invalide les compteurs stockés du mois pour forcer un recalcul à partir
+    // des données planning/absences/récup actuelles (évite tout résidu antérieur).
+    await clearCompteursMois(month).catch(() => {});
     const [emps, plan, comps, recs, absences] = await Promise.all([
       listEmployees(),
       listPlanning(days[0], days[days.length - 1]),
