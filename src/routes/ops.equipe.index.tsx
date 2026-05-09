@@ -154,7 +154,23 @@ function EquipeIndex() {
         const heuresRecup = recups
           .filter((r) => r.employee_id === emp.id && r.statut === "approuvee")
           .reduce((s, r) => s + (r.heures_demandees ?? 0), 0);
-        const hParJour = 7.5;
+        const hParJour = 7;
+        // Base mensuelle fixe : 35h/semaine × 52 semaines / 12 mois = 151,67h
+        // (les fériés et CP sont déjà inclus dans le forfait annuel)
+        const baseMensuelleFixe = (35 * 52) / 12;
+        // Jours neutralisés (CP, maladie, RTT, parental, sans solde pris) :
+        // ils comptent comme jour travaillé au forfait pour ne pas creuser le solde.
+        const ouvresSet = new Set(joursOuvres);
+        const joursNeutralises: string[] = [];
+        for (const a of empAbs) {
+          if (!["conge_paye", "rtt", "parental", "sans_solde", "maladie"].includes(a.type)) continue;
+          const start = new Date(`${a.date_debut}T00:00:00Z`);
+          const end = new Date(`${a.date_fin}T00:00:00Z`);
+          for (let dt = new Date(start); dt <= end; dt.setUTCDate(dt.getUTCDate() + 1)) {
+            const iso = dt.toISOString().slice(0, 10);
+            if (ouvresSet.has(iso)) joursNeutralises.push(iso);
+          }
+        }
         const empPlanning = planning.filter((p) => p.employee_id === emp.id);
         // Injecte les récups approuvées comme entrées planning de type "recuperation"
         const empRecups = recups
@@ -173,7 +189,14 @@ function EquipeIndex() {
             pause_minutes: null,
           }));
         const empPlanningAvecRecups = [...empPlanning, ...empRecups];
-        const calc = calcCompteurMensuel(empPlanningAvecRecups, joursOuvres, hParJour, emp);
+        const calc = calcCompteurMensuel(
+          empPlanningAvecRecups,
+          joursOuvres,
+          hParJour,
+          emp,
+          baseMensuelleFixe,
+          joursNeutralises,
+        );
         const joursOuvresCount = joursOuvres.length;
         return {
           nom: `${emp.prenom} ${emp.nom}`,
