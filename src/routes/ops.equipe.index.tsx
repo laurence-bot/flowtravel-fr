@@ -19,6 +19,7 @@ import {
   listRecupDemandes,
   frenchHolidays,
   isJourOuvre,
+  calcCompteurMensuel,
   CONTRACT_TYPE_LABELS,
   type Employee,
   type ContractType,
@@ -153,28 +154,27 @@ function EquipeIndex() {
         const heuresRecup = recups
           .filter((r) => r.employee_id === emp.id && r.statut === "approuvee")
           .reduce((s, r) => s + (r.heures_demandees ?? 0), 0);
-        // H. brutes = jours ouvrés agence × 7.5h/jour (horaires réels agence)
-        const joursOuvresCount = joursOuvres.length;
         const hParJour = 7.5;
-        const heuresBrutes = joursOuvresCount * hParJour;
+        const empPlanning = planning.filter((p) => p.employee_id === emp.id);
+        const calc = calcCompteurMensuel(empPlanning, joursOuvres, hParJour, emp);
+        const joursOuvresCount = joursOuvres.length;
         return {
           nom: `${emp.prenom} ${emp.nom}`,
           poste: emp.poste ?? "",
           contrat: emp.type_contrat,
           heures_contractuelles: compteur?.heures_contractuelles ?? 0,
-          heures_realisees: compteur?.heures_realisees ?? 0,
-          // Solde recalculé depuis heuresBrutes (UI) pour éviter les décalages avec la base
-          solde: (compteur?.heures_realisees ?? 0) - heuresBrutes,
+          heures_realisees: calc.travailReel,
+          solde: calc.solde,
           jours_conge: joursConge,
           jours_maladie: joursMaladie,
           heures_recup: heuresRecup,
           // Contexte explicatif
           jours_ouvres: joursOuvresCount,
           h_par_jour: hParJour,
-          heures_brutes: heuresBrutes,
+          heures_brutes: calc.base,
         };
       }),
-    [employees, compteurs, absences, recups, joursOuvres],
+    [employees, compteurs, absences, recups, joursOuvres, planning],
   );
 
   const exportRecap = () => {
