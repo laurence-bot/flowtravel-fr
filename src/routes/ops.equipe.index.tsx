@@ -194,7 +194,6 @@ function EquipeIndex() {
           undefined,
           joursNeutralises,
         );
-        const joursOuvresCount = joursOuvres.length;
         return {
           nom: `${emp.prenom} ${emp.nom}`,
           poste: emp.poste ?? "",
@@ -206,7 +205,7 @@ function EquipeIndex() {
           jours_maladie: joursMaladie,
           heures_recup: heuresRecup,
           // Contexte explicatif
-          jours_ouvres: joursOuvresCount,
+          jours_ouvres: calc.joursRythme,
           h_par_jour: hParJour,
           heures_brutes: calc.base,
         };
