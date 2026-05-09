@@ -812,6 +812,7 @@ export function calcCompteurMensuel(
   heuresParJour: number = 7,
   emp?: Employee,
   baseMensuelleFixe?: number,
+  joursNeutralises: string[] = [],
 ): { base: number; travailReel: number; depForm: number; realisees: number; solde: number; heuresSup: number } {
   const joursEffectifs = emp ? joursOuvres.filter((d) => estJourTravaille(emp, d)) : joursOuvres;
   const ouvresSet = new Set(joursEffectifs);
