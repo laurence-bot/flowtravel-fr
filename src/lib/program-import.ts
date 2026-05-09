@@ -1,16 +1,21 @@
 /**
  * program-import.ts
- * Hook et composant de synchronisation PDF de vols ↔ itinéraire FlowTravel.
  *
- * Ce fichier expose :
- *  - usePdfFlightSync()  : hook React principal
- *  - extractTextFromPDF(): extraction texte PDF côté navigateur (pdf.js)
- *  - SyncStep           : enum des étapes guidées utilisateur
- *  - buildReviewRows()  : données pour le tableau de review
- *  - buildDoneSummary() : résumé après application
+ * Ce fichier regroupe DEUX fonctionnalités distinctes :
+ *
+ * ── PARTIE A : Import de programmes fournisseurs (PDF/image via IA)
+ *    Exports : extractProgramFromFile, insertJours, insertLignes,
+ *              previewLignesDuplicates, purgeEtReinserer, ExtractedProgram
+ *    Utilisé par : program-import-dialog.tsx, quote-content-editor-block.tsx
+ *
+ * ── PARTIE B : Synchronisation PDF de vols ↔ dates itinéraire
+ *    Exports : usePdfFlightSync, extractTextFromPDF, SyncStep,
+ *              buildReviewRows, buildDoneSummary, DayItem, ReviewRow
+ *    Utilisé par : SyncPdfModal.tsx (ou équivalent)
  */
 
 import { useState, useCallback, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   parseFlightPDF,
   computeItineraryDates,
@@ -22,50 +27,359 @@ import {
   type SpecialDayType,
 } from "./flight-connections";
 
+// ============================================================================
+// PARTIE A — Import programme fournisseur (IA)
+// ============================================================================
+
 // ---------------------------------------------------------------------------
-// Types publics
+// Types
 // ---------------------------------------------------------------------------
 
-export type SyncStep =
-  | "idle" // État initial — rien en cours
-  | "upload" // Étape 1 : charger le PDF
-  | "parsing" // Chargement / parsing en cours
-  | "review" // Étape 2 : vérifier les vols détectés
-  | "applying" // Application en cours
-  | "done" // Étape 3 : synchronisation terminée
-  | "error"; // Erreur récupérable
+export interface JourExtrait {
+  ordre: number;
+  titre: string;
+  lieu?: string | null;
+  description?: string | null;
+  /** Inclusions détectées (repas, transferts…) */
+  inclusions?: string[];
+}
+
+export interface LigneExtraite {
+  prestation: string;
+  nom_fournisseur?: string | null;
+  quantite?: number | null;
+  montant_devise: number;
+  devise: string;
+  mode_tarifaire?: "par_personne" | "forfait" | null;
+  jour_ordre?: number | null;
+}
+
+export interface ExtractedProgram {
+  jours: JourExtrait[];
+  lignes: LigneExtraite[];
+  /** "haute" | "moyenne" | "basse" */
+  confiance: string;
+  fournisseur_nom?: string | null;
+  destination?: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// extractProgramFromFile — analyse IA du PDF/image fournisseur
+// ---------------------------------------------------------------------------
+
+/**
+ * Extrait les jours et lignes de prix d'un PDF ou image fournisseur via l'API IA.
+ *
+ * @param file             Fichier PDF ou image sélectionné par l'utilisateur
+ * @param onProgress       Callback de progression (label affiché dans l'UI)
+ * @returns                { result, error }
+ */
+export async function extractProgramFromFile(
+  file: File,
+  onProgress?: (label: string) => void,
+): Promise<{ result: ExtractedProgram | null; error: string | null }> {
+  try {
+    onProgress?.("Lecture du fichier…");
+
+    // Conversion en base64
+    const base64 = await fileToBase64(file);
+    const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+
+    onProgress?.("Envoi à l'IA…");
+
+    // Appel à la Edge Function Supabase dédiée
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any).functions.invoke("extract-program-from-file", {
+      body: {
+        fileBase64: base64,
+        fileName: file.name,
+        mimeType: file.type || (isPdf ? "application/pdf" : "image/jpeg"),
+      },
+    });
+
+    if (error) {
+      console.error("[program-import] edge function error:", error);
+      return { result: null, error: error.message ?? "Erreur serveur lors de l'extraction." };
+    }
+
+    onProgress?.("Validation des résultats…");
+
+    if (!data || !data.jours) {
+      return { result: null, error: "L'IA n'a pas retourné de programme valide." };
+    }
+
+    const result: ExtractedProgram = {
+      jours: data.jours ?? [],
+      lignes: data.lignes ?? [],
+      confiance: data.confiance ?? "basse",
+      fournisseur_nom: data.fournisseur_nom ?? null,
+      destination: data.destination ?? null,
+    };
+
+    return { result, error: null };
+  } catch (e) {
+    console.error("[program-import] extractProgramFromFile:", e);
+    return {
+      result: null,
+      error: e instanceof Error ? e.message : "Erreur inattendue lors de l'extraction.",
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// insertJours — insère les jours extraits dans cotation_jours
+// ---------------------------------------------------------------------------
+
+export interface InsertJoursResult {
+  count: number;
+  skipped: number;
+  error: string | null;
+}
+
+export async function insertJours(
+  userId: string,
+  cotationId: string,
+  jours: JourExtrait[],
+  startOrdre: number,
+): Promise<InsertJoursResult> {
+  if (jours.length === 0) return { count: 0, skipped: 0, error: null };
+
+  try {
+    const rows = jours.map((j, idx) => ({
+      cotation_id: cotationId,
+      user_id: userId,
+      ordre: startOrdre + idx,
+      titre: j.titre,
+      lieu: j.lieu ?? null,
+      description: j.description ?? null,
+    }));
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("cotation_jours").insert(rows);
+
+    if (error) {
+      console.error("[program-import] insertJours:", error);
+      return { count: 0, skipped: 0, error: error.message };
+    }
+
+    return { count: rows.length, skipped: 0, error: null };
+  } catch (e) {
+    return {
+      count: 0,
+      skipped: 0,
+      error: e instanceof Error ? e.message : "Erreur insertion jours.",
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// insertLignes — insère les lignes fournisseurs extraites
+// ---------------------------------------------------------------------------
+
+export interface InsertLignesResult {
+  count: number;
+  skipped: number;
+  replaced: number;
+  error: string | null;
+}
+
+export async function insertLignes(
+  userId: string,
+  cotationId: string,
+  lignes: LigneExtraite[],
+  startOrdre: number,
+  strategy: "ignore" | "replace" | "add_anyway" = "ignore",
+): Promise<InsertLignesResult> {
+  if (lignes.length === 0) return { count: 0, skipped: 0, replaced: 0, error: null };
+
+  try {
+    let skipped = 0;
+    let replaced = 0;
+    const toInsert: object[] = [];
+
+    for (let idx = 0; idx < lignes.length; idx++) {
+      const l = lignes[idx];
+
+      if (strategy === "ignore" || strategy === "replace") {
+        // Vérifie si une ligne similaire existe déjà (même prestation + fournisseur)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: existing } = await (supabase as any)
+          .from("cotation_lignes_fournisseurs")
+          .select("id")
+          .eq("cotation_id", cotationId)
+          .eq("prestation", l.prestation)
+          .limit(1);
+
+        if (existing && existing.length > 0) {
+          if (strategy === "ignore") {
+            skipped++;
+            continue;
+          } else {
+            // replace : supprime l'existant avant de réinsérer
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase as any).from("cotation_lignes_fournisseurs").delete().eq("id", existing[0].id);
+            replaced++;
+          }
+        }
+      }
+
+      toInsert.push({
+        cotation_id: cotationId,
+        user_id: userId,
+        ordre: startOrdre + idx,
+        prestation: l.prestation,
+        nom_fournisseur: l.nom_fournisseur ?? null,
+        quantite: l.quantite ?? 1,
+        montant_devise: l.montant_devise,
+        devise: l.devise,
+        mode_tarifaire: l.mode_tarifaire ?? "forfait",
+        jour_ordre: l.jour_ordre ?? null,
+      });
+    }
+
+    if (toInsert.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from("cotation_lignes_fournisseurs").insert(toInsert);
+
+      if (error) {
+        console.error("[program-import] insertLignes:", error);
+        return { count: 0, skipped, replaced, error: error.message };
+      }
+    }
+
+    return { count: toInsert.length, skipped, replaced, error: null };
+  } catch (e) {
+    return {
+      count: 0,
+      skipped: 0,
+      replaced: 0,
+      error: e instanceof Error ? e.message : "Erreur insertion lignes.",
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// previewLignesDuplicates — compte les doublons potentiels avant import
+// ---------------------------------------------------------------------------
+
+export async function previewLignesDuplicates(
+  cotationId: string,
+  lignes: LigneExtraite[],
+): Promise<{ duplicates: number }> {
+  try {
+    let duplicates = 0;
+    for (const l of lignes) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase as any)
+        .from("cotation_lignes_fournisseurs")
+        .select("id")
+        .eq("cotation_id", cotationId)
+        .eq("prestation", l.prestation)
+        .limit(1);
+      if (data && data.length > 0) duplicates++;
+    }
+    return { duplicates };
+  } catch {
+    return { duplicates: 0 };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// purgeEtReinserer — supprime tous les jours/lignes et réinsère depuis zéro
+// ---------------------------------------------------------------------------
+
+export async function purgeEtReinserer(
+  userId: string,
+  cotationId: string,
+  program: ExtractedProgram,
+): Promise<{ error: string | null }> {
+  try {
+    // Suppression des jours existants
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: delJours } = await (supabase as any).from("cotation_jours").delete().eq("cotation_id", cotationId);
+
+    if (delJours) return { error: delJours.message };
+
+    // Suppression des lignes existantes
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: delLignes } = await (supabase as any)
+      .from("cotation_lignes_fournisseurs")
+      .delete()
+      .eq("cotation_id", cotationId);
+
+    if (delLignes) return { error: delLignes.message };
+
+    // Réinsertion
+    const j = await insertJours(userId, cotationId, program.jours, 1);
+    if (j.error) return { error: j.error };
+
+    const l = await insertLignes(userId, cotationId, program.lignes, 1, "add_anyway");
+    if (l.error) return { error: l.error };
+
+    return { error: null };
+  } catch (e) {
+    return {
+      error: e instanceof Error ? e.message : "Erreur purgeEtReinserer.",
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helper interne
+// ---------------------------------------------------------------------------
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Retire le préfixe "data:...;base64,"
+      resolve(result.split(",")[1] ?? result);
+    };
+    reader.onerror = () => reject(new Error("Impossible de lire le fichier."));
+    reader.readAsDataURL(file);
+  });
+}
+
+// ============================================================================
+// PARTIE B — Synchronisation PDF vols ↔ dates itinéraire
+// ============================================================================
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+export type SyncStep = "idle" | "upload" | "parsing" | "review" | "applying" | "done" | "error";
 
 export interface SyncState {
   step: SyncStep;
-  /** Vols détectés — disponibles dès l'étape "review" */
   flightGroup: FlightGroup | null;
-  /** Dates calculées pour chaque jour de l'itinéraire */
   computedDates: string[];
-  /** Nombre de jours mis à jour lors de l'apply */
   updatedDaysCount: number;
-  /** Message d'erreur si step = "error" */
   errorMessage: string | null;
-  /** Nom du fichier chargé */
   fileName: string | null;
 }
 
 export interface DayItem {
   id: string;
-  dayIndex: number; // 0-based (J1 = 0)
-  currentDate: string | null; // ISO actuel en base
+  dayIndex: number;
+  currentDate: string | null;
   title: string;
 }
 
+export type ReviewRow = {
+  dayLabel: string;
+  currentDateFR: string;
+  newDateFR: string;
+  changed: boolean;
+  flights: string[];
+  specialType: SpecialDayType | null;
+};
+
 // ---------------------------------------------------------------------------
-// Extraction texte PDF (côté navigateur, sans dépendance serveur)
+// extractTextFromPDF — extraction texte PDF côté navigateur (pdf.js)
 // ---------------------------------------------------------------------------
 
-/**
- * Extrait le texte d'un PDF via pdf.js (déjà chargé dans le projet Lovable).
- *
- * @param file  Fichier PDF sélectionné par l'utilisateur
- * @returns     Texte brut de toutes les pages concaténées
- */
 export async function extractTextFromPDF(file: File): Promise<string> {
   if (!file.type.includes("pdf") && !file.name.toLowerCase().endsWith(".pdf")) {
     throw new Error("Le fichier sélectionné n'est pas un PDF valide.");
@@ -87,7 +401,6 @@ export async function extractTextFromPDF(file: File): Promise<string> {
     const page = await pdfDoc.getPage(pageNum);
     const content = await page.getTextContent();
 
-    // Tri spatial : position Y décroissante puis X croissante
     const items = content.items as Array<{
       str: string;
       transform: number[];
@@ -100,7 +413,6 @@ export async function extractTextFromPDF(file: File): Promise<string> {
       return a.transform[4] - b.transform[4];
     });
 
-    // Groupement en lignes (tolérance 8px sur Y)
     const lineGroups: string[][] = [];
     let lastY: number | null = null;
     for (const item of sorted) {
@@ -132,7 +444,7 @@ async function importPdfJs() {
 }
 
 // ---------------------------------------------------------------------------
-// Hook principal usePdfFlightSync
+// Hook usePdfFlightSync
 // ---------------------------------------------------------------------------
 
 export interface UsePdfFlightSyncOptions {
@@ -162,7 +474,6 @@ export function usePdfFlightSync({ days, onApplyDates }: UsePdfFlightSyncOptions
   const [state, setState] = useState<SyncState>(INITIAL_STATE);
   const abortRef = useRef(false);
 
-  // Étape 1 : Parsing du PDF
   const handleFileSelected = useCallback(
     async (file: File) => {
       abortRef.current = false;
@@ -210,7 +521,6 @@ export function usePdfFlightSync({ days, onApplyDates }: UsePdfFlightSyncOptions
     [days.length],
   );
 
-  // Étape 2 : Application des dates
   const handleApply = useCallback(async () => {
     const { computedDates, flightGroup } = state;
     if (!flightGroup || computedDates.length === 0) return;
@@ -272,39 +582,20 @@ export function usePdfFlightSync({ days, onApplyDates }: UsePdfFlightSyncOptions
     return currentIdx > targetIdx;
   };
 
-  return { state, handleFileSelected, handleApply, handleReset, getStepLabel, isStepDone };
+  return {
+    state,
+    handleFileSelected,
+    handleApply,
+    handleReset,
+    getStepLabel,
+    isStepDone,
+  };
 }
 
 // ---------------------------------------------------------------------------
-// Utilitaires d'affichage
+// buildReviewRows
 // ---------------------------------------------------------------------------
 
-export type ReviewRow = {
-  dayLabel: string;
-  currentDateFR: string;
-  newDateFR: string;
-  changed: boolean;
-  flights: string[];
-  /**
-   * Type de jour spécial :
-   *  "departure"           → J1  — Départ France
-   *  "arrival_destination" → J2  — Arrivée à destination
-   *  "return_home"         → Jn  — Retour France
-   *  null                  → jour normal
-   */
-  specialType: SpecialDayType | null;
-};
-
-/**
- * Construit les lignes du tableau de review.
- *
- * Attribution des vols par jour :
- *  J1 (departure)           → tous les segments aller qui PARTENT ce jour-là
- *                              (MRS→IST, IST→CGK si même date)
- *  J2 (arrival_destination) → dernier segment aller (celui qui arrive à destination finale)
- *  Jn (return_home)         → tous les segments retour
- *  Autres                   → segments domestiques dont la date = ce jour
- */
 export function buildReviewRows(flightGroup: FlightGroup, computedDates: string[], days: DayItem[]): ReviewRow[] {
   const specialDays = getSpecialDays(flightGroup, days.length);
 
@@ -317,17 +608,13 @@ export function buildReviewRows(flightGroup: FlightGroup, computedDates: string[
     let dayFlights: FlightSegment[] = [];
 
     if (specialType === "departure") {
-      // J1 : vols aller qui partent le jour de départ
       dayFlights = flightGroup.outbound.filter((seg) => seg.date === newDate);
     } else if (specialType === "arrival_destination") {
-      // J2 : dernier segment aller (arrivée à destination finale)
       const last = flightGroup.outbound[flightGroup.outbound.length - 1];
       if (last) dayFlights = [last];
     } else if (specialType === "return_home") {
-      // Jn : tous les segments retour
       dayFlights = flightGroup.inbound;
     } else {
-      // Jours intermédiaires : vols domestiques éventuels
       dayFlights = [...flightGroup.outbound, ...flightGroup.inbound].filter((seg) => seg.date === newDate);
     }
 
@@ -342,9 +629,10 @@ export function buildReviewRows(flightGroup: FlightGroup, computedDates: string[
   });
 }
 
-/**
- * Résumé affiché dans l'étape "done".
- */
+// ---------------------------------------------------------------------------
+// buildDoneSummary
+// ---------------------------------------------------------------------------
+
 export function buildDoneSummary(flightGroup: FlightGroup, updatedDaysCount: number): string {
   const total = flightGroup.outbound.length + flightGroup.inbound.length;
   const first = flightGroup.outbound[0];
