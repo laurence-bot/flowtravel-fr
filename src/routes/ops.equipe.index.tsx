@@ -471,7 +471,7 @@ function EquipeIndex() {
                   <tr>
                     <th className="text-left px-4 py-3">Employé</th>
                     <th className="text-right px-4 py-3">
-                      <span title="Jours ouvrés agence × 7.5h/jour (horaires réels agence)">H. brutes</span>
+                      <span title="Jours rythme du mois (hors fériés) × h/jour">Base réelle</span>
                     </th>
                     <th className="text-right px-4 py-3">H. réalisées</th>
                     <th className="text-right px-4 py-3">Solde</th>
