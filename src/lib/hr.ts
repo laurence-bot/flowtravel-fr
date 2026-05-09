@@ -830,16 +830,19 @@ export function calcCompteurMensuel(
       if (ouvresSet.has(e.date_start)) heuresRecup += dureeNetteEntry(e);
       continue;
     }
-    // Congé payé : jour neutre (compté comme heuresParJour pour ne pas creuser le solde).
-    // Le décompte du nb de jours de CP restants est géré séparément (compteur CP).
-    if (e.type === "conge_paye") {
-      for (const d of planningEntryDays(e)) {
-        if (ouvresSet.has(d) && !heuresParJourMap.has(d)) {
-          heuresParJourMap.set(d, heuresParJour);
-        }
-      }
-      continue;
+  }
+
+  // Jours neutralisés (CP, maladie, RTT pris depuis hr_absences) : comptés comme jour travaillé
+  // au forfait (heuresParJour) pour ne pas creuser le solde face à la base mensuelle fixe.
+  for (const d of joursNeutralises) {
+    if (ouvresSet.has(d) && !heuresParJourMap.has(d)) {
+      heuresParJourMap.set(d, heuresParJour);
     }
+  }
+
+  // (placeholder pour conserver la numérotation suivante)
+  for (const _ of [] as never[]) {
+    void _;
     const PRESENCE_TYPES = ["travail", "teletravail", "reunion", "deplacement", "formation"];
     if (!PRESENCE_TYPES.includes(e.type)) continue;
 
