@@ -1267,3 +1267,69 @@ export async function uploadHrDocumentPdf(file: File, docId: string): Promise<st
   const { data } = supabase.storage.from("hr-documents").getPublicUrl(path);
   return data.publicUrl;
 }
+
+// =========== Jours dus / rendus ===========
+export type JoursDuSens = "du" | "rendu";
+export type JoursDuStatut = "ouvert" | "solde" | "annule";
+
+export type JourDu = {
+  id: string;
+  employee_id: string;
+  agence_id: string | null;
+  sens: JoursDuSens;
+  date_origine: string;
+  motif: string | null;
+  planning_entry_id: string | null;
+  date_extinction: string | null;
+  extinction_entry_id: string | null;
+  statut: JoursDuStatut;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function listJoursDus(employeeId?: string): Promise<JourDu[]> {
+  let q = supabase.from("hr_jours_dus" as any).select("*").order("date_origine", { ascending: false });
+  if (employeeId) q = q.eq("employee_id", employeeId);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as unknown as JourDu[];
+}
+
+export async function createJourDu(input: {
+  employee_id: string;
+  sens: JoursDuSens;
+  date_origine: string;
+  motif?: string;
+  note?: string;
+}): Promise<void> {
+  const employee = await getEmployee(input.employee_id);
+  const { error } = await supabase.from("hr_jours_dus" as any).insert({
+    employee_id: input.employee_id,
+    agence_id: employee?.agence_id ?? null,
+    sens: input.sens,
+    date_origine: input.date_origine,
+    motif: input.motif ?? null,
+    note: input.note ?? null,
+    statut: "ouvert",
+  } as any);
+  if (error) throw error;
+}
+
+export async function marquerJourDuSolde(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("hr_jours_dus" as any)
+    .update({ statut: "solde", date_extinction: new Date().toISOString().slice(0, 10) })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function annulerJourDu(id: string): Promise<void> {
+  const { error } = await supabase.from("hr_jours_dus" as any).update({ statut: "annule" }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteJourDu(id: string): Promise<void> {
+  const { error } = await supabase.from("hr_jours_dus" as any).delete().eq("id", id);
+  if (error) throw error;
+}
