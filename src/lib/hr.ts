@@ -881,6 +881,7 @@ export function calcCompteurMensuel(
     realisees: Math.round(realisees * 100) / 100,
     solde,
     heuresSup,
+    joursRythme: joursRythme.length,
   };
 }
 
