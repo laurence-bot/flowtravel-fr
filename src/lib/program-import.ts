@@ -244,7 +244,6 @@ export async function insertLignes(
         montant_devise: l.montant_devise,
         devise: l.devise,
         mode_tarifaire: l.mode_tarifaire ?? "forfait",
-        jour_ordre: l.jour_ordre ?? null,
       });
     }
 
