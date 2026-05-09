@@ -809,12 +809,15 @@ function dureeNetteEntry(e: PlanningEntry): number {
 export function calcCompteurMensuel(
   entries: PlanningEntry[],
   joursOuvres: string[],
-  heuresParJour: number = 7.5,
+  heuresParJour: number = 7,
   emp?: Employee,
+  baseMensuelleFixe?: number,
 ): { base: number; travailReel: number; depForm: number; realisees: number; solde: number; heuresSup: number } {
   const joursEffectifs = emp ? joursOuvres.filter((d) => estJourTravaille(emp, d)) : joursOuvres;
   const ouvresSet = new Set(joursEffectifs);
-  const base = joursEffectifs.length * heuresParJour;
+  // Base contractuelle : forfait mensuel fixe si fourni (ex. 35h × 52 / 12 = 151,67h),
+  // sinon calcul variable jours ouvrés × heures/jour (rétro-compat).
+  const base = baseMensuelleFixe ?? joursEffectifs.length * heuresParJour;
 
   // Calcul par jour pour éviter tout double comptage
   // Priorité : travail/teletravail/reunion avec horaires > deplacement/formation > rien
@@ -824,6 +827,16 @@ export function calcCompteurMensuel(
   for (const e of entries) {
     if (e.type === "recuperation") {
       if (ouvresSet.has(e.date_start)) heuresRecup += dureeNetteEntry(e);
+      continue;
+    }
+    // Congé payé : jour neutre (compté comme heuresParJour pour ne pas creuser le solde).
+    // Le décompte du nb de jours de CP restants est géré séparément (compteur CP).
+    if (e.type === "conge_paye") {
+      for (const d of planningEntryDays(e)) {
+        if (ouvresSet.has(d) && !heuresParJourMap.has(d)) {
+          heuresParJourMap.set(d, heuresParJour);
+        }
+      }
       continue;
     }
     const PRESENCE_TYPES = ["travail", "teletravail", "reunion", "deplacement", "formation"];
