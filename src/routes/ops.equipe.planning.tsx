@@ -49,6 +49,7 @@ const TYPE_COLORS: Record<PlanningType, { badge: string; dot: string; abbr: stri
   deplacement: { badge: "bg-orange-50 text-orange-700 border-orange-200", dot: "bg-orange-500", abbr: "DÉP" },
   formation: { badge: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500", abbr: "FOR" },
   recuperation: { badge: "bg-purple-50 text-purple-700 border-purple-200", dot: "bg-purple-500", abbr: "RÉC" },
+  remplacement: { badge: "bg-rose-50 text-rose-700 border-rose-200", dot: "bg-rose-500", abbr: "RPL" },
   autre: { badge: "bg-zinc-50 text-zinc-500 border-zinc-200", dot: "bg-zinc-400", abbr: "AUT" },
 };
 

@@ -155,11 +155,8 @@ function EquipeIndex() {
           .filter((r) => r.employee_id === emp.id && r.statut === "approuvee")
           .reduce((s, r) => s + (r.heures_demandees ?? 0), 0);
         const hParJour = 7;
-        // Base mensuelle fixe : 35h/semaine × 52 semaines / 12 mois = 151,67h
-        // (les fériés et CP sont déjà inclus dans le forfait annuel)
-        const baseMensuelleFixe = (35 * 52) / 12;
-        // Jours neutralisés (CP, maladie, RTT, parental, sans solde pris) :
-        // ils comptent comme jour travaillé au forfait pour ne pas creuser le solde.
+        // Base = jours rythme du mois (hors fériés) × heures/jour réel
+        // (forfait paie 151,67h utilisé uniquement pour les bulletins)
         const ouvresSet = new Set(joursOuvres);
         const joursNeutralises: string[] = [];
         for (const a of empAbs) {
@@ -194,7 +191,7 @@ function EquipeIndex() {
           joursOuvres,
           hParJour,
           emp,
-          baseMensuelleFixe,
+          undefined,
           joursNeutralises,
         );
         const joursOuvresCount = joursOuvres.length;
@@ -474,7 +471,7 @@ function EquipeIndex() {
                   <tr>
                     <th className="text-left px-4 py-3">Employé</th>
                     <th className="text-right px-4 py-3">
-                      <span title="Jours ouvrés agence × 7.5h/jour (horaires réels agence)">H. brutes</span>
+                      <span title="Jours rythme du mois (hors fériés) × h/jour">Base réelle</span>
                     </th>
                     <th className="text-right px-4 py-3">H. réalisées</th>
                     <th className="text-right px-4 py-3">Solde</th>

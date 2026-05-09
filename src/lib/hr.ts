@@ -19,6 +19,7 @@ export type PlanningType =
   | "deplacement"
   | "formation"
   | "recuperation"
+  | "remplacement"
   | "autre";
 export type TimeEvent = "arrivee" | "pause_debut" | "pause_fin" | "sortie";
 export type EvaluationStatut = "a_completer" | "auto_eval_faite" | "entretien_fait" | "signee" | "cloturee";
@@ -56,6 +57,7 @@ export const PLANNING_TYPE_LABELS: Record<PlanningType, string> = {
   deplacement: "Déplacement",
   formation: "Formation",
   recuperation: "Récupération",
+  remplacement: "Remplacement",
   autre: "Autre",
 };
 export const TIME_EVENT_LABELS: Record<TimeEvent, string> = {
@@ -794,85 +796,88 @@ function dureeNetteEntry(e: PlanningEntry): number {
   const [dh, dm] = e.heure_debut.split(":").map(Number);
   const [fh, fm] = e.heure_fin.split(":").map(Number);
   const dureeMin = fh * 60 + fm - (dh * 60 + dm);
-  const pauseMin = (e as any).pause_minutes ?? 30; // 30 min de pause repas par défaut
+  let pauseMin = (e as any).pause_minutes;
+  // Si pause non saisie OU saisie à 0 sur une journée > 6h → pause repas par défaut 30 min
+  if (pauseMin == null) pauseMin = 30;
+  else if (pauseMin === 0 && dureeMin > 360) pauseMin = 30;
   return Math.max(0, dureeMin - pauseMin) / 60;
 }
 
 /**
- * Détail d'un compteur mensuel pour un employé.
- * - base = jours ouvrés × heures/jour contractuelles
- * - travailReel = heures réelles pointées (travail, télétravail, réunion, déplacement, formation)
- *   → déplacement/formation = présence normale, heures contractuelles si pas d'horaires saisis
- * - solde = travailReel - base
- * - heuresSup = max(0, solde)
+ * Compteur mensuel basé sur la **réalité du mois** :
+ * - base = (jours rythme du mois − jours fériés) × heuresParJour
+ * - travail/teletravail/reunion : durée nette saisie (avec pause auto 30 min si oubliée)
+ * - deplacement/formation : si jour rythme → forfait heuresParJour, sinon 0
+ * - remplacement : 0 (impact via table hr_jours_dus)
+ * - recuperation : −heuresParJour
+ * - jours neutralisés (CP, maladie, RTT) : comptés au forfait pour ne pas creuser le solde
  */
 export function calcCompteurMensuel(
   entries: PlanningEntry[],
   joursOuvres: string[],
   heuresParJour: number = 7,
   emp?: Employee,
-  baseMensuelleFixe?: number,
+  _baseMensuelleFixe?: number, // déprécié, ignoré
   joursNeutralises: string[] = [],
 ): { base: number; travailReel: number; depForm: number; realisees: number; solde: number; heuresSup: number } {
-  const joursEffectifs = emp ? joursOuvres.filter((d) => estJourTravaille(emp, d)) : joursOuvres;
-  const ouvresSet = new Set(joursEffectifs);
-  // Base contractuelle : forfait mensuel fixe si fourni (ex. 35h × 52 / 12 = 151,67h),
-  // sinon calcul variable jours ouvrés × heures/jour (rétro-compat).
-  const base = baseMensuelleFixe ?? joursEffectifs.length * heuresParJour;
+  // Jours rythme du mois (filtrés des fériés via joursOuvres déjà fait par l'appelant)
+  const joursRythme = emp ? joursOuvres.filter((d) => estJourTravaille(emp, d)) : joursOuvres;
+  const rythmeSet = new Set(joursRythme);
+  const base = joursRythme.length * heuresParJour;
 
-  // Calcul par jour pour éviter tout double comptage
-  // Priorité : travail/teletravail/reunion avec horaires > deplacement/formation > rien
   const heuresParJourMap = new Map<string, number>();
   let heuresRecup = 0;
 
   for (const e of entries) {
     if (e.type === "recuperation") {
-      if (ouvresSet.has(e.date_start)) heuresRecup += dureeNetteEntry(e);
+      // Récup = retire des heures, valeur saisie ou forfait jour
+      const d = dureeNetteEntry(e);
+      heuresRecup += d > 0 ? d : heuresParJour;
+      continue;
+    }
+    if (e.type === "remplacement") {
+      // Compté via hr_jours_dus, pas dans les heures
       continue;
     }
     const PRESENCE_TYPES = ["travail", "teletravail", "reunion", "deplacement", "formation"];
     if (!PRESENCE_TYPES.includes(e.type)) continue;
 
     const isContextOnly = e.type === "deplacement" || e.type === "formation";
-    const duree = dureeNetteEntry(e); // 0 si pas d'horaires
+    const duree = dureeNetteEntry(e);
 
     for (const d of planningEntryDays(e)) {
-      if (!ouvresSet.has(d)) continue;
       const existing = heuresParJourMap.get(d) ?? null;
       if (isContextOnly) {
-        // Déplacement/formation = info de contexte (lieu), heures normales du contrat
-        // On ne compte que lun-ven (pas le samedi), et seulement si aucune entrée réelle ce jour
-        const jourSemaine = new Date(`${d}T00:00:00Z`).getUTCDay(); // 0=dim, 6=sam
-        if (jourSemaine !== 0 && jourSemaine !== 6 && existing === null) {
+        // Déplacement/formation : ne compte que sur les jours de rythme (forfait)
+        if (rythmeSet.has(d) && existing === null) {
           heuresParJourMap.set(d, duree > 0 ? duree : heuresParJour);
         }
       } else {
-        // Travail/teletravail/reunion avec horaires = valeur réelle, prioritaire
+        // Travail réel : compté quel que soit le jour (samedi exceptionnel possible)
         if (duree > 0) {
           heuresParJourMap.set(d, (existing ?? 0) + duree);
-        } else if (existing === null) {
+        } else if (existing === null && rythmeSet.has(d)) {
           heuresParJourMap.set(d, heuresParJour);
         }
       }
     }
   }
 
-  // Jours neutralisés (CP, maladie, RTT pris depuis hr_absences) : comptés comme jour travaillé
-  // au forfait (heuresParJour) pour ne pas creuser le solde face à la base mensuelle fixe.
+  // Jours neutralisés (CP, maladie...) : comptés au forfait
   for (const d of joursNeutralises) {
-    if (ouvresSet.has(d) && !heuresParJourMap.has(d)) {
+    if (rythmeSet.has(d) && !heuresParJourMap.has(d)) {
       heuresParJourMap.set(d, heuresParJour);
     }
   }
 
   const travailReel = Array.from(heuresParJourMap.values()).reduce((s, h) => s + h, 0);
-  const realisees = travailReel;
-  const solde = Math.round((travailReel - base - heuresRecup) * 100) / 100;
-  const heuresSup = Math.round(Math.max(0, travailReel - base - heuresRecup) * 100) / 100;
+  const realisees = travailReel - heuresRecup;
+  const solde = Math.round((realisees - base) * 100) / 100;
+  const heuresSup = Math.round(Math.max(0, realisees - base) * 100) / 100;
   return {
     base: Math.round(base * 100) / 100,
     travailReel: Math.round(travailReel * 100) / 100,
-    depForm: 0, // conservé pour compatibilité
+    depForm: 0,
     realisees: Math.round(realisees * 100) / 100,
     solde,
     heuresSup,
@@ -1261,4 +1266,70 @@ export async function uploadHrDocumentPdf(file: File, docId: string): Promise<st
   if (error) throw new Error(`Upload échoué : ${error.message}`);
   const { data } = supabase.storage.from("hr-documents").getPublicUrl(path);
   return data.publicUrl;
+}
+
+// =========== Jours dus / rendus ===========
+export type JoursDuSens = "du" | "rendu";
+export type JoursDuStatut = "ouvert" | "solde" | "annule";
+
+export type JourDu = {
+  id: string;
+  employee_id: string;
+  agence_id: string | null;
+  sens: JoursDuSens;
+  date_origine: string;
+  motif: string | null;
+  planning_entry_id: string | null;
+  date_extinction: string | null;
+  extinction_entry_id: string | null;
+  statut: JoursDuStatut;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function listJoursDus(employeeId?: string): Promise<JourDu[]> {
+  let q = supabase.from("hr_jours_dus" as any).select("*").order("date_origine", { ascending: false });
+  if (employeeId) q = q.eq("employee_id", employeeId);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as unknown as JourDu[];
+}
+
+export async function createJourDu(input: {
+  employee_id: string;
+  sens: JoursDuSens;
+  date_origine: string;
+  motif?: string;
+  note?: string;
+}): Promise<void> {
+  const employee = await getEmployee(input.employee_id);
+  const { error } = await supabase.from("hr_jours_dus" as any).insert({
+    employee_id: input.employee_id,
+    agence_id: employee?.agence_id ?? null,
+    sens: input.sens,
+    date_origine: input.date_origine,
+    motif: input.motif ?? null,
+    note: input.note ?? null,
+    statut: "ouvert",
+  } as any);
+  if (error) throw error;
+}
+
+export async function marquerJourDuSolde(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("hr_jours_dus" as any)
+    .update({ statut: "solde", date_extinction: new Date().toISOString().slice(0, 10) })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function annulerJourDu(id: string): Promise<void> {
+  const { error } = await supabase.from("hr_jours_dus" as any).update({ statut: "annule" }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteJourDu(id: string): Promise<void> {
+  const { error } = await supabase.from("hr_jours_dus" as any).delete().eq("id", id);
+  if (error) throw error;
 }
