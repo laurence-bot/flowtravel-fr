@@ -759,11 +759,11 @@ export function QuoteContentEditorBlock({
           const file = new File([blob], programmePdfName ?? "programme.pdf", { type: "application/pdf" });
           const extracted = await extractProgramFromFile(file);
           if (extracted.result) {
-            const r = await purgeEtReinserer(userId, cotationId, extracted.result, { regenJours: true });
+            const r = await purgeEtReinserer(userId, cotationId, extracted.result);
             if (r.error) throw new Error(r.error);
-            importedPdfJours = r.joursCount;
+            importedPdfJours = extracted.result.jours.length;
             skippedPdfJours = 0;
-            importedPdfLines = r.lignesCount;
+            importedPdfLines = extracted.result.lignes.length;
             skippedPdfLines = 0;
           }
         }
