@@ -616,17 +616,6 @@ function CotationDetailPage() {
           description={`Version ${cot.version_number}${cot.version_label ? ` — ${cot.version_label}` : ""}${client ? ` · ${client.nom}` : ""}${cot.destination ? ` · ${cot.destination}` : ""}`}
           action={
             <div className="flex flex-wrap items-center gap-2">
-              {user && false && (
-                <ProgramImportDialog
-                  cotationId={cot.id}
-                  userId={user.id}
-                  canWrite={canWrite}
-                  onImported={() => {
-                    refetchLignes();
-                    window.location.reload();
-                  }}
-                />
-              )}
               {user && (
                 <Button asChild size="sm">
                   <a href="#devis-web-client">
