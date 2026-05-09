@@ -20,6 +20,7 @@ import {
   upsertCompteur,
   listCompteurs,
   listRecupDemandes,
+  listAbsences,
   frenchHolidays,
   isJourOuvre,
   isJourFerie,
