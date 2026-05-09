@@ -289,22 +289,58 @@ function PlanningPage() {
 
   const load = async () => {
     const days = daysInMonth(month);
-    const [emps, plan, comps, recs] = await Promise.all([
+    const [emps, plan, comps, recs, absences] = await Promise.all([
       listEmployees(),
       listPlanning(days[0], days[days.length - 1]),
       listCompteurs(month),
       listRecupDemandes(month),
+      listAbsences(),
     ]);
     const actifs = emps.filter((e) => e.actif);
     setEmployees(actifs);
     setEntries(plan);
     setRecups(recs);
     const joursOuvres = days.filter((d) => isJourOuvre(d, holidays));
+    const ouvresSet = new Set(joursOuvres);
     await Promise.all(
       actifs.map(async (emp) => {
         const empEntries = plan.filter((e) => e.employee_id === emp.id);
+        const empAbs = absences.filter((a) => a.employee_id === emp.id);
+        const joursNeutralises: string[] = [];
+        for (const a of empAbs) {
+          if (!["conge_paye", "rtt", "parental", "sans_solde", "maladie"].includes(a.type)) continue;
+          if (a.statut !== "approuvee") continue;
+          const start = new Date(`${a.date_debut}T00:00:00Z`);
+          const end = new Date(`${a.date_fin}T00:00:00Z`);
+          for (let dt = new Date(start); dt <= end; dt.setUTCDate(dt.getUTCDate() + 1)) {
+            const iso = dt.toISOString().slice(0, 10);
+            if (ouvresSet.has(iso)) joursNeutralises.push(iso);
+          }
+        }
+        const empRecups = recs
+          .filter((r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee)
+          .map((r) => ({
+            id: r.id,
+            employee_id: r.employee_id,
+            agence_id: null,
+            date_start: r.date_souhaitee!,
+            date_end: r.date_souhaitee!,
+            heure_debut: r.heure_debut ?? null,
+            heure_fin: r.heure_fin ?? null,
+            type: "recuperation" as const,
+            note: null,
+            group_id: null,
+            pause_minutes: null,
+          }));
         const hParJour = heuresContractuellesParJour(emp);
-        const c = calcCompteurMensuel(empEntries, joursOuvres, hParJour, emp);
+        const c = calcCompteurMensuel(
+          [...empEntries, ...empRecups],
+          joursOuvres,
+          hParJour,
+          emp,
+          undefined,
+          joursNeutralises,
+        );
         await upsertCompteur(emp.id, month, c.realisees, c.base);
       }),
     );
