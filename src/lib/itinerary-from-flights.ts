@@ -208,10 +208,44 @@ export function buildItineraryFromFlights(
 
   const arrDate = outbound[outbound.length - 1]?.date_arrivee;
   const isOvernightOutbound = !!(startDate && arrDate && startDate !== arrDate);
+  const heureArriveeDest = outbound[outbound.length - 1]?.heure_arrivee ?? null;
+
+  const inboundReturnDate = inbound[inbound.length - 1]?.date_arrivee || inbound[inbound.length - 1]?.date_depart || null;
+  const villeRetour = inbound.length > 0 ? iataToCity(inbound[inbound.length - 1].aeroport_arrivee) : villeOrigine;
+
+  // Map des dates de transit outbound (strictement entre départ et arrivée à destination)
+  // → ville d'escale + détails. Une date transit appartient au segment [seg[i].date_arrivee, seg[i+1].date_depart].
+  const transitInfo = new Map<string, { ville: string; heureArr: string | null; heureDep: string | null }>();
+  if (isOvernightOutbound && arrDate) {
+    for (const d of dates) {
+      if (d <= startDate! || d >= arrDate) continue;
+      // Trouver le segment dont le layover couvre cette date
+      let found: { ville: string; heureArr: string | null; heureDep: string | null } | null = null;
+      for (let i = 0; i < outbound.length - 1; i++) {
+        const cur = outbound[i];
+        const nxt = outbound[i + 1];
+        if (!cur.date_arrivee || !nxt.date_depart) continue;
+        if (d >= cur.date_arrivee && d <= nxt.date_depart) {
+          found = {
+            ville: iataToCity(cur.aeroport_arrivee),
+            heureArr: cur.heure_arrivee,
+            heureDep: nxt.heure_depart,
+          };
+          break;
+        }
+      }
+      if (!found) {
+        // Vol direct de nuit sans escale : transit "à bord"
+        found = { ville: villeOrigine ?? "destination", heureArr: null, heureDep: null };
+      }
+      transitInfo.set(d, found);
+    }
+  }
 
   const days: GeneratedDay[] = dates.map((d, i) => {
     const isFirst = i === 0;
     const isLast = i === dates.length - 1;
+    const isReturnDay = inbound.length > 0 && inboundReturnDate && d === inboundReturnDate;
     let titre = `Jour ${i + 1}`;
     let description: string | null = null;
     let lieu: string | null = null;
@@ -219,15 +253,30 @@ export function buildItineraryFromFlights(
 
     if (isFirst) {
       titre = isOvernightOutbound
-        ? `Vol vers ${villeDestination ?? "votre destination"} — Nuit en vol`
-        : `Envol vers ${villeDestination ?? "votre destination"}`;
+        ? `Départ de ${villeOrigine ?? "votre ville"} — Nuit en vol`
+        : `Départ de ${villeOrigine ?? "votre ville"}`;
       description = outboundNarr || null;
       lieu = villeOrigine;
       isFlightDay = true;
-    } else if (isLast && inbound.length > 0) {
-      titre = `Vol retour vers ${
-        inbound[inbound.length - 1] ? iataToCity(inbound[inbound.length - 1].aeroport_arrivee) : "votre ville"
-      }`;
+    } else if (arrDate && d === arrDate && isOvernightOutbound) {
+      // Jour d'arrivée à destination (vol overnight)
+      titre = `Arrivée à ${villeDestination ?? "destination"}`;
+      lieu = villeDestination;
+      isFlightDay = true;
+      const hh = heureArriveeDest ? ` à ${fmtTime(heureArriveeDest)}` : "";
+      description = `Arrivée à ${villeDestination ?? "destination"} le ${fmtDateLong(arrDate)}${hh}. Début du programme réceptif.`;
+    } else if (transitInfo.has(d)) {
+      const t = transitInfo.get(d)!;
+      titre = `Transit ${t.ville}`;
+      lieu = t.ville;
+      isFlightDay = true;
+      const plage =
+        t.heureArr && t.heureDep
+          ? ` Escale de ${fmtTime(t.heureArr)} à ${fmtTime(t.heureDep)}.`
+          : "";
+      description = `Transit à ${t.ville} le ${fmtDateLong(d)}.${plage}`;
+    } else if (isReturnDay || (isLast && inbound.length > 0)) {
+      titre = `Retour à ${villeRetour ?? "votre ville"}`;
       description = inboundNarr || null;
       lieu = villeDestination;
       isFlightDay = true;
@@ -246,24 +295,6 @@ export function buildItineraryFromFlights(
       isFlightDay,
     };
   });
-
-  // Si le vol aller arrive après la date de départ (nuit en vol ou 2+ nuits),
-  // on cherche le jour correspondant à la date d'arrivée réelle — pas forcément days[1].
-  if (isOvernightOutbound && arrDate) {
-    const arrivalDay = days.find((d) => d.date_jour === arrDate);
-    if (arrivalDay && !arrivalDay.isFlightDay) {
-      arrivalDay.titre = `Arrivée à ${villeDestination ?? "destination"}`;
-      arrivalDay.isFlightDay = true;
-      arrivalDay.description =
-        `Arrivée à ${villeDestination ?? "destination"} le ${fmtDateLong(arrDate)}` +
-        (outbound[outbound.length - 1]?.heure_arrivee
-          ? ` à ${fmtTime(outbound[outbound.length - 1].heure_arrivee)}`
-          : "") +
-        `.`;
-    }
-    // Les jours intermédiaires (entre départ et arrivée, hors escales) restent
-    // en "Vol vers..." ou transit — pas de titre d'arrivée prématuré.
-  }
 
   // Détection automatique des transits entre segments (escales longues / nuits hors réceptif).
   // Pour chaque paire (segment N → N+1) du vol aller puis du vol retour, on calcule la
