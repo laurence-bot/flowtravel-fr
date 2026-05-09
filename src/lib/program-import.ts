@@ -87,15 +87,26 @@ export async function extractProgramFromFile(
 
     onProgress?.("Envoi à l'IA…");
 
-    // Appel à la Edge Function Supabase dédiée
+    // Appel à la Edge Function extract-pdf
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any).functions.invoke("extract-program-from-file", {
-      body: {
-        fileBase64: base64,
-        fileName: file.name,
-        mimeType: file.type || (isPdf ? "application/pdf" : "image/jpeg"),
-      },
-    });
+    let data: any, error: any;
+    if (isPdf) {
+      // Envoi PDF en base64 pour extraction serveur via unpdf
+      ({ data, error } = await (supabase as any).functions.invoke("extract-pdf", {
+        body: {
+          type: "programme_fournisseur",
+          pdfBase64: base64,
+        },
+      }));
+    } else {
+      // Envoi image en vision
+      ({ data, error } = await (supabase as any).functions.invoke("extract-pdf", {
+        body: {
+          type: "programme_fournisseur",
+          images: [`data:${file.type || "image/jpeg"};base64,${base64}`],
+        },
+      }));
+    }
 
     if (error) {
       console.error("[program-import] edge function error:", error);
@@ -104,16 +115,16 @@ export async function extractProgramFromFile(
 
     onProgress?.("Validation des résultats…");
 
-    if (!data || !data.jours) {
+    if (!data || !data.data || !data.data.jours) {
       return { result: null, error: "L'IA n'a pas retourné de programme valide." };
     }
 
     const result: ExtractedProgram = {
-      jours: data.jours ?? [],
-      lignes: data.lignes ?? [],
-      confiance: data.confiance ?? "basse",
-      fournisseur_nom: data.fournisseur_nom ?? null,
-      destination: data.destination ?? null,
+      jours: data.data.jours ?? [],
+      lignes: data.data.lignes ?? [],
+      confiance: data.data.confiance ?? data.confiance ?? "basse",
+      fournisseur_nom: data.data.fournisseur_nom ?? null,
+      destination: data.data.destination ?? null,
     };
 
     return { result, error: null };
