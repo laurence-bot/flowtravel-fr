@@ -19,6 +19,7 @@ import {
   calcHeuresRealisees,
   upsertCompteur,
   listCompteurs,
+  clearCompteursMois,
   listRecupDemandes,
   listAbsences,
   frenchHolidays,
