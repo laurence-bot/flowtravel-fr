@@ -38,7 +38,7 @@ import {
   type FlightSegmentLite,
 } from "@/lib/itinerary-from-flights";
 import { buildJourSyncPlan, duplicateLineKey, normKey, type SyncJour } from "@/lib/cotation-sync";
-import { extractProgramFromFile, insertJours, insertLignes, purgeEtReinserer } from "@/lib/program-import";
+import { extractProgramFromFile, purgeEtReinserer } from "@/lib/program-import";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -644,6 +644,7 @@ export function QuoteContentEditorBlock({
       setDetectInclusionsLoading(false);
     }
   };
+
   const resyncProgramAndFlights = async () => {
     setResyncLoading(true);
     try {
@@ -681,8 +682,6 @@ export function QuoteContentEditorBlock({
         newDepart = sorted[0]?.date_depart ?? refVol.date_depart ?? newDepart;
         newRetour = sorted[sorted.length - 1]?.date_arrivee ?? refVol.date_retour ?? newRetour;
 
-        // Charger aussi les segments des vols annexes (domestiques stockés en option séparée)
-        // pour que enrichVolsDomestiques enrichisse les bons jours d'itinéraire.
         const otherVolIds = vols.filter((v) => v.id !== refVol.id).map((v) => v.id);
         let extraSegments: FlightSegmentLite[] = [];
         if (otherVolIds.length > 0) {
@@ -725,14 +724,14 @@ export function QuoteContentEditorBlock({
         if (delErr) throw delErr;
       }
 
-      const results = await Promise.all(
+      const updateResults = await Promise.all(
         plan.updates.map((u) =>
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (supabase as any).from("cotation_jours").update(u.patch).eq("id", u.id),
         ),
       );
-      const failed = results.find((r) => r.error);
-      if (failed) throw failed.error;
+      const failedUpdate = updateResults.find((r) => r.error);
+      if (failedUpdate) throw failedUpdate.error;
 
       if (plan.inserts.length > 0) {
         const newRows = plan.inserts.map((row) => ({
@@ -749,13 +748,13 @@ export function QuoteContentEditorBlock({
       let skippedPdfJours = 0;
       let importedPdfLines = 0;
       let skippedPdfLines = 0;
+
       if (programmePdfUrl) {
         const { data: signed } = await supabase.storage.from("pdf-imports").createSignedUrl(programmePdfUrl, 120);
         if (signed?.signedUrl) {
-          const blob = await fetch(signed.signedUrl).then((r) => {
-            if (!r.ok) throw new Error("PDF importé inaccessible.");
-            return r.blob();
-          });
+          const pdfResp = await fetch(signed.signedUrl);
+          if (!pdfResp.ok) throw new Error("PDF importé inaccessible.");
+          const blob = await pdfResp.blob();
           const file = new File([blob], programmePdfName ?? "programme.pdf", { type: "application/pdf" });
           const extracted = await extractProgramFromFile(file);
           if (extracted.result) {
@@ -823,7 +822,6 @@ export function QuoteContentEditorBlock({
     setRegenOpen(false);
     setRegenLoading(true);
     try {
-      // 1. Charger vols + segments + lien public (pour vol choisi)
       const [volsRes, linkRes] = await Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase as any)
@@ -867,12 +865,10 @@ export function QuoteContentEditorBlock({
         return;
       }
 
-      // 2. Effacer les jours existants
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: delErr } = await (supabase as any).from("cotation_jours").delete().eq("cotation_id", cotationId);
       if (delErr) throw delErr;
 
-      // 3. Insérer les nouveaux jours
       const payload = generated.map((g) => ({
         user_id: userId,
         cotation_id: cotationId,
@@ -1255,10 +1251,8 @@ function JourEditor({
   const [open, setOpen] = useState(false);
   const [inclusions, setInclusions] = useState<Inclusions>(jour.inclusions ?? {});
 
-  // Détection auto au montage si aucune inclusion existante
   useEffect(() => {
     if (jour.inclusions && Object.keys(jour.inclusions).length > 0) {
-      // Si vol domestique détecté et titre ne le mentionne pas → enrichit le titre
       if (jour.inclusions.vol_domestique === true && !jour.titre.toLowerCase().includes("vol") && canWrite) {
         const titreParts = jour.titre.split(/\s*[-–—]\s*/);
         if (titreParts.length >= 2) {
@@ -1296,7 +1290,6 @@ function JourEditor({
   const runSuggestPhoto = async () => {
     setSuggestingPhoto(true);
     try {
-      // Tente jusqu'à 3 queries différentes pour éviter les doublons
       const queries = [
         { titre: titre || jour.titre, lieu: lieu || jour.lieu || null },
         { titre: lieu || jour.lieu || jour.titre, lieu: null as string | null },
@@ -1364,7 +1357,6 @@ function JourEditor({
     }
   };
 
-  // Synchroniser état local si la prop change (drag → re-render)
   useEffect(() => {
     setTitre(jour.titre);
     setLieu(jour.lieu ?? "");
@@ -1460,7 +1452,7 @@ function JourEditor({
         )}
       </div>
 
-      {/* PASTILLES INCLUSIONS (visibles tout le temps) */}
+      {/* PASTILLES INCLUSIONS */}
       {Object.keys(inclusions).length > 0 && (
         <div className="px-3 pb-3 -mt-1">
           <InclusionPills inclusions={inclusions} variant="compact" />
@@ -1675,7 +1667,7 @@ function JourEditor({
 }
 
 /* ============================================================
- *  Slot d'ajout galerie (déclenche l'ImagePicker dans un Dialog)
+ *  Slot d'ajout galerie
  * ============================================================ */
 function GalleryAddSlot({
   userId,
@@ -1711,7 +1703,7 @@ function GalleryAddSlot({
 }
 
 /* ============================================================
- *  Modale "Affiner" (input guidé)
+ *  Modale "Affiner"
  * ============================================================ */
 function AiRefineDialog({
   open,
@@ -1798,9 +1790,6 @@ function AiRefineDialog({
 
 /* ============================================================
  *  Bloc Hôtel d'un jour
- *   - Nom + URL site officiel + URL photo
- *   - Boutons "Rechercher sur Google" (site officiel + images)
- *   - Aperçu photo + lien externe
  * ============================================================ */
 function HotelBlock({
   jour,
