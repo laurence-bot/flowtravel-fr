@@ -963,90 +963,109 @@ export function QuoteContentEditorBlock({
 
       {/* JOURS */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <Label>Itinéraire jour par jour ({jours.length})</Label>
+        <div className="flex items-start justify-between flex-wrap gap-2">
+          <div>
+            <Label>Itinéraire jour par jour ({jours.length})</Label>
+            {canWrite && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Suivez l'ordre des boutons pour construire votre programme.
+              </p>
+            )}
+          </div>
           {canWrite && (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => void resyncProgramAndFlights()}
-                disabled={resyncLoading || (!hasFlights && jours.length === 0 && !programmePdfUrl)}
-                title="Synchronise le programme PDF avec les dates de vol et alerte en cas d'écart"
-              >
-                {resyncLoading ? (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4 mr-1" />
-                )}
-                Sync PDF + vols
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => void cleanDuplicates()}
-                disabled={cleanLoading}
-                title="Supprime en masse les doublons de jours et de lignes prix"
-              >
-                {cleanLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}
-                Doublons
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => void enrichHotels()}
-                disabled={enrichLoading}
-                title="Recherche automatiquement le site officiel et une photo pour chaque hôtel détecté dans le programme"
-              >
-                {enrichLoading ? (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4 mr-1" />
-                )}
-                Hôtels
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => void enrichPhotos()}
-                disabled={enrichPhotosLoading || jours.every((j) => !!j.image_url)}
-                title="Cherche automatiquement une photo Unsplash premium pour chaque jour sans photo"
-              >
-                {enrichPhotosLoading ? (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                ) : (
-                  <Search className="h-4 w-4 mr-1" />
-                )}
-                Photos
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => void detectAllInclusions()}
-                disabled={detectInclusionsLoading || jours.length === 0}
-                title="Détecte automatiquement les inclusions depuis le texte de chaque jour"
-              >
-                {detectInclusionsLoading ? (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                ) : (
-                  <ListChecks className="h-4 w-4 mr-1" />
-                )}
-                Inclusions
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleRegenClick}
-                disabled={regenLoading || !hasFlights}
-                title={
-                  hasFlights
-                    ? "Construit l'itinéraire à partir des vols saisis"
-                    : "Ajoutez d'abord les vols pour activer cette option"
-                }
-              >
-                {regenLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plane className="h-4 w-4 mr-1" />}
-                {jours.length === 0 ? "Générer" : "Depuis les vols"}
-              </Button>
+            <div className="flex items-center gap-2.5 flex-wrap pt-3">
+              <StepBadge n={1}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void resyncProgramAndFlights()}
+                  disabled={resyncLoading || (!hasFlights && jours.length === 0 && !programmePdfUrl)}
+                  title="Synchronise le programme PDF avec les dates de vol et alerte en cas d'écart"
+                >
+                  {resyncLoading ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                  )}
+                  Sync PDF + vols
+                </Button>
+              </StepBadge>
+              <StepBadge n={2}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void cleanDuplicates()}
+                  disabled={cleanLoading}
+                  title="Supprime en masse les doublons de jours et de lignes prix"
+                >
+                  {cleanLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}
+                  Doublons
+                </Button>
+              </StepBadge>
+              <StepBadge n={3}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void enrichHotels()}
+                  disabled={enrichLoading}
+                  title="Recherche automatiquement le site officiel et une photo pour chaque hôtel détecté dans le programme"
+                >
+                  {enrichLoading ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4 mr-1" />
+                  )}
+                  Hôtels
+                </Button>
+              </StepBadge>
+              <StepBadge n={4}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void enrichPhotos()}
+                  disabled={enrichPhotosLoading || jours.every((j) => !!j.image_url)}
+                  title="Cherche automatiquement une photo Unsplash premium pour chaque jour sans photo"
+                >
+                  {enrichPhotosLoading ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4 mr-1" />
+                  )}
+                  Photos
+                </Button>
+              </StepBadge>
+              <StepBadge n={5}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void detectAllInclusions()}
+                  disabled={detectInclusionsLoading || jours.length === 0}
+                  title="Détecte automatiquement les inclusions depuis le texte de chaque jour"
+                >
+                  {detectInclusionsLoading ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <ListChecks className="h-4 w-4 mr-1" />
+                  )}
+                  Inclusions
+                </Button>
+              </StepBadge>
+              <StepBadge n={6}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleRegenClick}
+                  disabled={regenLoading || !hasFlights}
+                  title={
+                    hasFlights
+                      ? "Construit l'itinéraire à partir des vols saisis"
+                      : "Ajoutez d'abord les vols pour activer cette option"
+                  }
+                >
+                  {regenLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plane className="h-4 w-4 mr-1" />}
+                  {jours.length === 0 ? "Générer" : "Depuis les vols"}
+                </Button>
+              </StepBadge>
               <Button size="sm" variant="outline" onClick={addJour}>
                 <Plus className="h-4 w-4 mr-1" />
                 Ajouter un jour
