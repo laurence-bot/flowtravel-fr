@@ -245,7 +245,7 @@ function EmployeeDetail() {
                 <Input
                   type="number"
                   step="0.25"
-                  value={employee.heures_par_jour ?? 7.5}
+                  value={employee.heures_par_jour ?? 7}
                   onChange={(e) => setEmployee({ ...employee, heures_par_jour: Number(e.target.value) || null })}
                 />
               </Field>
