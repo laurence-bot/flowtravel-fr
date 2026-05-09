@@ -14,9 +14,14 @@ import {
   updateEmployee,
   deleteEmployee,
   CONTRACT_TYPE_LABELS,
+  listJoursDus,
+  createJourDu,
+  marquerJourDuSolde,
+  deleteJourDu,
   type Employee,
   type ContractType,
   type RythmeType,
+  type JourDu,
 } from "@/lib/hr";
 import { toast } from "sonner";
 
