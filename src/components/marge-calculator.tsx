@@ -26,14 +26,42 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, tauxMargeC
   const [mode, setMode] = useState<Mode>("pct_ca");
   const [pctCa, setPctCa] = useState<number>(tauxMargeCible ?? 25);
   const [montant, setMontant] = useState<number>(2000);
+  const [prixTtcOverride, setPrixTtcOverride] = useState<number | null>(null);
+  const [prixTtcInput, setPrixTtcInput] = useState<string>("");
 
   // Mettre à jour si la cotation change (navigation entre cotations)
   useEffect(() => {
     if (tauxMargeCible != null) setPctCa(tauxMargeCible);
   }, [tauxMargeCible]);
 
+  // Reset override quand le mode/pct/montant change
+  useEffect(() => {
+    setPrixTtcOverride(null);
+    setPrixTtcInput("");
+  }, [mode, pctCa, montant, coutTotal, regimeTva, tauxTvaMarge]);
+
   const result = useMemo(() => {
     const cout = Math.max(0, coutTotal);
+
+    // Si l'utilisateur a édité directement le prix TTC, on recalcule depuis là
+    if (prixTtcOverride != null && prixTtcOverride > 0) {
+      const prixTtc = prixTtcOverride;
+      const margeBrute = prixTtc - cout;
+      const tvaSurMarge =
+        regimeTva === "marge_ue" && margeBrute > 0 ? margeBrute - margeBrute / (1 + tauxTvaMarge / 100) : 0;
+      const margeNette = margeBrute - tvaSurMarge;
+      const margeNettePct = prixTtc > 0 ? (margeNette / prixTtc) * 100 : 0;
+      const prixHt = prixTtc - tvaSurMarge;
+      return {
+        prixTtc: Math.round(prixTtc * 100) / 100,
+        prixHt: Math.round(prixHt * 100) / 100,
+        margeBrute,
+        margeNette,
+        margeNettePct,
+        tvaSurMarge,
+      };
+    }
+
     let margeNetteSouhaitee = 0;
 
     if (mode === "montant") {
@@ -79,7 +107,14 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, tauxMargeC
       margeNettePct,
       tvaSurMarge,
     };
-  }, [mode, pctCa, montant, coutTotal, regimeTva, tauxTvaMarge]);
+  }, [mode, pctCa, montant, coutTotal, regimeTva, tauxTvaMarge, prixTtcOverride]);
+
+  // Garde l'input prix TTC en phase quand pas d'override
+  useEffect(() => {
+    if (prixTtcOverride == null) {
+      setPrixTtcInput(result.prixTtc.toFixed(2));
+    }
+  }, [result.prixTtc, prixTtcOverride]);
 
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
@@ -132,11 +167,29 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, tauxMargeC
             )}
           </div>
 
-          <div className="rounded-lg bg-primary/5 border border-primary/20 px-4 py-3">
-            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Prix de vente TTC calculé
+          <div className="rounded-lg bg-primary/5 border-2 border-amber-400 px-4 py-3 shadow-[0_0_0_3px_rgba(251,191,36,0.1)]">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Prix de vente TTC (éditable)
+              </div>
+              <span className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">Modifiable</span>
             </div>
-            <div className="mt-1 text-2xl font-bold tabular text-primary">{formatEUR(result.prixTtc)}</div>
+            <div className="relative mt-1">
+              <Input
+                type="number"
+                step="1"
+                value={prixTtcInput}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setPrixTtcInput(v);
+                  const n = Number(v);
+                  if (!isNaN(n) && n > 0) setPrixTtcOverride(n);
+                  else setPrixTtcOverride(null);
+                }}
+                className="h-11 pr-8 text-2xl font-bold tabular text-primary border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+              />
+              <span className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
+            </div>
           </div>
         </div>
 
@@ -167,7 +220,7 @@ export function MargeCalculator({ coutTotal, regimeTva, tauxTvaMarge, tauxMargeC
             onApply({
               prixHt: result.prixHt,
               prixTtc: result.prixTtc,
-              tauxMargeCible: mode === "pct_ca" ? pctCa : null,
+              tauxMargeCible: prixTtcOverride != null ? result.margeNettePct : mode === "pct_ca" ? pctCa : null,
             })
           }
         >
