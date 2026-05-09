@@ -19,6 +19,7 @@ import {
   listRecupDemandes,
   frenchHolidays,
   isJourOuvre,
+  calcCompteurMensuel,
   CONTRACT_TYPE_LABELS,
   type Employee,
   type ContractType,
