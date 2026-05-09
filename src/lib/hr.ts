@@ -939,6 +939,12 @@ export async function upsertCompteur(
   if (error) throw error;
 }
 
+/** Supprime tous les compteurs stockés pour un mois — force un recalcul propre. */
+export async function clearCompteursMois(mois: string): Promise<void> {
+  const { error } = await supabase.from("hr_compteur_heures" as any).delete().eq("mois", mois);
+  if (error) throw error;
+}
+
 export async function listCompteurs(mois: string): Promise<CompteurHeures[]> {
   const { data, error } = await supabase
     .from("hr_compteur_heures" as any)
