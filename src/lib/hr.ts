@@ -798,7 +798,7 @@ function dureeNetteEntry(e: PlanningEntry): number {
   const dureeMin = fh * 60 + fm - (dh * 60 + dm);
   let pauseMin = (e as any).pause_minutes;
   // Si pause non saisie OU saisie à 0 sur une journée > 6h → pause repas par défaut 30 min
-  if (pauseMin == null) pauseMin = 30;
+  if (pauseMin == null) pauseMin = dureeMin > 360 ? 30 : 0;
   else if (pauseMin === 0 && dureeMin > 360) pauseMin = 30;
   return Math.max(0, dureeMin - pauseMin) / 60;
 }
@@ -850,7 +850,7 @@ export function calcCompteurMensuel(
       if (isContextOnly) {
         // Déplacement/formation : ne compte que sur les jours de rythme (forfait)
         if (rythmeSet.has(d) && existing === null) {
-          heuresParJourMap.set(d, duree > 0 ? duree : heuresParJour);
+          heuresParJourMap.set(d, heuresParJour);
         }
       } else {
         // Travail réel : compté quel que soit le jour (samedi exceptionnel possible)
