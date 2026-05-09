@@ -156,7 +156,24 @@ function EquipeIndex() {
           .reduce((s, r) => s + (r.heures_demandees ?? 0), 0);
         const hParJour = 7.5;
         const empPlanning = planning.filter((p) => p.employee_id === emp.id);
-        const calc = calcCompteurMensuel(empPlanning, joursOuvres, hParJour, emp);
+        // Injecte les récups approuvées comme entrées planning de type "recuperation"
+        const empRecups = recups
+          .filter((r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee)
+          .map((r) => ({
+            id: r.id,
+            employee_id: r.employee_id,
+            agence_id: null,
+            date_start: r.date_souhaitee!,
+            date_end: r.date_souhaitee!,
+            heure_debut: r.heure_debut ?? null,
+            heure_fin: r.heure_fin ?? null,
+            type: "recuperation" as const,
+            note: null,
+            group_id: null,
+            pause_minutes: null,
+          }));
+        const empPlanningAvecRecups = [...empPlanning, ...empRecups];
+        const calc = calcCompteurMensuel(empPlanningAvecRecups, joursOuvres, hParJour, emp);
         const joursOuvresCount = joursOuvres.length;
         return {
           nom: `${emp.prenom} ${emp.nom}`,
