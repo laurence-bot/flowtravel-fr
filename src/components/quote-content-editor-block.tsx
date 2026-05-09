@@ -991,6 +991,17 @@ export function QuoteContentEditorBlock({
           {canWrite && (
             <div className="flex items-center gap-2.5 flex-wrap pt-3">
               <StepBadge n={1}>
+                <ProgramImportDialog
+                  cotationId={cotationId}
+                  userId={userId}
+                  canWrite={canWrite}
+                  onImported={() => {
+                    void loadJours();
+                    onDataChanged?.();
+                  }}
+                />
+              </StepBadge>
+              <StepBadge n={2}>
                 <Button
                   size="sm"
                   variant="outline"
@@ -1006,7 +1017,7 @@ export function QuoteContentEditorBlock({
                   Sync PDF + vols
                 </Button>
               </StepBadge>
-              <StepBadge n={2}>
+              <StepBadge n={3}>
                 <Button
                   size="sm"
                   variant="outline"
@@ -1018,7 +1029,7 @@ export function QuoteContentEditorBlock({
                   Doublons
                 </Button>
               </StepBadge>
-              <StepBadge n={3}>
+              <StepBadge n={4}>
                 <Button
                   size="sm"
                   variant="outline"
@@ -1034,7 +1045,7 @@ export function QuoteContentEditorBlock({
                   Hôtels
                 </Button>
               </StepBadge>
-              <StepBadge n={4}>
+              <StepBadge n={5}>
                 <Button
                   size="sm"
                   variant="outline"
@@ -1050,7 +1061,7 @@ export function QuoteContentEditorBlock({
                   Photos
                 </Button>
               </StepBadge>
-              <StepBadge n={5}>
+              <StepBadge n={6}>
                 <Button
                   size="sm"
                   variant="outline"
@@ -1066,7 +1077,7 @@ export function QuoteContentEditorBlock({
                   Inclusions
                 </Button>
               </StepBadge>
-              <StepBadge n={6}>
+              <StepBadge n={7}>
                 <Button
                   size="sm"
                   variant="outline"
@@ -1089,16 +1100,27 @@ export function QuoteContentEditorBlock({
             </div>
           )}
         </div>
-        {!hasFlights && jours.length === 0 && (
-          <div className="text-xs text-muted-foreground bg-muted/50 border border-dashed rounded p-3 flex items-start gap-2">
-            <Plane className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[color:var(--gold)]" />
-            <div>
-              <strong>Les vols définissent la structure du voyage.</strong> Saisissez d'abord vos vols (option vol +
-              segments) puis cliquez sur <em>« Générer depuis les vols »</em>
-              pour construire automatiquement le calendrier jour par jour.
+        {canWrite && (() => {
+          const hasJours = jours.length > 0;
+          const hasPdf = !!programmePdfUrl;
+          let msg: string | null = null;
+          if (!hasJours && !hasPdf && !hasFlights) {
+            msg = "Commencez par ① importer votre programme fournisseur (PDF), ou ajoutez un jour manuellement.";
+          } else if (!hasJours && hasFlights) {
+            msg = "Vols détectés — cliquez sur ⑦ Générer depuis les vols pour construire l'itinéraire automatiquement.";
+          } else if (hasJours && hasFlights) {
+            msg = "Programme importé — utilisez ② Sync PDF + vols pour aligner les dates sur vos vols.";
+          } else if (hasJours && !hasFlights) {
+            msg = "Programme importé — ajoutez vos vols puis utilisez ② Sync pour aligner les dates.";
+          }
+          if (!msg) return null;
+          return (
+            <div className="text-xs text-muted-foreground bg-muted/50 border border-dashed rounded p-3 flex items-start gap-2">
+              <Plane className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[color:var(--gold)]" />
+              <div>{msg}</div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {loading ? (
           <div className="text-sm text-muted-foreground text-center py-6">Chargement…</div>
