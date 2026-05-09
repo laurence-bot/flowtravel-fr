@@ -31,6 +31,21 @@ import {
   RefreshCw,
   Search,
 } from "lucide-react";
+
+/** Petit badge numéroté doré affiché en haut à gauche d'un bouton. */
+function StepBadge({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <div className="relative inline-flex">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -top-2 -left-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[11px] font-bold text-amber-950 shadow-sm ring-2 ring-background"
+      >
+        {n}
+      </span>
+      {children}
+    </div>
+  );
+}
 import {
   buildItineraryFromFlights,
   pickReferenceFlight,
