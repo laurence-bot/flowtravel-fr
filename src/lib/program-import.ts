@@ -239,7 +239,7 @@ export async function insertLignes(
         user_id: userId,
         ordre: startOrdre + idx,
         prestation: l.prestation,
-        nom_fournisseur: l.nom_fournisseur ?? null,
+        nom_fournisseur: l.nom_fournisseur ?? l.prestation ?? "—",
         quantite: l.quantite ?? 1,
         montant_devise: l.montant_devise,
         devise: l.devise,
