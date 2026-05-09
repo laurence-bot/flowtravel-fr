@@ -199,7 +199,7 @@ function EquipeIndex() {
           poste: emp.poste ?? "",
           contrat: emp.type_contrat,
           heures_contractuelles: compteur?.heures_contractuelles ?? 0,
-          heures_realisees: calc.travailReel,
+          heures_realisees: calc.realisees,
           solde: calc.solde,
           jours_conge: joursConge,
           jours_maladie: joursMaladie,
