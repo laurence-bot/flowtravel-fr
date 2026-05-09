@@ -754,21 +754,21 @@ export function QuoteContentEditorBlock({
         if (signed?.signedUrl) {
           const blob = await fetch(signed.signedUrl).then((r) => {
             if (!r.ok) throw new Error("PDF importé inaccessible.");
-        // Avant (cassé) :
-const r = await purgeEtReinserer(userId, cotationId, extracted.result, { regenJours: true });
-if (r.error) throw new Error(r.error);
-importedPdfJours = r.joursCount;
-skippedPdfJours = 0;
-importedPdfLines = r.lignesCount;
-skippedPdfLines = 0;
+            return r.blob();
+          });
+          const file = new File([blob], programmePdfName ?? "programme.pdf", { type: "application/pdf" });
+          const extracted = await extractProgramFromFile(file);
+          if (extracted.result) {
+            const r = await purgeEtReinserer(userId, cotationId, extracted.result, { regenJours: true });
+            if (r.error) throw new Error(r.error);
+            importedPdfJours = r.joursCount;
+            skippedPdfJours = 0;
+            importedPdfLines = r.lignesCount;
+            skippedPdfLines = 0;
+          }
+        }
+      }
 
-// Après (corrigé) :
-const r = await purgeEtReinserer(userId, cotationId, extracted.result);
-if (r.error) throw new Error(r.error);
-importedPdfJours = extracted.result.jours.length;
-skippedPdfJours = 0;
-importedPdfLines = extracted.result.lignes.length;
-skippedPdfLines = 0;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: lignesData } = await (supabase as any)
         .from("cotation_lignes_fournisseurs")
