@@ -57,6 +57,7 @@ export const PLANNING_TYPE_LABELS: Record<PlanningType, string> = {
   deplacement: "Déplacement",
   formation: "Formation",
   recuperation: "Récupération",
+  remplacement: "Remplacement",
   autre: "Autre",
 };
 export const TIME_EVENT_LABELS: Record<TimeEvent, string> = {
