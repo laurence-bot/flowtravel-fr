@@ -377,6 +377,91 @@ function EmployeeDetail() {
               )}
             </div>
           </Card>
+
+          {/* Jours à rendre / rendus */}
+          <Card className="p-6 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium text-sm uppercase tracking-wider text-muted-foreground">
+                Jours à rendre / rendus
+              </h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  const date = prompt("Date d'origine (YYYY-MM-DD) ?");
+                  if (!date) return;
+                  const motif = prompt("Motif ?") ?? "";
+                  try {
+                    await createJourDu({ employee_id: employee.id, sens: "du", date_origine: date, motif });
+                    toast.success("Jour dû ajouté");
+                    reloadJoursDus();
+                  } catch (e: any) {
+                    toast.error(e.message);
+                  }
+                }}
+              >
+                + Ajouter un jour dû
+              </Button>
+            </div>
+            {joursDus.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Aucun jour dû ou rendu enregistré.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="text-xs uppercase tracking-wider text-muted-foreground">
+                  <tr className="border-b">
+                    <th className="text-left py-2">Sens</th>
+                    <th className="text-left py-2">Date origine</th>
+                    <th className="text-left py-2">Motif</th>
+                    <th className="text-left py-2">Statut</th>
+                    <th className="text-left py-2">Soldé le</th>
+                    <th className="text-right py-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {joursDus.map((j) => (
+                    <tr key={j.id} className="border-b last:border-0">
+                      <td className="py-2">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded text-xs ${j.sens === "du" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
+                        >
+                          {j.sens === "du" ? "Dû" : "Rendu"}
+                        </span>
+                      </td>
+                      <td className="py-2">{j.date_origine}</td>
+                      <td className="py-2 text-muted-foreground">{j.motif ?? "—"}</td>
+                      <td className="py-2">{j.statut}</td>
+                      <td className="py-2 text-muted-foreground">{j.date_extinction ?? "—"}</td>
+                      <td className="py-2 text-right space-x-2">
+                        {j.statut === "ouvert" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              await marquerJourDuSolde(j.id);
+                              reloadJoursDus();
+                            }}
+                          >
+                            Marquer soldé
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={async () => {
+                            if (!confirm("Supprimer cette entrée ?")) return;
+                            await deleteJourDu(j.id);
+                            reloadJoursDus();
+                          }}
+                        >
+                          Suppr.
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
