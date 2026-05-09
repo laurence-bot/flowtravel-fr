@@ -19,6 +19,7 @@ export type PlanningType =
   | "deplacement"
   | "formation"
   | "recuperation"
+  | "remplacement"
   | "autre";
 export type TimeEvent = "arrivee" | "pause_debut" | "pause_fin" | "sortie";
 export type EvaluationStatut = "a_completer" | "auto_eval_faite" | "entretien_fait" | "signee" | "cloturee";
