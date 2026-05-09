@@ -38,7 +38,7 @@ import {
   type FlightSegmentLite,
 } from "@/lib/itinerary-from-flights";
 import { buildJourSyncPlan, duplicateLineKey, normKey, type SyncJour } from "@/lib/cotation-sync";
-import { extractProgramFromFile, purgeEtReinserer } from "@/lib/program-import";
+import { extractProgramFromFile, insertJours, insertLignes } from "@/lib/program-import";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -757,13 +757,20 @@ export function QuoteContentEditorBlock({
           const blob = await pdfResp.blob();
           const file = new File([blob], programmePdfName ?? "programme.pdf", { type: "application/pdf" });
           const extracted = await extractProgramFromFile(file);
+          if (extracted.error) throw new Error(extracted.error);
           if (extracted.result) {
-            const r = await purgeEtReinserer(userId, cotationId, extracted.result);
-            if (r.error) throw new Error(r.error);
-            importedPdfJours = extracted.result.jours.length;
-            skippedPdfJours = 0;
-            importedPdfLines = extracted.result.lignes.length;
-            skippedPdfLines = 0;
+            // Complète les jours déjà synchronisés avec les vols sans les écraser.
+            // insertJours avec startOrdre après les jours vol, insertLignes en "ignore" pour les doublons.
+            const joursResult = await insertJours(userId, cotationId, extracted.result.jours, plan.targetCount + 1);
+            if (joursResult.error) throw new Error(joursResult.error);
+
+            const lignesResult = await insertLignes(userId, cotationId, extracted.result.lignes, 1, "ignore");
+            if (lignesResult.error) throw new Error(lignesResult.error);
+
+            importedPdfJours = joursResult.count;
+            skippedPdfJours = joursResult.skipped;
+            importedPdfLines = lignesResult.count;
+            skippedPdfLines = lignesResult.skipped;
           }
         }
       }
