@@ -2802,6 +2802,76 @@ export type Database = {
           },
         ]
       }
+      hr_jours_dus: {
+        Row: {
+          agence_id: string | null
+          created_at: string
+          date_extinction: string | null
+          date_origine: string
+          employee_id: string
+          extinction_entry_id: string | null
+          id: string
+          motif: string | null
+          note: string | null
+          planning_entry_id: string | null
+          sens: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          agence_id?: string | null
+          created_at?: string
+          date_extinction?: string | null
+          date_origine: string
+          employee_id: string
+          extinction_entry_id?: string | null
+          id?: string
+          motif?: string | null
+          note?: string | null
+          planning_entry_id?: string | null
+          sens: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          agence_id?: string | null
+          created_at?: string
+          date_extinction?: string | null
+          date_origine?: string
+          employee_id?: string
+          extinction_entry_id?: string | null
+          id?: string
+          motif?: string | null
+          note?: string | null
+          planning_entry_id?: string | null
+          sens?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_jours_dus_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_jours_dus_extinction_entry_id_fkey"
+            columns: ["extinction_entry_id"]
+            isOneToOne: false
+            referencedRelation: "hr_planning_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_jours_dus_planning_entry_id_fkey"
+            columns: ["planning_entry_id"]
+            isOneToOne: false
+            referencedRelation: "hr_planning_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hr_planning_entries: {
         Row: {
           agence_id: string | null
@@ -3781,6 +3851,7 @@ export type Database = {
         | "formation"
         | "autre"
         | "recuperation"
+        | "remplacement"
       hr_time_event: "arrivee" | "pause_debut" | "pause_fin" | "sortie"
       mariage_contribution_statut: "en_attente" | "paye" | "annule"
       paiement_methode: "virement" | "carte" | "especes"
@@ -4120,6 +4191,7 @@ export const Constants = {
         "formation",
         "autre",
         "recuperation",
+        "remplacement",
       ],
       hr_time_event: ["arrivee", "pause_debut", "pause_fin", "sortie"],
       mariage_contribution_statut: ["en_attente", "paye", "annule"],
