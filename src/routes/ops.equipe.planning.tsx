@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Trash2, Copy, AlertTriangle, Check, X, Pencil } from "lucide-react";
+import { ArrowLeft, Trash2, Copy, AlertTriangle, Check, X, Pencil, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
