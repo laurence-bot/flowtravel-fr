@@ -194,19 +194,18 @@ function EquipeIndex() {
           undefined,
           joursNeutralises,
         );
-        const joursOuvresCount = joursOuvres.length;
         return {
           nom: `${emp.prenom} ${emp.nom}`,
           poste: emp.poste ?? "",
           contrat: emp.type_contrat,
           heures_contractuelles: compteur?.heures_contractuelles ?? 0,
-          heures_realisees: calc.travailReel,
+          heures_realisees: calc.realisees,
           solde: calc.solde,
           jours_conge: joursConge,
           jours_maladie: joursMaladie,
           heures_recup: heuresRecup,
           // Contexte explicatif
-          jours_ouvres: joursOuvresCount,
+          jours_ouvres: calc.joursRythme,
           h_par_jour: hParJour,
           heures_brutes: calc.base,
         };

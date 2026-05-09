@@ -819,7 +819,7 @@ export function calcCompteurMensuel(
   emp?: Employee,
   _baseMensuelleFixe?: number, // déprécié, ignoré
   joursNeutralises: string[] = [],
-): { base: number; travailReel: number; depForm: number; realisees: number; solde: number; heuresSup: number } {
+): { base: number; travailReel: number; depForm: number; realisees: number; solde: number; heuresSup: number; joursRythme: number } {
   // Jours rythme du mois (filtrés des fériés via joursOuvres déjà fait par l'appelant)
   const joursRythme = emp ? joursOuvres.filter((d) => estJourTravaille(emp, d)) : joursOuvres;
   const rythmeSet = new Set(joursRythme);
@@ -881,6 +881,7 @@ export function calcCompteurMensuel(
     realisees: Math.round(realisees * 100) / 100,
     solde,
     heuresSup,
+    joursRythme: joursRythme.length,
   };
 }
 
