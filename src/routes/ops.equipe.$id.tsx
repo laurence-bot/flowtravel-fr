@@ -34,12 +34,19 @@ function EmployeeDetail() {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [joursDus, setJoursDus] = useState<JourDu[]>([]);
+
+  const reloadJoursDus = () => {
+    listJoursDus(id).then(setJoursDus).catch(() => {});
+  };
 
   useEffect(() => {
     getEmployee(id)
       .then(setEmployee)
       .catch((e) => toast.error(e.message))
       .finally(() => setLoading(false));
+    reloadJoursDus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const save = async () => {
