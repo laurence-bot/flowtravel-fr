@@ -809,12 +809,16 @@ function dureeNetteEntry(e: PlanningEntry): number {
 export function calcCompteurMensuel(
   entries: PlanningEntry[],
   joursOuvres: string[],
-  heuresParJour: number = 7.5,
+  heuresParJour: number = 7,
   emp?: Employee,
+  baseMensuelleFixe?: number,
+  joursNeutralises: string[] = [],
 ): { base: number; travailReel: number; depForm: number; realisees: number; solde: number; heuresSup: number } {
   const joursEffectifs = emp ? joursOuvres.filter((d) => estJourTravaille(emp, d)) : joursOuvres;
   const ouvresSet = new Set(joursEffectifs);
-  const base = joursEffectifs.length * heuresParJour;
+  // Base contractuelle : forfait mensuel fixe si fourni (ex. 35h × 52 / 12 = 151,67h),
+  // sinon calcul variable jours ouvrés × heures/jour (rétro-compat).
+  const base = baseMensuelleFixe ?? joursEffectifs.length * heuresParJour;
 
   // Calcul par jour pour éviter tout double comptage
   // Priorité : travail/teletravail/reunion avec horaires > deplacement/formation > rien
@@ -850,6 +854,14 @@ export function calcCompteurMensuel(
           heuresParJourMap.set(d, heuresParJour);
         }
       }
+    }
+  }
+
+  // Jours neutralisés (CP, maladie, RTT pris depuis hr_absences) : comptés comme jour travaillé
+  // au forfait (heuresParJour) pour ne pas creuser le solde face à la base mensuelle fixe.
+  for (const d of joursNeutralises) {
+    if (ouvresSet.has(d) && !heuresParJourMap.has(d)) {
+      heuresParJourMap.set(d, heuresParJour);
     }
   }
 
