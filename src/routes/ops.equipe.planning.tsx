@@ -645,6 +645,21 @@ function PlanningPage() {
         action={
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-full sm:w-44" />
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await load();
+                  toast.success("Compteurs recalculés");
+                } catch (e: any) {
+                  toast.error(e.message ?? "Erreur lors du recalcul");
+                }
+              }}
+              title="Vide les compteurs stockés du mois et les recalcule"
+            >
+              <RefreshCw className="h-4 w-4 mr-1.5" />
+              Forcer le recalcul
+            </Button>
             <Button variant="outline" onClick={() => setRecupOpen(true)}>
               Récupération
             </Button>
