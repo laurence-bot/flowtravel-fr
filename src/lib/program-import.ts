@@ -166,7 +166,10 @@ export async function insertJours(
       ordre: startOrdre + idx,
       titre: j.titre,
       lieu: j.lieu ?? null,
+      date_jour: j.date_jour ?? null,
       description: j.description ?? null,
+      hotel_nom: j.hotel_nom ?? null,
+      inclusions: j.inclusions ?? null,
     }));
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
