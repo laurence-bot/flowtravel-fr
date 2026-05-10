@@ -377,6 +377,9 @@ function EquipeIndex() {
         action={
           <div className="flex gap-2">
             <Button asChild variant="outline">
+              <Link to="/ops/equipe/annee">Vue annuelle</Link>
+            </Button>
+            <Button asChild variant="outline">
               <Link to="/ops/equipe/parametres">
                 <SettingsIcon className="h-4 w-4 mr-2" />
                 Paramètres
