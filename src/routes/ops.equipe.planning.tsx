@@ -1000,6 +1000,8 @@ function PlanningPage() {
                                   employee_id: emp.id,
                                   type: "heures",
                                   heures_demandees: String(c.solde),
+                                  heure_debut: "14:00",
+                                  heure_fin: "16:30",
                                   date_souhaitee: "",
                                   motif: "",
                                 });
