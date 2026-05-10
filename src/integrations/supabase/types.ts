@@ -2476,6 +2476,7 @@ export type Database = {
           id: string
           necessite_signature: boolean | null
           pdf_url: string | null
+          sent_at: string | null
           signataire_nom: string | null
           signed_at: string | null
           statut: string
@@ -2494,6 +2495,7 @@ export type Database = {
           id?: string
           necessite_signature?: boolean | null
           pdf_url?: string | null
+          sent_at?: string | null
           signataire_nom?: string | null
           signed_at?: string | null
           statut?: string
@@ -2512,6 +2514,7 @@ export type Database = {
           id?: string
           necessite_signature?: boolean | null
           pdf_url?: string | null
+          sent_at?: string | null
           signataire_nom?: string | null
           signed_at?: string | null
           statut?: string

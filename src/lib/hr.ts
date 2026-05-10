@@ -1377,6 +1377,7 @@ export type HrDocument = {
   token: string;
   signed_at: string | null;
   signataire_nom: string | null;
+  sent_at: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -1404,6 +1405,10 @@ export async function createHrDocument(input: {
 }): Promise<HrDocument> {
   const agence_id = await getMyAgenceId();
   const user = await getCurrentUserSafe();
+  // Les bulletins de paie n'ont pas à être signés : statut auto "signe" (confirmé).
+  const isBulletin = input.categorie === "bulletin_paie";
+  const necessite_signature = isBulletin ? false : (input.necessite_signature ?? false);
+  const statut = isBulletin ? "signe" : "brouillon";
   const { data, error } = await supabase
     .from("hr_documents" as any)
     .insert({
@@ -1413,8 +1418,8 @@ export async function createHrDocument(input: {
       titre: input.titre,
       description: input.description ?? null,
       date_document: input.date_document ?? null,
-      necessite_signature: input.necessite_signature ?? false,
-      statut: "brouillon",
+      necessite_signature,
+      statut,
       created_by: user?.id ?? null,
     })
     .select("*")
