@@ -307,7 +307,7 @@ function ContractsPage() {
     try {
       const { error } = await supabase
         .from("hr_contracts")
-        .update({ statut: "signe", date_signature: new Date().toISOString().slice(0, 10) })
+        .update({ statut: "signe", signed_at: new Date().toISOString(), signataire_nom: "Signature manuelle" })
         .eq("id", c.id);
       if (error) throw error;
       load();
