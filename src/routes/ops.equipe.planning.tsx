@@ -721,6 +721,18 @@ function PlanningPage() {
             <Button variant="outline" onClick={() => setRecupOpen(true)}>
               Récupération
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPurgeEmpId(employees[0]?.id ?? "");
+                setPurgeScope("mois");
+                setPurgeOpen(true);
+              }}
+              title="Supprimer toutes les entrées de planning d'un employé"
+            >
+              <Trash2 className="h-4 w-4 mr-1.5 text-destructive" />
+              Vider planning
+            </Button>
             <Button onClick={() => openAdd()}>+ Ajouter</Button>
           </div>
         }
