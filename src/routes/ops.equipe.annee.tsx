@@ -36,6 +36,15 @@ const COLORS: Record<EventType, string> = {
   formation: "bg-amber-400",
   deplacement: "bg-pink-400",
 };
+const EVENT_LABELS: Record<EventType, string> = {
+  travail: "Travail",
+  teletravail: "Télétravail",
+  conge: "Congé / RTT",
+  absent: "Absence",
+  recup: "Récupération",
+  formation: "Formation",
+  deplacement: "Déplacement",
+};
 
 function addMonths(yyyymm: string, n: number): string {
   const d = new Date(`${yyyymm}-01T00:00:00Z`);
