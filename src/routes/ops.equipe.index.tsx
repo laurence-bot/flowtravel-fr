@@ -622,6 +622,47 @@ function EquipeIndex() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog de suppression depuis le calendrier consolidé */}
+      <Dialog open={!!delTarget} onOpenChange={(o) => !o && setDelTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer cette entrée ?</DialogTitle>
+          </DialogHeader>
+          {delTarget && (
+            <div className="space-y-2 text-sm">
+              <p>
+                <span className="text-muted-foreground">Employé : </span>
+                <span className="font-medium">{delTarget.empName}</span>
+              </p>
+              <p>
+                <span className="text-muted-foreground">Date : </span>
+                <span className="font-medium">{delTarget.date}</span>
+                {delTarget.source.range !== delTarget.date && (
+                  <span className="text-muted-foreground"> (série complète : {delTarget.source.range})</span>
+                )}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Type : </span>
+                <span className="font-medium">{delTarget.source.label}</span>
+              </p>
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                ⚠️ La suppression est définitive. Si l'entrée couvre plusieurs jours, toute la série sera supprimée.
+                Pensez à cliquer sur « Forcer le recalcul » du planning ensuite.
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDelTarget(null)} disabled={deleting}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={deleting}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              {deleting ? "Suppression…" : "Supprimer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
