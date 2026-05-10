@@ -31,6 +31,7 @@ import {
   createRecupDemande,
   approuverRecupDemande,
   refuserRecupDemande,
+  deleteRecupDemande,
   alertesFinDeMois,
   PLANNING_TYPE_LABELS,
   planningEntryCoversDate,
