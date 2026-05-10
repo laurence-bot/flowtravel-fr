@@ -488,7 +488,7 @@ function EquipeIndex() {
                         {days.map((d) => {
                           const wk = isWeekend(d);
                           const ferie = holidays.has(d);
-                          const event = !wk && !ferie ? cellEvent(emp.id, d) : null;
+                          const event = !ferie ? cellEvent(emp.id, d) : null;
                           const col = event ? EVENT_COLORS[event] : null;
                           const src = event ? cellSource(emp.id, d) : null;
                           return (

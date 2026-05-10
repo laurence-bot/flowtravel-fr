@@ -377,7 +377,12 @@ function PlanningPage() {
     const emp = employees.find((e) => e.id === empId);
     return entries.filter((e) => {
       if (e.employee_id !== empId || !planningEntryCoversDate(e, date)) return false;
-      if ((e.type === "deplacement" || e.type === "formation") && (!isJourOuvre(date, holidays) || (emp && !estJourTravaille(emp, date)))) {
+      // Sur un jour férié : aucun badge "travaillé" affiché (jour payé non travaillé).
+      // Les heures restent comptées via le forfait contractuel côté compteur.
+      if (isJourFerie(date, holidays) && ["travail", "teletravail", "reunion", "deplacement", "formation"].includes(e.type)) {
+        return false;
+      }
+      if ((e.type === "deplacement" || e.type === "formation") && (emp && !estJourTravaille(emp, date))) {
         return false;
       }
       return true;
@@ -896,7 +901,12 @@ function PlanningPage() {
         </TabsContent>
 
         <TabsContent value="compteurs">
-          <Card className="p-0 overflow-auto">
+          <Card className="p-0 overflow-hidden">
+            <div className="px-4 py-3 border-b bg-muted/20 text-xs text-muted-foreground space-y-1">
+              <p><strong>Contractuelles</strong> : heures dues sur le mois selon le contrat (ex. Lisa 37h30 × jours ouvrés).</p>
+              <p><strong>Réalisées</strong> : heures effectivement planifiées (travail, télétravail, réunion, déplacement, formation, récupération) — fériés/CP/RTT/maladie comptés au forfait contractuel pour ne pas creuser le solde.</p>
+              <p><strong>Solde</strong> : Réalisées + Report − Contractuelles. Positif = heures à récupérer ; négatif = heures dues.</p>
+            </div>
             {compteurs.length === 0 ? (
               <p className="p-10 text-center text-muted-foreground">Aucune donnée pour ce mois</p>
             ) : (
