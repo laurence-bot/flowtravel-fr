@@ -418,6 +418,7 @@ function EquipeIndex() {
                           const ferie = holidays.has(d);
                           const event = !wk && !ferie ? cellEvent(emp.id, d) : null;
                           const col = event ? EVENT_COLORS[event] : null;
+                          const src = event ? cellSource(emp.id, d) : null;
                           return (
                             <td
                               key={d}
@@ -426,13 +427,28 @@ function EquipeIndex() {
                                 wk || ferie ? "bg-muted/20" : "",
                               ].join(" ")}
                             >
-                              {col && (
+                              {col && src ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setDelTarget({
+                                      source: src,
+                                      empName: `${emp.prenom} ${emp.nom}`,
+                                      date: d,
+                                    })
+                                  }
+                                  title={`${src.label} — cliquer pour supprimer`}
+                                  className={`inline-block w-[26px] h-[18px] rounded text-[8px] font-bold leading-[18px] ${col.bg} ${col.text} hover:ring-2 hover:ring-destructive/60 transition`}
+                                >
+                                  {col.abbr}
+                                </button>
+                              ) : col ? (
                                 <span
                                   className={`inline-block w-[26px] h-[18px] rounded text-[8px] font-bold leading-[18px] ${col.bg} ${col.text}`}
                                 >
                                   {col.abbr}
                                 </span>
-                              )}
+                              ) : null}
                             </td>
                           );
                         })}
