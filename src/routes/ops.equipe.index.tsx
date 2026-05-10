@@ -155,8 +155,8 @@ function EquipeIndex() {
           .filter((r) => r.employee_id === emp.id && r.statut === "approuvee")
           .reduce((s, r) => s + (r.heures_demandees ?? 0), 0);
         const hParJour = 7;
-        // Base = jours rythme du mois (hors fériés) × heures/jour réel
-        // (forfait paie 151,67h utilisé uniquement pour les bulletins)
+        // Base = forfait mensualisé paie (jours rythme/sem × h/jour × 52/12)
+        // Lisa temps plein → 151,67h, identique à la fiche de paie
         const ouvresSet = new Set(joursOuvres);
         const joursNeutralises: string[] = [];
         for (const a of empAbs) {
