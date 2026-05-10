@@ -146,16 +146,6 @@ function AnneePage() {
       let baseReelleTotal = 0;
       let rttAcquisesTotal = 0;
       const empAbs = absences.filter((a) => a.employee_id === emp.id);
-      // Toutes les récups approuvées de l'employé (avec date) — on utilise les heures
-      // réellement demandées, pas la durée de l'entrée planning liée.
-      const empRecups = recups.filter(
-        (r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee,
-      );
-      // Entrées planning de récup déjà liées à une demande : à ignorer pour éviter le double comptage.
-      const linkedRecupPlanningIds = new Set(
-        empRecups.map((r) => (r as any).planning_entry_id).filter(Boolean),
-      );
-      const recupDatesByEmp = new Set(empRecups.map((r) => r.date_souhaitee!));
 
       // Congés / RTT pris (jours ouvrés sur la période)
       let congesPris = 0;
@@ -191,31 +181,9 @@ function AnneePage() {
             if (ouvresSet.has(iso)) joursNeutralises.push(iso);
           }
         }
-        const empEntries = entries.filter(
-          (e) =>
-            e.employee_id === emp.id &&
-            !linkedRecupPlanningIds.has(e.id) &&
-            !(e.type === "recuperation" && planningEntryDays(e).some((d) => recupDatesByEmp.has(d))) &&
-            planningEntryDays(e).some((d) => ouvresSet.has(d)),
-        );
-        const recupAsEntries = empRecups
-          .filter((r) => r.date_souhaitee! >= days[0] && r.date_souhaitee! <= days[days.length - 1])
-          .map((r) => ({
-            id: r.id,
-            employee_id: r.employee_id,
-            agence_id: null,
-            date_start: r.date_souhaitee!,
-            date_end: r.date_souhaitee!,
-            heure_debut: r.heure_debut ?? null,
-            heure_fin: r.heure_fin ?? null,
-            type: "recuperation" as const,
-            note: null,
-            group_id: null,
-            pause_minutes: null,
-            heures_recup: r.heures_demandees,
-          }));
+        const empEntries = buildCompteurEntriesForEmployee(entries, recups, emp.id, days[0], days[days.length - 1]);
         const c = calcCompteurMensuel(
-          [...empEntries, ...recupAsEntries],
+          empEntries,
           ouvres,
           hParJour,
           emp,
