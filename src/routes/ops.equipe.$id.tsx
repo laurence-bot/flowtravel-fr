@@ -13,6 +13,7 @@ import {
   getEmployee,
   updateEmployee,
   deleteEmployee,
+  resetEmployeeData,
   CONTRACT_TYPE_LABELS,
   listJoursDus,
   createJourDu,
