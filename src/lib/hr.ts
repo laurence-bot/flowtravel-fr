@@ -950,17 +950,13 @@ export function calcCompteurMensuel(
       let dayImpact = 0;
       if (isNormalWorkedDay) {
         if (hasRttAgreement) {
-          // Exemple Lisa : journée saisie 7h30 = 7h payées + 0h30 RTT acquise.
-          // Les heures au-delà du contrat journalier restent des heures en plus.
+          // Exemple Lisa : journée 7h30 = 7h payées + 0h30 RTT acquise (alimente le pool RTT).
+          // Le compteur d'heures sup ne bouge QUE si la journée dépasse le contrat (7h30).
           const rttCredit = Math.max(0, Math.min(effective, heuresParJour) - basePaieJour);
-          const overtimeBeyondContract = Math.max(0, effective - heuresParJour);
           rttAcquises += rttCredit;
-          // Le crédit RTT journalier (0h30 entre base de paie 7h et contrat 7h30)
-          // alimente le solde = heures à rattraper. Seules les heures au-delà du
-          // contrat journalier sont en plus comptées comme heures sup.
-          dayImpact = effective < basePaieJour
-            ? effective - basePaieJour
-            : rttCredit + overtimeBeyondContract;
+          // Solde = écart par rapport au contrat journalier (sans inclure le crédit RTT,
+          // qui est compensé séparément par les jours de RTT pris dans l'année).
+          dayImpact = effective - heuresParJour;
         } else {
           dayImpact = effective - heuresParJour;
         }
