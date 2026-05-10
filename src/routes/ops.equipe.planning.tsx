@@ -305,10 +305,11 @@ function PlanningPage() {
     setEntries(plan);
     setRecups(recs);
     const joursOuvres = days.filter((d) => isJourOuvre(d, holidays));
+    const linkedRecupPlanningIds = new Set(recs.map((r) => r.planning_entry_id).filter(Boolean));
     const ouvresSet = new Set(joursOuvres);
     await Promise.all(
       actifs.map(async (emp) => {
-        const empEntries = plan.filter((e) => e.employee_id === emp.id);
+        const empEntries = plan.filter((e) => e.employee_id === emp.id && !linkedRecupPlanningIds.has(e.id));
         const empAbs = absences.filter((a) => a.employee_id === emp.id);
         const joursNeutralises: string[] = [];
         for (const a of empAbs) {
@@ -335,6 +336,7 @@ function PlanningPage() {
             note: null,
             group_id: null,
             pause_minutes: null,
+            heures_recup: r.heures_demandees,
           }));
         const hParJour = heuresContractuellesParJour(emp);
         const c = calcCompteurMensuel(
