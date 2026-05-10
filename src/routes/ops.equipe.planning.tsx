@@ -289,6 +289,7 @@ function PlanningPage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [savingRecup, setSavingRecup] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{ emp: Employee; date: string } | null>(null);
   const [tab, setTab] = useState("planning");
   const [actionEntry, setActionEntry] = useState<{ entry: PlanningEntry; emp: Employee } | null>(null);
@@ -429,6 +430,7 @@ function PlanningPage() {
   };
 
   const save = async () => {
+    if (saving) return; // garde anti double-clic
     const empId = selectedCell?.emp.id ?? form.employee_id;
     if (!empId) {
       toast.error("Employé requis");
@@ -514,7 +516,7 @@ function PlanningPage() {
               setSaving(false);
               return;
             }
-            await Promise.all(conflictEntries.map((e) => deletePlanning(e.id)));
+            for (const e of conflictEntries) await deletePlanning(e.id);
           }
           await upsertPlanning({
             employee_id: empId,
@@ -554,25 +556,23 @@ function PlanningPage() {
                 setSaving(false);
                 return;
               }
-              await Promise.all(conflictEntries.map((e) => deletePlanning(e.id)));
+              for (const e of conflictEntries) await deletePlanning(e.id);
             }
           }
           const groupId = dates.length > 1 ? crypto.randomUUID() : null;
-          await Promise.all(
-            dates.map((date) =>
-              upsertPlanning({
-                employee_id: empId,
-                date_start: date,
-                date_end: date,
-                type: form.type,
-                heure_debut: form.heure_debut || null,
-                heure_fin: form.heure_fin || null,
-                note: form.note || null,
-                group_id: groupId,
-                pause_minutes: Number(form.pause_minutes || 0),
-              } as any),
-            ),
-          );
+          for (const date of dates) {
+            await upsertPlanning({
+              employee_id: empId,
+              date_start: date,
+              date_end: date,
+              type: form.type,
+              heure_debut: form.heure_debut || null,
+              heure_fin: form.heure_fin || null,
+              note: form.note || null,
+              group_id: groupId,
+              pause_minutes: Number(form.pause_minutes || 0),
+            } as any);
+          }
           toast.success(`${dates.length} entrée(s) ajoutée(s)`);
         }
       }
@@ -640,10 +640,12 @@ function PlanningPage() {
   };
 
   const saveRecup = async () => {
+    if (savingRecup) return;
     if (!recupForm.employee_id || !recupForm.heures_demandees) {
       toast.error("Champs requis");
       return;
     }
+    setSavingRecup(true);
     try {
       await createRecupDemande({
         employee_id: recupForm.employee_id,
@@ -658,6 +660,8 @@ function PlanningPage() {
       load();
     } catch (e: any) {
       toast.error(e.message);
+    } finally {
+      setSavingRecup(false);
     }
   };
 
@@ -1497,7 +1501,7 @@ function PlanningPage() {
             <Button variant="outline" onClick={() => setRecupOpen(false)}>
               Annuler
             </Button>
-            <Button onClick={saveRecup}>Enregistrer</Button>
+            <Button onClick={saveRecup} disabled={savingRecup}>{savingRecup ? "Enregistrement…" : "Enregistrer"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
