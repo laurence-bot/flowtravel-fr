@@ -13,6 +13,7 @@ import {
   frenchHolidays,
   isJourOuvre,
   calcCompteurMensuel,
+  buildCompteurEntriesForEmployee,
   heuresContractuellesParJour,
   basePaieMensuelle,
   planningEntryDays,
