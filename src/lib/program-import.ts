@@ -123,13 +123,15 @@ export async function extractProgramFromFile(
       return { result: null, error: "L'IA n'a pas retourné de programme valide." };
     }
 
-    const result: ExtractedProgram = {
+    const rawResult: ExtractedProgram = {
       jours: data.data.jours ?? [],
       lignes: data.data.lignes ?? [],
       confiance: data.data.confiance ?? data.confiance ?? "basse",
       fournisseur_nom: data.data.fournisseur_nom ?? null,
       destination: data.data.destination ?? null,
     };
+
+    const result = sanitizeExtractedProgram(rawResult);
 
     return { result, error: null };
   } catch (e) {
@@ -245,8 +247,8 @@ export async function upsertJoursProgramme(
         .select("date_depart, date_retour")
         .eq("id", cotationId)
         .maybeSingle();
-      dateDepart = dateDepart ?? (cot?.date_depart ?? null);
-      dateRetour = dateRetour ?? (cot?.date_retour ?? null);
+      dateDepart = dateDepart ?? cot?.date_depart ?? null;
+      dateRetour = dateRetour ?? cot?.date_retour ?? null;
     }
 
     // 2) Calcule date_jour manquante à partir de date_depart si dispo.
@@ -333,10 +335,7 @@ export async function upsertJoursProgramme(
           inclusions: j.inclusions ?? match.inclusions ?? null,
         };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: upErr } = await (supabase as any)
-          .from("cotation_jours")
-          .update(patch)
-          .eq("id", match.id);
+        const { error: upErr } = await (supabase as any).from("cotation_jours").update(patch).eq("id", match.id);
         if (upErr) return { inserted, updated, skipped: 0, error: upErr.message };
         updated++;
       } else {
@@ -387,10 +386,7 @@ export async function upsertJoursProgramme(
       const target = i + 1;
       if (all[i].ordre !== target) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any)
-          .from("cotation_jours")
-          .update({ ordre: target })
-          .eq("id", all[i].id);
+        await (supabase as any).from("cotation_jours").update({ ordre: target }).eq("id", all[i].id);
       }
     }
 
@@ -452,17 +448,7 @@ export async function insertLignes(
         }
       }
 
-      toInsert.push({
-        cotation_id: cotationId,
-        user_id: userId,
-        ordre: startOrdre + idx,
-        prestation: l.prestation,
-        nom_fournisseur: l.nom_fournisseur ?? l.prestation ?? "—",
-        quantite: l.quantite ?? 1,
-        montant_devise: l.montant_devise,
-        devise: l.devise,
-        mode_tarifaire: l.mode_tarifaire === "par_personne" ? "par_personne" : "global",
-      });
+      toInsert.push(lineToDbPayload(userId, cotationId, l, startOrdre + idx));
     }
 
     if (toInsert.length > 0) {
@@ -501,10 +487,9 @@ export async function previewLignesDuplicates(
       .from("cotation_lignes_fournisseurs")
       .select("prestation, montant_devise, devise, nom_fournisseur, mode_tarifaire")
       .eq("cotation_id", cotationId);
-    const existingKeys = new Set<string>(
-      ((data ?? []) as ExistingSupplierLine[]).map((row) => supplierLineKey(row)),
-    );
-    for (const l of lignes) {
+    const existingKeys = new Set<string>(((data ?? []) as ExistingSupplierLine[]).map((row) => supplierLineKey(row)));
+    const cleaned = sanitizeExtractedProgram({ jours: [], lignes, confiance: "haute" }).lignes;
+    for (const l of cleaned) {
       const key = supplierLineKey({
         prestation: l.prestation,
         montant_devise: l.montant_devise,
@@ -529,8 +514,8 @@ export async function previewLignesDuplicates(
 //   qu'un seul clic. Les options ne se dupliquent jamais.
 //
 // Clé métier (cotation_id implicite) :
-//   prestation normalisée + nom_fournisseur normalisé + montant_devise
-//   + devise + mode_tarifaire
+//   prestation normalisée + montant_devise + devise + mode_tarifaire
+//   (fournisseur exclu volontairement pour éviter les faux doublons)
 //
 // Comportement :
 //   1. récupère toutes les lignes existantes pour cette cotation
@@ -553,27 +538,143 @@ type ExistingSupplierLine = {
 
 /** Normalise un libellé fournisseur (retire "Option:", accents, espaces, casse). */
 export function normalizeSupplierLineName(s: string | null | undefined): string {
-  return (s ?? "")
-    .toString()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    // Préfixes optionnels à neutraliser pour éviter les faux doublons
-    .replace(/^\s*(?:option\s*:|en\s+option\s*:?|optional\s*:|opt\s*:)\s*/i, "")
-    .replace(/\bopt(?:ion(?:nel(?:le)?)?)?\b\s*:?\s*/gi, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return (
+    (s ?? "")
+      .toString()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      // Préfixes optionnels à neutraliser pour éviter les faux doublons
+      .replace(/^\s*(?:option\s*:|en\s+option\s*:?|optional\s*:|opt\s*:)\s*/i, "")
+      .replace(/\bopt(?:ion(?:nel(?:le)?)?)?\b\s*:?\s*/gi, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
+}
+
+function normalizeModeTarifaire(mode: string | null | undefined): "global" | "par_personne" {
+  return mode === "par_personne" ? "par_personne" : "global";
+}
+
+function isAccommodationLineName(name: string | null | undefined): boolean {
+  const n = normalizeSupplierLineName(name);
+  return (
+    n.startsWith("hebergement ") ||
+    n.includes(" hotel ") ||
+    n.includes(" resort ") ||
+    n.includes(" villas ") ||
+    n.includes(" villa ")
+  );
+}
+
+function isPackageLineName(name: string | null | undefined): boolean {
+  const n = normalizeSupplierLineName(name);
+  return (
+    n.includes("circuit") ||
+    n.includes("programme") ||
+    n.includes("sejour") ||
+    n.includes("voyage") ||
+    n.includes("package") ||
+    n.includes("tour")
+  );
+}
+
+function roundMoney(n: number | null | undefined): string {
+  return Number(n ?? 0).toFixed(2);
+}
+
+function lineToDbPayload(userId: string, cotationId: string, l: LigneExtraite, ordre: number) {
+  const mode = normalizeModeTarifaire(l.mode_tarifaire);
+  const montantDevise = Number(l.montant_devise ?? 0);
+  const devise = (l.devise || "EUR").toUpperCase();
+
+  // Taux par défaut solide : EUR = 1, autre devise = 1 tant qu'aucune couverture FX
+  // n'a été appliquée. Cela évite les coûts fournisseurs à 0 €.
+  const taux = 1;
+
+  return {
+    cotation_id: cotationId,
+    user_id: userId,
+    ordre,
+    prestation: l.prestation,
+    nom_fournisseur: l.nom_fournisseur?.trim() || "Fournisseur à préciser",
+    quantite: Number(l.quantite ?? 1) || 1,
+    montant_devise: montantDevise,
+    devise,
+    taux_change_vers_eur: taux,
+    montant_eur: montantDevise * taux,
+    mode_tarifaire: mode,
+    pct_acompte_1: 30,
+    pct_acompte_2: 0,
+    pct_acompte_3: 0,
+    pct_solde: 70,
+    source_fx: "taux_du_jour",
+  };
+}
+
+export function sanitizeExtractedProgram(program: ExtractedProgram): ExtractedProgram {
+  const raw = program.lignes ?? [];
+
+  // Montants des lignes package/circuit : si l'IA a copié ce prix sur chaque hôtel
+  // de la liste d'hébergements, ces lignes sont fausses et doivent être supprimées.
+  const packageAmounts = new Set(
+    raw
+      .filter((l) => isPackageLineName(l.prestation) && Number(l.montant_devise ?? 0) > 0)
+      .map((l) => `${roundMoney(l.montant_devise)}|${(l.devise || "").toUpperCase()}`),
+  );
+
+  const seen = new Set<string>();
+  const lignes: LigneExtraite[] = [];
+
+  for (const l of raw) {
+    const montant = Number(l.montant_devise ?? 0);
+    if (!l.prestation?.trim() || !Number.isFinite(montant) || montant <= 0) continue;
+
+    const amountKey = `${roundMoney(montant)}|${(l.devise || "").toUpperCase()}`;
+    const looksLikeAllocatedHotel = isAccommodationLineName(l.prestation) && packageAmounts.has(amountKey);
+
+    // Exemple corrigé : une liste d'hôtels sans prix ne doit pas devenir 5 lignes
+    // fournisseur à 2695 USD chacune. Les hôtels restent sur les jours/hotel_nom.
+    if (looksLikeAllocatedHotel) continue;
+
+    const normalized: LigneExtraite = {
+      ...l,
+      quantite: Number(l.quantite ?? 1) || 1,
+      montant_devise: montant,
+      devise: (l.devise || "EUR").toUpperCase(),
+      mode_tarifaire: normalizeModeTarifaire(l.mode_tarifaire),
+      nom_fournisseur: l.nom_fournisseur?.trim() || program.fournisseur_nom || null,
+    };
+
+    const key = supplierLineKey({
+      prestation: normalized.prestation,
+      montant_devise: normalized.montant_devise,
+      devise: normalized.devise,
+      nom_fournisseur: normalized.nom_fournisseur ?? null,
+      mode_tarifaire: normalized.mode_tarifaire,
+    });
+
+    if (seen.has(key)) continue;
+    seen.add(key);
+    lignes.push(normalized);
+  }
+
+  return { ...program, lignes };
 }
 
 /** Clé unique métier d'une ligne fournisseur (cotation_id implicite). */
 export function supplierLineKey(l: ExistingSupplierLine): string {
   const presta = normalizeSupplierLineName(l.prestation);
-  const four = normalizeSupplierLineName(l.nom_fournisseur);
   const montant = Number(l.montant_devise ?? 0).toFixed(2);
   const dev = (l.devise ?? "").toUpperCase();
-  const mode = (l.mode_tarifaire ?? "global").toLowerCase();
-  return `${presta}|${four}|${montant}|${dev}|${mode}`;
+  const mode = normalizeModeTarifaire(l.mode_tarifaire);
+
+  // IMPORTANT : le fournisseur n'entre volontairement PAS dans la clé.
+  // En import PDF, la même prestation peut arriver une fois avec le vrai fournisseur
+  // (ex. Jans Tours) puis une fois avec le libellé recopié comme fournisseur.
+  // Si on garde le fournisseur dans la clé, la synchro crée des doublons.
+  return `${presta}|${montant}|${dev}|${mode}`;
 }
 
 export interface UpsertSupplierLinesResult {
@@ -588,7 +689,10 @@ export async function upsertSupplierLinesFromPdf(
   cotationId: string,
   lignes: LigneExtraite[],
 ): Promise<UpsertSupplierLinesResult> {
-  if (lignes.length === 0) {
+  const cleanProgram = sanitizeExtractedProgram({ jours: [], lignes, confiance: "haute" });
+  const cleanLines = cleanProgram.lignes;
+
+  if (cleanLines.length === 0) {
     return { inserted: 0, updated: 0, mergedDuplicates: 0, error: null };
   }
   try {
@@ -635,7 +739,7 @@ export async function upsertSupplierLinesFromPdf(
     let updated = 0;
     const seenInPdf = new Set<string>();
 
-    for (const l of lignes) {
+    for (const l of cleanLines) {
       const key = supplierLineKey({
         prestation: l.prestation,
         montant_devise: l.montant_devise,
@@ -653,14 +757,7 @@ export async function upsertSupplierLinesFromPdf(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error: uErr } = await (supabase as any)
           .from("cotation_lignes_fournisseurs")
-          .update({
-            prestation: l.prestation,
-            nom_fournisseur: l.nom_fournisseur ?? l.prestation ?? "—",
-            quantite: l.quantite ?? 1,
-            montant_devise: l.montant_devise,
-            devise: l.devise,
-            mode_tarifaire: l.mode_tarifaire === "par_personne" ? "par_personne" : "global",
-          })
+          .update(lineToDbPayload(userId, cotationId, l, existing.ordre ?? 1))
           .eq("id", existing.id);
         if (uErr) return { inserted, updated, mergedDuplicates, error: uErr.message };
         updated++;
@@ -669,23 +766,21 @@ export async function upsertSupplierLinesFromPdf(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: ins, error: iErr } = await (supabase as any)
           .from("cotation_lignes_fournisseurs")
-          .insert({
-            cotation_id: cotationId,
-            user_id: userId,
-            ordre: maxOrdre,
-            prestation: l.prestation,
-            nom_fournisseur: l.nom_fournisseur ?? l.prestation ?? "—",
-            quantite: l.quantite ?? 1,
-            montant_devise: l.montant_devise,
-            devise: l.devise,
-            mode_tarifaire: l.mode_tarifaire === "par_personne" ? "par_personne" : "global",
-          })
+          .insert(lineToDbPayload(userId, cotationId, l, maxOrdre))
           .select("id")
           .single();
         if (iErr) return { inserted, updated, mergedDuplicates, error: iErr.message };
         inserted++;
         if (ins?.id) {
-          byKey.set(key, { id: ins.id as string, prestation: l.prestation, montant_devise: l.montant_devise, devise: l.devise, nom_fournisseur: l.nom_fournisseur ?? null, mode_tarifaire: l.mode_tarifaire ?? "global", ordre: maxOrdre });
+          byKey.set(key, {
+            id: ins.id as string,
+            prestation: l.prestation,
+            montant_devise: l.montant_devise,
+            devise: l.devise,
+            nom_fournisseur: l.nom_fournisseur ?? null,
+            mode_tarifaire: l.mode_tarifaire ?? "global",
+            ordre: maxOrdre,
+          });
         }
       }
     }
@@ -730,7 +825,7 @@ export async function purgeEtReinserer(
     const j = await insertJours(userId, cotationId, program.jours, 1);
     if (j.error) return { error: j.error };
 
-    const l = await insertLignes(userId, cotationId, program.lignes, 1, "add_anyway");
+    const l = await upsertSupplierLinesFromPdf(userId, cotationId, program.lignes);
     if (l.error) return { error: l.error };
 
     return { error: null };
