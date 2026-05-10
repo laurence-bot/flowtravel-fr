@@ -786,13 +786,13 @@ export function QuoteContentEditorBlock({
             );
             if (joursResult.error) throw new Error(joursResult.error);
 
-            const lignesResult = await insertLignes(userId, cotationId, extracted.result.lignes, 1, "ignore");
+            const lignesResult = await upsertSupplierLinesFromPdf(userId, cotationId, extracted.result.lignes);
             if (lignesResult.error) throw new Error(lignesResult.error);
 
             importedPdfJours = joursResult.inserted + joursResult.updated;
             skippedPdfJours = 0;
-            importedPdfLines = lignesResult.count;
-            skippedPdfLines = lignesResult.skipped;
+            importedPdfLines = lignesResult.inserted + lignesResult.updated;
+            skippedPdfLines = lignesResult.mergedDuplicates;
           }
         }
       }
