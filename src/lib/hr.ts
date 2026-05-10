@@ -768,6 +768,15 @@ export function isJourOuvre(dateIso: string, holidays?: Set<string>): boolean {
   return !isJourFerie(dateIso, holidays);
 }
 
+function daysInIsoMonth(month: string): string[] {
+  const start = new Date(`${month}-01T00:00:00Z`);
+  const out: string[] = [];
+  for (let d = new Date(start); d.getUTCMonth() === start.getUTCMonth(); d.setUTCDate(d.getUTCDate() + 1)) {
+    out.push(d.toISOString().slice(0, 10));
+  }
+  return out;
+}
+
 /** Heures contractuelles par jour — lit depuis l'employé, sinon 7.5h. */
 export function heuresContractuellesParJour(
   emp?: (Pick<Employee, "type_contrat"> & { heures_par_jour?: number | null }) | null,
@@ -805,12 +814,12 @@ function dureeNetteEntry(e: PlanningEntry): number {
 
 /**
  * Compteur mensuel basé sur la **réalité du mois** :
- * - base = (jours rythme du mois − jours fériés) × heuresParJour
+ * - base = forfait mensualisé paie (jours rythme/sem × heuresParJour × 52 / 12)
  * - travail/teletravail/reunion : durée nette saisie (avec pause auto 30 min si oubliée)
- * - deplacement/formation : si jour rythme → forfait heuresParJour, sinon 0
+ * - deplacement/formation : si jour rythme ouvré → forfait heuresParJour, jamais d'heures sup
  * - remplacement : 0 (impact via table hr_jours_dus)
- * - recuperation : −heuresParJour
- * - jours neutralisés (CP, maladie, RTT) : comptés au forfait pour ne pas creuser le solde
+ * - recuperation : valeur demandée/saisie, plafonnée à la journée contractuelle
+ * - jours neutralisés (fériés chômés, CP, maladie, RTT) : comptés au forfait pour ne pas creuser le solde
  */
 export function calcCompteurMensuel(
   entries: PlanningEntry[],
@@ -823,6 +832,7 @@ export function calcCompteurMensuel(
   // Jours rythme du mois (filtrés des fériés via joursOuvres déjà fait par l'appelant)
   const joursRythme = emp ? joursOuvres.filter((d) => estJourTravaille(emp, d)) : joursOuvres;
   const rythmeSet = new Set(joursRythme);
+  const joursOuvresSet = new Set(joursOuvres);
   // Base = forfait mensualisé paie : (jours rythme/sem × heures/jour × 52 / 12)
   // Aligné sur la fiche de paie (151,67h pour un temps plein 5j × 7h)
   let joursParSemaine = 5;
@@ -838,13 +848,29 @@ export function calcCompteurMensuel(
   const base = (joursParSemaine * heuresParJour * 52) / 12;
 
   const heuresParJourMap = new Map<string, number>();
-  let heuresRecup = 0;
+  const heuresRecupParJour = new Map<string, number>();
+
+  const month = joursOuvres[0]?.slice(0, 7);
+  if (month) {
+    const holidays = frenchHolidays(Number(month.slice(0, 4)));
+    for (const d of daysInIsoMonth(month)) {
+      if (!isJourFerie(d, holidays)) continue;
+      if (emp ? estJourTravaille(emp, d) : new Date(`${d}T00:00:00Z`).getUTCDay() !== 0) {
+        heuresParJourMap.set(d, heuresParJour);
+      }
+    }
+  }
 
   for (const e of entries) {
     if (e.type === "recuperation") {
-      // Récup = retire des heures, valeur saisie ou forfait jour
-      const d = dureeNetteEntry(e);
-      heuresRecup += d > 0 ? d : heuresParJour;
+      // Récup = retire des heures, valeur demandée/saisie ou forfait jour, plafonnée par jour.
+      const explicit = Number((e as any).heures_recup ?? 0);
+      const duree = dureeNetteEntry(e);
+      const value = Math.min(heuresParJour, explicit > 0 ? explicit : duree > 0 ? duree : heuresParJour);
+      for (const d of planningEntryDays(e)) {
+        if (!joursOuvresSet.has(d)) continue;
+        heuresRecupParJour.set(d, Math.min(heuresParJour, (heuresRecupParJour.get(d) ?? 0) + value));
+      }
       continue;
     }
     if (e.type === "remplacement") {
@@ -858,6 +884,7 @@ export function calcCompteurMensuel(
     const duree = dureeNetteEntry(e);
 
     for (const d of planningEntryDays(e)) {
+      if (!joursOuvresSet.has(d)) continue;
       const existing = heuresParJourMap.get(d) ?? null;
       if (isContextOnly) {
         // Déplacement/formation : ne compte que sur les jours de rythme (forfait)
@@ -883,6 +910,7 @@ export function calcCompteurMensuel(
   }
 
   const travailReel = Array.from(heuresParJourMap.values()).reduce((s, h) => s + h, 0);
+  const heuresRecup = Array.from(heuresRecupParJour.values()).reduce((s, h) => s + h, 0);
   const realisees = travailReel - heuresRecup;
   const solde = Math.round((realisees - base) * 100) / 100;
   const heuresSup = Math.round(Math.max(0, realisees - base) * 100) / 100;
