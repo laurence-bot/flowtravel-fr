@@ -53,7 +53,7 @@ import {
   type FlightSegmentLite,
 } from "@/lib/itinerary-from-flights";
 import { buildJourSyncPlan, duplicateLineKey, normKey, type SyncJour } from "@/lib/cotation-sync";
-import { extractProgramFromFile, insertJours, insertLignes } from "@/lib/program-import";
+import { extractProgramFromFile, insertLignes, upsertJoursProgramme } from "@/lib/program-import";
 import { ProgramImportDialog } from "@/components/program-import-dialog";
 import {
   AlertDialog,
