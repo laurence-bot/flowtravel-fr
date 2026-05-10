@@ -197,11 +197,6 @@ function ContractsPage() {
         date_fin: contractForm.date_fin || undefined,
         contenu_html: contractForm.contenu_html || undefined,
       });
-      if (contractPdf) {
-        const url = await uploadContractPdf(contractPdf, contract.id);
-        await supabase.from("hr_contracts").update({ pdf_url: url }).eq("id", contract.id);
-        await updateHrDocument(doc.id, { pdf_url: url });
-      }
       const doc = await createHrDocument({
         employee_id: contractForm.employee_id,
         categorie: "contrat",
@@ -209,6 +204,11 @@ function ContractsPage() {
         date_document: contractForm.date_debut || undefined,
         necessite_signature: true,
       });
+      if (contractPdf) {
+        const url = await uploadContractPdf(contractPdf, contract.id);
+        await supabase.from("hr_contracts").update({ pdf_url: url }).eq("id", contract.id);
+        await updateHrDocument(doc.id, { pdf_url: url });
+      }
       setContractOpen(false);
       setContractPdf(null);
       setContractForm({
