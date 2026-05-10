@@ -125,15 +125,38 @@ function AnneePage() {
 
   // Cumul annuel par employé
   const cumulByEmp = useMemo(() => {
-    const map = new Map<string, { heuresSup: number; soldeAnnuel: number; basePaie: number; baseReelle: number }>();
+    const map = new Map<string, { heuresSup: number; soldeAnnuel: number; basePaie: number; baseReelle: number; congesPris: number; rttPris: number; rttAcquises: number }>();
+    const yearStart = startDate;
+    const yearEnd = endDate;
     for (const emp of employees) {
       const hParJour = heuresContractuellesParJour(emp);
       let heuresSup = 0;
       let soldeAnnuel = 0;
       let basePaieTotal = 0;
       let baseReelleTotal = 0;
+      let rttAcquisesTotal = 0;
       const empAbs = absences.filter((a) => a.employee_id === emp.id);
       const empRecups = recups.filter((r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee);
+
+      // Congés / RTT pris (jours ouvrés sur la période)
+      let congesPris = 0;
+      let rttPris = 0;
+      for (const a of empAbs) {
+        if (a.type !== "conge_paye" && a.type !== "rtt") continue;
+        const startD = a.date_debut > yearStart ? a.date_debut : yearStart;
+        const endD = a.date_fin < yearEnd ? a.date_fin : yearEnd;
+        if (startD > endD) continue;
+        const s = new Date(`${startD}T00:00:00Z`);
+        const e = new Date(`${endD}T00:00:00Z`);
+        for (let dt = new Date(s); dt <= e; dt.setUTCDate(dt.getUTCDate() + 1)) {
+          const iso = dt.toISOString().slice(0, 10);
+          const yr = Number(iso.slice(0, 4));
+          if (!isJourOuvre(iso, frenchHolidays(yr))) continue;
+          if (a.type === "conge_paye") congesPris += 1;
+          else rttPris += 1;
+        }
+      }
+
       for (const m of months) {
         const days = monthDays(m);
         const holidays = frenchHolidays(Number(m.slice(0, 4)));
@@ -180,16 +203,20 @@ function AnneePage() {
         soldeAnnuel += c.solde;
         basePaieTotal += basePaieMensuelle(emp);
         baseReelleTotal += c.base;
+        rttAcquisesTotal += c.rttAcquises ?? 0;
       }
       map.set(emp.id, {
         heuresSup: Math.round(heuresSup * 100) / 100,
         soldeAnnuel: Math.round(soldeAnnuel * 100) / 100,
         basePaie: Math.round(basePaieTotal * 100) / 100,
         baseReelle: Math.round(baseReelleTotal * 100) / 100,
+        congesPris,
+        rttPris,
+        rttAcquises: Math.round(rttAcquisesTotal * 100) / 100,
       });
     }
     return map;
-  }, [employees, entries, absences, recups, months]);
+  }, [employees, entries, absences, recups, months, startDate, endDate]);
 
   // Agrège pour chaque jour le type d'événement le plus parlant.
   const cellEvent = (empId: string, date: string): EventType | null => {
@@ -271,6 +298,9 @@ function AnneePage() {
                     {MONTH_LABELS[Number(m.slice(5)) - 1]} {m.slice(2, 4)}
                   </th>
                 ))}
+                <th className="px-2 py-1 border-l text-right min-w-[90px]">Congés</th>
+                <th className="px-2 py-1 border-l text-right min-w-[90px]">RTT pris</th>
+                <th className="px-2 py-1 border-l text-right min-w-[100px]">RTT acq.</th>
                 <th className="px-2 py-1 border-l text-right min-w-[100px]">H. sup an.</th>
                 <th className="px-2 py-1 border-l text-right min-w-[90px]">Solde an.</th>
               </tr>
@@ -278,7 +308,7 @@ function AnneePage() {
             <tbody>
               {employees.length === 0 && (
                 <tr>
-                  <td colSpan={months.reduce((s, m) => s + monthDays(m).length, 0) + 3} className="text-center p-10 text-muted-foreground">
+                  <td colSpan={months.reduce((s, m) => s + monthDays(m).length, 0) + 6} className="text-center p-10 text-muted-foreground">
                     Aucun employé actif
                   </td>
                 </tr>
@@ -325,6 +355,28 @@ function AnneePage() {
                         );
                       });
                     })}
+                    <td className="px-2 py-1 border-l text-right tabular-nums">
+                      {cum ? (
+                        <span className="text-muted-foreground">
+                          <span className="font-medium text-foreground">{cum.congesPris}</span>
+                          {(emp.jours_conges_par_an ?? 0) > 0 && <> / {emp.jours_conges_par_an}</>}
+                        </span>
+                      ) : "—"}
+                    </td>
+                    <td className="px-2 py-1 border-l text-right tabular-nums">
+                      {(emp.jours_rtt_par_an ?? 0) > 0 && cum ? (
+                        <span className="text-muted-foreground">
+                          <span className="font-medium text-foreground">{cum.rttPris}</span> / {emp.jours_rtt_par_an}
+                        </span>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="px-2 py-1 border-l text-right tabular-nums">
+                      {(emp.jours_rtt_par_an ?? 0) > 0 && cum ? (
+                        <span className={cum.rttAcquises > 0 ? "text-emerald-600 font-medium" : "text-muted-foreground"}>
+                          {cum.rttAcquises}h
+                        </span>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
                     <td className="px-2 py-1 border-l text-right tabular-nums font-medium">
                       {cum ? (
                         <span className={cum.heuresSup > 0 ? "text-emerald-600" : "text-muted-foreground"}>
