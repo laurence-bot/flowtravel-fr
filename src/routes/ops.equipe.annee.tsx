@@ -248,8 +248,12 @@ function AnneePage() {
       const hParJour = heuresContractuellesParJour(emp);
       const empAbs = absences.filter((a) => a.employee_id === emp.id);
       const empRecups = recups.filter(
-        (r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee && !(r as any).planning_entry_id,
+        (r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee,
       );
+      const linkedRecupPlanningIds = new Set(
+        empRecups.map((r) => (r as any).planning_entry_id).filter(Boolean),
+      );
+      const recupDatesByEmp = new Set(empRecups.map((r) => r.date_souhaitee!));
       const inner = new Map<string, MonthDetail>();
       for (const m of months) {
         const days = monthDays(m);
@@ -267,7 +271,11 @@ function AnneePage() {
           }
         }
         const empEntries = entries.filter(
-          (e) => e.employee_id === emp.id && planningEntryDays(e).some((d) => ouvresSet.has(d)),
+          (e) =>
+            e.employee_id === emp.id &&
+            !linkedRecupPlanningIds.has(e.id) &&
+            !(e.type === "recuperation" && planningEntryDays(e).some((d) => recupDatesByEmp.has(d))) &&
+            planningEntryDays(e).some((d) => ouvresSet.has(d)),
         );
         const recupAsEntries = empRecups
           .filter((r) => r.date_souhaitee! >= days[0] && r.date_souhaitee! <= days[days.length - 1])
