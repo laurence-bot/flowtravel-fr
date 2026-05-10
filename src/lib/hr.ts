@@ -212,6 +212,22 @@ export async function getMyAgenceId(): Promise<string | null> {
   return getMyAgenceIdSafe();
 }
 
+/** Supprime TOUTES les entrées de planning d'un employé (optionnellement bornées par mois YYYY-MM). */
+export async function deleteAllPlanningForEmployee(
+  employeeId: string,
+  opts?: { mois?: string },
+): Promise<number> {
+  let q = supabase.from("hr_planning_entries").delete({ count: "exact" }).eq("employee_id", employeeId);
+  if (opts?.mois) {
+    const start = `${opts.mois}-01`;
+    const [y, m] = opts.mois.split("-").map(Number);
+    const next = new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 10);
+    q = q.gte("date_start", start).lt("date_start", next);
+  }
+  const { error, count } = await q;
+  if (error) throw error;
+  return count ?? 0;
+}
 
 // =========== Employees ===========
 export async function listEmployees(): Promise<Employee[]> {

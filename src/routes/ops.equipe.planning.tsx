@@ -32,6 +32,7 @@ import {
   approuverRecupDemande,
   refuserRecupDemande,
   deleteRecupDemande,
+  deleteAllPlanningForEmployee,
   alertesFinDeMois,
   PLANNING_TYPE_LABELS,
   planningEntryCoversDate,
@@ -295,6 +296,10 @@ function PlanningPage() {
   const [actionEntry, setActionEntry] = useState<{ entry: PlanningEntry; emp: Employee } | null>(null);
 
   const [recupOpen, setRecupOpen] = useState(false);
+  const [purgeOpen, setPurgeOpen] = useState(false);
+  const [purgeEmpId, setPurgeEmpId] = useState<string>("");
+  const [purgeScope, setPurgeScope] = useState<"mois" | "tout">("mois");
+  const [purging, setPurging] = useState(false);
   const [recupForm, setRecupForm] = useState({
     employee_id: "",
     type: "heures" as RecupDemande["type"],
@@ -715,6 +720,18 @@ function PlanningPage() {
             </Button>
             <Button variant="outline" onClick={() => setRecupOpen(true)}>
               Récupération
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPurgeEmpId(employees[0]?.id ?? "");
+                setPurgeScope("mois");
+                setPurgeOpen(true);
+              }}
+              title="Supprimer toutes les entrées de planning d'un employé"
+            >
+              <Trash2 className="h-4 w-4 mr-1.5 text-destructive" />
+              Vider planning
             </Button>
             <Button onClick={() => openAdd()}>+ Ajouter</Button>
           </div>
@@ -1502,6 +1519,81 @@ function PlanningPage() {
               Annuler
             </Button>
             <Button onClick={saveRecup} disabled={savingRecup}>{savingRecup ? "Enregistrement…" : "Enregistrer"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={purgeOpen} onOpenChange={setPurgeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Vider le planning d'un employé</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Employé</Label>
+              <Select value={purgeEmpId} onValueChange={setPurgeEmpId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir un employé" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.prenom} {e.nom}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Portée</Label>
+              <Select value={purgeScope} onValueChange={(v) => setPurgeScope(v as "mois" | "tout")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mois">Mois affiché ({month})</SelectItem>
+                  <SelectItem value="tout">Tout le planning (toutes dates)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-sm text-destructive">
+              ⚠ Cette action est irréversible. Les compteurs seront recalculés.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPurgeOpen(false)} disabled={purging}>
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={!purgeEmpId || purging}
+              onClick={async () => {
+                if (purging) return;
+                const emp = employees.find((e) => e.id === purgeEmpId);
+                if (!emp) return;
+                const label =
+                  purgeScope === "mois"
+                    ? `tout le planning de ${emp.prenom} ${emp.nom} pour ${month}`
+                    : `TOUT le planning de ${emp.prenom} ${emp.nom} (toutes dates confondues)`;
+                if (!window.confirm(`Supprimer ${label} ? Cette action est irréversible.`)) return;
+                setPurging(true);
+                try {
+                  const n = await deleteAllPlanningForEmployee(
+                    purgeEmpId,
+                    purgeScope === "mois" ? { mois: month } : undefined,
+                  );
+                  toast.success(`${n} entrée(s) supprimée(s)`);
+                  setPurgeOpen(false);
+                  await load();
+                } catch (e: any) {
+                  toast.error(e.message ?? "Erreur lors de la suppression");
+                } finally {
+                  setPurging(false);
+                }
+              }}
+            >
+              {purging ? "Suppression…" : "Supprimer"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
