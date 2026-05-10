@@ -89,6 +89,23 @@ function EmployeeDetail() {
     }
   };
 
+  const resetData = async () => {
+    if (!employee) return;
+    if (
+      !confirm(
+        `Supprimer TOUTES les données RH (planning, pointage, absences, récup, contrats, évaluations, fiches de poste, documents, compteurs, jours dus) de ${employee.prenom} ${employee.nom} ?\n\nLa fiche employé est conservée. Action irréversible.`,
+      )
+    )
+      return;
+    try {
+      await resetEmployeeData(employee.id);
+      toast.success("Données RH réinitialisées");
+      reloadJoursDus();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
   if (loading) return <div className="p-10 text-center text-muted-foreground">Chargement…</div>;
   if (!employee) return <div className="p-10 text-center">Employé introuvable</div>;
 
