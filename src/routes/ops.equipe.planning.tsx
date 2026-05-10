@@ -640,10 +640,12 @@ function PlanningPage() {
   };
 
   const saveRecup = async () => {
+    if (savingRecup) return;
     if (!recupForm.employee_id || !recupForm.heures_demandees) {
       toast.error("Champs requis");
       return;
     }
+    setSavingRecup(true);
     try {
       await createRecupDemande({
         employee_id: recupForm.employee_id,
@@ -658,6 +660,8 @@ function PlanningPage() {
       load();
     } catch (e: any) {
       toast.error(e.message);
+    } finally {
+      setSavingRecup(false);
     }
   };
 
