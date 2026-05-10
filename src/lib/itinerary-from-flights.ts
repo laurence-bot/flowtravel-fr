@@ -6,7 +6,7 @@
 
 import { iataToCity, IATA_COUNTRY, countryNameFr } from "@/lib/iata";
 import { airlineName } from "@/lib/airlines";
-import { analyserConnexionVol, type VolPoint } from "@/lib/flight-connections";
+
 
 export type FlightSegmentLite = {
   id: string;
