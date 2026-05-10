@@ -209,13 +209,9 @@ export type Evaluation = {
 };
 
 export async function getMyAgenceId(): Promise<string | null> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data } = await supabase.from("user_profiles").select("agence_id").eq("user_id", user.id).maybeSingle();
-  return data?.agence_id ?? null;
+  return getMyAgenceIdSafe();
 }
+
 
 // =========== Employees ===========
 export async function listEmployees(): Promise<Employee[]> {
