@@ -308,7 +308,7 @@ function AnneePage() {
             <tbody>
               {employees.length === 0 && (
                 <tr>
-                  <td colSpan={months.reduce((s, m) => s + monthDays(m).length, 0) + 3} className="text-center p-10 text-muted-foreground">
+                  <td colSpan={months.reduce((s, m) => s + monthDays(m).length, 0) + 6} className="text-center p-10 text-muted-foreground">
                     Aucun employé actif
                   </td>
                 </tr>
