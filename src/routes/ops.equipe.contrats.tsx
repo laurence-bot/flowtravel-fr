@@ -578,7 +578,7 @@ function ContractsPage() {
                 <Label>Type</Label>
                 <Select
                   value={contractForm.type_contrat}
-                  onValueChange={(v) => setContractForm({ ...contractForm, type_contrat: v as ContractType })}
+                  onValueChange={(v) => setContractForm({ ...contractForm, type_contrat: v as ContractType, date_fin: v === "cdi" ? "" : contractForm.date_fin })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -600,14 +600,16 @@ function ContractsPage() {
                   onChange={(e) => setContractForm({ ...contractForm, date_debut: e.target.value })}
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label>Fin</Label>
-                <Input
-                  type="date"
-                  value={contractForm.date_fin}
-                  onChange={(e) => setContractForm({ ...contractForm, date_fin: e.target.value })}
-                />
-              </div>
+              {contractForm.type_contrat !== "cdi" && (
+                <div className="space-y-1.5">
+                  <Label>Fin</Label>
+                  <Input
+                    type="date"
+                    value={contractForm.date_fin}
+                    onChange={(e) => setContractForm({ ...contractForm, date_fin: e.target.value })}
+                  />
+                </div>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>Document PDF</Label>
