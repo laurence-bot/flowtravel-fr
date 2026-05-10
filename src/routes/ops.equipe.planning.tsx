@@ -382,10 +382,7 @@ function PlanningPage() {
       // Sur un jour férié : on masque uniquement les badges "travail/télétravail/réunion/formation"
       // (jour payé non travaillé). Les déplacements restent visibles car ils couvrent une plage
       // continue (ex : voyage pro qui inclut un férié).
-      if (
-        isJourFerie(date, holidays) &&
-        ["travail", "teletravail", "reunion", "formation"].includes(e.type)
-      ) {
+      if (isJourFerie(date, holidays) && ["travail", "teletravail", "reunion", "formation"].includes(e.type)) {
         return false;
       }
       // Un déplacement ou une formation couvre toute sa plage (week-end inclus) : on n'applique
@@ -909,9 +906,19 @@ function PlanningPage() {
         <TabsContent value="compteurs">
           <Card className="p-0 overflow-hidden">
             <div className="px-4 py-3 border-b bg-muted/20 text-xs text-muted-foreground space-y-1">
-              <p><strong>Contractuelles</strong> : heures dues sur le mois selon le contrat (ex. Lisa 37h30 × jours ouvrés).</p>
-              <p><strong>Réalisées</strong> : heures effectivement planifiées (travail, télétravail, réunion, déplacement, formation, récupération) — fériés/CP/RTT/maladie comptés au forfait contractuel pour ne pas creuser le solde.</p>
-              <p><strong>Solde</strong> : Réalisées + Report − Contractuelles. Positif = heures à récupérer ; négatif = heures dues.</p>
+              <p>
+                <strong>Contractuelles</strong> : heures dues sur le mois selon le contrat (ex. Lisa 37h30 × jours
+                ouvrés).
+              </p>
+              <p>
+                <strong>Réalisées</strong> : heures effectivement planifiées (travail, télétravail, réunion,
+                déplacement, formation, récupération) — fériés/CP/RTT/maladie comptés au forfait contractuel pour ne pas
+                creuser le solde.
+              </p>
+              <p>
+                <strong>Solde</strong> : Réalisées + Report − Contractuelles. Positif = heures à récupérer ; négatif =
+                heures dues.
+              </p>
             </div>
             {compteurs.length === 0 ? (
               <p className="p-10 text-center text-muted-foreground">Aucune donnée pour ce mois</p>
