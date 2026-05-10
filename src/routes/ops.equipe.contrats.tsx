@@ -504,9 +504,15 @@ function ContractsPage() {
                         <td className="px-3 py-2 text-xs">{DOC_CATEGORIE_LABELS[doc.categorie]}</td>
                         <td className="px-3 py-2">{doc.date_document ?? "—"}</td>
                         <td className="px-3 py-2">
-                          <span className={`px-2 py-0.5 rounded text-xs ${STATUT_COLORS[doc.statut] ?? ""}`}>
-                            {doc.statut}
-                          </span>
+                          {(() => {
+                            const s = docStatusLabel(doc);
+                            return (
+                              <div className="flex flex-col gap-0.5">
+                                <span className={`px-2 py-0.5 rounded text-xs w-fit ${s.cls}`}>{s.label}</span>
+                                {s.sub && <span className="text-[10px] text-muted-foreground">{s.sub}</span>}
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td className="px-3 py-2">
                           <div className="flex items-center gap-1 justify-end">
