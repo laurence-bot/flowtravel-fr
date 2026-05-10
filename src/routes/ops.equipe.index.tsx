@@ -146,6 +146,58 @@ function EquipeIndex() {
     return null;
   };
 
+  // Source d'une cellule (pour suppression depuis la vue d'ensemble)
+  type CellSource =
+    | { kind: "absence"; id: string; label: string; range: string }
+    | { kind: "planning"; id: string; label: string; range: string };
+  const cellSource = (empId: string, date: string): CellSource | null => {
+    const absence = absences.find((a) => a.employee_id === empId && a.date_debut <= date && date <= a.date_fin);
+    if (absence) {
+      return {
+        kind: "absence",
+        id: absence.id,
+        label: `Absence : ${absence.type}${absence.motif ? " — " + absence.motif : ""}`,
+        range: absence.date_debut === absence.date_fin ? absence.date_debut : `${absence.date_debut} → ${absence.date_fin}`,
+      };
+    }
+    const plan = planning.find((p) => p.employee_id === empId && p.date_start <= date && date <= p.date_end);
+    if (plan) {
+      return {
+        kind: "planning",
+        id: plan.id,
+        label: `Planning : ${plan.type}${plan.note ? " — " + plan.note : ""}`,
+        range: plan.date_start === plan.date_end ? plan.date_start : `${plan.date_start} → ${plan.date_end}`,
+      };
+    }
+    return null;
+  };
+
+  // État du dialog de suppression
+  const [delTarget, setDelTarget] = useState<
+    | { source: CellSource; empName: string; date: string }
+    | null
+  >(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const confirmDelete = async () => {
+    if (!delTarget) return;
+    setDeleting(true);
+    try {
+      if (delTarget.source.kind === "absence") {
+        await deleteAbsence(delTarget.source.id);
+      } else {
+        await deletePlanning(delTarget.source.id);
+      }
+      toast.success("Entrée supprimée");
+      setDelTarget(null);
+      await reload();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Suppression impossible");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const recapRows = useMemo(
     () =>
       employees.map((emp) => {
