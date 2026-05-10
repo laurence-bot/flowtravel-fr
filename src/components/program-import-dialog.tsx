@@ -17,7 +17,7 @@ import { Loader2, Upload, FileText, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import {
   extractProgramFromFile,
-  insertJours,
+  upsertJoursProgramme,
   insertLignes,
   previewLignesDuplicates,
   type ExtractedProgram,
