@@ -32,6 +32,7 @@ import {
   approuverRecupDemande,
   refuserRecupDemande,
   deleteRecupDemande,
+  deleteAllPlanningForEmployee,
   alertesFinDeMois,
   PLANNING_TYPE_LABELS,
   planningEntryCoversDate,
