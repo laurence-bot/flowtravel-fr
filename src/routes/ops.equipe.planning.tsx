@@ -1501,7 +1501,7 @@ function PlanningPage() {
             <Button variant="outline" onClick={() => setRecupOpen(false)}>
               Annuler
             </Button>
-            <Button onClick={saveRecup}>Enregistrer</Button>
+            <Button onClick={saveRecup} disabled={savingRecup}>{savingRecup ? "Enregistrement…" : "Enregistrer"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
