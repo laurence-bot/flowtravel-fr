@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUserSafe, getMyAgenceIdSafe } from "@/lib/auth-cache";
 
 export type ContractType = "cdi" | "cdd" | "stage" | "alternance" | "freelance" | "interim" | "autre";
 export type ContractStatut = "brouillon" | "a_signer" | "signe" | "archive" | "rompu";
