@@ -53,7 +53,7 @@ import {
   type FlightSegmentLite,
 } from "@/lib/itinerary-from-flights";
 import { buildJourSyncPlan, duplicateLineKey, normKey, type SyncJour } from "@/lib/cotation-sync";
-import { extractProgramFromFile, insertJours, insertLignes } from "@/lib/program-import";
+import { extractProgramFromFile, insertLignes, upsertJoursProgramme } from "@/lib/program-import";
 import { ProgramImportDialog } from "@/components/program-import-dialog";
 import {
   AlertDialog,
@@ -775,16 +775,22 @@ export function QuoteContentEditorBlock({
           const extracted = await extractProgramFromFile(file);
           if (extracted.error) throw new Error(extracted.error);
           if (extracted.result) {
-            // Complète les jours déjà synchronisés avec les vols sans les écraser.
-            // insertJours avec startOrdre après les jours vol, insertLignes en "ignore" pour les doublons.
-            const joursResult = await insertJours(userId, cotationId, extracted.result.jours, plan.targetCount + 1);
+            // Sync IDEMPOTENTE : upsertJoursProgramme fusionne par date_jour
+            // (puis titre normalisé) au lieu d'ajouter en aveugle. Cliquer
+            // plusieurs fois sur "Sync PDF + vols" doit donner le même résultat.
+            const joursResult = await upsertJoursProgramme(
+              userId,
+              cotationId,
+              extracted.result.jours,
+              { dateDepart: newDepart },
+            );
             if (joursResult.error) throw new Error(joursResult.error);
 
             const lignesResult = await insertLignes(userId, cotationId, extracted.result.lignes, 1, "ignore");
             if (lignesResult.error) throw new Error(lignesResult.error);
 
-            importedPdfJours = joursResult.count;
-            skippedPdfJours = joursResult.skipped;
+            importedPdfJours = joursResult.inserted + joursResult.updated;
+            skippedPdfJours = 0;
             importedPdfLines = lignesResult.count;
             skippedPdfLines = lignesResult.skipped;
           }
@@ -821,7 +827,62 @@ export function QuoteContentEditorBlock({
         removedDups = dupIds.length;
       }
 
+      // Sécurité : dédoublonne tout jour ayant la même date_jour OU le même
+      // (date_jour + titre normalisé) après synchronisation. On conserve
+      // le jour le plus "riche" (description la plus longue, titre non placeholder).
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: afterSyncJours } = await (supabase as any)
+        .from("cotation_jours")
+        .select("id, ordre, titre, description, date_jour, lieu, hotel_nom, image_url, gallery_urls, created_at")
+        .eq("cotation_id", cotationId);
+      const dayRows = (afterSyncJours ?? []) as SyncJour[];
+      const groups = new Map<string, SyncJour[]>();
+      for (const j of dayRows) {
+        if (!j.date_jour) continue;
+        const key = j.date_jour;
+        const arr = groups.get(key) ?? [];
+        arr.push(j);
+        groups.set(key, arr);
+      }
+      const toDelete: string[] = [];
+      const score = (j: SyncJour) => {
+        const titleOk = j.titre && !/^j(?:our)?\s*\d+\s*$/i.test(j.titre.trim()) ? 50 : 0;
+        return titleOk + (j.description?.length ?? 0) + (j.hotel_nom ? 20 : 0) + (j.image_url ? 10 : 0);
+      };
+      for (const arr of groups.values()) {
+        if (arr.length <= 1) continue;
+        const sorted = [...arr].sort((a, b) => score(b) - score(a));
+        for (const dup of sorted.slice(1)) toDelete.push(dup.id);
+      }
+      let mergedDups = 0;
+      if (toDelete.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: dErr } = await (supabase as any)
+          .from("cotation_jours")
+          .delete()
+          .in("id", toDelete);
+        if (dErr) throw dErr;
+        mergedDups = toDelete.length;
+
+        // Renumérotation après dédoublonnage
+        const remaining = dayRows
+          .filter((j) => !toDelete.includes(j.id))
+          .sort((a, b) => {
+            if (a.date_jour && b.date_jour) return a.date_jour.localeCompare(b.date_jour);
+            if (a.date_jour) return -1;
+            if (b.date_jour) return 1;
+            return a.ordre - b.ordre;
+          });
+        await Promise.all(
+          remaining.map((j, i) =>
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (supabase as any).from("cotation_jours").update({ ordre: i + 1 }).eq("id", j.id),
+          ),
+        );
+      }
+
       const msgParts = [`${plan.targetCount} jour${plan.targetCount > 1 ? "s" : ""} synchronisé(s)`];
+      if (mergedDups > 0) msgParts.push(`${mergedDups} doublon(s) de date fusionné(s)`);
       if (plan.deleteIds.length > 0) msgParts.push(`${plan.deleteIds.length} jour(s) doublon/en trop supprimé(s)`);
       if (plan.inserts.length > 0) msgParts.push(`${plan.inserts.length} jour(s) ajouté(s)`);
       if (importedPdfJours > 0 || importedPdfLines > 0)
