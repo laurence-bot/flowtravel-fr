@@ -33,6 +33,7 @@ type Props = {
 };
 
 export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }: Props) {
+  const storageKey = `pdfImport:${cotationId}`;
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -42,12 +43,57 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
   const [selJours, setSelJours] = useState<Set<number>>(new Set());
   const [selLignes, setSelLignes] = useState<Set<number>>(new Set());
 
+  // Restaure l'état persisté (analyse en cours, sélections) à l'ouverture.
+  useEffect(() => {
+    if (!open) return;
+    try {
+      const raw = sessionStorage.getItem(storageKey);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as {
+        result?: ExtractedProgram | null;
+        selJours?: number[];
+        selLignes?: number[];
+      };
+      if (saved.result) {
+        setResult(saved.result);
+        setSelJours(new Set(saved.selJours ?? []));
+        setSelLignes(new Set(saved.selLignes ?? []));
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [open, storageKey]);
+
+  // Persiste l'analyse + sélections (le File n'est pas sérialisable).
+  useEffect(() => {
+    if (!open) return;
+    try {
+      if (result) {
+        sessionStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            result,
+            selJours: Array.from(selJours),
+            selLignes: Array.from(selLignes),
+          }),
+        );
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [open, result, selJours, selLignes, storageKey]);
+
   const reset = () => {
     setFile(null);
     setResult(null);
     setProgressLabel("");
     setSelJours(new Set());
     setSelLignes(new Set());
+    try {
+      sessionStorage.removeItem(storageKey);
+    } catch {
+      /* ignore */
+    }
   };
 
   /** Upload le PDF dans le bucket pdf-imports et sauvegarde l'URL sur la cotation. */
