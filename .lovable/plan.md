@@ -1,54 +1,55 @@
 ## Objectif
 
-Repartir à zéro sur le dossier RH de Lisa : effacer toutes les données rattachées à son `hr_employees.id` (planning, pointage, absences, récupérations, contrats, évaluations, fiches de poste, documents, compteurs, jours dus/rendus, abonnements push), **sans supprimer la fiche employée elle-même**.
+Aligner la **base RH** sur le **forfait mensualisé paie** (151,67h pour Lisa temps plein 35h) au lieu du calcul "jours rythme réels du mois". Conséquence : le solde RH ne fluctue plus selon le nombre de fériés du mois.
 
-Deux livrables :
-1. **Nettoyage immédiat** via une opération de données ciblée sur Lisa.
-2. **Bouton réutilisable** dans la fiche employé pour refaire la remise à zéro à la demande (admin uniquement).
+## Formule
 
-## 1. Nettoyage immédiat (données)
+```
+base_mensuelle = jours_rythme_par_semaine × heures_par_jour × 52 / 12
+```
 
-Identification : `hr_employees` où `prenom ILIKE 'lisa'` (vérification du nom avant exécution pour éviter les homonymes).
+- Lisa (5 jours × 7h) → **5 × 7 × 52/12 = 151,67h**
+- Temps partiel 4 jours × 7h → 121,33h
+- Rythme A/B → moyenne des deux semaines
 
-Tables purgées pour `employee_id = <Lisa>` :
-- `hr_planning_entries`
-- `hr_time_entries`
-- `hr_absences`
-- `hr_recup_demandes`
-- `hr_contracts`
-- `hr_evaluations`
-- `hr_job_descriptions`
-- `hr_documents`
-- `hr_compteur_heures`
-- `hr_jours_dus`
-- `hr_push_subscriptions`
+## 1. `src/lib/hr.ts` — `calcCompteurMensuel`
 
-Conservé : la ligne `hr_employees` de Lisa (profil, contrat horaire, rythme, jours de congés/RTT — tout ce qui est dans la fiche) ET son `auth.user` éventuel.
+- Remplacer `const base = joursRythme.length * heuresParJour;` par le calcul forfait :
+  ```ts
+  const joursParSemaine = emp ? moyenneJoursParSemaine(emp) : 5;
+  const base = joursParSemaine * heuresParJour * 52 / 12;
+  ```
+- Ajouter helper `moyenneJoursParSemaine(emp)` :
+  - `fixe` → `semaine_a_jours.length` (fallback 5)
+  - `ab` → `(semaine_a_jours.length + semaine_b_jours.length) / 2`
+- Le reste du calcul (réalisé, neutralisations CP, récup, déplacement forfait, remplacement) ne change pas.
+- `joursNeutralises` (CP, maladie, RTT) restent comptés "comme travaillés" pour ne pas creuser le solde — comportement OK avec le forfait.
 
-Ordre de suppression : enfants d'abord (jours dus, compteurs, planning, time entries, absences, récup, contrats, evals, fiches poste, documents, push) — pas de FK croisée problématique attendue.
+## 2. UI — labels et tooltips
 
-## 2. Bouton « Réinitialiser les données RH » dans la fiche employé
+`src/routes/ops.equipe.index.tsx` :
+- Commentaire ligne 158-159 : remplacer par "Base = forfait mensualisé (jours rythme/sem × h/jour × 52/12)"
+- Si un tooltip mentionne "133h" ou "jours rythme du mois", le mettre à jour : "151,67h pour un temps plein 5j × 7h, identique à la fiche de paie"
 
-Emplacement : `src/routes/ops.equipe.$id.tsx`, dans le header (à côté de « Supprimer ») — visible uniquement pour les administrateurs (via `useRole`).
+`src/routes/ops.equipe.planning.tsx` : aucun changement de signature, juste vérifier que l'affichage du compteur dit bien "Base 151,67h" et non "Base 119h".
 
-Comportement :
-- Bouton rouge outline « Réinitialiser les données RH » avec icône `Eraser`.
-- Confirmation native : `confirm("Supprimer TOUTES les données RH (planning, pointage, absences, récup, contrats, évals, documents, compteurs, jours dus) de {Prénom Nom} ? La fiche employé est conservée. Action irréversible.")`.
-- Appelle un nouveau helper `resetEmployeeData(employeeId)` exporté depuis `src/lib/hr.ts`.
-- Toast succès + reload des données affichées (joursDus, etc.).
+## 3. Migration & nettoyage
 
-### Helper `resetEmployeeData` (src/lib/hr.ts)
+- Pas de schéma à modifier.
+- Vider `hr_compteur_heures` pour forcer recalcul (déjà géré par `clearCompteursMois` au load + bouton "Forcer le recalcul").
 
-Exécute en série les `delete()` Supabase sur les 11 tables listées ci-dessus avec `eq('employee_id', id)`. Renvoie `{ ok: true }` ou propage la première erreur. RLS existante (admin agence) couvre l'autorisation.
+## Impact
+
+| Mois 2026 | Ancienne base (réelle) | Nouvelle base (forfait) |
+|---|---|---|
+| Janvier | 147h | **151,67h** |
+| Février | 140h | **151,67h** |
+| Mars | 154h | **151,67h** |
+| Mai | 119h | **151,67h** |
+
+Le solde RH reflètera désormais l'**effort réel vs contrat paie**, pas les variations de calendrier.
 
 ## Hors scope
 
-- Suppression de la fiche `hr_employees` (l'utilisateur veut la garder).
-- Données non-RH (cotations, dossiers, factures…).
-- Recréation de seed/test data : Lisa repartira d'un dossier RH vierge.
-
-## Détails techniques
-
-- Pas de migration de schéma — uniquement des `DELETE` ciblés (outil `supabase--insert` pour le nettoyage immédiat).
-- Le trigger `trg_planning_remplacement_to_jours_dus` ne se déclenche qu'à l'INSERT, donc les DELETE sont sûrs.
-- Le bouton respecte la `useRole` admin pour éviter qu'un agent supprime son propre historique.
+- Soldes annuels CP / RTT
+- Modulation annuelle 1607h (à faire si un jour vous signez un accord de modulation)
