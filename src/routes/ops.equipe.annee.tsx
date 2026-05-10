@@ -36,6 +36,15 @@ const COLORS: Record<EventType, string> = {
   formation: "bg-amber-400",
   deplacement: "bg-pink-400",
 };
+const EVENT_LABELS: Record<EventType, string> = {
+  travail: "Travail",
+  teletravail: "Télétravail",
+  conge: "Congé / RTT",
+  absent: "Absence",
+  recup: "Récupération",
+  formation: "Formation",
+  deplacement: "Déplacement",
+};
 
 function addMonths(yyyymm: string, n: number): string {
   const d = new Date(`${yyyymm}-01T00:00:00Z`);
@@ -218,22 +227,71 @@ function AnneePage() {
     return map;
   }, [employees, entries, absences, recups, months, startDate, endDate]);
 
-  // Agrège pour chaque jour le type d'événement le plus parlant.
-  const cellEvent = (empId: string, date: string): EventType | null => {
-    const abs = absences.find((a) => a.employee_id === empId && a.date_debut <= date && date <= a.date_fin);
-    if (abs) return absenceToEvent(abs.type);
-    const e = entries.find(
-      (p) => p.employee_id === empId && planningEntryCoversDate(p, date),
-    );
-    if (e) return planningToEvent(e.type);
-    return null;
-  };
+  // Détail mois par mois (solde + répartition par type d'événement en jours ouvrés)
+  type MonthDetail = { solde: number; counts: Record<EventType, number>; ouvres: number };
+  const monthDetailByEmp = useMemo(() => {
+    const map = new Map<string, Map<string, MonthDetail>>();
+    for (const emp of employees) {
+      const hParJour = heuresContractuellesParJour(emp);
+      const empAbs = absences.filter((a) => a.employee_id === emp.id);
+      const empRecups = recups.filter((r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee);
+      const inner = new Map<string, MonthDetail>();
+      for (const m of months) {
+        const days = monthDays(m);
+        const holidays = frenchHolidays(Number(m.slice(0, 4)));
+        const ouvres = days.filter((d) => isJourOuvre(d, holidays));
+        const ouvresSet = new Set(ouvres);
+        const joursNeutralises: string[] = [];
+        for (const a of empAbs) {
+          if (!["conge_paye", "rtt", "parental", "sans_solde", "maladie"].includes(a.type)) continue;
+          const s = new Date(`${a.date_debut}T00:00:00Z`);
+          const e = new Date(`${a.date_fin}T00:00:00Z`);
+          for (let dt = new Date(s); dt <= e; dt.setUTCDate(dt.getUTCDate() + 1)) {
+            const iso = dt.toISOString().slice(0, 10);
+            if (ouvresSet.has(iso)) joursNeutralises.push(iso);
+          }
+        }
+        const empEntries = entries.filter(
+          (e) => e.employee_id === emp.id && planningEntryDays(e).some((d) => ouvresSet.has(d)),
+        );
+        const recupAsEntries = empRecups
+          .filter((r) => r.date_souhaitee! >= days[0] && r.date_souhaitee! <= days[days.length - 1])
+          .map((r) => ({
+            id: r.id, employee_id: r.employee_id, agence_id: null,
+            date_start: r.date_souhaitee!, date_end: r.date_souhaitee!,
+            heure_debut: r.heure_debut ?? null, heure_fin: r.heure_fin ?? null,
+            type: "recuperation" as const, note: null, group_id: null,
+            pause_minutes: null, heures_recup: r.heures_demandees,
+          }));
+        const c = calcCompteurMensuel(
+          [...empEntries, ...recupAsEntries], ouvres, hParJour, emp, undefined, joursNeutralises,
+        );
+        const counts: Record<EventType, number> = {
+          travail: 0, teletravail: 0, conge: 0, absent: 0, recup: 0, formation: 0, deplacement: 0,
+        };
+        for (const d of ouvres) {
+          const abs = empAbs.find((a) => a.date_debut <= d && d <= a.date_fin);
+          let ev: EventType | null = null;
+          if (abs) ev = absenceToEvent(abs.type);
+          else {
+            const pe = entries.find((p) => p.employee_id === emp.id && planningEntryCoversDate(p, d));
+            if (pe) ev = planningToEvent(pe.type);
+          }
+          if (ev) counts[ev] += 1;
+        }
+        inner.set(m, { solde: c.solde, counts, ouvres: ouvres.length });
+      }
+      map.set(emp.id, inner);
+    }
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [employees, entries, absences, recups, months]);
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Vue annuelle"
-        description="Planning consolidé sur 12 mois — heures sup à rattraper et solde de l'année"
+        description="12 mois de planning consolidé par employé — congés, RTT, heures sup et solde"
         action={
           <Button asChild variant="outline">
             <Link to="/ops/equipe">
@@ -245,12 +303,7 @@ function AnneePage() {
       />
 
       <div className="flex items-center gap-2 flex-wrap">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setStartMonth(addMonths(startMonth, -12))}
-          title="Année précédente"
-        >
+        <Button variant="outline" size="sm" onClick={() => setStartMonth(addMonths(startMonth, -12))} title="Année précédente">
           <ChevronLeft className="h-4 w-4" />
         </Button>
         <label className="text-sm text-muted-foreground">Depuis</label>
@@ -260,158 +313,173 @@ function AnneePage() {
           onChange={(e) => setStartMonth(e.target.value || "2026-05")}
           className="w-44"
         />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setStartMonth(addMonths(startMonth, 12))}
-          title="Année suivante"
-        >
+        <Button variant="outline" size="sm" onClick={() => setStartMonth(addMonths(startMonth, 12))} title="Année suivante">
           <ChevronRight className="h-4 w-4" />
         </Button>
         <span className="text-xs text-muted-foreground ml-2">
           {months[0]} → {months[months.length - 1]}
         </span>
-        <div className="flex flex-wrap gap-1.5 ml-auto">
-          {(Object.entries(COLORS) as [EventType, string][]).map(([k, c]) => (
-            <span key={k} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-              <span className={`w-2 h-2 rounded-sm ${c}`} />
-              {k}
+        <div className="flex flex-wrap gap-2 ml-auto">
+          {(Object.entries(EVENT_LABELS) as [EventType, string][]).map(([k, label]) => (
+            <span key={k} className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span className={`w-2.5 h-2.5 rounded-sm ${COLORS[k]}`} />
+              {label}
             </span>
           ))}
         </div>
       </div>
 
-      <Card className="p-0 overflow-auto">
-        {loading ? (
-          <div className="p-10 text-center text-sm text-muted-foreground">Chargement…</div>
-        ) : (
-          <table className="w-full text-[10px] border-collapse">
-            <thead>
-              <tr className="bg-muted/30 border-b">
-                <th className="text-left px-2 py-2 sticky left-0 bg-muted/30 z-10 min-w-[140px]">Employé</th>
-                {months.map((m) => (
-                  <th
-                    key={m}
-                    colSpan={monthDays(m).length}
-                    className="text-center font-medium px-1 py-1 border-l text-muted-foreground"
-                  >
-                    {MONTH_LABELS[Number(m.slice(5)) - 1]} {m.slice(2, 4)}
-                  </th>
-                ))}
-                <th className="px-2 py-1 border-l text-right min-w-[90px]">Congés</th>
-                <th className="px-2 py-1 border-l text-right min-w-[90px]">RTT pris</th>
-                <th className="px-2 py-1 border-l text-right min-w-[100px]">RTT acq.</th>
-                <th className="px-2 py-1 border-l text-right min-w-[100px]">H. sup an.</th>
-                <th className="px-2 py-1 border-l text-right min-w-[90px]">Solde an.</th>
-              </tr>
-            </thead>
-            <tbody>
-              {employees.length === 0 && (
-                <tr>
-                  <td colSpan={months.reduce((s, m) => s + monthDays(m).length, 0) + 6} className="text-center p-10 text-muted-foreground">
-                    Aucun employé actif
-                  </td>
-                </tr>
-              )}
-              {employees.map((emp) => {
-                const cum = cumulByEmp.get(emp.id);
-                return (
-                  <tr key={emp.id} className="border-b hover:bg-muted/10">
-                    <td className="px-2 py-1 sticky left-0 bg-background z-10 font-medium whitespace-nowrap">
-                      <Link to="/ops/equipe/$id" params={{ id: emp.id }} className="hover:underline">
-                        {emp.prenom} {emp.nom}
-                      </Link>
-                      {(emp.jours_rtt_par_an ?? 0) > 0 && (
-                        <span className="ml-1 text-[9px] uppercase text-muted-foreground">RTT</span>
+      {loading ? (
+        <Card className="p-10 text-center text-sm text-muted-foreground">Chargement…</Card>
+      ) : employees.length === 0 ? (
+        <Card className="p-10 text-center text-sm text-muted-foreground">Aucun employé actif</Card>
+      ) : (
+        <div className="space-y-4">
+          {employees.map((emp) => {
+            const cum = cumulByEmp.get(emp.id);
+            const detail = monthDetailByEmp.get(emp.id);
+            if (!cum || !detail) return null;
+            const hasRtt = (emp.jours_rtt_par_an ?? 0) > 0;
+            return (
+              <Card key={emp.id} className="p-4 md:p-5">
+                {/* En-tête : nom + KPIs */}
+                <div className="flex flex-wrap items-start justify-between gap-4 pb-4 border-b">
+                  <div>
+                    <Link
+                      to="/ops/equipe/$id"
+                      params={{ id: emp.id }}
+                      className="text-lg font-display hover:underline"
+                    >
+                      {emp.prenom} {emp.nom}
+                    </Link>
+                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                      <span>{heuresContractuellesParJour(emp)}h / jour</span>
+                      {hasRtt && (
+                        <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 uppercase tracking-wide text-[10px] font-medium">
+                          RTT
+                        </span>
                       )}
-                    </td>
-                    {months.map((m) => {
-                      const days = monthDays(m);
-                      return days.map((d) => {
-                        const dt = new Date(`${d}T00:00:00Z`);
-                        const dow = dt.getUTCDay();
-                        const wk = dow === 0 || dow === 6;
-                        const ev = !wk ? cellEvent(emp.id, d) : null;
-                        const isFirstOfMonth = d.endsWith("-01");
-                        return (
-                          <td
-                            key={d}
-                            title={`${d}${ev ? " · " + ev : ""}`}
-                            className={[
-                              "p-0 align-middle",
-                              isFirstOfMonth ? "border-l border-l-border/60" : "border-l border-border/10",
-                              wk ? "bg-muted/30" : "",
-                            ].join(" ")}
-                            style={{ width: 6, minWidth: 6 }}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                    <KpiTile
+                      label="Solde annuel"
+                      value={fmtH(cum.soldeAnnuel)}
+                      tone={cum.soldeAnnuel > 0 ? "positive" : cum.soldeAnnuel < 0 ? "negative" : "muted"}
+                    />
+                    <KpiTile
+                      label="Heures sup"
+                      value={`${cum.heuresSup}h`}
+                      tone={cum.heuresSup > 0 ? "positive" : "muted"}
+                    />
+                    <KpiTile
+                      label="Congés payés"
+                      value={`${cum.congesPris}${(emp.jours_conges_par_an ?? 0) > 0 ? ` / ${emp.jours_conges_par_an}` : ""}`}
+                      sub="jours"
+                    />
+                    <KpiTile
+                      label="RTT"
+                      value={hasRtt ? `${cum.rttPris} / ${emp.jours_rtt_par_an}` : "—"}
+                      sub={hasRtt ? `${cum.rttAcquises}h acquises` : undefined}
+                    />
+                  </div>
+                </div>
+
+                {/* Bandeau 12 mois */}
+                <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-2">
+                  {months.map((m) => {
+                    const d = detail.get(m)!;
+                    const total = d.ouvres || 1;
+                    const monthLabel = MONTH_LABELS[Number(m.slice(5)) - 1];
+                    const yr = m.slice(2, 4);
+                    return (
+                      <div
+                        key={m}
+                        className="rounded-md border bg-muted/20 p-2 hover:bg-muted/40 transition-colors"
+                        title={
+                          `${monthLabel} 20${yr}\n` +
+                          (Object.entries(d.counts) as [EventType, number][])
+                            .filter(([, n]) => n > 0)
+                            .map(([k, n]) => `• ${EVENT_LABELS[k]} : ${n}j`)
+                            .join("\n")
+                        }
+                      >
+                        <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1.5">
+                          <span className="font-medium uppercase tracking-wide">{monthLabel}</span>
+                          <span>{yr}</span>
+                        </div>
+                        {/* Barre empilée par type */}
+                        <div className="flex h-1.5 rounded-full overflow-hidden bg-border/40">
+                          {(Object.keys(d.counts) as EventType[]).map((k) => {
+                            const n = d.counts[k];
+                            if (!n) return null;
+                            return (
+                              <div
+                                key={k}
+                                className={COLORS[k]}
+                                style={{ width: `${(n / total) * 100}%` }}
+                              />
+                            );
+                          })}
+                        </div>
+                        <div className="mt-1.5 flex items-baseline justify-between gap-1">
+                          <span className="text-[10px] text-muted-foreground">{d.ouvres}j ouvr.</span>
+                          <span
+                            className={
+                              "text-xs tabular-nums font-medium " +
+                              (d.solde > 0
+                                ? "text-emerald-600"
+                                : d.solde < 0
+                                  ? "text-red-500"
+                                  : "text-muted-foreground")
+                            }
                           >
-                            <Link
-                              to="/ops/equipe/planning"
-                              className="block w-full"
-                              style={{ height: 18 }}
-                            >
-                              {ev && <div className={`w-full h-full ${COLORS[ev]}`} />}
-                            </Link>
-                          </td>
-                        );
-                      });
-                    })}
-                    <td className="px-2 py-1 border-l text-right tabular-nums">
-                      {cum ? (
-                        <span className="text-muted-foreground">
-                          <span className="font-medium text-foreground">{cum.congesPris}</span>
-                          {(emp.jours_conges_par_an ?? 0) > 0 && <> / {emp.jours_conges_par_an}</>}
-                        </span>
-                      ) : "—"}
-                    </td>
-                    <td className="px-2 py-1 border-l text-right tabular-nums">
-                      {(emp.jours_rtt_par_an ?? 0) > 0 && cum ? (
-                        <span className="text-muted-foreground">
-                          <span className="font-medium text-foreground">{cum.rttPris}</span> / {emp.jours_rtt_par_an}
-                        </span>
-                      ) : <span className="text-muted-foreground">—</span>}
-                    </td>
-                    <td className="px-2 py-1 border-l text-right tabular-nums">
-                      {(emp.jours_rtt_par_an ?? 0) > 0 && cum ? (
-                        <span className={cum.rttAcquises > 0 ? "text-emerald-600 font-medium" : "text-muted-foreground"}>
-                          {cum.rttAcquises}h
-                        </span>
-                      ) : <span className="text-muted-foreground">—</span>}
-                    </td>
-                    <td className="px-2 py-1 border-l text-right tabular-nums font-medium">
-                      {cum ? (
-                        <span className={cum.heuresSup > 0 ? "text-emerald-600" : "text-muted-foreground"}>
-                          {cum.heuresSup}h
-                        </span>
-                      ) : "—"}
-                    </td>
-                    <td className="px-2 py-1 border-l text-right tabular-nums font-medium">
-                      {cum ? (
-                        <span
-                          className={
-                            cum.soldeAnnuel > 0
-                              ? "text-emerald-600"
-                              : cum.soldeAnnuel < 0
-                                ? "text-red-500"
-                                : "text-muted-foreground"
-                          }
-                        >
-                          {fmtH(cum.soldeAnnuel)}
-                        </span>
-                      ) : "—"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </Card>
+                            {fmtH(d.solde)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       <p className="text-xs text-muted-foreground">
-        Les heures sup affichées correspondent au cumul, mois par mois, des heures réalisées au-dessus de
-        la base contractuelle réelle. Elles déclenchent les droits à rattrapage en jours ou en heures.
-        Les jours férié, congés payés, RTT et arrêts maladie ne creusent pas le solde.
+        Chaque mois affiche la répartition des jours ouvrés par type d'activité et le solde d'heures
+        (au-dessus ou en-dessous de la base contractuelle). Les heures sup cumulées sur l'année déclenchent
+        les droits à rattrapage. Jours fériés, congés payés, RTT et arrêts maladie ne creusent pas le solde.
       </p>
+    </div>
+  );
+}
+
+function KpiTile({
+  label,
+  value,
+  sub,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  tone?: "default" | "positive" | "negative" | "muted";
+}) {
+  const toneCls =
+    tone === "positive"
+      ? "text-emerald-600"
+      : tone === "negative"
+        ? "text-red-500"
+        : tone === "muted"
+          ? "text-muted-foreground"
+          : "text-foreground";
+  return (
+    <div className="rounded-md border bg-background px-3 py-2 min-w-[110px]">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className={`text-base font-display tabular-nums leading-tight ${toneCls}`}>{value}</div>
+      {sub && <div className="text-[10px] text-muted-foreground">{sub}</div>}
     </div>
   );
 }
