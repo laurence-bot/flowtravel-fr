@@ -1340,3 +1340,27 @@ export async function deleteJourDu(id: string): Promise<void> {
   const { error } = await supabase.from("hr_jours_dus" as any).delete().eq("id", id);
   if (error) throw error;
 }
+
+/**
+ * Réinitialise toutes les données RH d'un employé sans supprimer sa fiche.
+ * Purge : planning, pointage, absences, récup, contrats, évals, fiches poste,
+ * documents, compteurs et jours dus/rendus.
+ */
+export async function resetEmployeeData(employeeId: string): Promise<void> {
+  const tables = [
+    "hr_jours_dus",
+    "hr_compteur_heures",
+    "hr_planning_entries",
+    "hr_time_entries",
+    "hr_absences",
+    "hr_recup_demandes",
+    "hr_contracts",
+    "hr_evaluations",
+    "hr_job_descriptions",
+    "hr_documents",
+  ] as const;
+  for (const t of tables) {
+    const { error } = await supabase.from(t as any).delete().eq("employee_id", employeeId);
+    if (error) throw new Error(`${t}: ${error.message}`);
+  }
+}

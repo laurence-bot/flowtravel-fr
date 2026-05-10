@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Eraser, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import {
   getEmployee,
   updateEmployee,
   deleteEmployee,
+  resetEmployeeData,
   CONTRACT_TYPE_LABELS,
   listJoursDus,
   createJourDu,
@@ -88,6 +89,23 @@ function EmployeeDetail() {
     }
   };
 
+  const resetData = async () => {
+    if (!employee) return;
+    if (
+      !confirm(
+        `Supprimer TOUTES les données RH (planning, pointage, absences, récup, contrats, évaluations, fiches de poste, documents, compteurs, jours dus) de ${employee.prenom} ${employee.nom} ?\n\nLa fiche employé est conservée. Action irréversible.`,
+      )
+    )
+      return;
+    try {
+      await resetEmployeeData(employee.id);
+      toast.success("Données RH réinitialisées");
+      reloadJoursDus();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
   if (loading) return <div className="p-10 text-center text-muted-foreground">Chargement…</div>;
   if (!employee) return <div className="p-10 text-center">Employé introuvable</div>;
 
@@ -105,6 +123,10 @@ function EmployeeDetail() {
         description={employee.poste ?? "Employé"}
         action={
           <div className="flex gap-2">
+            <Button variant="outline" onClick={resetData} className="text-destructive hover:text-destructive">
+              <Eraser className="h-4 w-4 mr-2" />
+              Réinitialiser RH
+            </Button>
             <Button variant="outline" onClick={remove}>
               <Trash2 className="h-4 w-4 mr-2" />
               Supprimer

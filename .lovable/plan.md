@@ -1,71 +1,54 @@
 ## Objectif
 
-Aligner le calcul du compteur mensuel sur la **réalité du mois** (pas le forfait paie), avec pause déjeuner par défaut et nouveau type `remplacement`.
+Repartir à zéro sur le dossier RH de Lisa : effacer toutes les données rattachées à son `hr_employees.id` (planning, pointage, absences, récupérations, contrats, évaluations, fiches de poste, documents, compteurs, jours dus/rendus, abonnements push), **sans supprimer la fiche employée elle-même**.
 
-## 1. Données — corriger les pauses manquantes
+Deux livrables :
+1. **Nettoyage immédiat** via une opération de données ciblée sur Lisa.
+2. **Bouton réutilisable** dans la fiche employé pour refaire la remise à zéro à la demande (admin uniquement).
 
-`UPDATE` sur les 2 entrées de Lisa avec `pause_minutes = 0` :
-- 04/05/2026 → pause_minutes = 30
-- 12/05/2026 → pause_minutes = 30
+## 1. Nettoyage immédiat (données)
 
-## 2. Migration DB
+Identification : `hr_employees` où `prenom ILIKE 'lisa'` (vérification du nom avant exécution pour éviter les homonymes).
 
-- Ajouter `'remplacement'` à l'enum `hr_planning_entry_type`
-- Créer `hr_jours_dus` (employee_id, agence_id, sens 'du'|'rendu', date_origine, motif, planning_entry_id, date_extinction, extinction_entry_id, statut, note) + RLS agence
-- Trigger `hr_planning_entries`: à l'insert d'un `remplacement` → créer `hr_jours_dus` (sens='rendu') et tenter d'éteindre le plus ancien `du` ouvert de l'employé
+Tables purgées pour `employee_id = <Lisa>` :
+- `hr_planning_entries`
+- `hr_time_entries`
+- `hr_absences`
+- `hr_recup_demandes`
+- `hr_contracts`
+- `hr_evaluations`
+- `hr_job_descriptions`
+- `hr_documents`
+- `hr_compteur_heures`
+- `hr_jours_dus`
+- `hr_push_subscriptions`
 
-## 3. `src/lib/hr.ts` — refonte `calcCompteurMensuel`
+Conservé : la ligne `hr_employees` de Lisa (profil, contrat horaire, rythme, jours de congés/RTT — tout ce qui est dans la fiche) ET son `auth.user` éventuel.
 
-**Pause par défaut** : helper `dureeNetteEntry(e)` — si `type='travail'`, `heures_debut`/`heures_fin` saisis, durée brute > 6h et `pause_minutes = 0` → applique 30 min de pause par défaut.
+Ordre de suppression : enfants d'abord (jours dus, compteurs, planning, time entries, absences, récup, contrats, evals, fiches poste, documents, push) — pas de FK croisée problématique attendue.
 
-**Boucle jours du mois** :
-- `joursRythme[d]` = jour rythme (selon `rythme_semaine`/`semaine_a_jours`/`semaine_b_jours`/`semaine_ref_iso`) ET non férié
-- **Base mensuelle** = `joursRythme.length × heuresParJour` (= 7h) → pour Lisa mai 2026 : 19 × 7 = **133h**
+## 2. Bouton « Réinitialiser les données RH » dans la fiche employé
 
-**Comptage par type** :
-| Type | Comptage |
-|---|---|
-| `travail`, `teletravail`, `reunion` | `dureeNetteEntry(e)` (avec pause auto) |
-| `deplacement`, `formation` | si jour rythme → 7h forfait ; sinon **0h** |
-| `remplacement` | **0h** (impact via DB jours dus) |
-| `recuperation` | `−heuresParJour` |
-| `conge_paye` | neutre = `heuresParJour` |
+Emplacement : `src/routes/ops.equipe.$id.tsx`, dans le header (à côté de « Supprimer ») — visible uniquement pour les administrateurs (via `useRole`).
 
-**Suppression** du paramètre `baseMensuelleFixe` (forfait 151,67h n'est plus utilisé pour le solde RH).
+Comportement :
+- Bouton rouge outline « Réinitialiser les données RH » avec icône `Eraser`.
+- Confirmation native : `confirm("Supprimer TOUTES les données RH (planning, pointage, absences, récup, contrats, évals, documents, compteurs, jours dus) de {Prénom Nom} ? La fiche employé est conservée. Action irréversible.")`.
+- Appelle un nouveau helper `resetEmployeeData(employeeId)` exporté depuis `src/lib/hr.ts`.
+- Toast succès + reload des données affichées (joursDus, etc.).
 
-## 4. Types & UI planning
+### Helper `resetEmployeeData` (src/lib/hr.ts)
 
-- `PlanningEntryType` + `PLANNING_TYPE_LABELS` : ajouter `remplacement` (libellé « Remplacement »)
-- Couleur dédiée dans le calendrier planning
-- Option dans le dialog de création d'entrée
+Exécute en série les `delete()` Supabase sur les 11 tables listées ci-dessus avec `eq('employee_id', id)`. Renvoie `{ ok: true }` ou propage la première erreur. RLS existante (admin agence) couvre l'autorisation.
 
-## 5. `src/routes/ops.equipe.index.tsx`
+## Hors scope
 
-- `hParJour = 7` (au lieu de 7,5)
-- Badge mensuel : `Xh / 133h` (base réelle) avec couleur selon solde
-- Tooltip : « Forfait paie 151,67h — base réelle du mois Yh (jours rythme − fériés × 7h) »
+- Suppression de la fiche `hr_employees` (l'utilisateur veut la garder).
+- Données non-RH (cotations, dossiers, factures…).
+- Recréation de seed/test data : Lisa repartira d'un dossier RH vierge.
 
-## 6. `src/routes/ops.equipe.$id.tsx`
+## Détails techniques
 
-- Bloc « Jours à rendre / rendus » listant `hr_jours_dus` ouverts
-- Bouton « Marquer comme rendu manuellement »
-
-## 7. Hors scope
-
-- Acquisition CP / soldes annuels
-- Heures sup > 7h sur jour rythme : restent comptées telles quelles (génèrent solde positif)
-- Calcul forfait paie 151,67h : reste utilisé uniquement pour les bulletins, pas modifié
-
-## Impact recalculé pour Lisa — mai 2026
-
-- Base réelle = **133h**
-- Réalisé = 90,5h travail (avec pauses corrigées) + 49h déplacement forfait − 2,75h récup = **136,75h**
-
-  Wait — recalcul précis avec pauses corrigées :
-  - 04/05 : 7h (au lieu de 7,5h)
-  - 12/05 : 7,5h (au lieu de 8h, pause 30 min ajoutée)
-  - Travail = 9×7,5 + 2×7 = 81,5h… 
-  
-  Calcul détaillé sera refait à l'implémentation, mais ordre de grandeur : **~135h réalisé vs 133h base → solde ≈ +2h**.
-
-- Jours dus = −1 (Mer 27/05 marqué `remplacement`)
+- Pas de migration de schéma — uniquement des `DELETE` ciblés (outil `supabase--insert` pour le nettoyage immédiat).
+- Le trigger `trg_planning_remplacement_to_jours_dus` ne se déclenche qu'à l'INSERT, donc les DELETE sont sûrs.
+- Le bouton respecte la `useRole` admin pour éviter qu'un agent supprime son propre historique.
