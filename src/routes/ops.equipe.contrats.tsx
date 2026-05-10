@@ -47,7 +47,7 @@ function docStatusLabel(doc: HrDocument): { label: string; cls: string; sub?: st
   if (doc.categorie === "bulletin_paie") {
     return { label: "confirmé", cls: STATUT_COLORS.signe };
   }
-  if (doc.statut === "a_signer") {
+  if (doc.statut === "a_signer" || (doc.necessite_signature && doc.sent_at)) {
     return {
       label: "en attente de signature",
       cls: STATUT_COLORS.a_signer,
@@ -197,17 +197,18 @@ function ContractsPage() {
         date_fin: contractForm.date_fin || undefined,
         contenu_html: contractForm.contenu_html || undefined,
       });
-      if (contractPdf) {
-        const url = await uploadContractPdf(contractPdf, contract.id);
-        await supabase.from("hr_contracts").update({ pdf_url: url }).eq("id", contract.id);
-      }
-      await createHrDocument({
+      const doc = await createHrDocument({
         employee_id: contractForm.employee_id,
         categorie: "contrat",
         titre: contractForm.titre,
         date_document: contractForm.date_debut || undefined,
         necessite_signature: true,
       });
+      if (contractPdf) {
+        const url = await uploadContractPdf(contractPdf, contract.id);
+        await supabase.from("hr_contracts").update({ pdf_url: url }).eq("id", contract.id);
+        await updateHrDocument(doc.id, { pdf_url: url });
+      }
       setContractOpen(false);
       setContractPdf(null);
       setContractForm({
@@ -311,6 +312,18 @@ function ContractsPage() {
   const sendSign = async (c: Contract) => {
     try {
       await sendContractForSignature(c.id);
+      const sentAt = new Date().toISOString();
+      const matchingDoc = documents.find(
+        (d) => d.employee_id === c.employee_id && d.categorie === "contrat" && d.titre.trim() === c.titre.trim(),
+      );
+      if (matchingDoc) {
+        await updateHrDocument(matchingDoc.id, {
+          statut: "a_signer",
+          sent_at: sentAt,
+          necessite_signature: true,
+          pdf_url: matchingDoc.pdf_url ?? c.pdf_url,
+        });
+      }
       const emp = empById(c.employee_id);
       if (emp?.email) {
         await sendTransactionalEmail({
@@ -334,11 +347,24 @@ function ContractsPage() {
   const markSigned = async (c: Contract) => {
     if (!confirm(`Marquer le contrat « ${c.titre} » comme signé ?`)) return;
     try {
+      const signedAt = new Date().toISOString();
       const { error } = await supabase
         .from("hr_contracts")
-        .update({ statut: "signe", signed_at: new Date().toISOString(), signataire_nom: "Signature manuelle" })
+        .update({ statut: "signe", signed_at: signedAt, signataire_nom: "Signature manuelle" })
         .eq("id", c.id);
       if (error) throw error;
+      const matchingDoc = documents.find(
+        (d) => d.employee_id === c.employee_id && d.categorie === "contrat" && d.titre.trim() === c.titre.trim(),
+      );
+      if (matchingDoc) {
+        await updateHrDocument(matchingDoc.id, {
+          statut: "signe",
+          signed_at: signedAt,
+          signataire_nom: "Signature manuelle",
+          necessite_signature: false,
+          pdf_url: matchingDoc.pdf_url ?? c.pdf_url,
+        });
+      }
       load();
       toast.success("Contrat marqué comme signé");
     } catch (e: any) {
