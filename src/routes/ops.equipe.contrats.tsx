@@ -342,6 +342,13 @@ function ContractsPage() {
           espace_url: `${window.location.origin}/mon-espace/documents`,
         },
       });
+      // Marquer envoyé + passer en "à signer" si signature requise
+      const patch: Partial<HrDocument> = { sent_at: new Date().toISOString() };
+      if (doc.necessite_signature && doc.statut === "brouillon") {
+        patch.statut = "a_signer";
+      }
+      await updateHrDocument(doc.id, patch);
+      load();
       toast.success("Document envoyé par email");
     } catch (e: any) {
       toast.error(e.message);
