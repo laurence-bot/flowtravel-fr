@@ -4,7 +4,7 @@
 // "Départ de Marseille à HH:MM avec X, escale à Y de … à …, arrivée à Z le lendemain".
 // Si le vol arrive le lendemain, le J1 est marqué "Nuit en vol — Arrivée à destination le …".
 
-import { iataToCity, IATA_COUNTRY } from "@/lib/iata";
+import { iataToCity, IATA_COUNTRY, countryNameFr } from "@/lib/iata";
 import { airlineName } from "@/lib/airlines";
 import { analyserConnexionVol, type VolPoint } from "@/lib/flight-connections";
 
