@@ -994,9 +994,9 @@ export function calcCompteurMensuel(
           // → chaque journée à 7h30 alimente le solde de +0h30 (heures sup à récupérer).
           // → une journée à 7h ne crée AUCUN écart (0h impact).
           // Le pool rttAcquises informe sur le crédit RTT cumulé (informatif, en heures).
-          const rttCredit = Math.max(0, Math.min(effective, heuresParJour) - basePaieJour);
+          const rttCredit = effective >= heuresParJour ? heuresParJour - basePaieJour : 0;
           rttAcquises += rttCredit;
-          dayImpact = effective - basePaieJour;
+          dayImpact = effective >= heuresParJour ? effective - basePaieJour : 0;
         } else {
           dayImpact = effective - heuresParJour;
         }
