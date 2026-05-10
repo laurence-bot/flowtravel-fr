@@ -296,6 +296,10 @@ function PlanningPage() {
   const [actionEntry, setActionEntry] = useState<{ entry: PlanningEntry; emp: Employee } | null>(null);
 
   const [recupOpen, setRecupOpen] = useState(false);
+  const [purgeOpen, setPurgeOpen] = useState(false);
+  const [purgeEmpId, setPurgeEmpId] = useState<string>("");
+  const [purgeScope, setPurgeScope] = useState<"mois" | "tout">("mois");
+  const [purging, setPurging] = useState(false);
   const [recupForm, setRecupForm] = useState({
     employee_id: "",
     type: "heures" as RecupDemande["type"],
