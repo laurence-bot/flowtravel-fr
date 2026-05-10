@@ -515,7 +515,7 @@ function PlanningPage() {
               setSaving(false);
               return;
             }
-            await Promise.all(conflictEntries.map((e) => deletePlanning(e.id)));
+            for (const e of conflictEntries) await deletePlanning(e.id);
           }
           await upsertPlanning({
             employee_id: empId,
