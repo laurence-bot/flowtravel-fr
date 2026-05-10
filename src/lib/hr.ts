@@ -883,13 +883,20 @@ export function calcCompteurMensuel(
     const isContextOnly = e.type === "deplacement" || e.type === "formation";
     const duree = dureeNetteEntry(e);
 
+    // Plafond métier déplacement/formation : 7h de travail effectif par jour,
+    // hors pause (la pause de 30 min s'ajoute en amplitude mais n'est pas payée).
+    // Indépendant de heures_par_jour du contrat — pas de dépassement possible.
+    const PLAFOND_DEPLACEMENT_FORMATION = 7;
+
     for (const d of planningEntryDays(e)) {
       if (!joursOuvresSet.has(d)) continue;
       const existing = heuresParJourMap.get(d) ?? null;
       if (isContextOnly) {
-        // Déplacement/formation : ne compte que sur les jours de rythme (forfait)
+        // Déplacement/formation : ne compte que sur les jours de rythme,
+        // forfait 7h (ou durée saisie si inférieure, ex. demi-journée)
         if (rythmeSet.has(d) && existing === null) {
-          heuresParJourMap.set(d, heuresParJour);
+          const value = duree > 0 ? Math.min(duree, PLAFOND_DEPLACEMENT_FORMATION) : PLAFOND_DEPLACEMENT_FORMATION;
+          heuresParJourMap.set(d, value);
         }
       } else {
         // Travail réel : compté quel que soit le jour (samedi exceptionnel possible)
