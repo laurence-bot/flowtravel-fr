@@ -379,12 +379,18 @@ function PlanningPage() {
       if (e.employee_id !== empId || !planningEntryCoversDate(e, date)) return false;
       // Sur un jour férié : aucun badge "travaillé" affiché (jour payé non travaillé).
       // Les heures restent comptées via le forfait contractuel côté compteur.
-      if (isJourFerie(date, holidays) && ["travail", "teletravail", "reunion", "deplacement", "formation"].includes(e.type)) {
+      // Sur un jour férié : on masque uniquement les badges "travail/télétravail/réunion/formation"
+      // (jour payé non travaillé). Les déplacements restent visibles car ils couvrent une plage
+      // continue (ex : voyage pro qui inclut un férié).
+      if (
+        isJourFerie(date, holidays) &&
+        ["travail", "teletravail", "reunion", "formation"].includes(e.type)
+      ) {
         return false;
       }
-      if ((e.type === "deplacement" || e.type === "formation") && (emp && !estJourTravaille(emp, date))) {
-        return false;
-      }
+      // Un déplacement ou une formation couvre toute sa plage (week-end inclus) : on n'applique
+      // PAS le filtre "jour travaillé selon le planning hebdo" — sinon le 1er ou le dernier jour
+      // disparaît si l'employé n'est habituellement pas en poste ce jour-là.
       return true;
     });
   };
