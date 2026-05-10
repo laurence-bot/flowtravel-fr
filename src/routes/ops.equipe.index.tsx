@@ -158,7 +158,7 @@ function EquipeIndex() {
           .reduce((s, r) => s + (r.heures_demandees ?? 0), 0);
         const hParJour = heuresContractuellesParJour(emp);
         // Base = forfait mensualisé paie (jours rythme/sem × h/jour × 52/12)
-        // Lisa temps plein → 151,67h, identique à la fiche de paie
+        // Lisa 37h30 → 162,5h ; les fériés chômés sont neutralisés côté réalisé.
         const ouvresSet = new Set(joursOuvres);
         const joursNeutralises: string[] = [];
         for (const a of empAbs) {
