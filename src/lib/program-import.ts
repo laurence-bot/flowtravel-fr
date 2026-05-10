@@ -39,9 +39,13 @@ export interface JourExtrait {
   ordre: number;
   titre: string;
   lieu?: string | null;
+  /** Date du jour au format YYYY-MM-DD si disponible (source de vérité prioritaire). */
+  date_jour?: string | null;
   description?: string | null;
+  /** Nom de l'hébergement de la nuit, tel qu'écrit dans le document. */
+  hotel_nom?: string | null;
   /** Inclusions détectées (repas, transferts…) */
-  inclusions?: string[];
+  inclusions?: string[] | null;
 }
 
 export interface LigneExtraite {
