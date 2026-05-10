@@ -623,7 +623,14 @@ function EquipeIndex() {
                   <tr>
                     <th className="text-left px-4 py-3">Employé</th>
                     <th className="text-right px-4 py-3">
-                      <span title="Jours rythme du mois (hors fériés) × h/jour">Base réelle</span>
+                      <span title="Mensualisation paie 35h (152h pour un temps plein) — sert au bulletin">
+                        Base paie
+                      </span>
+                    </th>
+                    <th className="text-right px-4 py-3">
+                      <span title="Forfait contractuel réel : jours rythme × h/jour — pilote les alertes heures sup">
+                        Base réelle
+                      </span>
                     </th>
                     <th className="text-right px-4 py-3">H. réalisées</th>
                     <th className="text-right px-4 py-3">Solde</th>
@@ -638,6 +645,12 @@ function EquipeIndex() {
                       <td className="px-4 py-3 font-medium">
                         {r.nom}
                         {r.poste && <span className="ml-2 text-xs text-muted-foreground">{r.poste}</span>}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        <span className="font-medium">{r.base_paie}h</span>
+                        {r.a_rtt && (
+                          <div className="text-[10px] text-muted-foreground">RTT</div>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums">
                         <span className="font-medium">{r.heures_brutes}h</span>
@@ -668,6 +681,9 @@ function EquipeIndex() {
                 <tfoot className="border-t bg-muted/20 text-xs font-medium">
                   <tr>
                     <td className="px-4 py-2 text-muted-foreground">Total équipe</td>
+                    <td className="px-4 py-2 text-right tabular-nums">
+                      {recapRows.reduce((s, r) => s + r.base_paie, 0)}h
+                    </td>
                     <td className="px-4 py-2 text-right tabular-nums">
                       {recapRows.reduce((s, r) => s + r.heures_brutes, 0)}h
                     </td>
