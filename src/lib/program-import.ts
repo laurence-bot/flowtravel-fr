@@ -230,19 +230,55 @@ export async function upsertJoursProgramme(
   userId: string,
   cotationId: string,
   jours: JourExtrait[],
-  options?: { dateDepart?: string | null },
+  options?: { dateDepart?: string | null; dateRetour?: string | null },
 ): Promise<UpsertJoursResult> {
   if (jours.length === 0) return { inserted: 0, updated: 0, skipped: 0, error: null };
 
   try {
-    // 1) Calcule date_jour manquante à partir de date_depart si dispo.
-    const enriched: JourExtrait[] = jours.map((j) => {
+    // 1) Si dateDepart/dateRetour non fournis, on les charge depuis la cotation.
+    let dateDepart = options?.dateDepart ?? null;
+    let dateRetour = options?.dateRetour ?? null;
+    if (!dateDepart || !dateRetour) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: cot } = await (supabase as any)
+        .from("cotations")
+        .select("date_depart, date_retour")
+        .eq("id", cotationId)
+        .maybeSingle();
+      dateDepart = dateDepart ?? (cot?.date_depart ?? null);
+      dateRetour = dateRetour ?? (cot?.date_retour ?? null);
+    }
+
+    // 2) Calcule date_jour manquante à partir de date_depart si dispo.
+    const enrichedAll: JourExtrait[] = jours.map((j) => {
       if (j.date_jour) return j;
-      if (options?.dateDepart && typeof j.ordre === "number" && j.ordre >= 1) {
-        return { ...j, date_jour: addDaysISO(options.dateDepart, j.ordre - 1) };
+      if (dateDepart && typeof j.ordre === "number" && j.ordre >= 1) {
+        return { ...j, date_jour: addDaysISO(dateDepart, j.ordre - 1) };
       }
       return j;
     });
+
+    // 2bis) Garde-fou global : on ignore tout jour hors plage [dateDepart, dateRetour].
+    //       Règle métier FlowTravel : aucun jour de programme ne peut tomber
+    //       avant le départ ou après le retour de la cotation.
+    let outOfRange = 0;
+    const enriched: JourExtrait[] = enrichedAll.filter((j) => {
+      if (!j.date_jour) return true;
+      if (dateDepart && j.date_jour < dateDepart) {
+        console.warn("[program-import] jour ignoré (avant date_depart):", j.date_jour, j.titre);
+        outOfRange++;
+        return false;
+      }
+      if (dateRetour && j.date_jour > dateRetour) {
+        console.warn("[program-import] jour ignoré (après date_retour):", j.date_jour, j.titre);
+        outOfRange++;
+        return false;
+      }
+      return true;
+    });
+    if (enriched.length === 0) {
+      return { inserted: 0, updated: 0, skipped: outOfRange, error: null };
+    }
 
     // 2) Récupère les jours existants
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
