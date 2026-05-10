@@ -43,6 +43,30 @@ const STATUT_COLORS: Record<string, string> = {
   rompu: "bg-red-100 text-red-600",
 };
 
+function docStatusLabel(doc: HrDocument): { label: string; cls: string; sub?: string } {
+  if (doc.categorie === "bulletin_paie") {
+    return { label: "confirmé", cls: STATUT_COLORS.signe };
+  }
+  if (doc.statut === "a_signer") {
+    return {
+      label: "en attente de signature",
+      cls: STATUT_COLORS.a_signer,
+      sub: doc.sent_at ? `envoyé le ${new Date(doc.sent_at).toLocaleDateString("fr-FR")}` : undefined,
+    };
+  }
+  if (doc.statut === "signe") {
+    return { label: "signé", cls: STATUT_COLORS.signe };
+  }
+  if (doc.sent_at) {
+    return {
+      label: "envoyé",
+      cls: "bg-blue-100 text-blue-700",
+      sub: `le ${new Date(doc.sent_at).toLocaleDateString("fr-FR")}`,
+    };
+  }
+  return { label: doc.statut, cls: STATUT_COLORS[doc.statut] ?? "" };
+}
+
 async function uploadContractPdf(file: File, contractId: string): Promise<string> {
   const path = `contracts/${contractId}/contrat.pdf`;
   const { error } = await supabase.storage
