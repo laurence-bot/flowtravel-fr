@@ -107,15 +107,79 @@ function EquipeIndex() {
   const reload = async () => {
     setLoading(true);
     try {
-      const [emps, abs, plan, comps, recs] = await Promise.all([
+      // Invalide les compteurs stockés du mois → force un recalcul propre
+      // (sinon les soldes restent figés après une suppression de planning).
+      await clearCompteursMois(month).catch(() => {});
+      const [emps, abs, plan, recs] = await Promise.all([
         listEmployees(),
         listAbsences(),
         listPlanning(days[0], days[days.length - 1]),
-        listCompteurs(month),
         listRecupDemandes(month),
       ]);
-      setEmployees(emps.filter((e) => e.actif));
-      setAbsences(abs.filter((a) => a.statut === "approuvee" || a.statut === "signee"));
+      const actifs = emps.filter((e) => e.actif);
+      const approvedAbs = abs.filter((a) => a.statut === "approuvee" || a.statut === "signee");
+      // Recalcule les compteurs côté serveur (mêmes données que la vue planning)
+      const ouvres = days.filter((d) => isJourOuvre(d, holidays));
+      const ouvresSet = new Set(ouvres);
+      const linkedRecupPlanningIds = new Set(recs.map((r) => r.planning_entry_id).filter(Boolean));
+      const approvedRecupDatesByEmp = new Map<string, Set<string>>();
+      for (const r of recs) {
+        if (r.statut !== "approuvee" || !r.date_souhaitee) continue;
+        const set = approvedRecupDatesByEmp.get(r.employee_id) ?? new Set<string>();
+        set.add(r.date_souhaitee);
+        approvedRecupDatesByEmp.set(r.employee_id, set);
+      }
+      await Promise.all(
+        actifs.map(async (emp) => {
+          const recupDates = approvedRecupDatesByEmp.get(emp.id) ?? new Set<string>();
+          const empEntries = plan.filter(
+            (e) =>
+              e.employee_id === emp.id &&
+              !linkedRecupPlanningIds.has(e.id) &&
+              !(e.type === "recuperation" && planningEntryDays(e).some((d) => recupDates.has(d))),
+          );
+          const empAbs = approvedAbs.filter((a) => a.employee_id === emp.id);
+          const joursNeutralises: string[] = [];
+          for (const a of empAbs) {
+            if (!["conge_paye", "rtt", "parental", "sans_solde", "maladie"].includes(a.type)) continue;
+            const start = new Date(`${a.date_debut}T00:00:00Z`);
+            const end = new Date(`${a.date_fin}T00:00:00Z`);
+            for (let dt = new Date(start); dt <= end; dt.setUTCDate(dt.getUTCDate() + 1)) {
+              const iso = dt.toISOString().slice(0, 10);
+              if (ouvresSet.has(iso)) joursNeutralises.push(iso);
+            }
+          }
+          const empRecups = recs
+            .filter((r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee)
+            .map((r) => ({
+              id: r.id,
+              employee_id: r.employee_id,
+              agence_id: null,
+              date_start: r.date_souhaitee!,
+              date_end: r.date_souhaitee!,
+              heure_debut: r.heure_debut ?? null,
+              heure_fin: r.heure_fin ?? null,
+              type: "recuperation" as const,
+              note: null,
+              group_id: null,
+              pause_minutes: null,
+              heures_recup: r.heures_demandees,
+            }));
+          const hParJour = heuresContractuellesParJour(emp);
+          const c = calcCompteurMensuel(
+            [...empEntries, ...empRecups],
+            ouvres,
+            hParJour,
+            emp,
+            undefined,
+            joursNeutralises,
+          );
+          await upsertCompteur(emp.id, month, c.realisees, c.base);
+        }),
+      );
+      const comps = await listCompteurs(month);
+      setEmployees(actifs);
+      setAbsences(approvedAbs);
       setPlanning(plan);
       setCompteurs(comps);
       setRecups(recs);
