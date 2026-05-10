@@ -429,6 +429,7 @@ function PlanningPage() {
   };
 
   const save = async () => {
+    if (saving) return; // garde anti double-clic
     const empId = selectedCell?.emp.id ?? form.employee_id;
     if (!empId) {
       toast.error("Employé requis");
