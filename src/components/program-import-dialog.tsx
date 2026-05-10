@@ -243,11 +243,20 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
       <Dialog
         open={open}
         onOpenChange={(o) => {
+          // On ne ferme via cet event que si l'utilisateur n'a rien d'analysé
+          // en cours, sinon on ignore (la fermeture passe par les boutons).
+          if (!o && (loading || importing || result)) return;
           setOpen(o);
           if (!o) reset();
         }}
       >
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogContent
+          className="max-w-3xl max-h-[85vh] overflow-y-auto"
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => {
+            if (loading || importing || result) e.preventDefault();
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5" />
