@@ -823,7 +823,19 @@ export function calcCompteurMensuel(
   // Jours rythme du mois (filtrés des fériés via joursOuvres déjà fait par l'appelant)
   const joursRythme = emp ? joursOuvres.filter((d) => estJourTravaille(emp, d)) : joursOuvres;
   const rythmeSet = new Set(joursRythme);
-  const base = joursRythme.length * heuresParJour;
+  // Base = forfait mensualisé paie : (jours rythme/sem × heures/jour × 52 / 12)
+  // Aligné sur la fiche de paie (151,67h pour un temps plein 5j × 7h)
+  let joursParSemaine = 5;
+  if (emp) {
+    const a = emp.semaine_a_jours?.length ?? 5;
+    if (emp.rythme_semaine === "ab") {
+      const b = emp.semaine_b_jours?.length ?? a;
+      joursParSemaine = (a + b) / 2;
+    } else {
+      joursParSemaine = a;
+    }
+  }
+  const base = (joursParSemaine * heuresParJour * 52) / 12;
 
   const heuresParJourMap = new Map<string, number>();
   let heuresRecup = 0;
