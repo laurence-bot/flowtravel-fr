@@ -42,19 +42,21 @@ export async function getMyAgenceIdSafe(): Promise<string | null> {
   if (!userId) return null;
   if (userId in cachedAgenceIdByUser) return cachedAgenceIdByUser[userId];
   if (!agencePromiseByUser[userId]) {
-    agencePromiseByUser[userId] = supabase
-      .from("user_profiles")
-      .select("agence_id")
-      .eq("user_id", userId)
-      .maybeSingle()
-      .then(({ data }) => {
+    const p = (async () => {
+      try {
+        const { data } = await supabase
+          .from("user_profiles")
+          .select("agence_id")
+          .eq("user_id", userId)
+          .maybeSingle();
         const v = data?.agence_id ?? null;
         cachedAgenceIdByUser[userId] = v;
         return v;
-      })
-      .finally(() => {
+      } finally {
         delete agencePromiseByUser[userId];
-      });
+      }
+    })();
+    agencePromiseByUser[userId] = p;
   }
   return agencePromiseByUser[userId];
 }
