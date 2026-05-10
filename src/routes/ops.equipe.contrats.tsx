@@ -256,7 +256,12 @@ function ContractsPage() {
       }
       if (docPdf) {
         const url = await uploadHrDocumentPdf(docPdf, doc.id);
-        await updateHrDocument(doc.id, { pdf_url: url, statut: "brouillon" });
+        const isBulletin = docForm.categorie === "bulletin_paie";
+        await updateHrDocument(doc.id, {
+          pdf_url: url,
+          statut: isBulletin ? "signe" : "brouillon",
+          ...(isBulletin ? { necessite_signature: false } : {}),
+        });
       }
       setDocOpen(false);
       setDocPdf(null);
