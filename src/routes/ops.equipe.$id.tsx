@@ -123,6 +123,10 @@ function EmployeeDetail() {
         description={employee.poste ?? "Employé"}
         action={
           <div className="flex gap-2">
+            <Button variant="outline" onClick={resetData} className="text-destructive hover:text-destructive">
+              <Eraser className="h-4 w-4 mr-2" />
+              Réinitialiser RH
+            </Button>
             <Button variant="outline" onClick={remove}>
               <Trash2 className="h-4 w-4 mr-2" />
               Supprimer
