@@ -53,7 +53,7 @@ import {
   type FlightSegmentLite,
 } from "@/lib/itinerary-from-flights";
 import { buildJourSyncPlan, duplicateLineKey, normKey, type SyncJour } from "@/lib/cotation-sync";
-import { extractProgramFromFile, insertLignes, upsertJoursProgramme } from "@/lib/program-import";
+import { extractProgramFromFile, insertLignes, upsertJoursProgramme, upsertSupplierLinesFromPdf } from "@/lib/program-import";
 import { ProgramImportDialog } from "@/components/program-import-dialog";
 import {
   AlertDialog,
@@ -786,13 +786,13 @@ export function QuoteContentEditorBlock({
             );
             if (joursResult.error) throw new Error(joursResult.error);
 
-            const lignesResult = await insertLignes(userId, cotationId, extracted.result.lignes, 1, "ignore");
+            const lignesResult = await upsertSupplierLinesFromPdf(userId, cotationId, extracted.result.lignes);
             if (lignesResult.error) throw new Error(lignesResult.error);
 
             importedPdfJours = joursResult.inserted + joursResult.updated;
             skippedPdfJours = 0;
-            importedPdfLines = lignesResult.count;
-            skippedPdfLines = lignesResult.skipped;
+            importedPdfLines = lignesResult.inserted + lignesResult.updated;
+            skippedPdfLines = lignesResult.mergedDuplicates;
           }
         }
       }
