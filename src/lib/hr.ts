@@ -1087,12 +1087,38 @@ export async function approuverRecupDemande(id: string): Promise<void> {
   const d = dem as any;
   if (!d) throw new Error("Demande introuvable");
 
-  let planning_entry_id: string | null = null;
+  let planning_entry_id: string | null = d.planning_entry_id ?? null;
   if (d.date_souhaitee) {
     const employee = await getEmployee(d.employee_id);
-    const { data: ins, error: e2 } = await supabase
-      .from("hr_planning_entries")
-      .insert({
+    if (planning_entry_id) {
+      await supabase
+        .from("hr_planning_entries")
+        .delete()
+        .eq("employee_id", d.employee_id)
+        .eq("date_start", d.date_souhaitee)
+        .eq("date_end", d.date_souhaitee)
+        .eq("type", "recuperation")
+        .neq("id", planning_entry_id);
+      const { error: updatePlanningError } = await supabase
+        .from("hr_planning_entries")
+        .update({
+          heure_debut: d.heure_debut ?? null,
+          heure_fin: d.heure_fin ?? null,
+          note: d.motif ?? "Récupération",
+        } as any)
+        .eq("id", planning_entry_id);
+      if (updatePlanningError) throw updatePlanningError;
+    } else {
+      await supabase
+        .from("hr_planning_entries")
+        .delete()
+        .eq("employee_id", d.employee_id)
+        .eq("date_start", d.date_souhaitee)
+        .eq("date_end", d.date_souhaitee)
+        .eq("type", "recuperation");
+      const { data: ins, error: e2 } = await supabase
+        .from("hr_planning_entries")
+        .insert({
         employee_id: d.employee_id,
         agence_id: employee?.agence_id ?? null,
         date_start: d.date_souhaitee,
@@ -1101,12 +1127,13 @@ export async function approuverRecupDemande(id: string): Promise<void> {
         heure_debut: d.heure_debut ?? null,
         heure_fin: d.heure_fin ?? null,
         note: d.motif ?? "Récupération",
-        created_by: user?.id ?? null,
-      } as any)
-      .select("id")
-      .single();
-    if (e2) throw e2;
-    planning_entry_id = (ins as any)?.id ?? null;
+          created_by: user?.id ?? null,
+        } as any)
+        .select("id")
+        .single();
+      if (e2) throw e2;
+      planning_entry_id = (ins as any)?.id ?? null;
+    }
   }
 
   const { error } = await supabase
