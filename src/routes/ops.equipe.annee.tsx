@@ -216,13 +216,6 @@ function AnneePage() {
     for (const emp of employees) {
       const hParJour = heuresContractuellesParJour(emp);
       const empAbs = absences.filter((a) => a.employee_id === emp.id);
-      const empRecups = recups.filter(
-        (r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee,
-      );
-      const linkedRecupPlanningIds = new Set(
-        empRecups.map((r) => (r as any).planning_entry_id).filter(Boolean),
-      );
-      const recupDatesByEmp = new Set(empRecups.map((r) => r.date_souhaitee!));
       const inner = new Map<string, MonthDetail>();
       for (const m of months) {
         const days = monthDays(m);
@@ -239,24 +232,9 @@ function AnneePage() {
             if (ouvresSet.has(iso)) joursNeutralises.push(iso);
           }
         }
-        const empEntries = entries.filter(
-          (e) =>
-            e.employee_id === emp.id &&
-            !linkedRecupPlanningIds.has(e.id) &&
-            !(e.type === "recuperation" && planningEntryDays(e).some((d) => recupDatesByEmp.has(d))) &&
-            planningEntryDays(e).some((d) => ouvresSet.has(d)),
-        );
-        const recupAsEntries = empRecups
-          .filter((r) => r.date_souhaitee! >= days[0] && r.date_souhaitee! <= days[days.length - 1])
-          .map((r) => ({
-            id: r.id, employee_id: r.employee_id, agence_id: null,
-            date_start: r.date_souhaitee!, date_end: r.date_souhaitee!,
-            heure_debut: r.heure_debut ?? null, heure_fin: r.heure_fin ?? null,
-            type: "recuperation" as const, note: null, group_id: null,
-            pause_minutes: null, heures_recup: r.heures_demandees,
-          }));
+        const empEntries = buildCompteurEntriesForEmployee(entries, recups, emp.id, days[0], days[days.length - 1]);
         const c = calcCompteurMensuel(
-          [...empEntries, ...recupAsEntries], ouvres, hParJour, emp, undefined, joursNeutralises,
+          empEntries, ouvres, hParJour, emp, undefined, joursNeutralises,
         );
         const counts: Record<EventType, number> = {
           travail: 0, teletravail: 0, conge: 0, absent: 0, recup: 0, formation: 0, deplacement: 0,
