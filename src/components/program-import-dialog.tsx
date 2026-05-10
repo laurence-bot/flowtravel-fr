@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,6 +33,7 @@ type Props = {
 };
 
 export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }: Props) {
+  const storageKey = `pdfImport:${cotationId}`;
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -42,12 +43,57 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
   const [selJours, setSelJours] = useState<Set<number>>(new Set());
   const [selLignes, setSelLignes] = useState<Set<number>>(new Set());
 
+  // Restaure l'état persisté (analyse en cours, sélections) à l'ouverture.
+  useEffect(() => {
+    if (!open) return;
+    try {
+      const raw = sessionStorage.getItem(storageKey);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as {
+        result?: ExtractedProgram | null;
+        selJours?: number[];
+        selLignes?: number[];
+      };
+      if (saved.result) {
+        setResult(saved.result);
+        setSelJours(new Set(saved.selJours ?? []));
+        setSelLignes(new Set(saved.selLignes ?? []));
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [open, storageKey]);
+
+  // Persiste l'analyse + sélections (le File n'est pas sérialisable).
+  useEffect(() => {
+    if (!open) return;
+    try {
+      if (result) {
+        sessionStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            result,
+            selJours: Array.from(selJours),
+            selLignes: Array.from(selLignes),
+          }),
+        );
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [open, result, selJours, selLignes, storageKey]);
+
   const reset = () => {
     setFile(null);
     setResult(null);
     setProgressLabel("");
     setSelJours(new Set());
     setSelLignes(new Set());
+    try {
+      sessionStorage.removeItem(storageKey);
+    } catch {
+      /* ignore */
+    }
   };
 
   /** Upload le PDF dans le bucket pdf-imports et sauvegarde l'URL sur la cotation. */
@@ -197,11 +243,20 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
       <Dialog
         open={open}
         onOpenChange={(o) => {
+          // On ne ferme via cet event que si l'utilisateur n'a rien d'analysé
+          // en cours, sinon on ignore (la fermeture passe par les boutons).
+          if (!o && (loading || importing || result)) return;
           setOpen(o);
           if (!o) reset();
         }}
       >
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogContent
+          className="max-w-3xl max-h-[85vh] overflow-y-auto"
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => {
+            if (loading || importing || result) e.preventDefault();
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5" />
@@ -333,6 +388,16 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
           )}
 
           <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setOpen(false);
+                reset();
+              }}
+              disabled={importing}
+            >
+              Annuler
+            </Button>
             {result && (
               <>
                 <Button variant="ghost" onClick={reset} disabled={importing}>

@@ -12,7 +12,7 @@ import { generateDayText } from "@/server/quote-day-text.functions";
 import { suggestDayPhoto } from "@/server/quote-images.functions";
 import { generateQuoteIntro } from "@/server/quote-intro.functions";
 import type { CotationJour, Inclusions } from "@/lib/quote-public";
-import { detectInclusions, generateInclusText } from "@/lib/detect-inclusions";
+import { detectInclusions, generateInclusText, inferTripContext } from "@/lib/detect-inclusions";
 import { InclusionPills } from "@/components/cotation/InclusionPills";
 import { InclusionToggles } from "@/components/cotation/InclusionToggles";
 import { ListChecks } from "lucide-react";
@@ -644,11 +644,45 @@ export function QuoteContentEditorBlock({
     setDetectInclusionsLoading(true);
     let count = 0;
     try {
+      // Recharge vols + segments pour passer un tripContext cohérent
+      // (homeCountry / destCountry) — règle métier globale FlowTravel.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const [{ data: volsRes }, { data: linkRes }] = await Promise.all([
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from("flight_options")
+          .select("id, date_depart, date_retour, created_at")
+          .eq("cotation_id", cotationId)
+          .order("created_at", { ascending: true }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from("quote_public_links")
+          .select("chosen_flight_option_id")
+          .eq("cotation_id", cotationId)
+          .maybeSingle(),
+      ]);
+      const vols = (volsRes ?? []) as FlightOptionLite[];
+      const chosenId = (linkRes?.chosen_flight_option_id ?? null) as string | null;
+      const refVol = pickReferenceFlight(vols, chosenId);
+      let segments: FlightSegmentLite[] = [];
+      if (refVol) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: segs } = await (supabase as any)
+          .from("flight_segments")
+          .select("*")
+          .eq("flight_option_id", refVol.id)
+          .order("ordre", { ascending: true });
+        segments = (segs ?? []) as FlightSegmentLite[];
+      }
+      const tripContext = inferTripContext(segments);
+
       for (const jour of jours) {
         const detected = detectInclusions({
           titre: jour.titre,
           description: jour.description,
           jourDate: jour.date_jour,
+          segments,
+          tripContext,
         });
         if (Object.keys(detected).length > 0) {
           await updateJour(jour.id, { inclusions: detected });
