@@ -145,7 +145,11 @@ function AnneePage() {
       let baseReelleTotal = 0;
       let rttAcquisesTotal = 0;
       const empAbs = absences.filter((a) => a.employee_id === emp.id);
-      const empRecups = recups.filter((r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee);
+      // Récups approuvées NON liées à une entrée planning (sinon double comptage : l'approbation crée déjà
+      // une entrée de type "recuperation" dans le planning, qui est déjà décomptée par calcCompteurMensuel).
+      const empRecups = recups.filter(
+        (r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee && !(r as any).planning_entry_id,
+      );
 
       // Congés / RTT pris (jours ouvrés sur la période)
       let congesPris = 0;
