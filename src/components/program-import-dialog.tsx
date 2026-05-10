@@ -118,15 +118,9 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
     if (!result) return;
     setImporting(true);
 
-    // Récupère le max ordre actuel des jours et lignes pour append
-    const [{ data: joursMax }, { data: lignesMax }] = await Promise.all([
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
-        .from("cotation_jours")
-        .select("ordre")
-        .eq("cotation_id", cotationId)
-        .order("ordre", { ascending: false })
-        .limit(1),
+    // Récupère le max ordre actuel des lignes (pour append) et la date_depart
+    // de la cotation (pour calculer date_jour si l'IA ne l'a pas extraite).
+    const [{ data: lignesMax }, { data: cotationRow }] = await Promise.all([
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (supabase as any)
         .from("cotation_lignes_fournisseurs")
@@ -134,9 +128,15 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
         .eq("cotation_id", cotationId)
         .order("ordre", { ascending: false })
         .limit(1),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from("cotations")
+        .select("date_depart")
+        .eq("id", cotationId)
+        .maybeSingle(),
     ]);
-    const startJour = ((joursMax?.[0]?.ordre as number) ?? 0) + 1;
     const startLigne = ((lignesMax?.[0]?.ordre as number) ?? 0) + 1;
+    const dateDepart = (cotationRow?.date_depart as string | null) ?? null;
 
     const jours = result.jours.filter((_, i) => selJours.has(i));
     const lignes = result.lignes.filter((_, i) => selLignes.has(i));
@@ -161,7 +161,7 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
     }
 
     const [j, l] = await Promise.all([
-      insertJours(userId, cotationId, jours, startJour),
+      upsertJoursProgramme(userId, cotationId, jours, { dateDepart }),
       insertLignes(userId, cotationId, lignes, startLigne, strategy),
     ]);
     setImporting(false);
@@ -170,11 +170,12 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
     if (l.error) toast.error(`Lignes : ${l.error}`);
     if (!j.error && !l.error) {
       const skippedParts: string[] = [];
-      if (j.skipped > 0) skippedParts.push(`${j.skipped} jour(s) doublon ignoré(s)`);
       if (l.skipped > 0) skippedParts.push(`${l.skipped} ligne(s) doublon ignorée(s)`);
       if (l.replaced > 0) skippedParts.push(`${l.replaced} ligne(s) remplacée(s)`);
       const suffix = skippedParts.length > 0 ? ` — ${skippedParts.join(", ")}` : "";
-      toast.success(`${j.count} jour(s) et ${l.count} ligne(s) importés${suffix}.`);
+      toast.success(
+        `${j.inserted} jour(s) ajouté(s), ${j.updated} mis à jour, ${l.count} ligne(s) importée(s)${suffix}.`,
+      );
       setOpen(false);
       reset();
       onImported?.();
