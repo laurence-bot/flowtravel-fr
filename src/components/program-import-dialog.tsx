@@ -260,6 +260,9 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
                 <div className="font-semibold mb-2">
                   Jours détectés ({result.jours.length})
                 </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Les jours existants aux mêmes dates seront mis à jour, pas dupliqués.
+                </p>
                 <div className="space-y-2">
                   {result.jours.map((j, i) => (
                     <Card key={i} className="p-3">
@@ -271,10 +274,15 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
                         />
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium">
-                            Jour {j.ordre} — {j.titre}
+                            Jour {j.ordre}
+                            {j.date_jour ? ` · ${j.date_jour}` : ""} — {j.titre}
                           </div>
-                          {j.lieu && (
-                            <div className="text-xs text-muted-foreground">{j.lieu}</div>
+                          {(j.lieu || j.hotel_nom) && (
+                            <div className="text-xs text-muted-foreground">
+                              {j.lieu ?? ""}
+                              {j.lieu && j.hotel_nom ? " · " : ""}
+                              {j.hotel_nom ? `🏨 ${j.hotel_nom}` : ""}
+                            </div>
                           )}
                           {j.description && (
                             <div className="text-xs mt-1 text-muted-foreground line-clamp-3">
