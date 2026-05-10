@@ -524,7 +524,11 @@ export async function deletePlanningGroup(groupId: string): Promise<void> {
   if (error) throw error;
 }
 
-/** Liste les pointages de l'agence (admin). */
+/** Supprime une absence (RH). */
+export async function deleteAbsence(id: string): Promise<void> {
+  const { error } = await supabase.from("hr_absences").delete().eq("id", id);
+  if (error) throw error;
+}
 export async function listAllTimeEntries(fromIso: string, toIso: string): Promise<TimeEntry[]> {
   return listTimeEntriesAgence(fromIso, toIso);
 }

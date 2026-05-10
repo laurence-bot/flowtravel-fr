@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
-import { Plus, Users, Settings as SettingsIcon, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Users, Settings as SettingsIcon, Download, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,8 @@ import {
   calcCompteurMensuel,
   heuresContractuellesParJour,
   planningEntryDays,
+  deletePlanning,
+  deleteAbsence,
   CONTRACT_TYPE_LABELS,
   type Employee,
   type ContractType,
@@ -142,6 +144,58 @@ function EquipeIndex() {
     const plan = planning.find((p) => p.employee_id === empId && p.date_start <= date && date <= p.date_end);
     if (plan) return planningToEventType(plan.type);
     return null;
+  };
+
+  // Source d'une cellule (pour suppression depuis la vue d'ensemble)
+  type CellSource =
+    | { kind: "absence"; id: string; label: string; range: string }
+    | { kind: "planning"; id: string; label: string; range: string };
+  const cellSource = (empId: string, date: string): CellSource | null => {
+    const absence = absences.find((a) => a.employee_id === empId && a.date_debut <= date && date <= a.date_fin);
+    if (absence) {
+      return {
+        kind: "absence",
+        id: absence.id,
+        label: `Absence : ${absence.type}${absence.motif ? " — " + absence.motif : ""}`,
+        range: absence.date_debut === absence.date_fin ? absence.date_debut : `${absence.date_debut} → ${absence.date_fin}`,
+      };
+    }
+    const plan = planning.find((p) => p.employee_id === empId && p.date_start <= date && date <= p.date_end);
+    if (plan) {
+      return {
+        kind: "planning",
+        id: plan.id,
+        label: `Planning : ${plan.type}${plan.note ? " — " + plan.note : ""}`,
+        range: plan.date_start === plan.date_end ? plan.date_start : `${plan.date_start} → ${plan.date_end}`,
+      };
+    }
+    return null;
+  };
+
+  // État du dialog de suppression
+  const [delTarget, setDelTarget] = useState<
+    | { source: CellSource; empName: string; date: string }
+    | null
+  >(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const confirmDelete = async () => {
+    if (!delTarget) return;
+    setDeleting(true);
+    try {
+      if (delTarget.source.kind === "absence") {
+        await deleteAbsence(delTarget.source.id);
+      } else {
+        await deletePlanning(delTarget.source.id);
+      }
+      toast.success("Entrée supprimée");
+      setDelTarget(null);
+      await reload();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Suppression impossible");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const recapRows = useMemo(
@@ -364,6 +418,7 @@ function EquipeIndex() {
                           const ferie = holidays.has(d);
                           const event = !wk && !ferie ? cellEvent(emp.id, d) : null;
                           const col = event ? EVENT_COLORS[event] : null;
+                          const src = event ? cellSource(emp.id, d) : null;
                           return (
                             <td
                               key={d}
@@ -372,13 +427,28 @@ function EquipeIndex() {
                                 wk || ferie ? "bg-muted/20" : "",
                               ].join(" ")}
                             >
-                              {col && (
+                              {col && src ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setDelTarget({
+                                      source: src,
+                                      empName: `${emp.prenom} ${emp.nom}`,
+                                      date: d,
+                                    })
+                                  }
+                                  title={`${src.label} — cliquer pour supprimer`}
+                                  className={`inline-block w-[26px] h-[18px] rounded text-[8px] font-bold leading-[18px] ${col.bg} ${col.text} hover:ring-2 hover:ring-destructive/60 transition`}
+                                >
+                                  {col.abbr}
+                                </button>
+                              ) : col ? (
                                 <span
                                   className={`inline-block w-[26px] h-[18px] rounded text-[8px] font-bold leading-[18px] ${col.bg} ${col.text}`}
                                 >
                                   {col.abbr}
                                 </span>
-                              )}
+                              ) : null}
                             </td>
                           );
                         })}
@@ -552,6 +622,47 @@ function EquipeIndex() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog de suppression depuis le calendrier consolidé */}
+      <Dialog open={!!delTarget} onOpenChange={(o) => !o && setDelTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer cette entrée ?</DialogTitle>
+          </DialogHeader>
+          {delTarget && (
+            <div className="space-y-2 text-sm">
+              <p>
+                <span className="text-muted-foreground">Employé : </span>
+                <span className="font-medium">{delTarget.empName}</span>
+              </p>
+              <p>
+                <span className="text-muted-foreground">Date : </span>
+                <span className="font-medium">{delTarget.date}</span>
+                {delTarget.source.range !== delTarget.date && (
+                  <span className="text-muted-foreground"> (série complète : {delTarget.source.range})</span>
+                )}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Type : </span>
+                <span className="font-medium">{delTarget.source.label}</span>
+              </p>
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                ⚠️ La suppression est définitive. Si l'entrée couvre plusieurs jours, toute la série sera supprimée.
+                Pensez à cliquer sur « Forcer le recalcul » du planning ensuite.
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDelTarget(null)} disabled={deleting}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={deleting}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              {deleting ? "Suppression…" : "Supprimer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
