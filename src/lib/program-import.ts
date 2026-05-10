@@ -460,19 +460,208 @@ export async function previewLignesDuplicates(
 ): Promise<{ duplicates: number }> {
   try {
     let duplicates = 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabase as any)
+      .from("cotation_lignes_fournisseurs")
+      .select("prestation, montant_devise, devise, nom_fournisseur, mode_tarifaire")
+      .eq("cotation_id", cotationId);
+    const existingKeys = new Set<string>(
+      ((data ?? []) as ExistingSupplierLine[]).map((row) => supplierLineKey(row)),
+    );
     for (const l of lignes) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data } = await (supabase as any)
-        .from("cotation_lignes_fournisseurs")
-        .select("id")
-        .eq("cotation_id", cotationId)
-        .eq("prestation", l.prestation)
-        .limit(1);
-      if (data && data.length > 0) duplicates++;
+      const key = supplierLineKey({
+        prestation: l.prestation,
+        montant_devise: l.montant_devise,
+        devise: l.devise,
+        nom_fournisseur: l.nom_fournisseur ?? null,
+        mode_tarifaire: l.mode_tarifaire ?? "global",
+      });
+      if (existingKeys.has(key)) duplicates++;
     }
     return { duplicates };
   } catch {
     return { duplicates: 0 };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// upsertSupplierLinesFromPdf — synchronisation STRICTEMENT IDÉMPOTENTE
+// des lignes fournisseurs extraites d'un PDF.
+//
+// Règle métier globale FlowTravel :
+//   Cliquer N fois sur "Sync PDF + vols" doit produire le même résultat
+//   qu'un seul clic. Les options ne se dupliquent jamais.
+//
+// Clé métier (cotation_id implicite) :
+//   prestation normalisée + nom_fournisseur normalisé + montant_devise
+//   + devise + mode_tarifaire
+//
+// Comportement :
+//   1. récupère toutes les lignes existantes pour cette cotation
+//   2. fusionne d'abord les doublons internes côté DB sur la même clé
+//   3. pour chaque ligne extraite :
+//        - clé déjà présente → UPDATE (rafraîchit quantité/prestation lisible)
+//        - clé absente       → INSERT
+//   4. ne supprime JAMAIS les lignes existantes hors PDF (couvertures FX,
+//      saisies manuelles…) — l'upsert est additif.
+// ---------------------------------------------------------------------------
+
+type ExistingSupplierLine = {
+  id?: string;
+  prestation: string | null;
+  montant_devise: number | null;
+  devise: string | null;
+  nom_fournisseur: string | null;
+  mode_tarifaire?: string | null;
+};
+
+/** Normalise un libellé fournisseur (retire "Option:", accents, espaces, casse). */
+export function normalizeSupplierLineName(s: string | null | undefined): string {
+  return (s ?? "")
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    // Préfixes optionnels à neutraliser pour éviter les faux doublons
+    .replace(/^\s*(?:option\s*:|en\s+option\s*:?|optional\s*:|opt\s*:)\s*/i, "")
+    .replace(/\bopt(?:ion(?:nel(?:le)?)?)?\b\s*:?\s*/gi, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Clé unique métier d'une ligne fournisseur (cotation_id implicite). */
+export function supplierLineKey(l: ExistingSupplierLine): string {
+  const presta = normalizeSupplierLineName(l.prestation);
+  const four = normalizeSupplierLineName(l.nom_fournisseur);
+  const montant = Number(l.montant_devise ?? 0).toFixed(2);
+  const dev = (l.devise ?? "").toUpperCase();
+  const mode = (l.mode_tarifaire ?? "global").toLowerCase();
+  return `${presta}|${four}|${montant}|${dev}|${mode}`;
+}
+
+export interface UpsertSupplierLinesResult {
+  inserted: number;
+  updated: number;
+  mergedDuplicates: number;
+  error: string | null;
+}
+
+export async function upsertSupplierLinesFromPdf(
+  userId: string,
+  cotationId: string,
+  lignes: LigneExtraite[],
+): Promise<UpsertSupplierLinesResult> {
+  if (lignes.length === 0) {
+    return { inserted: 0, updated: 0, mergedDuplicates: 0, error: null };
+  }
+  try {
+    // 1) Récupère l'existant
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingRows, error: selErr } = await (supabase as any)
+      .from("cotation_lignes_fournisseurs")
+      .select("id, prestation, montant_devise, devise, nom_fournisseur, mode_tarifaire, ordre, created_at")
+      .eq("cotation_id", cotationId)
+      .order("created_at", { ascending: true });
+    if (selErr) return { inserted: 0, updated: 0, mergedDuplicates: 0, error: selErr.message };
+
+    type ExistingRow = ExistingSupplierLine & { id: string; ordre?: number | null; created_at?: string };
+    const rows = (existingRows ?? []) as ExistingRow[];
+
+    // 2) Fusionne d'abord les doublons internes (même clé) en supprimant les
+    //    occurrences en trop. On garde la ligne la plus ancienne (ordre stable).
+    const byKey = new Map<string, ExistingRow>();
+    const internalDupIds: string[] = [];
+    for (const row of rows) {
+      const k = supplierLineKey(row);
+      if (byKey.has(k)) internalDupIds.push(row.id);
+      else byKey.set(k, row);
+    }
+    let mergedDuplicates = 0;
+    if (internalDupIds.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: dErr } = await (supabase as any)
+        .from("cotation_lignes_fournisseurs")
+        .delete()
+        .in("id", internalDupIds);
+      if (dErr) return { inserted: 0, updated: 0, mergedDuplicates: 0, error: dErr.message };
+      mergedDuplicates = internalDupIds.length;
+    }
+
+    // 3) Calcule le prochain "ordre" pour les insertions
+    let maxOrdre = 0;
+    for (const row of byKey.values()) {
+      if ((row.ordre ?? 0) > maxOrdre) maxOrdre = row.ordre ?? 0;
+    }
+
+    // 4) Pour chaque ligne extraite : upsert sur la clé métier
+    let inserted = 0;
+    let updated = 0;
+    const seenInPdf = new Set<string>();
+
+    for (const l of lignes) {
+      const key = supplierLineKey({
+        prestation: l.prestation,
+        montant_devise: l.montant_devise,
+        devise: l.devise,
+        nom_fournisseur: l.nom_fournisseur ?? null,
+        mode_tarifaire: l.mode_tarifaire ?? "global",
+      });
+      // Évite de traiter deux fois la même ligne dans le même PDF
+      if (seenInPdf.has(key)) continue;
+      seenInPdf.add(key);
+
+      const existing = byKey.get(key);
+      if (existing) {
+        // UPDATE : rafraîchit prestation lisible / quantité / fournisseur
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: uErr } = await (supabase as any)
+          .from("cotation_lignes_fournisseurs")
+          .update({
+            prestation: l.prestation,
+            nom_fournisseur: l.nom_fournisseur ?? l.prestation ?? "—",
+            quantite: l.quantite ?? 1,
+            montant_devise: l.montant_devise,
+            devise: l.devise,
+            mode_tarifaire: l.mode_tarifaire === "par_personne" ? "par_personne" : "global",
+          })
+          .eq("id", existing.id);
+        if (uErr) return { inserted, updated, mergedDuplicates, error: uErr.message };
+        updated++;
+      } else {
+        maxOrdre += 1;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: ins, error: iErr } = await (supabase as any)
+          .from("cotation_lignes_fournisseurs")
+          .insert({
+            cotation_id: cotationId,
+            user_id: userId,
+            ordre: maxOrdre,
+            prestation: l.prestation,
+            nom_fournisseur: l.nom_fournisseur ?? l.prestation ?? "—",
+            quantite: l.quantite ?? 1,
+            montant_devise: l.montant_devise,
+            devise: l.devise,
+            mode_tarifaire: l.mode_tarifaire === "par_personne" ? "par_personne" : "global",
+          })
+          .select("id")
+          .single();
+        if (iErr) return { inserted, updated, mergedDuplicates, error: iErr.message };
+        inserted++;
+        if (ins?.id) {
+          byKey.set(key, { id: ins.id as string, prestation: l.prestation, montant_devise: l.montant_devise, devise: l.devise, nom_fournisseur: l.nom_fournisseur ?? null, mode_tarifaire: l.mode_tarifaire ?? "global", ordre: maxOrdre });
+        }
+      }
+    }
+
+    return { inserted, updated, mergedDuplicates, error: null };
+  } catch (e) {
+    return {
+      inserted: 0,
+      updated: 0,
+      mergedDuplicates: 0,
+      error: e instanceof Error ? e.message : "Erreur upsertSupplierLinesFromPdf.",
+    };
   }
 }
 
