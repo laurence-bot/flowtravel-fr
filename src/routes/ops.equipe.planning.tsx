@@ -559,21 +559,19 @@ function PlanningPage() {
             }
           }
           const groupId = dates.length > 1 ? crypto.randomUUID() : null;
-          await Promise.all(
-            dates.map((date) =>
-              upsertPlanning({
-                employee_id: empId,
-                date_start: date,
-                date_end: date,
-                type: form.type,
-                heure_debut: form.heure_debut || null,
-                heure_fin: form.heure_fin || null,
-                note: form.note || null,
-                group_id: groupId,
-                pause_minutes: Number(form.pause_minutes || 0),
-              } as any),
-            ),
-          );
+          for (const date of dates) {
+            await upsertPlanning({
+              employee_id: empId,
+              date_start: date,
+              date_end: date,
+              type: form.type,
+              heure_debut: form.heure_debut || null,
+              heure_fin: form.heure_fin || null,
+              note: form.note || null,
+              group_id: groupId,
+              pause_minutes: Number(form.pause_minutes || 0),
+            } as any);
+          }
           toast.success(`${dates.length} entrée(s) ajoutée(s)`);
         }
       }
