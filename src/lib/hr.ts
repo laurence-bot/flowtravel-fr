@@ -851,9 +851,16 @@ export function buildCompteurEntriesForEmployee(
   toIso: string,
 ): PlanningEntry[] {
   const approvedRecups = recups.filter(
-    (r) => r.employee_id === employeeId && r.statut === "approuvee" && r.date_souhaitee && r.date_souhaitee >= fromIso && r.date_souhaitee <= toIso,
+    (r) =>
+      r.employee_id === employeeId &&
+      r.statut === "approuvee" &&
+      r.date_souhaitee &&
+      r.date_souhaitee >= fromIso &&
+      r.date_souhaitee <= toIso,
   );
-  const linkedRecupPlanningIds = new Set(approvedRecups.map((r) => r.planning_entry_id).filter(Boolean));
+  const linkedRecupPlanningIds = new Set(
+    approvedRecups.map((r) => r.planning_entry_id).filter(Boolean),
+  );
   const recupDates = new Set(approvedRecups.map((r) => r.date_souhaitee!));
   const periodEntries = entries.filter(
     (e) =>
@@ -946,7 +953,7 @@ export function calcCompteurMensuel(
     const duree = dureeNetteEntry(e);
 
     if (e.type === "recuperation") {
-      const explicit = Number((e as any).heures_recup ?? 0);
+      const explicit = Number(e.heures_recup ?? 0);
       const fallback = duree > 0 ? duree : heuresParJour;
       const value = Math.min(heuresParJour, explicit > 0 ? explicit : fallback);
 
