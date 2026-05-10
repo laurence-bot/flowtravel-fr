@@ -31,6 +31,7 @@ import {
   createRecupDemande,
   approuverRecupDemande,
   refuserRecupDemande,
+  deleteRecupDemande,
   alertesFinDeMois,
   PLANNING_TYPE_LABELS,
   planningEntryCoversDate,
@@ -1005,40 +1006,61 @@ function PlanningPage() {
                           </span>
                         </td>
                         <td className="px-3 py-2">
-                          {r.statut === "demande" && (
-                            <div className="flex gap-1 justify-end">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={async () => {
-                                  try {
-                                    await approuverRecupDemande(r.id);
-                                    toast.success("Approuvée");
-                                    load();
-                                  } catch (e: any) {
-                                    toast.error(e.message);
-                                  }
-                                }}
-                              >
-                                <Check className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={async () => {
-                                  try {
-                                    await refuserRecupDemande(r.id);
-                                    toast.success("Refusée");
-                                    load();
-                                  } catch (e: any) {
-                                    toast.error(e.message);
-                                  }
-                                }}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          )}
+                          <div className="flex gap-1 justify-end">
+                            {r.statut === "demande" && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  title="Approuver"
+                                  onClick={async () => {
+                                    try {
+                                      await approuverRecupDemande(r.id);
+                                      toast.success("Approuvée");
+                                      load();
+                                    } catch (e: any) {
+                                      toast.error(e.message);
+                                    }
+                                  }}
+                                >
+                                  <Check className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  title="Refuser"
+                                  onClick={async () => {
+                                    try {
+                                      await refuserRecupDemande(r.id);
+                                      toast.success("Refusée");
+                                      load();
+                                    } catch (e: any) {
+                                      toast.error(e.message);
+                                    }
+                                  }}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              title="Supprimer définitivement"
+                              onClick={async () => {
+                                if (!confirm("Supprimer définitivement cette demande de récupération ?")) return;
+                                try {
+                                  await deleteRecupDemande(r.id);
+                                  toast.success("Demande supprimée");
+                                  load();
+                                } catch (e: any) {
+                                  toast.error(e.message);
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3 text-destructive" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );

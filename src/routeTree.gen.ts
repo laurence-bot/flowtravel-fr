@@ -81,6 +81,7 @@ import { Route as OpsEquipeParametresRouteImport } from './routes/ops.equipe.par
 import { Route as OpsEquipeFichesPosteRouteImport } from './routes/ops.equipe.fiches-poste'
 import { Route as OpsEquipeEvaluationsRouteImport } from './routes/ops.equipe.evaluations'
 import { Route as OpsEquipeContratsRouteImport } from './routes/ops.equipe.contrats'
+import { Route as OpsEquipeAnneeRouteImport } from './routes/ops.equipe.annee'
 import { Route as OpsEquipeAbsencesRouteImport } from './routes/ops.equipe.absences'
 import { Route as OpsEquipeIdRouteImport } from './routes/ops.equipe.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
@@ -455,6 +456,11 @@ const OpsEquipeContratsRoute = OpsEquipeContratsRouteImport.update({
   path: '/equipe/contrats',
   getParentRoute: () => OpsRoute,
 } as any)
+const OpsEquipeAnneeRoute = OpsEquipeAnneeRouteImport.update({
+  id: '/equipe/annee',
+  path: '/equipe/annee',
+  getParentRoute: () => OpsRoute,
+} as any)
 const OpsEquipeAbsencesRoute = OpsEquipeAbsencesRouteImport.update({
   id: '/equipe/absences',
   path: '/equipe/absences',
@@ -598,6 +604,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ops/equipe/$id': typeof OpsEquipeIdRoute
   '/ops/equipe/absences': typeof OpsEquipeAbsencesRoute
+  '/ops/equipe/annee': typeof OpsEquipeAnneeRoute
   '/ops/equipe/contrats': typeof OpsEquipeContratsRoute
   '/ops/equipe/evaluations': typeof OpsEquipeEvaluationsRoute
   '/ops/equipe/fiches-poste': typeof OpsEquipeFichesPosteRoute
@@ -684,6 +691,7 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ops/equipe/$id': typeof OpsEquipeIdRoute
   '/ops/equipe/absences': typeof OpsEquipeAbsencesRoute
+  '/ops/equipe/annee': typeof OpsEquipeAnneeRoute
   '/ops/equipe/contrats': typeof OpsEquipeContratsRoute
   '/ops/equipe/evaluations': typeof OpsEquipeEvaluationsRoute
   '/ops/equipe/fiches-poste': typeof OpsEquipeFichesPosteRoute
@@ -772,6 +780,7 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ops/equipe/$id': typeof OpsEquipeIdRoute
   '/ops/equipe/absences': typeof OpsEquipeAbsencesRoute
+  '/ops/equipe/annee': typeof OpsEquipeAnneeRoute
   '/ops/equipe/contrats': typeof OpsEquipeContratsRoute
   '/ops/equipe/evaluations': typeof OpsEquipeEvaluationsRoute
   '/ops/equipe/fiches-poste': typeof OpsEquipeFichesPosteRoute
@@ -861,6 +870,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/ops/equipe/$id'
     | '/ops/equipe/absences'
+    | '/ops/equipe/annee'
     | '/ops/equipe/contrats'
     | '/ops/equipe/evaluations'
     | '/ops/equipe/fiches-poste'
@@ -947,6 +957,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/ops/equipe/$id'
     | '/ops/equipe/absences'
+    | '/ops/equipe/annee'
     | '/ops/equipe/contrats'
     | '/ops/equipe/evaluations'
     | '/ops/equipe/fiches-poste'
@@ -1034,6 +1045,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/ops/equipe/$id'
     | '/ops/equipe/absences'
+    | '/ops/equipe/annee'
     | '/ops/equipe/contrats'
     | '/ops/equipe/evaluations'
     | '/ops/equipe/fiches-poste'
@@ -1623,6 +1635,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpsEquipeContratsRouteImport
       parentRoute: typeof OpsRoute
     }
+    '/ops/equipe/annee': {
+      id: '/ops/equipe/annee'
+      path: '/equipe/annee'
+      fullPath: '/ops/equipe/annee'
+      preLoaderRoute: typeof OpsEquipeAnneeRouteImport
+      parentRoute: typeof OpsRoute
+    }
     '/ops/equipe/absences': {
       id: '/ops/equipe/absences'
       path: '/equipe/absences'
@@ -1798,6 +1817,7 @@ interface OpsRouteChildren {
   OpsIndexRoute: typeof OpsIndexRoute
   OpsEquipeIdRoute: typeof OpsEquipeIdRoute
   OpsEquipeAbsencesRoute: typeof OpsEquipeAbsencesRoute
+  OpsEquipeAnneeRoute: typeof OpsEquipeAnneeRoute
   OpsEquipeContratsRoute: typeof OpsEquipeContratsRoute
   OpsEquipeEvaluationsRoute: typeof OpsEquipeEvaluationsRoute
   OpsEquipeFichesPosteRoute: typeof OpsEquipeFichesPosteRoute
@@ -1816,6 +1836,7 @@ const OpsRouteChildren: OpsRouteChildren = {
   OpsIndexRoute: OpsIndexRoute,
   OpsEquipeIdRoute: OpsEquipeIdRoute,
   OpsEquipeAbsencesRoute: OpsEquipeAbsencesRoute,
+  OpsEquipeAnneeRoute: OpsEquipeAnneeRoute,
   OpsEquipeContratsRoute: OpsEquipeContratsRoute,
   OpsEquipeEvaluationsRoute: OpsEquipeEvaluationsRoute,
   OpsEquipeFichesPosteRoute: OpsEquipeFichesPosteRoute,

@@ -788,6 +788,38 @@ export function heuresContractuellesParJour(
   return emp?.heures_par_jour ?? 7.5;
 }
 
+/** Nombre de jours travaillés/semaine selon le rythme (A ou A/B moyenné). */
+export function joursParSemaineEmp(emp?: Employee | null): number {
+  if (!emp) return 5;
+  const a = emp.semaine_a_jours?.length ?? 5;
+  if (emp.rythme_semaine === "ab") {
+    const b = emp.semaine_b_jours?.length ?? a;
+    return (a + b) / 2;
+  }
+  return a;
+}
+
+/**
+ * Base mensualisée AFFICHÉE SUR LE BULLETIN DE PAIE.
+ * Si l'employé bénéficie d'un accord RTT (jours_rtt_par_an > 0) :
+ *   base paie = 35h × (joursParSemaine / 5) × 52 / 12  → 151,67h pour un temps plein 5j
+ * Sinon, identique à la base contractuelle réelle.
+ *
+ * IMPORTANT — ne sert QU'À l'affichage paie. Les alertes et le suivi des
+ * heures sup s'appuient sur la base contractuelle réelle (heures_par_jour),
+ * jamais sur cette base paie.
+ */
+export function basePaieMensuelle(emp: Employee): number {
+  const jps = joursParSemaineEmp(emp);
+  const hParJour = heuresContractuellesParJour(emp);
+  const baseContrat = (jps * hParJour * 52) / 12;
+  if ((emp.jours_rtt_par_an ?? 0) > 0) {
+    const basePaie = (35 * (jps / 5) * 52) / 12;
+    return Math.round(basePaie * 100) / 100;
+  }
+  return Math.round(baseContrat * 100) / 100;
+}
+
 /** Retourne true si la date est un jour travaillé selon le rythme A/B de l'employé. */
 export function estJourTravaille(emp: Employee, dateIso: string): boolean {
   const dow = new Date(`${dateIso}T00:00:00Z`).getUTCDay();
@@ -837,8 +869,10 @@ export function calcCompteurMensuel(
   const joursRythme = emp ? joursOuvres.filter((d) => estJourTravaille(emp, d)) : joursOuvres;
   const rythmeSet = new Set(joursRythme);
   const joursOuvresSet = new Set(joursOuvres);
-  // Base = forfait mensualisé paie : (jours rythme/sem × heures/jour × 52 / 12)
-  // Aligné sur la fiche de paie (151,67h pour un temps plein 5j × 7h)
+  // Base = forfait contractuel RÉEL (jours rythme/sem × heures/jour × 52 / 12)
+  // Pour Lisa 5j × 7,5h = 162,5h. C'est cette base qui pilote les alertes
+  // d'heures sup et les droits à récupération — distincte de la base paie
+  // mensualisée à 35h (151,67h) qui sert uniquement au bulletin (cf. basePaieMensuelle).
   let joursParSemaine = 5;
   if (emp) {
     const a = emp.semaine_a_jours?.length ?? 5;

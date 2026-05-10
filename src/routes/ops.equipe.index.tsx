@@ -21,9 +21,12 @@ import {
   isJourOuvre,
   calcCompteurMensuel,
   heuresContractuellesParJour,
+  basePaieMensuelle,
   planningEntryDays,
   deletePlanning,
   deleteAbsence,
+  upsertCompteur,
+  clearCompteursMois,
   CONTRACT_TYPE_LABELS,
   type Employee,
   type ContractType,
@@ -104,15 +107,79 @@ function EquipeIndex() {
   const reload = async () => {
     setLoading(true);
     try {
-      const [emps, abs, plan, comps, recs] = await Promise.all([
+      // Invalide les compteurs stockés du mois → force un recalcul propre
+      // (sinon les soldes restent figés après une suppression de planning).
+      await clearCompteursMois(month).catch(() => {});
+      const [emps, abs, plan, recs] = await Promise.all([
         listEmployees(),
         listAbsences(),
         listPlanning(days[0], days[days.length - 1]),
-        listCompteurs(month),
         listRecupDemandes(month),
       ]);
-      setEmployees(emps.filter((e) => e.actif));
-      setAbsences(abs.filter((a) => a.statut === "approuvee" || a.statut === "signee"));
+      const actifs = emps.filter((e) => e.actif);
+      const approvedAbs = abs.filter((a) => a.statut === "approuvee" || a.statut === "signee");
+      // Recalcule les compteurs côté serveur (mêmes données que la vue planning)
+      const ouvres = days.filter((d) => isJourOuvre(d, holidays));
+      const ouvresSet = new Set(ouvres);
+      const linkedRecupPlanningIds = new Set(recs.map((r) => r.planning_entry_id).filter(Boolean));
+      const approvedRecupDatesByEmp = new Map<string, Set<string>>();
+      for (const r of recs) {
+        if (r.statut !== "approuvee" || !r.date_souhaitee) continue;
+        const set = approvedRecupDatesByEmp.get(r.employee_id) ?? new Set<string>();
+        set.add(r.date_souhaitee);
+        approvedRecupDatesByEmp.set(r.employee_id, set);
+      }
+      await Promise.all(
+        actifs.map(async (emp) => {
+          const recupDates = approvedRecupDatesByEmp.get(emp.id) ?? new Set<string>();
+          const empEntries = plan.filter(
+            (e) =>
+              e.employee_id === emp.id &&
+              !linkedRecupPlanningIds.has(e.id) &&
+              !(e.type === "recuperation" && planningEntryDays(e).some((d) => recupDates.has(d))),
+          );
+          const empAbs = approvedAbs.filter((a) => a.employee_id === emp.id);
+          const joursNeutralises: string[] = [];
+          for (const a of empAbs) {
+            if (!["conge_paye", "rtt", "parental", "sans_solde", "maladie"].includes(a.type)) continue;
+            const start = new Date(`${a.date_debut}T00:00:00Z`);
+            const end = new Date(`${a.date_fin}T00:00:00Z`);
+            for (let dt = new Date(start); dt <= end; dt.setUTCDate(dt.getUTCDate() + 1)) {
+              const iso = dt.toISOString().slice(0, 10);
+              if (ouvresSet.has(iso)) joursNeutralises.push(iso);
+            }
+          }
+          const empRecups = recs
+            .filter((r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee)
+            .map((r) => ({
+              id: r.id,
+              employee_id: r.employee_id,
+              agence_id: null,
+              date_start: r.date_souhaitee!,
+              date_end: r.date_souhaitee!,
+              heure_debut: r.heure_debut ?? null,
+              heure_fin: r.heure_fin ?? null,
+              type: "recuperation" as const,
+              note: null,
+              group_id: null,
+              pause_minutes: null,
+              heures_recup: r.heures_demandees,
+            }));
+          const hParJour = heuresContractuellesParJour(emp);
+          const c = calcCompteurMensuel(
+            [...empEntries, ...empRecups],
+            ouvres,
+            hParJour,
+            emp,
+            undefined,
+            joursNeutralises,
+          );
+          await upsertCompteur(emp.id, month, c.realisees, c.base);
+        }),
+      );
+      const comps = await listCompteurs(month);
+      setEmployees(actifs);
+      setAbsences(approvedAbs);
       setPlanning(plan);
       setCompteurs(comps);
       setRecups(recs);
@@ -276,6 +343,8 @@ function EquipeIndex() {
           jours_ouvres: calc.joursRythme,
           h_par_jour: hParJour,
           heures_brutes: calc.base,
+          base_paie: basePaieMensuelle(emp),
+          a_rtt: (emp.jours_rtt_par_an ?? 0) > 0,
         };
       }),
     [employees, compteurs, absences, recups, joursOuvres, planning],
@@ -307,6 +376,9 @@ function EquipeIndex() {
         description="Calendrier consolidé, présences, absences et récap mensuel"
         action={
           <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link to="/ops/equipe/annee">Vue annuelle</Link>
+            </Button>
             <Button asChild variant="outline">
               <Link to="/ops/equipe/parametres">
                 <SettingsIcon className="h-4 w-4 mr-2" />
@@ -554,7 +626,14 @@ function EquipeIndex() {
                   <tr>
                     <th className="text-left px-4 py-3">Employé</th>
                     <th className="text-right px-4 py-3">
-                      <span title="Jours rythme du mois (hors fériés) × h/jour">Base réelle</span>
+                      <span title="Mensualisation paie 35h (152h pour un temps plein) — sert au bulletin">
+                        Base paie
+                      </span>
+                    </th>
+                    <th className="text-right px-4 py-3">
+                      <span title="Forfait contractuel réel : jours rythme × h/jour — pilote les alertes heures sup">
+                        Base réelle
+                      </span>
                     </th>
                     <th className="text-right px-4 py-3">H. réalisées</th>
                     <th className="text-right px-4 py-3">Solde</th>
@@ -569,6 +648,12 @@ function EquipeIndex() {
                       <td className="px-4 py-3 font-medium">
                         {r.nom}
                         {r.poste && <span className="ml-2 text-xs text-muted-foreground">{r.poste}</span>}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        <span className="font-medium">{r.base_paie}h</span>
+                        {r.a_rtt && (
+                          <div className="text-[10px] text-muted-foreground">RTT</div>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums">
                         <span className="font-medium">{r.heures_brutes}h</span>
@@ -599,6 +684,9 @@ function EquipeIndex() {
                 <tfoot className="border-t bg-muted/20 text-xs font-medium">
                   <tr>
                     <td className="px-4 py-2 text-muted-foreground">Total équipe</td>
+                    <td className="px-4 py-2 text-right tabular-nums">
+                      {recapRows.reduce((s, r) => s + r.base_paie, 0)}h
+                    </td>
                     <td className="px-4 py-2 text-right tabular-nums">
                       {recapRows.reduce((s, r) => s + r.heures_brutes, 0)}h
                     </td>

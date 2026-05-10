@@ -1,44 +1,53 @@
-## Contexte
+## Plan de correction RH — version revue
 
-Actuellement dans `src/lib/hr.ts`, les jours de **déplacement** et **formation** sont comptés à hauteur de `heures_par_jour` du contrat (= 7h30 pour Lisa, soit sa journée contractuelle complète hors pause).
+### Distinction clé
+- **Bulletin de paie** : reste sur la base mensualisée 151,67h (35h × 52 / 12). C’est l’information à afficher comme « base paie » et à exporter pour la comptable.
+- **Logiciel RH (FlowTravel)** : suit la **réalité** du contrat 37h30 / semaine. Toute heure travaillée au-delà de 35h doit être visible, comptée et déclencher une alerte / un droit à récupération. C’est cette mécanique qui pilote les rattrapages d’heures et de jours.
 
-C'est incorrect. La règle métier réelle est :
+Donc on **n’absorbe pas** les heures sup dans le calcul interne. On affiche simplement deux références côte à côte.
 
-> **Déplacement / formation = 7h de travail effectif par jour, max 5 jours / semaine, pas de dépassement.**
-> La pause de 30 min s'ajoute en amplitude horaire mais n'est jamais payée ni comptée.
+### 1. Compteur mensuel — deux références claires
+Dans `src/lib/hr.ts` (`calcCompteurMensuel`) et dans les vues, exposer :
+- `base_paie` : 151,67h (paie 35h mensualisée). Sert uniquement à l’affichage / export.
+- `base_contractuelle` : forfait réel = jours rythme × heures/jour (ex. Lisa 37h30 → 162,5h sur un mois standard).
+- `realisees` : heures réellement faites (planning + récup déduites).
+- `solde` : `realisees − base_contractuelle` → c’est ce solde qui alimente les alertes et les droits à récup.
+- `heures_sup_cumulees` : heures au-delà de la base contractuelle, à reporter / rattraper.
 
-Donc une journée de déplacement de Lisa doit compter **7h** (pas 7h30), même si son contrat normal est à 7h30/jour. La différence (-0h30) est absorbée — pas d'heures sup, pas de manque non plus puisque c'est la règle.
+Important : on **ne soustrait pas** la part « RTT » du solde. Les RTT restent un compteur **séparé**, posé via le module Absences.
 
-## Changements
+### 2. Vue d’ensemble compteurs — afficher les deux bases
+Dans :
+- `src/routes/ops.equipe.planning.tsx` (onglet « Compteurs d’heures »)
+- `src/routes/ops.equipe.index.tsx` (onglet « Récap mensuel »)
 
-### 1. `src/lib/hr.ts` — `calcCompteurMensuel()`
+Ajouter une colonne **Base paie (151,67h)** à côté de **Base réelle (162,5h)** pour Lisa, avec une infobulle expliquant que la paie reste mensualisée à 35h, indépendamment du rythme réel.
 
-Remplacer le plafond `heuresParJour` par une **constante de 7h** pour les types `deplacement` et `formation` :
+### 3. Alertes fin de mois — garder strict
+`alertesFinDeMois()` reste basée sur `solde > 0` par rapport à la **base contractuelle réelle**, pas la base paie. Pas de “tolérance RTT”. C’est exactement ce qui doit déclencher la pose de récup.
 
-```ts
-const PLAFOND_DEPLACEMENT_FORMATION = 7; // heures de travail effectif, hors pause
-```
+### 4. Compteurs incohérents après suppression
+Lorsque tout le planning d’un employé est supprimé pour le mois :
+- recalculer immédiatement et écraser/supprimer la ligne `hr_compteur_heures` correspondante ;
+- la vue d’ensemble doit recharger comme la vue planning (aujourd’hui elle peut afficher un solde figé).
 
-- Pour chaque jour `deplacement` ou `formation` tombant sur un jour travaillé du rythme A/B :
-  - compter **exactement 7h** (ignorer toute valeur saisie supérieure)
-  - si valeur saisie < 7h, prendre la valeur saisie (cas demi-journée)
-- Si le jour tombe sur un jour non travaillé du rythme ou un férié → **ne rien compter** (déjà en place, on garde).
-- Garder la limite "max 5 jours / semaine" déjà implémentée.
+Action : sur la vue d’ensemble (`ops.equipe.index.tsx`), après chaque suppression OU au chargement, exécuter le même `clearCompteursMois` + recalcul que `ops.equipe.planning.tsx`.
 
-### 2. Documentation inline
+### 5. Poubelle sur les demandes de récupération (Planning)
+Dans l’onglet **Demandes de récupération** de `ops.equipe.planning.tsx`, ajouter un bouton poubelle sur chaque ligne quel que soit le statut (en attente, approuvée, refusée), avec confirmation. Comportement identique à `ops.equipe.absences.tsx` (utilise `deleteRecupDemande`, qui supprime aussi l’entrée planning liée).
 
-Ajouter un commentaire au-dessus de la constante expliquant la règle métier (7h effectif + 30 min pause non payée = 7h30 d'amplitude), pour éviter qu'un futur dev re-confonde avec `heures_par_jour`.
+### 6. Vue annuelle du planning à partir du 01/05/2026
+Nouvel onglet « Année » dans `ops.equipe.planning.tsx` :
+- vue compacte 12 mois (mai 2026 → avril 2027 par défaut), une ligne par employé ;
+- chaque cellule = 1 jour, couleur du type (travail / congé / récup / déplacement…), comme la vue mensuelle mais réduite ;
+- en-tête mensuel cliquable pour basculer sur le mois correspondant ;
+- colonne de droite : cumul annuel d’heures sup à rattraper et de jours dus / rendus ;
+- date de départ paramétrable (input « depuis »), pré-remplie au 01/05/2026.
 
-### 3. Vérification visuelle
+Pas de nouvelle table : on agrège côté client `listPlanning(start, end)` et `listAbsences()` sur la fenêtre choisie, plus la liste des compteurs mensuels stockés.
 
-Aucun changement UI. Après déploiement, l'utilisateur clique **« Forcer le recalcul »** sur le planning de mai pour voir le solde de Lisa s'ajuster.
-
-## Hors scope
-
-- Pas de changement sur les autres types (travail normal, récup, congés, RTT, fériés).
-- Pas de changement de schéma DB.
-- Pas de changement du contrat de Lisa (reste à 7h30/jour, 30 min pause, 162.5h/mois).
-
-## Question ouverte (à confirmer avant ou après implémentation)
-
-La constante 7h est-elle **globale à toute l'entreprise**, ou doit-elle devenir un champ configurable par employé (`heures_deplacement_par_jour`) ? Pour l'instant je pars sur **constante globale 7h** ; on pourra extraire en colonne DB plus tard si besoin.
+### Fichiers concernés
+- `src/lib/hr.ts` — calc compteurs, base paie / base réelle, agrégat annuel.
+- `src/routes/ops.equipe.planning.tsx` — colonnes compteurs, poubelle récup, onglet « Année ».
+- `src/routes/ops.equipe.index.tsx` — recalcul auto, colonne base paie.
+- Pas de migration DB nécessaire (on dérive la base paie à partir de l’existant).
