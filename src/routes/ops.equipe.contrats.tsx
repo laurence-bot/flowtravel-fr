@@ -578,7 +578,7 @@ function ContractsPage() {
                 <Label>Type</Label>
                 <Select
                   value={contractForm.type_contrat}
-                  onValueChange={(v) => setContractForm({ ...contractForm, type_contrat: v as ContractType })}
+                  onValueChange={(v) => setContractForm({ ...contractForm, type_contrat: v as ContractType, date_fin: v === "cdi" ? "" : contractForm.date_fin })}
                 >
                   <SelectTrigger>
                     <SelectValue />
