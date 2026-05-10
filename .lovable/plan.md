@@ -1,60 +1,20 @@
-# Plan corrigé : solde Lisa = 5h
+Je vais corriger la logique sans toucher aux données de Lisa.
 
-## Règle métier à appliquer
+Constat dans le code et la base :
+- Mai contient bien 2 récupérations approuvées de 2h30, soit 5h.
+- Le planning mensuel et la vue annuelle ne lisent pas les récupérations de la même façon :
+  - le planning mensuel repart des demandes RH et compte bien 2h30 + 2h30 ;
+  - la vue annuelle relit surtout les entrées planning liées, qui n’ont pas le champ `heures_demandees`, donc elles retombent à 2h + 2h au lieu de 5h.
+- La logique RTT a aussi été trop durcie : pour Lisa en accord RTT, une journée à 7h30 doit créditer 0h30 de récupération, une journée à 7h ne doit pas créer -0h30. Les 5h de crédit RTT de mai doivent donc être annulées par les 5h posées.
 
-Pour un contrat RTT comme Lisa :
-
-- la journée de référence paie est **7h** ;
-- la journée contractuelle est **7h30** ;
-- entre 7h et 7h30, on crédite uniquement la différence en récupération ;
-- à 7h pile, l'impact est **0h** ;
-- sous 7h, on creuse le solde ;
-- les déplacements / formations restent neutralisés : comptés 7h sur les jours de travail, sans crédit RTT ni pénalité.
-
-## Résultat attendu pour Lisa en mai 2026
-
-Lisa a 12 jours de travail réellement saisis :
-
-- **02/05** : 7h → 0h à rattraper
-- **04/05** : 7h → 0h à rattraper
-- **05, 06, 07, 11, 12, 25, 26, 28, 29, 30** : 10 jours à 7h30 → 10 × 0h30 = **5h à rattraper**
-- **13 au 24** : déplacement → neutralisé, compté 7h sur les jours de travail, sans toucher au solde
-
-Donc le solde mensuel attendu est **+5h**, pas 4h ni 4h30.
-
-## Correction à faire
-
-Dans `src/lib/hr.ts`, fonction `calcCompteurMensuel`, branche `hasRttAgreement` :
-
-1. Garder le calcul du crédit RTT journalier :
-
-```ts
-const rttCredit = Math.max(0, Math.min(effective, heuresParJour) - basePaieJour);
-const overtimeBeyondContract = Math.max(0, effective - heuresParJour);
-rttAcquises += rttCredit;
-```
-
-2. Remplacer la pénalité actuelle basée sur `heuresParJour` par une pénalité basée sur `basePaieJour` :
-
-```ts
-if (effective < basePaieJour) {
-  dayImpact = effective - basePaieJour;
-} else {
-  dayImpact = rttCredit + overtimeBeyondContract;
-}
-```
-
-## Effet de la correction
-
-- Journée à 7h00 : `effective < basePaieJour` est faux, `rttCredit = 0`, donc impact **0h**.
-- Journée à 7h30 : `rttCredit = 0,5`, donc impact **+0,5h**.
-- Journée à 8h00 : `rttCredit = 0,5` + `overtimeBeyondContract = 0,5`, donc impact **+1h**.
-- Journée à 6h30 : `6,5 - 7 = -0,5h`, donc impact **−0,5h**.
-
-## Vérification
-
-Après implémentation :
-
-1. Recalculer Lisa sur mai 2026.
-2. Confirmer que le solde affiche **+5h**.
-3. Confirmer que les déplacements du 13 au 24 restent neutralisés et ne génèrent ni RTT ni pénalité.
+Plan de correction :
+1. Créer une logique commune dans `src/lib/hr.ts` pour construire les entrées utilisées par les compteurs :
+   - ignorer les entrées planning `recuperation` déjà liées à une demande RH ;
+   - ajouter à la place les demandes de récupération approuvées avec leur vraie durée `heures_demandees`.
+2. Corriger `calcCompteurMensuel` pour les employés avec RTT :
+   - journée normale à 7h30 = +0h30 de solde récupérable ;
+   - journée à 7h = 0, pas -0h30 ;
+   - récupération posée = déduction exacte des heures demandées ;
+   - heures sup réelles seulement au-delà de 7h30.
+3. Brancher le planning mensuel et la vue annuelle sur cette même logique commune, pour que mai affiche le même solde dans les deux vues.
+4. Vérifier avec les données actuelles de Lisa que mai 2026 retombe à 0h sur le planning et sur la vue annuelle.
