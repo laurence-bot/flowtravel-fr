@@ -36,7 +36,6 @@ import {
   alertesFinDeMois,
   PLANNING_TYPE_LABELS,
   planningEntryCoversDate,
-  planningEntryDays,
   type Employee,
   type PlanningEntry,
   type PlanningType,

@@ -16,7 +16,6 @@ import {
   buildCompteurEntriesForEmployee,
   heuresContractuellesParJour,
   basePaieMensuelle,
-  planningEntryDays,
   planningEntryCoversDate,
   type Employee,
   type PlanningEntry,
