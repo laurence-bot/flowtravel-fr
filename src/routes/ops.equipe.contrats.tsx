@@ -508,21 +508,33 @@ function ContractsPage() {
                           )}
                         </td>
                         <td className="px-3 py-2 text-right">
-                          {c.statut === "brouillon" && (
-                            <Button size="sm" onClick={() => sendSign(c)}>
-                              <Send className="h-3.5 w-3.5 mr-1" /> Envoyer
-                            </Button>
-                          )}
-                          {c.statut === "a_signer" && (
-                            <a
-                              href={`/contrat-signer/${c.token}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-xs text-blue-600 hover:underline"
-                            >
-                              Lien signature
-                            </a>
-                          )}
+                          <div className="inline-flex items-center gap-2 justify-end">
+                            {c.statut === "brouillon" && (
+                              <>
+                                <Button size="sm" variant="outline" onClick={() => markSigned(c)}>
+                                  Marquer signé
+                                </Button>
+                                <Button size="sm" onClick={() => sendSign(c)}>
+                                  <Send className="h-3.5 w-3.5 mr-1" /> Envoyer
+                                </Button>
+                              </>
+                            )}
+                            {c.statut === "a_signer" && (
+                              <>
+                                <Button size="sm" variant="outline" onClick={() => markSigned(c)}>
+                                  Marquer signé
+                                </Button>
+                                <a
+                                  href={`/contrat-signer/${c.token}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-xs text-blue-600 hover:underline"
+                                >
+                                  Lien signature
+                                </a>
+                              </>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
