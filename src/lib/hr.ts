@@ -852,7 +852,8 @@ function dureeNetteEntry(e: PlanningEntry): number {
  * Compteur mensuel basé sur la **réalité du mois** :
  * - base = forfait mensualisé paie (jours rythme/sem × heuresParJour × 52 / 12)
  * - travail/teletravail/reunion : durée nette saisie (avec pause auto 30 min si oubliée)
- * - deplacement/formation : si jour rythme ouvré → forfait heuresParJour, jamais d'heures sup
+ * - deplacement/formation : si jour rythme ouvré → forfait contractuel pile (heuresParJour),
+ *   sinon 0 ; jamais d'heures sup, jamais de perte. Durée saisie ignorée pour le compteur.
  * - remplacement : 0 (impact via table hr_jours_dus)
  * - recuperation : valeur demandée/saisie, plafonnée à la journée contractuelle
  * - jours neutralisés (fériés chômés, CP, maladie, RTT) : comptés au forfait pour ne pas creuser le solde
@@ -921,20 +922,16 @@ export function calcCompteurMensuel(
     const isContextOnly = e.type === "deplacement" || e.type === "formation";
     const duree = dureeNetteEntry(e);
 
-    // Plafond métier déplacement/formation : 7h de travail effectif par jour,
-    // hors pause (la pause de 30 min s'ajoute en amplitude mais n'est pas payée).
-    // Indépendant de heures_par_jour du contrat — pas de dépassement possible.
-    const PLAFOND_DEPLACEMENT_FORMATION = 7;
-
     for (const d of planningEntryDays(e)) {
       if (!joursOuvresSet.has(d)) continue;
       const existing = heuresParJourMap.get(d) ?? null;
       if (isContextOnly) {
-        // Déplacement/formation : ne compte que sur les jours de rythme,
-        // forfait 7h (ou durée saisie si inférieure, ex. demi-journée)
+        // Déplacement / formation : forfait contractuel pile sur jour de rythme,
+        // 0 sinon (hors rythme = visible dans le planning mais 0h au compteur).
+        // Jamais d'heures sup générées par un déplacement, jamais de perte non plus.
+        // La durée éventuellement saisie est ignorée pour le compteur.
         if (rythmeSet.has(d) && existing === null) {
-          const value = duree > 0 ? Math.min(duree, PLAFOND_DEPLACEMENT_FORMATION) : PLAFOND_DEPLACEMENT_FORMATION;
-          heuresParJourMap.set(d, value);
+          heuresParJourMap.set(d, heuresParJour);
         }
       } else {
         // Travail réel : compté quel que soit le jour (samedi exceptionnel possible)

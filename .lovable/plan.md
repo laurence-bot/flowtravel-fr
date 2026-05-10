@@ -1,38 +1,38 @@
-## Objectif
+## Problème observé
 
-Finaliser les 3 points en suspens des correctifs globaux FlowTravel sur la synchronisation PDF + vols + fournisseurs.
+Lisa est à 7h30/jour contractuel. Quand on saisit ses heures réelles de travail, le compteur affiche bien +2h30 d'heures supp à rattraper. Dès qu'on ajoute un déplacement, le total perd 1h.
 
-## 1. Stabilité de la modale d'import PDF
+## Cause
 
-Fichier : `src/components/program-import-dialog.tsx` (ou équivalent)
+Dans `src/lib/hr.ts`, fonction `calcCompteurMensuel` (ligne ~927), un jour de déplacement est plafonné à un hardcode `PLAFOND_DEPLACEMENT_FORMATION = 7` :
 
-- Ajouter `onInteractOutside={(e) => e.preventDefault()}` et `onEscapeKeyDown` contrôlé pour empêcher la fermeture accidentelle pendant un changement d'onglet ou un clic hors zone.
-- Persister l'état de la modale (fichier sélectionné, onglet actif, données parsées) dans `sessionStorage` sous une clé `pdfImport:{cotationId}`.
-- Restaurer cet état à l'ouverture si présent ; nettoyer la clé après import réussi ou annulation explicite par l'utilisateur (bouton « Annuler »).
+- jour de déplacement compté = `min(durée saisie, 7h)`
+- pour Lisa (contrat 7h30) → chaque jour de déplacement vaut **7h au lieu de 7h30**
+- 2 jours × 0,5h manquante = **−1h** sur le compteur
 
-## 2. Garde-fous sur `upsertJoursProgramme`
+## Règle métier retenue (validée par tes réponses)
 
-Fichier : `src/lib/program-import.ts`
+1. **Jour de déplacement sur un jour de rythme** = forfait contractuel pile (`heuresParJour` de l'employé, ex. 7h30 pour Lisa). Aucune heure sup générée par le déplacement, aucune perte non plus.
+2. **Jour de déplacement hors rythme** (ex. samedi pour Lisa) = visible dans le planning, mais **0h** dans le compteur (déjà OK aujourd'hui).
+3. La durée éventuellement saisie (heure début/fin) sur l'entrée déplacement est **ignorée pour le compteur** : le déplacement vaut toujours la journée contractuelle, ni plus ni moins.
 
-- Avant tout insert/upsert d'un jour, charger `cotations.date_depart` et `cotations.date_retour` (ou équivalent) de la cotation cible.
-- Filtrer toute ligne PDF dont `date_jour` est strictement postérieure à la date de retour ou antérieure à la date de départ.
-- Logger en console les lignes ignorées avec raison (`hors_plage_voyage`) pour diagnostic.
-- Règle globale : aucun hardcode de pays, fournisseur ou cotation.
+## Modification ciblée
 
-## 3. Rafraîchissement des inclusions via `inferTripContext`
+Fichier : `src/lib/hr.ts`, fonction `calcCompteurMensuel`.
 
-Fichiers : `src/lib/detect-inclusions.ts` + le composant qui héberge le bouton « Détecter les inclusions » (probablement `src/components/quote-content-editor-block.tsx`).
+- Supprimer la constante `PLAFOND_DEPLACEMENT_FORMATION = 7`.
+- Branche `isContextOnly` (déplacement / formation) :
+  - si `rythmeSet.has(d) && existing === null` → `heuresParJourMap.set(d, heuresParJour)` (forfait contractuel exact, plus de min/plafond hardcodé).
+  - sinon (hors rythme, ou jour déjà rempli par une autre entrée travail) → inchangé : on ne touche à rien.
+- Mettre à jour le commentaire d'en-tête de la fonction pour refléter la nouvelle règle ("déplacement/formation : forfait contractuel exact sur jour de rythme, 0 sinon, jamais d'heures sup").
 
-- Exposer `inferTripContext(cotation, vols)` déjà créé dans le module.
-- Le bouton « Détecter les inclusions » doit :
-  1. Recharger les vols et la cotation à jour.
-  2. Appeler `inferTripContext()` pour résoudre `home_country` et `destination_country`.
-  3. Passer ce contexte à `detectInclusions()` afin que les badges Vol international / domestique / Nuit en vol / Hébergement soient recalculés selon les nouvelles règles IATA.
-  4. Mettre à jour les badges en base via le même flux d'upsert idempotent (pas de doublon).
+Aucune autre fonction ni aucune table n'est impactée.
 
-## Vérifications après implémentation
+## Vérification après implémentation
 
-- Cliquer 2× « Sync PDF + vols » → aucun nouveau jour, aucun nouveau fournisseur.
-- Ouvrir la modale d'import, changer d'onglet du navigateur, revenir → modale toujours ouverte avec son état.
-- Importer un PDF qui contient des jours après la date de retour → ces jours sont ignorés.
-- Cliquer « Détecter les inclusions » sur une cotation existante → badges cohérents avec les règles IATA (pas de « Hébergement » sur une nuit en vol, pas de « Vol domestique » pour CDG→MRS dans un voyage international).
+Sur Lisa (contrat 7h30, 5j/sem) :
+
+1. Mois sans aucun déplacement, semaine type avec +30 min/jour → solde = +2h30. **Inchangé**.
+2. Ajouter un déplacement de 2 jours sur des jours de rythme, sans entrée travail concurrente → le compteur **n'augmente ni ne diminue** par rapport à la même semaine remplie en travail au forfait : chaque jour de déplacement = 7h30. Plus de "−1h".
+3. Déplacement posé un samedi (hors rythme Lisa) → reste à 0h dans le compteur, badge visible dans le planning.
+4. Déplacement + travail le même jour → l'entrée travail prend le pas (comportement actuel conservé), le déplacement n'ajoute rien.
