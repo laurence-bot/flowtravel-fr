@@ -302,6 +302,21 @@ function ContractsPage() {
     }
   };
 
+  const markSigned = async (c: Contract) => {
+    if (!confirm(`Marquer le contrat « ${c.titre} » comme signé ?`)) return;
+    try {
+      const { error } = await supabase
+        .from("hr_contracts")
+        .update({ statut: "signe", date_signature: new Date().toISOString().slice(0, 10) })
+        .eq("id", c.id);
+      if (error) throw error;
+      load();
+      toast.success("Contrat marqué comme signé");
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Link
