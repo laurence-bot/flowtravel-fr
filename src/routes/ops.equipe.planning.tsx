@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Trash2, Copy, AlertTriangle, Check, X, Pencil, RefreshCw } from "lucide-react";
+import { ArrowLeft, Trash2, Copy, AlertTriangle, Check, X, Pencil, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -730,7 +730,31 @@ function PlanningPage() {
         description="Vue mensuelle, compteurs d'heures et récupérations"
         action={
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                const d = new Date(`${month}-01T00:00:00Z`);
+                d.setUTCMonth(d.getUTCMonth() - 1);
+                setMonth(d.toISOString().slice(0, 7));
+              }}
+              title="Mois précédent"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
             <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-full sm:w-44" />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                const d = new Date(`${month}-01T00:00:00Z`);
+                d.setUTCMonth(d.getUTCMonth() + 1);
+                setMonth(d.toISOString().slice(0, 7));
+              }}
+              title="Mois suivant"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
             <Button
               variant="outline"
               onClick={async () => {
