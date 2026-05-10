@@ -213,10 +213,7 @@ export async function getMyAgenceId(): Promise<string | null> {
 }
 
 /** Supprime TOUTES les entrées de planning d'un employé (optionnellement bornées par mois YYYY-MM). */
-export async function deleteAllPlanningForEmployee(
-  employeeId: string,
-  opts?: { mois?: string },
-): Promise<number> {
+export async function deleteAllPlanningForEmployee(employeeId: string, opts?: { mois?: string }): Promise<number> {
   let q = supabase.from("hr_planning_entries").delete({ count: "exact" }).eq("employee_id", employeeId);
   if (opts?.mois) {
     const start = `${opts.mois}-01`;
@@ -883,15 +880,20 @@ export function calcCompteurMensuel(
   realisees: number;
   solde: number;
   heuresSup: number;
+  rttAcquises: number;
+  heuresRecup: number;
   joursRythme: number;
 } {
   const joursRythme = emp ? joursOuvres.filter((d) => estJourTravaille(emp, d)) : joursOuvres;
   const rythmeSet = new Set(joursRythme);
   const joursOuvresSet = new Set(joursOuvres);
   const base = joursRythme.length * heuresParJour;
+  const hasRttAgreement = (emp?.jours_rtt_par_an ?? 0) > 0;
+  const basePaieJour = hasRttAgreement ? 7 : heuresParJour;
 
   let impact = 0;
   let heuresSup = 0;
+  let rttAcquises = 0;
   let heuresRecup = 0;
   let travailSaisi = 0;
   let depFormNeutralise = 0;
@@ -922,8 +924,10 @@ export function calcCompteurMensuel(
       for (const d of days) {
         if (!joursOuvresSet.has(d)) continue;
         if (!rythmeSet.has(d)) continue;
-        // Demande métier : déplacement/formation = 7h max comptées, sans heure sup.
-        depFormNeutralise += Math.min(7, heuresParJour);
+        // Déplacement / formation : visible au calendrier, assimilé travail,
+        // mais 7h max/jour, sans RTT acquise et sans heure supplémentaire.
+        const credited = Math.min(7, duree > 0 ? duree : 7);
+        depFormNeutralise += credited;
       }
       continue;
     }
@@ -942,7 +946,24 @@ export function calcCompteurMensuel(
       if (effective <= 0) continue;
 
       travailSaisi += effective;
-      const dayImpact = isNormalWorkedDay ? effective - heuresParJour : effective;
+
+      let dayImpact = 0;
+      if (isNormalWorkedDay) {
+        if (hasRttAgreement) {
+          // Exemple Lisa : journée saisie 7h30 = 7h payées + 0h30 RTT acquise.
+          // Les heures au-delà du contrat journalier restent des heures en plus.
+          const rttCredit = Math.max(0, Math.min(effective, heuresParJour) - basePaieJour);
+          const overtimeBeyondContract = Math.max(0, effective - heuresParJour);
+          rttAcquises += rttCredit;
+          dayImpact = effective < heuresParJour ? effective - heuresParJour : rttCredit + overtimeBeyondContract;
+        } else {
+          dayImpact = effective - heuresParJour;
+        }
+      } else {
+        // Travail explicite sur jour habituellement non travaillé : heures en plus.
+        dayImpact = effective;
+      }
+
       impact += dayImpact;
       if (dayImpact > 0) heuresSup += dayImpact;
     }
@@ -957,19 +978,21 @@ export function calcCompteurMensuel(
     realisees: round(impact),
     solde: round(impact),
     heuresSup: round(heuresSup),
+    rttAcquises: round(rttAcquises),
+    heuresRecup: round(heuresRecup),
     joursRythme: joursRythme.length,
   };
 }
 
-export function calcHeuresRealisees(entries: PlanningEntry[], heuresParJour = 5.75): number {
-  // Déplacement/formation = présence normale → heures contractuelles si pas d'horaires saisis
+export function calcHeuresRealisees(entries: PlanningEntry[], heuresParJour = 7.5): number {
   let total = 0;
   for (const e of entries) {
+    const days = planningEntryDays(e);
+    const duree = dureeNetteEntry(e);
     if (["travail", "teletravail", "reunion"].includes(e.type)) {
-      total += dureeNetteEntry(e);
+      total += (duree > 0 ? duree : heuresParJour) * days.length;
     } else if (e.type === "deplacement" || e.type === "formation") {
-      const duree = dureeNetteEntry(e);
-      total += duree > 0 ? duree : heuresParJour;
+      total += Math.min(7, duree > 0 ? duree : 7) * days.length;
     }
   }
   return Math.round(total * 100) / 100;
