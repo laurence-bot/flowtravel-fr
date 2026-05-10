@@ -317,6 +317,37 @@ function ContractsPage() {
     }
   };
 
+  const sendDocToEmployee = async (doc: HrDocument) => {
+    const emp = empById(doc.employee_id);
+    if (!emp?.email) {
+      toast.error("Cet employé n'a pas d'adresse email");
+      return;
+    }
+    if (!doc.pdf_url) {
+      toast.error("Ajoutez un PDF avant d'envoyer");
+      return;
+    }
+    if (!confirm(`Envoyer « ${doc.titre} » par email à ${emp.prenom} ${emp.nom} ?`)) return;
+    try {
+      await sendTransactionalEmail({
+        templateName: "hr-document-shared",
+        recipientEmail: emp.email,
+        idempotencyKey: `hr-doc-${doc.id}-${Date.now()}`,
+        templateData: {
+          prenom: emp.prenom,
+          categorie_label: DOC_CATEGORIE_LABELS[doc.categorie],
+          titre: doc.titre,
+          description: doc.description,
+          pdf_url: doc.pdf_url,
+          espace_url: `${window.location.origin}/mon-espace/documents`,
+        },
+      });
+      toast.success("Document envoyé par email");
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Link
@@ -454,6 +485,11 @@ function ContractsPage() {
                                   PDF
                                 </Button>
                               </a>
+                            )}
+                            {doc.pdf_url && (
+                              <Button size="sm" variant="ghost" onClick={() => sendDocToEmployee(doc)}>
+                                <Send className="h-3.5 w-3.5 mr-1" /> Envoyer
+                              </Button>
                             )}
                             <Button size="sm" variant="ghost" onClick={() => openEditDoc(doc)}>
                               Modifier

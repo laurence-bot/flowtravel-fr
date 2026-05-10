@@ -106,6 +106,7 @@ const navMonEspace: NavItem[] = [
   { to: "/mon-espace/pointage", label: "Pointage", icon: Clock },
   { to: "/mon-espace/conges", label: "Mes congés", icon: CalendarDays },
   { to: "/mon-espace/contrats", label: "Mes contrats", icon: FileSignature },
+  { to: "/mon-espace/documents", label: "Mes documents", icon: FileText },
   { to: "/mon-espace/evaluation", label: "Mon évaluation", icon: Award },
 ];
 

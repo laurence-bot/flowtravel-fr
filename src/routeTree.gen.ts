@@ -59,6 +59,7 @@ import { Route as OpsDashboardRouteImport } from './routes/ops.dashboard'
 import { Route as OpsAgencesRouteImport } from './routes/ops.agences'
 import { Route as MonEspacePointageRouteImport } from './routes/mon-espace.pointage'
 import { Route as MonEspaceEvaluationRouteImport } from './routes/mon-espace.evaluation'
+import { Route as MonEspaceDocumentsRouteImport } from './routes/mon-espace.documents'
 import { Route as MonEspaceContratsRouteImport } from './routes/mon-espace.contrats'
 import { Route as MonEspaceCongesRouteImport } from './routes/mon-espace.conges'
 import { Route as MesDocumentsTokenRouteImport } from './routes/mes-documents.$token'
@@ -346,6 +347,11 @@ const MonEspaceEvaluationRoute = MonEspaceEvaluationRouteImport.update({
   path: '/mon-espace/evaluation',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MonEspaceDocumentsRoute = MonEspaceDocumentsRouteImport.update({
+  id: '/mon-espace/documents',
+  path: '/mon-espace/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MonEspaceContratsRoute = MonEspaceContratsRouteImport.update({
   id: '/mon-espace/contrats',
   path: '/mon-espace/contrats',
@@ -589,6 +595,7 @@ export interface FileRoutesByFullPath {
   '/mes-documents/$token': typeof MesDocumentsTokenRoute
   '/mon-espace/conges': typeof MonEspaceCongesRoute
   '/mon-espace/contrats': typeof MonEspaceContratsRoute
+  '/mon-espace/documents': typeof MonEspaceDocumentsRoute
   '/mon-espace/evaluation': typeof MonEspaceEvaluationRoute
   '/mon-espace/pointage': typeof MonEspacePointageRoute
   '/ops/agences': typeof OpsAgencesRoute
@@ -676,6 +683,7 @@ export interface FileRoutesByTo {
   '/mes-documents/$token': typeof MesDocumentsTokenRoute
   '/mon-espace/conges': typeof MonEspaceCongesRoute
   '/mon-espace/contrats': typeof MonEspaceContratsRoute
+  '/mon-espace/documents': typeof MonEspaceDocumentsRoute
   '/mon-espace/evaluation': typeof MonEspaceEvaluationRoute
   '/mon-espace/pointage': typeof MonEspacePointageRoute
   '/ops/agences': typeof OpsAgencesRoute
@@ -765,6 +773,7 @@ export interface FileRoutesById {
   '/mes-documents/$token': typeof MesDocumentsTokenRoute
   '/mon-espace/conges': typeof MonEspaceCongesRoute
   '/mon-espace/contrats': typeof MonEspaceContratsRoute
+  '/mon-espace/documents': typeof MonEspaceDocumentsRoute
   '/mon-espace/evaluation': typeof MonEspaceEvaluationRoute
   '/mon-espace/pointage': typeof MonEspacePointageRoute
   '/ops/agences': typeof OpsAgencesRoute
@@ -855,6 +864,7 @@ export interface FileRouteTypes {
     | '/mes-documents/$token'
     | '/mon-espace/conges'
     | '/mon-espace/contrats'
+    | '/mon-espace/documents'
     | '/mon-espace/evaluation'
     | '/mon-espace/pointage'
     | '/ops/agences'
@@ -942,6 +952,7 @@ export interface FileRouteTypes {
     | '/mes-documents/$token'
     | '/mon-espace/conges'
     | '/mon-espace/contrats'
+    | '/mon-espace/documents'
     | '/mon-espace/evaluation'
     | '/mon-espace/pointage'
     | '/ops/agences'
@@ -1030,6 +1041,7 @@ export interface FileRouteTypes {
     | '/mes-documents/$token'
     | '/mon-espace/conges'
     | '/mon-espace/contrats'
+    | '/mon-espace/documents'
     | '/mon-espace/evaluation'
     | '/mon-espace/pointage'
     | '/ops/agences'
@@ -1114,6 +1126,7 @@ export interface RootRouteChildren {
   MesDocumentsTokenRoute: typeof MesDocumentsTokenRoute
   MonEspaceCongesRoute: typeof MonEspaceCongesRoute
   MonEspaceContratsRoute: typeof MonEspaceContratsRoute
+  MonEspaceDocumentsRoute: typeof MonEspaceDocumentsRoute
   MonEspaceEvaluationRoute: typeof MonEspaceEvaluationRoute
   MonEspacePointageRoute: typeof MonEspacePointageRoute
   PTokenRoute: typeof PTokenRoute
@@ -1479,6 +1492,13 @@ declare module '@tanstack/react-router' {
       path: '/mon-espace/evaluation'
       fullPath: '/mon-espace/evaluation'
       preLoaderRoute: typeof MonEspaceEvaluationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mon-espace/documents': {
+      id: '/mon-espace/documents'
+      path: '/mon-espace/documents'
+      fullPath: '/mon-espace/documents'
+      preLoaderRoute: typeof MonEspaceDocumentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mon-espace/contrats': {
@@ -1899,6 +1919,7 @@ const rootRouteChildren: RootRouteChildren = {
   MesDocumentsTokenRoute: MesDocumentsTokenRoute,
   MonEspaceCongesRoute: MonEspaceCongesRoute,
   MonEspaceContratsRoute: MonEspaceContratsRoute,
+  MonEspaceDocumentsRoute: MonEspaceDocumentsRoute,
   MonEspaceEvaluationRoute: MonEspaceEvaluationRoute,
   MonEspacePointageRoute: MonEspacePointageRoute,
   PTokenRoute: PTokenRoute,

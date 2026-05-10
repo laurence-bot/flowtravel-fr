@@ -17,6 +17,7 @@ import { template as bulletinRelance } from './bulletin-relance'
 import { template as agentEvent } from './agent-event'
 import { template as acompteRelance } from './acompte-relance'
 import { template as agenceValidee } from './agence-validee'
+import { template as hrDocumentShared } from './hr-document-shared'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'payroll-monthly': payrollMonthly,
@@ -28,4 +29,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'agent-event': agentEvent,
   'acompte-relance': acompteRelance,
   'agence-validee': agenceValidee,
+  'hr-document-shared': hrDocumentShared,
 }
