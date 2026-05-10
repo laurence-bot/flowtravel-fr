@@ -306,10 +306,23 @@ function PlanningPage() {
     setRecups(recs);
     const joursOuvres = days.filter((d) => isJourOuvre(d, holidays));
     const linkedRecupPlanningIds = new Set(recs.map((r) => r.planning_entry_id).filter(Boolean));
+    const approvedRecupDatesByEmp = new Map<string, Set<string>>();
+    for (const r of recs) {
+      if (r.statut !== "approuvee" || !r.date_souhaitee) continue;
+      const set = approvedRecupDatesByEmp.get(r.employee_id) ?? new Set<string>();
+      set.add(r.date_souhaitee);
+      approvedRecupDatesByEmp.set(r.employee_id, set);
+    }
     const ouvresSet = new Set(joursOuvres);
     await Promise.all(
       actifs.map(async (emp) => {
-        const empEntries = plan.filter((e) => e.employee_id === emp.id && !linkedRecupPlanningIds.has(e.id));
+        const recupDates = approvedRecupDatesByEmp.get(emp.id) ?? new Set<string>();
+        const empEntries = plan.filter(
+          (e) =>
+            e.employee_id === emp.id &&
+            !linkedRecupPlanningIds.has(e.id) &&
+            !(e.type === "recuperation" && planningEntryDays(e).some((d) => recupDates.has(d))),
+        );
         const empAbs = absences.filter((a) => a.employee_id === emp.id);
         const joursNeutralises: string[] = [];
         for (const a of empAbs) {
