@@ -16,7 +16,6 @@ import {
   upsertPlanning,
   deletePlanning,
   deletePlanningGroup,
-  calcHeuresRealisees,
   upsertCompteur,
   listCompteurs,
   clearCompteursMois,
@@ -27,6 +26,7 @@ import {
   isJourFerie,
   heuresContractuellesParJour,
   calcCompteurMensuel,
+  buildCompteurEntriesForEmployee,
   estJourTravaille,
   createRecupDemande,
   approuverRecupDemande,
@@ -36,7 +36,6 @@ import {
   alertesFinDeMois,
   PLANNING_TYPE_LABELS,
   planningEntryCoversDate,
-  planningEntryDays,
   type Employee,
   type PlanningEntry,
   type PlanningType,
@@ -327,24 +326,10 @@ function PlanningPage() {
     setEntries(plan);
     setRecups(recs);
     const joursOuvres = days.filter((d) => isJourOuvre(d, holidays));
-    const linkedRecupPlanningIds = new Set(recs.map((r) => r.planning_entry_id).filter(Boolean));
-    const approvedRecupDatesByEmp = new Map<string, Set<string>>();
-    for (const r of recs) {
-      if (r.statut !== "approuvee" || !r.date_souhaitee) continue;
-      const set = approvedRecupDatesByEmp.get(r.employee_id) ?? new Set<string>();
-      set.add(r.date_souhaitee);
-      approvedRecupDatesByEmp.set(r.employee_id, set);
-    }
     const ouvresSet = new Set(joursOuvres);
     await Promise.all(
       actifs.map(async (emp) => {
-        const recupDates = approvedRecupDatesByEmp.get(emp.id) ?? new Set<string>();
-        const empEntries = plan.filter(
-          (e) =>
-            e.employee_id === emp.id &&
-            !linkedRecupPlanningIds.has(e.id) &&
-            !(e.type === "recuperation" && planningEntryDays(e).some((d) => recupDates.has(d))),
-        );
+        const empEntries = buildCompteurEntriesForEmployee(plan, recs, emp.id, days[0], days[days.length - 1]);
         const empAbs = absences.filter((a) => a.employee_id === emp.id);
         const joursNeutralises: string[] = [];
         for (const a of empAbs) {
@@ -357,25 +342,9 @@ function PlanningPage() {
             if (ouvresSet.has(iso)) joursNeutralises.push(iso);
           }
         }
-        const empRecups = recs
-          .filter((r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee)
-          .map((r) => ({
-            id: r.id,
-            employee_id: r.employee_id,
-            agence_id: null,
-            date_start: r.date_souhaitee!,
-            date_end: r.date_souhaitee!,
-            heure_debut: r.heure_debut ?? null,
-            heure_fin: r.heure_fin ?? null,
-            type: "recuperation" as const,
-            note: null,
-            group_id: null,
-            pause_minutes: null,
-            heures_recup: r.heures_demandees,
-          }));
         const hParJour = heuresContractuellesParJour(emp);
         const c = calcCompteurMensuel(
-          [...empEntries, ...empRecups],
+          empEntries,
           joursOuvres,
           hParJour,
           emp,

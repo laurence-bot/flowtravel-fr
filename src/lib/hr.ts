@@ -155,6 +155,7 @@ export type PlanningEntry = {
   note: string | null;
   group_id: string | null;
   pause_minutes?: number | null;
+  heures_recup?: number | null;
 };
 
 /** True if the entry's [date_start, date_end] range covers the given ISO date. */
@@ -842,6 +843,52 @@ function dureeNetteEntry(e: PlanningEntry): number {
   return Math.max(0, dureeMin - pauseMin) / 60;
 }
 
+export function buildCompteurEntriesForEmployee(
+  entries: PlanningEntry[],
+  recups: RecupDemande[],
+  employeeId: string,
+  fromIso: string,
+  toIso: string,
+): PlanningEntry[] {
+  const approvedRecups = recups.filter(
+    (r) =>
+      r.employee_id === employeeId &&
+      r.statut === "approuvee" &&
+      r.date_souhaitee &&
+      r.date_souhaitee >= fromIso &&
+      r.date_souhaitee <= toIso,
+  );
+  const linkedRecupPlanningIds = new Set(
+    approvedRecups.map((r) => r.planning_entry_id).filter(Boolean),
+  );
+  const recupDates = new Set(approvedRecups.map((r) => r.date_souhaitee!));
+  const periodEntries = entries.filter(
+    (e) =>
+      e.employee_id === employeeId &&
+      e.date_start <= toIso &&
+      e.date_end >= fromIso &&
+      !linkedRecupPlanningIds.has(e.id) &&
+      !(e.type === "recuperation" && planningEntryDays(e).some((d) => recupDates.has(d))),
+  );
+
+  const recupEntries: PlanningEntry[] = approvedRecups.map((r) => ({
+    id: r.id,
+    employee_id: r.employee_id,
+    agence_id: r.agence_id,
+    date_start: r.date_souhaitee!,
+    date_end: r.date_souhaitee!,
+    heure_debut: r.heure_debut,
+    heure_fin: r.heure_fin,
+    type: "recuperation",
+    note: r.motif,
+    group_id: null,
+    pause_minutes: null,
+    heures_recup: r.heures_demandees,
+  }));
+
+  return [...periodEntries, ...recupEntries];
+}
+
 /**
  * Compteur mensuel FlowTravel — logique RH par exception.
  *
@@ -906,7 +953,7 @@ export function calcCompteurMensuel(
     const duree = dureeNetteEntry(e);
 
     if (e.type === "recuperation") {
-      const explicit = Number((e as any).heures_recup ?? 0);
+      const explicit = Number(e.heures_recup ?? 0);
       const fallback = duree > 0 ? duree : heuresParJour;
       const value = Math.min(heuresParJour, explicit > 0 ? explicit : fallback);
 
@@ -954,9 +1001,9 @@ export function calcCompteurMensuel(
           // → chaque journée à 7h30 alimente le solde de +0h30 (heures sup à récupérer).
           // → une journée à 7h ne crée AUCUN écart (0h impact).
           // Le pool rttAcquises informe sur le crédit RTT cumulé (informatif, en heures).
-          const rttCredit = Math.max(0, Math.min(effective, heuresParJour) - basePaieJour);
+          const rttCredit = effective >= heuresParJour ? heuresParJour - basePaieJour : 0;
           rttAcquises += rttCredit;
-          dayImpact = effective - basePaieJour;
+          dayImpact = effective >= heuresParJour ? effective - basePaieJour : 0;
         } else {
           dayImpact = effective - heuresParJour;
         }
