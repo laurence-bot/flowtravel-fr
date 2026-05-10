@@ -15,7 +15,7 @@ interface Props {
 const HrDocumentSharedEmail = ({ prenom, categorie_label, titre, description, pdf_url, espace_url, agence_nom }: Props) => (
   <Html lang="fr">
     <Head />
-    <Preview>{categorie_label ?? "Nouveau document"} disponible — {titre}</Preview>
+    <Preview>{`${categorie_label ?? "Nouveau document"} disponible — ${titre ?? ""}`}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>Bonjour {prenom ?? ""},</Heading>
