@@ -31,13 +31,24 @@ export type FlightOptionLite = {
   created_at: string;
 };
 
+/** Type métier d'une journée générée depuis les vols. */
+export type FlightDayType =
+  | "departure_day"     // Jour de départ international (quitte le pays d'origine)
+  | "overnight_flight"  // Nuit en vol entre départ et arrivée (pas de jour dédié, info portée par J1)
+  | "arrival_day"       // Jour d'arrivée à destination (programme terrestre commence)
+  | "domestic_transfer" // Vol domestique dans le pays de destination
+  | "inbound_flight"    // Jour de départ retour (quitte le pays de destination)
+  | "final_arrival"     // Jour d'arrivée finale dans le pays d'origine
+  | "stay";             // Jour de séjour (à compléter par le programme terrestre)
+
 export type GeneratedDay = {
   ordre: number;
   date_jour: string;
   titre: string;
   lieu: string | null;
   description: string | null;
-  isFlightDay: boolean; // J1 (vol aller) ou dernier jour (vol retour)
+  isFlightDay: boolean; // true pour départ/arrivée intl/retour/transfert domestique
+  type_jour?: FlightDayType;
 };
 
 /** Choisit le vol de référence : confirmé > 1er créé. */
