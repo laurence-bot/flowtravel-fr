@@ -1515,25 +1515,65 @@ function PlanningPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Heures à récupérer</Label>
-                <Input
-                  type="number"
-                  step="0.5"
-                  value={recupForm.heures_demandees}
-                  onChange={(e) => setRecupForm({ ...recupForm, heures_demandees: e.target.value })}
-                />
+            {recupForm.type === "heures" ? (
+              <>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <Label>Heure de début</Label>
+                    <Input
+                      type="time"
+                      value={recupForm.heure_debut}
+                      onChange={(e) => setRecupForm({ ...recupForm, heure_debut: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Heure de fin</Label>
+                    <Input
+                      type="time"
+                      value={recupForm.heure_fin}
+                      onChange={(e) => setRecupForm({ ...recupForm, heure_fin: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Total</Label>
+                    <Input
+                      type="text"
+                      readOnly
+                      value={`${recupHeuresFromRange(recupForm.heure_debut, recupForm.heure_fin)} h`}
+                      className="bg-muted"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Date souhaitée</Label>
+                  <Input
+                    type="date"
+                    value={recupForm.date_souhaitee}
+                    onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Heures à récupérer</Label>
+                  <Input
+                    type="number"
+                    step="0.5"
+                    value={recupForm.heures_demandees}
+                    onChange={(e) => setRecupForm({ ...recupForm, heures_demandees: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Date souhaitée</Label>
+                  <Input
+                    type="date"
+                    value={recupForm.date_souhaitee}
+                    onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })}
+                  />
+                </div>
               </div>
-              <div>
-                <Label>Date souhaitée</Label>
-                <Input
-                  type="date"
-                  value={recupForm.date_souhaitee}
-                  onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })}
-                />
-              </div>
-            </div>
+            )}
             <div>
               <Label>Motif (optionnel)</Label>
               <Textarea
