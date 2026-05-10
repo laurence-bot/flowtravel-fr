@@ -145,11 +145,16 @@ function AnneePage() {
       let baseReelleTotal = 0;
       let rttAcquisesTotal = 0;
       const empAbs = absences.filter((a) => a.employee_id === emp.id);
-      // Récups approuvées NON liées à une entrée planning (sinon double comptage : l'approbation crée déjà
-      // une entrée de type "recuperation" dans le planning, qui est déjà décomptée par calcCompteurMensuel).
+      // Toutes les récups approuvées de l'employé (avec date) — on utilise les heures
+      // réellement demandées, pas la durée de l'entrée planning liée.
       const empRecups = recups.filter(
-        (r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee && !(r as any).planning_entry_id,
+        (r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee,
       );
+      // Entrées planning de récup déjà liées à une demande : à ignorer pour éviter le double comptage.
+      const linkedRecupPlanningIds = new Set(
+        empRecups.map((r) => (r as any).planning_entry_id).filter(Boolean),
+      );
+      const recupDatesByEmp = new Set(empRecups.map((r) => r.date_souhaitee!));
 
       // Congés / RTT pris (jours ouvrés sur la période)
       let congesPris = 0;
