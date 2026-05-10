@@ -22,6 +22,8 @@ import {
   calcCompteurMensuel,
   heuresContractuellesParJour,
   planningEntryDays,
+  deletePlanning,
+  deleteAbsence,
   CONTRACT_TYPE_LABELS,
   type Employee,
   type ContractType,
