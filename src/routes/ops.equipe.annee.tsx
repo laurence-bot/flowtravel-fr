@@ -298,6 +298,9 @@ function AnneePage() {
                     {MONTH_LABELS[Number(m.slice(5)) - 1]} {m.slice(2, 4)}
                   </th>
                 ))}
+                <th className="px-2 py-1 border-l text-right min-w-[90px]">Congés</th>
+                <th className="px-2 py-1 border-l text-right min-w-[90px]">RTT pris</th>
+                <th className="px-2 py-1 border-l text-right min-w-[100px]">RTT acq.</th>
                 <th className="px-2 py-1 border-l text-right min-w-[100px]">H. sup an.</th>
                 <th className="px-2 py-1 border-l text-right min-w-[90px]">Solde an.</th>
               </tr>
