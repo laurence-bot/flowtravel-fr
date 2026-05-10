@@ -237,9 +237,7 @@ export async function getEmployeeByUserId(userId: string): Promise<Employee | nu
 }
 export async function createEmployee(input: Partial<Employee>): Promise<Employee> {
   const agence_id = await getMyAgenceId();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUserSafe();
   const { data, error } = await supabase
     .from("hr_employees")
     .insert({
@@ -284,9 +282,7 @@ export async function createContract(
   input: { titre: string; type_contrat: ContractType; date_debut?: string; date_fin?: string; contenu_html?: string },
 ): Promise<Contract> {
   const employee = await getEmployee(employeeId);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUserSafe();
   const { data, error } = await supabase
     .from("hr_contracts")
     .insert({
@@ -327,9 +323,7 @@ export async function createAbsence(input: {
   motif?: string;
 }): Promise<Absence> {
   const employee = await getEmployee(input.employee_id);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUserSafe();
   const nbJours = computeWorkingDays(input.date_debut, input.date_fin);
   const { data, error } = await supabase
     .from("hr_absences")
@@ -350,9 +344,7 @@ export async function createAbsence(input: {
   return data as Absence;
 }
 export async function approveAbsence(id: string): Promise<void> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUserSafe();
   const { error } = await supabase
     .from("hr_absences")
     .update({
@@ -405,9 +397,7 @@ export async function approveAbsence(id: string): Promise<void> {
   }
 }
 export async function rejectAbsence(id: string, motif: string): Promise<void> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUserSafe();
   const { error } = await supabase
     .from("hr_absences")
     .update({
@@ -494,9 +484,7 @@ export async function upsertPlanning(
   input: Partial<PlanningEntry> & { employee_id: string; date_start: string; type: PlanningType; date_end?: string },
 ): Promise<void> {
   const employee = await getEmployee(input.employee_id);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUserSafe();
   const { error } = await supabase.from("hr_planning_entries").insert({
     employee_id: input.employee_id,
     agence_id: employee?.agence_id ?? null,
@@ -564,9 +552,7 @@ export async function listEvaluations(employeeId?: string): Promise<Evaluation[]
 }
 export async function createEvaluation(employeeId: string, annee: number): Promise<Evaluation> {
   const employee = await getEmployee(employeeId);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUserSafe();
   const { data, error } = await supabase
     .from("hr_evaluations")
     .insert({
@@ -636,9 +622,7 @@ export async function createJobDescription(
   input: Partial<JobDescription> & { employee_id: string; intitule: string },
 ): Promise<JobDescription> {
   const agence_id = await getMyAgenceId();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUserSafe();
   // Désactiver les anciennes versions actives pour cet employé
   await supabase
     .from("hr_job_descriptions")
@@ -1113,9 +1097,7 @@ export async function createRecupDemande(input: {
 }
 
 export async function approuverRecupDemande(id: string): Promise<void> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUserSafe();
   // Charger la demande pour récupérer date/heures
   const { data: dem, error: e1 } = await supabase
     .from("hr_recup_demandes" as any)
@@ -1188,9 +1170,7 @@ export async function approuverRecupDemande(id: string): Promise<void> {
 }
 
 export async function refuserRecupDemande(id: string): Promise<void> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUserSafe();
   const { error } = await supabase
     .from("hr_recup_demandes" as any)
     .update({ statut: "refusee", traite_par: user?.id ?? null, traite_at: new Date().toISOString() })
@@ -1333,9 +1313,7 @@ export async function createHrDocument(input: {
   necessite_signature?: boolean;
 }): Promise<HrDocument> {
   const agence_id = await getMyAgenceId();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUserSafe();
   const { data, error } = await supabase
     .from("hr_documents" as any)
     .insert({
