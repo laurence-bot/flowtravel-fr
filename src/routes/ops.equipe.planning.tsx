@@ -86,6 +86,16 @@ function daysInMonth(month: string): string[] {
   return out;
 }
 
+function daysInRange(startIso: string, endIso: string): string[] {
+  const out: string[] = [];
+  const start = new Date(`${startIso}T00:00:00Z`);
+  const end = new Date(`${endIso}T00:00:00Z`);
+  for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+    out.push(d.toISOString().slice(0, 10));
+  }
+  return out;
+}
+
 function getISOWeek(d: Date): number {
   const tmp = new Date(d);
   tmp.setHours(0, 0, 0, 0);
@@ -170,13 +180,14 @@ const EMPTY_FORM: FormState = {
 
 function generateEntriesFromWeekConfig(
   employeeId: string,
-  month: string,
+  dateDebut: string,
+  dateFin: string,
   semaineA: WeekConfig,
   semaineB: WeekConfig,
   utiliseSemaineB: boolean,
   type: PlanningType,
 ) {
-  const days = daysInMonth(month);
+  const days = daysInRange(dateDebut, dateFin);
   return days.flatMap((dateStr) => {
     const date = new Date(dateStr);
     const jourIdx = JS_DAY_TO_IDX[date.getDay()];
@@ -192,6 +203,7 @@ function generateEntriesFromWeekConfig(
         heure_debut: config.heure_debut || null,
         heure_fin: config.heure_fin || null,
         note: null,
+        pause_minutes: Number(config.pause_minutes || 0),
       },
     ];
   });
@@ -382,7 +394,7 @@ function PlanningPage() {
       // Sur un jour férié : on masque uniquement les badges "travail/télétravail/réunion/formation"
       // (jour payé non travaillé). Les déplacements restent visibles car ils couvrent une plage
       // continue (ex : voyage pro qui inclut un férié).
-      if (isJourFerie(date, holidays) && ["travail", "teletravail", "reunion", "formation"].includes(e.type)) {
+      if (isJourFerie(date, holidays) && ["travail", "teletravail", "reunion"].includes(e.type)) {
         return false;
       }
       // Un déplacement ou une formation couvre toute sa plage (week-end inclus) : on n'applique
@@ -426,10 +438,7 @@ function PlanningPage() {
     try {
       if (form.editId) {
         await deletePlanning(form.editId);
-        const isRangeEdit =
-          (form.type === "deplacement" || form.type === "formation") &&
-          form.date_fin &&
-          form.date_fin >= form.date_debut;
+        const isRangeEdit = !!form.date_fin && form.date_fin >= form.date_debut;
         await upsertPlanning({
           employee_id: empId,
           date_start: form.date_debut,
@@ -438,7 +447,8 @@ function PlanningPage() {
           heure_debut: form.heure_debut || null,
           heure_fin: form.heure_fin || null,
           note: form.note || null,
-        });
+          pause_minutes: Number(form.pause_minutes || 0),
+        } as any);
         toast.success("Entrée mise à jour");
         setOpen(false);
         setForm(EMPTY_FORM);
@@ -447,9 +457,15 @@ function PlanningPage() {
       }
 
       if (form.mode === "semaine_type") {
+        if (!form.date_debut || !form.date_fin || form.date_fin < form.date_debut) {
+          toast.error("Période de planning invalide");
+          setSaving(false);
+          return;
+        }
         const toCreate = generateEntriesFromWeekConfig(
           empId,
-          form.mois_cible,
+          form.date_debut,
+          form.date_fin,
           form.semaine_a,
           form.semaine_b,
           form.utilise_semaine_b,
@@ -461,7 +477,7 @@ function PlanningPage() {
           return;
         }
         await Promise.all(toCreate.map((e) => upsertPlanning(e)));
-        toast.success(`${toCreate.length} entrée(s) générée(s) pour ${form.mois_cible}`);
+        toast.success(`${toCreate.length} entrée(s) générée(s) sur la période`);
       } else {
         if (!form.date_debut) {
           toast.error("Date requise");
@@ -470,10 +486,7 @@ function PlanningPage() {
         }
 
         // Cas plage continue (déplacement/formation) : une seule entrée avec date_start/date_end
-        const isRangeType =
-          (form.type === "deplacement" || form.type === "formation") &&
-          form.date_fin &&
-          form.date_fin >= form.date_debut;
+        const isRangeType = !!form.date_fin && form.date_fin >= form.date_debut;
 
         if (isRangeType) {
           // Conflit : tout jour de la plage déjà occupé par un type exclusif
@@ -511,7 +524,8 @@ function PlanningPage() {
             heure_debut: form.heure_debut || null,
             heure_fin: form.heure_fin || null,
             note: form.note || null,
-          });
+            pause_minutes: Number(form.pause_minutes || 0),
+          } as any);
           toast.success("Plage ajoutée");
         } else {
           const dates = expandDates(form.date_debut, form.repeat, month);
@@ -555,6 +569,7 @@ function PlanningPage() {
                 heure_fin: form.heure_fin || null,
                 note: form.note || null,
                 group_id: groupId,
+                pause_minutes: Number(form.pause_minutes || 0),
               } as any),
             ),
           );
@@ -613,7 +628,8 @@ function PlanningPage() {
             heure_debut: e.heure_debut ?? null,
             heure_fin: e.heure_fin ?? null,
             note: e.note ?? null,
-          }),
+            pause_minutes: (e as any).pause_minutes ?? null,
+          } as any),
         ),
       );
       toast.success(`${weekEntries.length} entrée(s) copiée(s)`);
@@ -911,13 +927,11 @@ function PlanningPage() {
                 ouvrés).
               </p>
               <p>
-                <strong>Réalisées</strong> : heures effectivement planifiées (travail, télétravail, réunion,
-                déplacement, formation, récupération) — fériés/CP/RTT/maladie comptés au forfait contractuel pour ne pas
-                creuser le solde.
+                <strong>Écart saisi</strong> : impact réel sur le compteur. Les jours fériés ne sont pas des heures
+                réalisées ; déplacement et formation restent visibles au calendrier mais sont neutralisés.
               </p>
               <p>
-                <strong>Solde</strong> : Réalisées + Report − Contractuelles. Positif = heures à récupérer ; négatif =
-                heures dues.
+                <strong>Solde</strong> : écart saisi + report. Positif = heures à récupérer ; négatif = heures dues.
               </p>
             </div>
             {compteurs.length === 0 ? (
@@ -928,7 +942,7 @@ function PlanningPage() {
                   <tr>
                     <th className="text-left px-3 py-2">Employé</th>
                     <th className="text-right px-3 py-2">Contractuelles</th>
-                    <th className="text-right px-3 py-2">Réalisées</th>
+                    <th className="text-right px-3 py-2">Écart saisi</th>
                     <th className="text-right px-3 py-2">Report</th>
                     <th className="text-right px-3 py-2">Solde</th>
                     <th className="px-3 py-2"></th>
@@ -1185,36 +1199,27 @@ function PlanningPage() {
                   </Select>
                 </div>
 
-                {!isEditing && (form.type === "deplacement" || form.type === "formation") ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label>Date de début</Label>
-                      <Input
-                        type="date"
-                        value={form.date_debut}
-                        onChange={(e) => setForm({ ...form, date_debut: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Date de fin</Label>
-                      <Input
-                        type="date"
-                        value={form.date_fin}
-                        onChange={(e) => setForm({ ...form, date_fin: e.target.value })}
-                        min={form.date_debut}
-                      />
-                    </div>
-                  </div>
-                ) : (
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label>Date</Label>
+                    <Label>Date de début</Label>
                     <Input
                       type="date"
                       value={form.date_debut}
                       onChange={(e) => setForm({ ...form, date_debut: e.target.value })}
                     />
                   </div>
-                )}
+                  <div className="space-y-1.5">
+                    <Label>
+                      Date de fin <span className="text-xs text-muted-foreground">(optionnel)</span>
+                    </Label>
+                    <Input
+                      type="date"
+                      value={form.date_fin}
+                      onChange={(e) => setForm({ ...form, date_fin: e.target.value })}
+                      min={form.date_debut}
+                    />
+                  </div>
+                </div>
 
                 {!(form.type === "deplacement" || form.type === "formation") && (
                   <>
@@ -1297,13 +1302,24 @@ function PlanningPage() {
 
             {form.mode === "semaine_type" && !isEditing && (
               <>
-                <div className="space-y-1.5">
-                  <Label>Mois à remplir</Label>
-                  <Input
-                    type="month"
-                    value={form.mois_cible}
-                    onChange={(e) => setForm({ ...form, mois_cible: e.target.value })}
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Début de période</Label>
+                    <Input
+                      type="date"
+                      value={form.date_debut}
+                      onChange={(e) => setForm({ ...form, date_debut: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Fin de période</Label>
+                    <Input
+                      type="date"
+                      value={form.date_fin}
+                      min={form.date_debut}
+                      onChange={(e) => setForm({ ...form, date_fin: e.target.value })}
+                    />
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Type d'activité</Label>
