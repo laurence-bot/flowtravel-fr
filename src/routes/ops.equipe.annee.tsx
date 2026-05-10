@@ -191,7 +191,11 @@ function AnneePage() {
           }
         }
         const empEntries = entries.filter(
-          (e) => e.employee_id === emp.id && planningEntryDays(e).some((d) => ouvresSet.has(d)),
+          (e) =>
+            e.employee_id === emp.id &&
+            !linkedRecupPlanningIds.has(e.id) &&
+            !(e.type === "recuperation" && planningEntryDays(e).some((d) => recupDatesByEmp.has(d))) &&
+            planningEntryDays(e).some((d) => ouvresSet.has(d)),
         );
         const recupAsEntries = empRecups
           .filter((r) => r.date_souhaitee! >= days[0] && r.date_souhaitee! <= days[days.length - 1])
