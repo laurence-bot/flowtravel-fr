@@ -869,8 +869,10 @@ export function calcCompteurMensuel(
   const joursRythme = emp ? joursOuvres.filter((d) => estJourTravaille(emp, d)) : joursOuvres;
   const rythmeSet = new Set(joursRythme);
   const joursOuvresSet = new Set(joursOuvres);
-  // Base = forfait mensualisé paie : (jours rythme/sem × heures/jour × 52 / 12)
-  // Aligné sur la fiche de paie (151,67h pour un temps plein 5j × 7h)
+  // Base = forfait contractuel RÉEL (jours rythme/sem × heures/jour × 52 / 12)
+  // Pour Lisa 5j × 7,5h = 162,5h. C'est cette base qui pilote les alertes
+  // d'heures sup et les droits à récupération — distincte de la base paie
+  // mensualisée à 35h (151,67h) qui sert uniquement au bulletin (cf. basePaieMensuelle).
   let joursParSemaine = 5;
   if (emp) {
     const a = emp.semaine_a_jours?.length ?? 5;
