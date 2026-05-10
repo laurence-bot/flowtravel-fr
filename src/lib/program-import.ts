@@ -39,9 +39,13 @@ export interface JourExtrait {
   ordre: number;
   titre: string;
   lieu?: string | null;
+  /** Date du jour au format YYYY-MM-DD si disponible (source de vérité prioritaire). */
+  date_jour?: string | null;
   description?: string | null;
+  /** Nom de l'hébergement de la nuit, tel qu'écrit dans le document. */
+  hotel_nom?: string | null;
   /** Inclusions détectées (repas, transferts…) */
-  inclusions?: string[];
+  inclusions?: string[] | null;
 }
 
 export interface LigneExtraite {
@@ -162,7 +166,10 @@ export async function insertJours(
       ordre: startOrdre + idx,
       titre: j.titre,
       lieu: j.lieu ?? null,
+      date_jour: j.date_jour ?? null,
       description: j.description ?? null,
+      hotel_nom: j.hotel_nom ?? null,
+      inclusions: j.inclusions ?? null,
     }));
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -184,8 +191,183 @@ export async function insertJours(
 }
 
 // ---------------------------------------------------------------------------
-// insertLignes — insère les lignes fournisseurs extraites
+// upsertJoursProgramme — fusionne intelligemment les jours extraits avec
+// les jours existants : update sur match (date_jour prioritaire, sinon
+// titre normalisé), insert pour les vrais nouveaux jours, puis renumérote
+// l'ensemble par date_jour puis ordre.
 // ---------------------------------------------------------------------------
+
+export interface UpsertJoursResult {
+  inserted: number;
+  updated: number;
+  skipped: number;
+  error: string | null;
+}
+
+function normalizeTitre(t: string | null | undefined): string {
+  if (!t) return "";
+  return t
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/** Calcule date_jour à partir de date_depart + (ordre - 1) jours, en YYYY-MM-DD UTC. */
+function addDaysISO(dateDepart: string, daysOffset: number): string {
+  // dateDepart au format YYYY-MM-DD : on construit en UTC pour éviter les dérives TZ.
+  const [y, m, d] = dateDepart.split("-").map((n) => parseInt(n, 10));
+  const dt = new Date(Date.UTC(y, (m || 1) - 1, d || 1));
+  dt.setUTCDate(dt.getUTCDate() + daysOffset);
+  const yy = dt.getUTCFullYear();
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getUTCDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
+}
+
+export async function upsertJoursProgramme(
+  userId: string,
+  cotationId: string,
+  jours: JourExtrait[],
+  options?: { dateDepart?: string | null },
+): Promise<UpsertJoursResult> {
+  if (jours.length === 0) return { inserted: 0, updated: 0, skipped: 0, error: null };
+
+  try {
+    // 1) Calcule date_jour manquante à partir de date_depart si dispo.
+    const enriched: JourExtrait[] = jours.map((j) => {
+      if (j.date_jour) return j;
+      if (options?.dateDepart && typeof j.ordre === "number" && j.ordre >= 1) {
+        return { ...j, date_jour: addDaysISO(options.dateDepart, j.ordre - 1) };
+      }
+      return j;
+    });
+
+    // 2) Récupère les jours existants
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingRaw, error: selErr } = await (supabase as any)
+      .from("cotation_jours")
+      .select("id, ordre, titre, lieu, date_jour, description, hotel_nom, inclusions")
+      .eq("cotation_id", cotationId);
+
+    if (selErr) return { inserted: 0, updated: 0, skipped: 0, error: selErr.message };
+
+    type ExistingRow = {
+      id: string;
+      ordre: number;
+      titre: string | null;
+      lieu: string | null;
+      date_jour: string | null;
+      description: string | null;
+      hotel_nom: string | null;
+      inclusions: unknown;
+    };
+
+    const existing: ExistingRow[] = (existingRaw ?? []) as ExistingRow[];
+
+    // Indexation rapide
+    const byDate = new Map<string, ExistingRow>();
+    const byTitle = new Map<string, ExistingRow>();
+    for (const e of existing) {
+      if (e.date_jour) byDate.set(e.date_jour, e);
+      const k = normalizeTitre(e.titre);
+      if (k) byTitle.set(k, e);
+    }
+
+    let inserted = 0;
+    let updated = 0;
+    const usedExistingIds = new Set<string>();
+    const inserts: Record<string, unknown>[] = [];
+
+    for (const j of enriched) {
+      const matchByDate = j.date_jour ? byDate.get(j.date_jour) : undefined;
+      const matchByTitle = !matchByDate ? byTitle.get(normalizeTitre(j.titre)) : undefined;
+      const match = matchByDate ?? matchByTitle;
+
+      if (match && !usedExistingIds.has(match.id)) {
+        usedExistingIds.add(match.id);
+        const patch: Record<string, unknown> = {
+          titre: j.titre ?? match.titre,
+          lieu: j.lieu ?? match.lieu,
+          date_jour: j.date_jour ?? match.date_jour,
+          description: j.description ?? match.description,
+          hotel_nom: j.hotel_nom ?? match.hotel_nom,
+          // Préserve les inclusions existantes si l'extraction n'en fournit pas
+          inclusions: j.inclusions ?? match.inclusions ?? null,
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: upErr } = await (supabase as any)
+          .from("cotation_jours")
+          .update(patch)
+          .eq("id", match.id);
+        if (upErr) return { inserted, updated, skipped: 0, error: upErr.message };
+        updated++;
+      } else {
+        inserts.push({
+          cotation_id: cotationId,
+          user_id: userId,
+          ordre: 9000 + inserts.length, // temporaire, renuméroté ensuite
+          titre: j.titre,
+          lieu: j.lieu ?? null,
+          date_jour: j.date_jour ?? null,
+          description: j.description ?? null,
+          hotel_nom: j.hotel_nom ?? null,
+          inclusions: j.inclusions ?? null,
+        });
+      }
+    }
+
+    if (inserts.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: insErr } = await (supabase as any).from("cotation_jours").insert(inserts);
+      if (insErr) return { inserted, updated, skipped: 0, error: insErr.message };
+      inserted = inserts.length;
+    }
+
+    // 3) Renumérotation finale par date_jour puis ordre.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: allRaw, error: reSelErr } = await (supabase as any)
+      .from("cotation_jours")
+      .select("id, ordre, date_jour")
+      .eq("cotation_id", cotationId);
+
+    if (reSelErr) return { inserted, updated, skipped: 0, error: reSelErr.message };
+
+    const all = ((allRaw ?? []) as Array<{ id: string; ordre: number; date_jour: string | null }>)
+      .slice()
+      .sort((a, b) => {
+        if (a.date_jour && b.date_jour) {
+          if (a.date_jour < b.date_jour) return -1;
+          if (a.date_jour > b.date_jour) return 1;
+          return a.ordre - b.ordre;
+        }
+        if (a.date_jour && !b.date_jour) return -1;
+        if (!a.date_jour && b.date_jour) return 1;
+        return a.ordre - b.ordre;
+      });
+
+    for (let i = 0; i < all.length; i++) {
+      const target = i + 1;
+      if (all[i].ordre !== target) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
+          .from("cotation_jours")
+          .update({ ordre: target })
+          .eq("id", all[i].id);
+      }
+    }
+
+    return { inserted, updated, skipped: 0, error: null };
+  } catch (e) {
+    return {
+      inserted: 0,
+      updated: 0,
+      skipped: 0,
+      error: e instanceof Error ? e.message : "Erreur upsertJoursProgramme.",
+    };
+  }
+}
 
 export interface InsertLignesResult {
   count: number;

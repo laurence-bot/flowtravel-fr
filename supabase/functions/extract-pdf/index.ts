@@ -304,16 +304,20 @@ Deno.serve(async (req) => {
       type === "couverture_fx"
         ? "Tu es un assistant comptable spécialisé en couvertures de change Ebury. Extrais les informations du contrat fourni. Si une information est absente, ne l'invente pas. Évalue ta confiance honnêtement."
         : type === "programme_fournisseur"
-        ? `Tu es un assistant pour une agence de voyages haut de gamme. Tu analyses des programmes / propositions de fournisseurs (DMC, réceptifs, hôtels).
+        ? `Tu es un assistant pour une agence de voyages haut de gamme. Tu analyses des programmes / propositions de fournisseurs locaux (DMC, réceptifs, hôtels).
 
 Tu extrais :
 (1) Tous les jours du programme dans l'ordre exact
 (2) Toutes les prestations chiffrées avec prix et devise
-(3) Pour chaque jour : le nom EXACT de l'hôtel ou hébergement de la nuit (champ hotel_nom) — cherche les mentions d'hôtel, lodge, resort, riad, villa, camp dans la description du jour ou dans le tableau des hébergements. Si un hébergement est listé pour plusieurs nuits, attribue-le à chaque jour concerné. Ne jamais inventer un nom — null si absent.
+(3) Pour chaque jour : la date au format YYYY-MM-DD dans le champ date_jour, dès qu'une date apparaît dans le document (en-tête de jour, tableau, planning). C'est la SOURCE DE VÉRITÉ. Si seules des dates relatives sont présentes (J1, J2…), laisse date_jour null.
+(4) Pour chaque jour : le nom EXACT de l'hôtel ou hébergement de la nuit (champ hotel_nom) — cherche les mentions d'hôtel, lodge, resort, riad, villa, camp, ryokan, dans la description du jour ou dans le tableau des hébergements. Si un hébergement est listé pour plusieurs nuits, attribue-le à chaque jour concerné. Ne jamais inventer un nom — null si absent.
 
-Pour chaque jour, RÉÉCRIS la description dans un ton premium, sensoriel, fluide — MAIS sans changer le sens, sans inventer, sans retirer aucune information factuelle (hôtels, transferts, horaires, services, repas, durées). Conserve les noms propres exacts. Pas d'émojis, pas de superlatifs creux ('inoubliable', 'magique'). Si une donnée manque, ne l'invente pas.
+RÈGLES STRICTES SUR LES VOLS :
+- N'INCLUS PAS les vols internationaux aller/retour qui correspondent au billet du client (ex : Paris→Tokyo, Marseille→Istanbul→Jakarta, retour Denpasar→Istanbul→Marseille). Ces vols sont gérés ailleurs et ne doivent PAS apparaître comme un jour de programme fournisseur, sauf si le DMC les facture explicitement.
+- INCLUS les vols domestiques mentionnés dans le programme (vols intérieurs entre deux villes du pays de destination, ex : Yogyakarta→Denpasar IU 123). Conserve le numéro de vol s'il est mentionné, dans le titre du jour : "Yogyakarta - Denpasar (vol IU 123) - Menjangan".
+- En cas de doute (ex : un vol qui pourrait être international mais est facturé par le DMC), conserve-le.
 
-Pour les jours comportant un vol domestique (vol intérieur entre deux villes du pays), inclure dans le titre du jour la mention du trajet aérien, ex : "Yogyakarta - Denpasar (vol domestique) - Menjangan" ou "Yogyakarta - Denpasar (vol IU 123) - Menjangan". Le numéro de vol doit être inclus s'il est mentionné dans le document.`
+Pour chaque jour, RÉÉCRIS la description dans un ton premium, sensoriel, fluide — MAIS sans changer le sens, sans inventer, sans retirer aucune information factuelle (hôtels, transferts, horaires, services, repas, durées). Conserve les noms propres exacts. Pas d'émojis, pas de superlatifs creux ('inoubliable', 'magique'). Si une donnée manque, ne l'invente pas.`
         : "Tu es un assistant comptable spécialisé en factures fournisseurs d'agences de voyage. Extrais les informations du contrat fourni. Si une information est absente, ne l'invente pas. Évalue ta confiance honnêtement.";
 
     // Construit le message user : texte ou images (vision)
