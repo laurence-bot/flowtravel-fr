@@ -852,7 +852,8 @@ function dureeNetteEntry(e: PlanningEntry): number {
  * Compteur mensuel basé sur la **réalité du mois** :
  * - base = forfait mensualisé paie (jours rythme/sem × heuresParJour × 52 / 12)
  * - travail/teletravail/reunion : durée nette saisie (avec pause auto 30 min si oubliée)
- * - deplacement/formation : si jour rythme ouvré → forfait heuresParJour, jamais d'heures sup
+ * - deplacement/formation : si jour rythme ouvré → forfait contractuel pile (heuresParJour),
+ *   sinon 0 ; jamais d'heures sup, jamais de perte. Durée saisie ignorée pour le compteur.
  * - remplacement : 0 (impact via table hr_jours_dus)
  * - recuperation : valeur demandée/saisie, plafonnée à la journée contractuelle
  * - jours neutralisés (fériés chômés, CP, maladie, RTT) : comptés au forfait pour ne pas creuser le solde
