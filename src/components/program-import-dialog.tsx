@@ -18,11 +18,10 @@ import { toast } from "sonner";
 import {
   extractProgramFromFile,
   upsertJoursProgramme,
-  insertLignes,
-  previewLignesDuplicates,
+  upsertSupplierLinesFromPdf,
+  sanitizeExtractedProgram,
   type ExtractedProgram,
 } from "@/lib/program-import";
-import { askDuplicate } from "@/lib/duplicate-confirm";
 import { supabase } from "@/integrations/supabase/client";
 
 type Props = {
@@ -83,6 +82,36 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
     }
   }, [open, result, selJours, selLignes, storageKey]);
 
+  // Sécurité navigateur : si Safari/Chrome remonte le composant ou si l'onglet
+  // reprend le focus, on rouvre automatiquement la fenêtre tant qu'une analyse
+  // non validée existe en sessionStorage.
+  useEffect(() => {
+    const restoreIfNeeded = () => {
+      try {
+        const raw = sessionStorage.getItem(storageKey);
+        if (!raw) return;
+        const saved = JSON.parse(raw) as { result?: ExtractedProgram | null };
+        if (saved.result) {
+          setResult((current) => current ?? saved.result ?? null);
+          setOpen(true);
+        }
+      } catch {
+        /* ignore */
+      }
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") restoreIfNeeded();
+    };
+
+    window.addEventListener("focus", restoreIfNeeded);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", restoreIfNeeded);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [storageKey]);
+
   const reset = () => {
     setFile(null);
     setResult(null);
@@ -134,11 +163,20 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
         toast.error(error ?? "Extraction échouée");
         return;
       }
-      setResult(r);
-      setSelJours(new Set(r.jours.map((_, i) => i)));
-      setSelLignes(new Set(r.lignes.map((_, i) => i)));
+      const clean = sanitizeExtractedProgram(r);
+      setResult(clean);
+      setSelJours(new Set(clean.jours.map((_, i) => i)));
+      setSelLignes(new Set(clean.lignes.map((_, i) => i)));
+      sessionStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          result: clean,
+          selJours: clean.jours.map((_, i) => i),
+          selLignes: clean.lignes.map((_, i) => i),
+        }),
+      );
       toast.success(
-        `Extraction terminée : ${r.jours.length} jour(s), ${r.lignes.length} ligne(s) — confiance ${r.confiance}.`,
+        `Extraction terminée : ${clean.jours.length} jour(s), ${clean.lignes.length} ligne(s) — confiance ${clean.confiance}.`,
       );
     } catch (e) {
       console.error("[program-import-dialog] analyse:", e);
@@ -164,63 +202,31 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
     if (!result) return;
     setImporting(true);
 
-    // Récupère le max ordre actuel des lignes (pour append) et la date_depart
-    // de la cotation (pour calculer date_jour si l'IA ne l'a pas extraite).
-    const [{ data: lignesMax }, { data: cotationRow }] = await Promise.all([
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
-        .from("cotation_lignes_fournisseurs")
-        .select("ordre")
-        .eq("cotation_id", cotationId)
-        .order("ordre", { ascending: false })
-        .limit(1),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
-        .from("cotations")
-        .select("date_depart")
-        .eq("id", cotationId)
-        .maybeSingle(),
-    ]);
-    const startLigne = ((lignesMax?.[0]?.ordre as number) ?? 0) + 1;
-    const dateDepart = (cotationRow?.date_depart as string | null) ?? null;
+    // Date de départ de la cotation : utilisée seulement si certains jours PDF
+    // n'ont pas de date_jour explicite.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: cotationRow } = await (supabase as any)
+      .from("cotations")
+      .select("date_depart")
+      .eq("id", cotationId)
+      .maybeSingle();
 
+    const dateDepart = (cotationRow?.date_depart as string | null) ?? null;
     const jours = result.jours.filter((_, i) => selJours.has(i));
     const lignes = result.lignes.filter((_, i) => selLignes.has(i));
 
-    // Détecte d'éventuels doublons côté lignes fournisseurs et demande la stratégie.
-    let strategy: "ignore" | "replace" | "add_anyway" = "ignore";
-    if (lignes.length > 0) {
-      const { duplicates } = await previewLignesDuplicates(cotationId, lignes);
-      if (duplicates > 0) {
-        const choice = await askDuplicate({
-          title: "Doublons détectés à l'import",
-          message: `⚠️ ${duplicates} ligne(s) fournisseur sur ${lignes.length} existent déjà dans cette cotation.\n\nQue souhaitez-vous faire ?`,
-        });
-        if (choice === "ANNULER") {
-          setImporting(false);
-          return;
-        }
-        if (choice === "REMPLACER") strategy = "replace";
-        else if (choice === "AJOUTER_QUAND_MEME") strategy = "add_anyway";
-        else strategy = "ignore";
-      }
-    }
-
     const [j, l] = await Promise.all([
       upsertJoursProgramme(userId, cotationId, jours, { dateDepart }),
-      insertLignes(userId, cotationId, lignes, startLigne, strategy),
+      upsertSupplierLinesFromPdf(userId, cotationId, lignes),
     ]);
     setImporting(false);
 
     if (j.error) toast.error(`Jours : ${j.error}`);
     if (l.error) toast.error(`Lignes : ${l.error}`);
     if (!j.error && !l.error) {
-      const skippedParts: string[] = [];
-      if (l.skipped > 0) skippedParts.push(`${l.skipped} ligne(s) doublon ignorée(s)`);
-      if (l.replaced > 0) skippedParts.push(`${l.replaced} ligne(s) remplacée(s)`);
-      const suffix = skippedParts.length > 0 ? ` — ${skippedParts.join(", ")}` : "";
+      const merged = l.mergedDuplicates > 0 ? ` — ${l.mergedDuplicates} doublon(s) fournisseur fusionné(s)` : "";
       toast.success(
-        `${j.inserted} jour(s) ajouté(s), ${j.updated} mis à jour, ${l.count} ligne(s) importée(s)${suffix}.`,
+        `${j.inserted} jour(s) ajouté(s), ${j.updated} mis à jour, ${l.inserted} ligne(s) fournisseur ajoutée(s), ${l.updated} mise(s) à jour${merged}.`,
       );
       setOpen(false);
       reset();
@@ -230,12 +236,7 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
 
   return (
     <>
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={!canWrite}
-        onClick={() => setOpen(true)}
-      >
+      <Button variant="outline" size="sm" disabled={!canWrite} onClick={() => setOpen(true)}>
         <Upload className="mr-2 h-4 w-4" />
         Importer un programme fournisseur
       </Button>
@@ -251,7 +252,8 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
         }}
       >
         <DialogContent
-          className="max-w-3xl max-h-[85vh] overflow-y-auto"
+          className="z-[9999] max-w-4xl max-h-[88vh] overflow-y-auto"
+          onOpenAutoFocus={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => {
             if (loading || importing || result) e.preventDefault();
@@ -263,9 +265,8 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
               Importer un programme fournisseur
             </DialogTitle>
             <DialogDescription>
-              PDF ou image (JPG/PNG). L'IA détecte les jours et les prestations
-              chiffrées, réécrit les textes en gardant strictement le sens, et
-              vous laisse choisir ce qui est importé.
+              PDF ou image (JPG/PNG). L'IA détecte les jours et les prestations chiffrées, réécrit les textes en gardant
+              strictement le sens, et vous laisse choisir ce qui est importé.
             </DialogDescription>
           </DialogHeader>
 
@@ -303,18 +304,12 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm">
                 <Badge variant="outline">Confiance : {result.confiance}</Badge>
-                {result.fournisseur_nom && (
-                  <Badge variant="outline">{result.fournisseur_nom}</Badge>
-                )}
-                {result.destination && (
-                  <Badge variant="outline">{result.destination}</Badge>
-                )}
+                {result.fournisseur_nom && <Badge variant="outline">{result.fournisseur_nom}</Badge>}
+                {result.destination && <Badge variant="outline">{result.destination}</Badge>}
               </div>
 
               <div>
-                <div className="font-semibold mb-2">
-                  Jours détectés ({result.jours.length})
-                </div>
+                <div className="font-semibold mb-2">Jours détectés ({result.jours.length})</div>
                 <p className="text-xs text-muted-foreground mb-2">
                   Les jours existants aux mêmes dates seront mis à jour, pas dupliqués.
                 </p>
@@ -322,11 +317,7 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
                   {result.jours.map((j, i) => (
                     <Card key={i} className="p-3">
                       <div className="flex items-start gap-3">
-                        <Checkbox
-                          checked={selJours.has(i)}
-                          onCheckedChange={() => toggleJour(i)}
-                          className="mt-1"
-                        />
+                        <Checkbox checked={selJours.has(i)} onCheckedChange={() => toggleJour(i)} className="mt-1" />
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium">
                             Jour {j.ordre}
@@ -340,9 +331,7 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
                             </div>
                           )}
                           {j.description && (
-                            <div className="text-xs mt-1 text-muted-foreground line-clamp-3">
-                              {j.description}
-                            </div>
+                            <div className="text-xs mt-1 text-muted-foreground line-clamp-3">{j.description}</div>
                           )}
                         </div>
                       </div>
@@ -362,16 +351,11 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
                   {result.lignes.map((l, i) => (
                     <Card key={i} className="p-3">
                       <div className="flex items-start gap-3">
-                        <Checkbox
-                          checked={selLignes.has(i)}
-                          onCheckedChange={() => toggleLigne(i)}
-                          className="mt-1"
-                        />
+                        <Checkbox checked={selLignes.has(i)} onCheckedChange={() => toggleLigne(i)} className="mt-1" />
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium">{l.prestation}</div>
                           <div className="text-xs text-muted-foreground">
-                            {l.nom_fournisseur ?? "—"} ·{" "}
-                            {(l.quantite ?? 1)} × {l.montant_devise} {l.devise}
+                            {l.nom_fournisseur ?? "—"} · {l.quantite ?? 1} × {l.montant_devise} {l.devise}
                             {l.mode_tarifaire === "par_personne" ? " / pers." : ""}
                             {l.jour_ordre ? ` · Jour ${l.jour_ordre}` : ""}
                           </div>
