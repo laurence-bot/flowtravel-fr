@@ -775,16 +775,22 @@ export function QuoteContentEditorBlock({
           const extracted = await extractProgramFromFile(file);
           if (extracted.error) throw new Error(extracted.error);
           if (extracted.result) {
-            // Complète les jours déjà synchronisés avec les vols sans les écraser.
-            // insertJours avec startOrdre après les jours vol, insertLignes en "ignore" pour les doublons.
-            const joursResult = await insertJours(userId, cotationId, extracted.result.jours, plan.targetCount + 1);
+            // Sync IDEMPOTENTE : upsertJoursProgramme fusionne par date_jour
+            // (puis titre normalisé) au lieu d'ajouter en aveugle. Cliquer
+            // plusieurs fois sur "Sync PDF + vols" doit donner le même résultat.
+            const joursResult = await upsertJoursProgramme(
+              userId,
+              cotationId,
+              extracted.result.jours,
+              { dateDepart: newDepart },
+            );
             if (joursResult.error) throw new Error(joursResult.error);
 
             const lignesResult = await insertLignes(userId, cotationId, extracted.result.lignes, 1, "ignore");
             if (lignesResult.error) throw new Error(lignesResult.error);
 
-            importedPdfJours = joursResult.count;
-            skippedPdfJours = joursResult.skipped;
+            importedPdfJours = joursResult.inserted + joursResult.updated;
+            skippedPdfJours = 0;
             importedPdfLines = lignesResult.count;
             skippedPdfLines = lignesResult.skipped;
           }
