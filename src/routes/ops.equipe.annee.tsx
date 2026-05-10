@@ -270,7 +270,13 @@ function AnneePage() {
           travail: 0, teletravail: 0, conge: 0, absent: 0, recup: 0, formation: 0, deplacement: 0,
         };
         for (const d of ouvres) {
-          const ev = cellEvent(emp.id, d);
+          const abs = empAbs.find((a) => a.date_debut <= d && d <= a.date_fin);
+          let ev: EventType | null = null;
+          if (abs) ev = absenceToEvent(abs.type);
+          else {
+            const pe = entries.find((p) => p.employee_id === emp.id && planningEntryCoversDate(p, d));
+            if (pe) ev = planningToEvent(pe.type);
+          }
           if (ev) counts[ev] += 1;
         }
         inner.set(m, { solde: c.solde, counts, ouvres: ouvres.length });
