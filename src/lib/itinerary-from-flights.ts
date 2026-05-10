@@ -184,11 +184,37 @@ function daysBetween(start: string, end: string): string[] {
 }
 
 /**
+ * Format un segment de vol en ligne narrative compacte (descriptif).
+ * Ex: "Vol TK1368 Marseille → Istanbul de 19h00 à 23h15."
+ */
+function segmentSentence(seg: FlightSegmentLite, fallbackCompagnie: string | null): string {
+  const compagnie = airlineName(seg.compagnie || fallbackCompagnie || "");
+  const ville1 = iataToCity(seg.aeroport_depart);
+  const ville2 = iataToCity(seg.aeroport_arrivee);
+  const num = seg.numero_vol ? `Vol ${seg.numero_vol} ` : "";
+  const heures =
+    seg.heure_depart && seg.heure_arrivee
+      ? ` de ${fmtTime(seg.heure_depart)} à ${fmtTime(seg.heure_arrivee)}`
+      : "";
+  const overnight = seg.date_depart && seg.date_arrivee && seg.date_depart !== seg.date_arrivee ? " (+1)" : "";
+  const cieSuffix = compagnie && !num ? ` (${compagnie})` : "";
+  return `${num}${ville1} → ${ville2}${heures}${overnight}${cieSuffix}.`;
+}
+
+/**
  * Construit le squelette de jours à partir des vols.
- * - J1 = date du 1er segment aller (départ).
- * - Dernier jour = date d'arrivée du dernier segment retour (ou last seg si pas de retour).
- * - Jours intermédiaires = un jour par date civile.
- * - Si vol aller arrive le lendemain → J1 contient "Nuit en vol".
+ *
+ * Logique métier travel design premium (universelle, pas de hardcode pays) :
+ * - Détection du pays d'origine (aéroport du tout 1er segment) et du pays de destination
+ *   (aéroport du dernier segment aller, après vols domestiques éventuels).
+ * - Jour de départ international : titre "Départ de {ville} à destination de {pays}".
+ * - Jour d'arrivée internationale : fusionne les derniers vols (ex: domestique d'arrivée)
+ *   et marque le début du programme terrestre — titre "Arrivée à {ville}".
+ * - Jour de retour international : titre "Vol retour vers {pays_origine}".
+ * - Jour d'arrivée finale : titre "Arrivée à {ville_origine}", créé même si aucun jour
+ *   civil n'existe (le moteur étend automatiquement la plage).
+ * - Jamais de titre "Transit" : les vols intermédiaires sont absorbés dans la nuit en vol
+ *   ou dans le jour d'arrivée fusionné.
  */
 export function buildItineraryFromFlights(
   vol: FlightOptionLite,
@@ -211,174 +237,212 @@ export function buildItineraryFromFlights(
   const dates = daysBetween(startDate, endDate);
   if (dates.length === 0) return [];
 
-  const villeDestination = outbound.length > 0 ? iataToCity(outbound[outbound.length - 1].aeroport_arrivee) : null;
-  const villeOrigine = outbound.length > 0 ? iataToCity(outbound[0].aeroport_depart) : null;
+  // Pays d'origine = pays du tout premier départ. Pays de destination = pays du
+  // dernier aéroport d'arrivée du trajet aller (après éventuels vols domestiques).
+  const homeIata = outbound[0]?.aeroport_depart ?? null;
+  const homeCountry = homeIata ? IATA_COUNTRY[homeIata.toUpperCase()] ?? null : null;
+  const villeOrigine = homeIata ? iataToCity(homeIata) : null;
 
-  const outboundNarr = buildFlightNarrative(outbound, vol.compagnie);
-  const inboundNarr = buildFlightNarrative(inbound, vol.compagnie);
+  // Le pays de destination est celui du dernier segment aller qui n'est PAS encore
+  // dans le pays d'origine (et qui clôture la chaîne intl).
+  let destCountry: string | null = null;
+  let destIata: string | null = null;
+  for (let i = outbound.length - 1; i >= 0; i--) {
+    const c = IATA_COUNTRY[outbound[i].aeroport_arrivee.toUpperCase()];
+    if (c && c !== homeCountry) {
+      destCountry = c;
+      destIata = outbound[i].aeroport_arrivee;
+      break;
+    }
+  }
+  // Fallback : dernier segment aller
+  if (!destIata && outbound.length > 0) {
+    destIata = outbound[outbound.length - 1].aeroport_arrivee;
+    destCountry = IATA_COUNTRY[destIata.toUpperCase()] ?? null;
+  }
+  const villeDestination = destIata ? iataToCity(destIata) : null;
+  const paysDestNom = countryNameFr(destCountry) ?? villeDestination ?? "destination";
+  const paysOrigineNom = countryNameFr(homeCountry) ?? villeOrigine ?? "votre ville";
 
-  const arrDate = outbound[outbound.length - 1]?.date_arrivee;
-  const isOvernightOutbound = !!(startDate && arrDate && startDate !== arrDate);
-  const heureArriveeDest = outbound[outbound.length - 1]?.heure_arrivee ?? null;
+  // ------- Jour de DÉPART international -------
+  // = date du segment outbound qui quitte le pays d'origine pour la 1ère fois.
+  let departureDate: string | null = null;
+  for (const seg of outbound) {
+    const cFrom = IATA_COUNTRY[seg.aeroport_depart.toUpperCase()];
+    const cTo = IATA_COUNTRY[seg.aeroport_arrivee.toUpperCase()];
+    if (cFrom === homeCountry && cTo !== homeCountry) {
+      departureDate = seg.date_depart;
+      break;
+    }
+  }
+  if (!departureDate) departureDate = outbound[0]?.date_depart ?? startDate;
 
-  const inboundReturnDate = inbound[inbound.length - 1]?.date_arrivee || inbound[inbound.length - 1]?.date_depart || null;
-  const villeRetour = inbound.length > 0 ? iataToCity(inbound[inbound.length - 1].aeroport_arrivee) : villeOrigine;
+  // ------- Jour d'ARRIVÉE internationale (jour où on touche le sol final) -------
+  // = date d'arrivée du DERNIER segment outbound (qui peut être un domestique d'arrivée
+  //   comme CGK→YIA). Si plusieurs segments arrivent le même jour, on garde celui-là.
+  const arrivalDate = outbound.length > 0
+    ? outbound[outbound.length - 1].date_arrivee ?? outbound[outbound.length - 1].date_depart ?? null
+    : null;
+  // Heure d'arrivée finale = heure du dernier segment outbound
+  const heureArriveeFinale = outbound[outbound.length - 1]?.heure_arrivee ?? null;
+  // Ville d'atterrissage final = ville du dernier segment outbound
+  const villeArriveeFinale = outbound.length > 0
+    ? iataToCity(outbound[outbound.length - 1].aeroport_arrivee)
+    : villeDestination;
 
-  // Map des dates de transit outbound (strictement entre départ et arrivée à destination)
-  // → ville d'escale + détails. Une date transit appartient au segment [seg[i].date_arrivee, seg[i+1].date_depart].
-  const transitInfo = new Map<string, { ville: string; heureArr: string | null; heureDep: string | null }>();
-  if (isOvernightOutbound && arrDate) {
-    for (const d of dates) {
-      if (d <= startDate! || d >= arrDate) continue;
-      // Trouver le segment dont le layover couvre cette date
-      let found: { ville: string; heureArr: string | null; heureDep: string | null } | null = null;
-      for (let i = 0; i < outbound.length - 1; i++) {
-        const cur = outbound[i];
-        const nxt = outbound[i + 1];
-        if (!cur.date_arrivee || !nxt.date_depart) continue;
-        if (d >= cur.date_arrivee && d <= nxt.date_depart) {
-          found = {
-            ville: iataToCity(cur.aeroport_arrivee),
-            heureArr: cur.heure_arrivee,
-            heureDep: nxt.heure_depart,
-          };
-          break;
-        }
+  // ------- Jour de RETOUR international (départ du pays visité) -------
+  let inboundDepartureDate: string | null = null;
+  if (inbound.length > 0) {
+    for (const seg of inbound) {
+      const cFrom = IATA_COUNTRY[seg.aeroport_depart.toUpperCase()];
+      if (cFrom === destCountry) {
+        inboundDepartureDate = seg.date_depart;
+        break;
       }
-      if (!found) {
-        // Vol direct de nuit sans escale : transit "à bord"
-        found = { ville: villeOrigine ?? "destination", heureArr: null, heureDep: null };
+    }
+    if (!inboundDepartureDate) inboundDepartureDate = inbound[0]?.date_depart ?? null;
+  }
+
+  // ------- Jour d'ARRIVÉE finale (retour au pays d'origine) -------
+  let finalArrivalDate: string | null = null;
+  if (inbound.length > 0) {
+    for (let i = inbound.length - 1; i >= 0; i--) {
+      const cTo = IATA_COUNTRY[inbound[i].aeroport_arrivee.toUpperCase()];
+      if (cTo === homeCountry) {
+        finalArrivalDate = inbound[i].date_arrivee ?? inbound[i].date_depart ?? null;
+        break;
       }
-      transitInfo.set(d, found);
+    }
+    if (!finalArrivalDate) {
+      finalArrivalDate = inbound[inbound.length - 1].date_arrivee ?? null;
     }
   }
 
-  const days: GeneratedDay[] = dates.map((d, i) => {
-    const isFirst = i === 0;
-    const isLast = i === dates.length - 1;
-    const isReturnDay = inbound.length > 0 && inboundReturnDate && d === inboundReturnDate;
-    let titre = `Jour ${i + 1}`;
-    let description: string | null = null;
-    let lieu: string | null = null;
-    let isFlightDay = false;
+  // Étendre la plage de dates si l'arrivée finale tombe APRÈS endDate (ex: vol retour +1)
+  let allDates = dates;
+  if (finalArrivalDate && finalArrivalDate > allDates[allDates.length - 1]) {
+    allDates = daysBetween(startDate, finalArrivalDate);
+  }
 
-    if (isFirst) {
-      titre = isOvernightOutbound
-        ? `Départ de ${villeOrigine ?? "votre ville"} — Nuit en vol`
-        : `Départ de ${villeOrigine ?? "votre ville"}`;
-      description = outboundNarr || null;
+  // Helpers pour groupement des segments par date
+  const outboundByDate = new Map<string, FlightSegmentLite[]>();
+  for (const seg of outbound) {
+    const d = seg.date_depart;
+    if (!d) continue;
+    if (!outboundByDate.has(d)) outboundByDate.set(d, []);
+    outboundByDate.get(d)!.push(seg);
+  }
+  const inboundByDate = new Map<string, FlightSegmentLite[]>();
+  for (const seg of inbound) {
+    const d = seg.date_depart;
+    if (!d) continue;
+    if (!inboundByDate.has(d)) inboundByDate.set(d, []);
+    inboundByDate.get(d)!.push(seg);
+  }
+  // Segments arrivant un jour différent de leur départ (à mentionner sur le jour d'arrivée)
+  const outboundArrByDate = new Map<string, FlightSegmentLite[]>();
+  for (const seg of outbound) {
+    const da = seg.date_arrivee;
+    if (!da || da === seg.date_depart) continue;
+    if (!outboundArrByDate.has(da)) outboundArrByDate.set(da, []);
+    outboundArrByDate.get(da)!.push(seg);
+  }
+
+  const days: GeneratedDay[] = allDates.map((d, i) => {
+    const ordre = i + 1;
+    let titre = `Jour ${ordre}`;
+    let description: string | null = null;
+    let lieu: string | null = villeDestination;
+    let isFlightDay = false;
+    let type_jour: FlightDayType = "stay";
+
+    // ===== JOUR D'ARRIVÉE FINALE =====
+    if (finalArrivalDate && d === finalArrivalDate && inbound.length > 0) {
+      titre = `Arrivée à ${villeOrigine ?? paysOrigineNom}`;
       lieu = villeOrigine;
       isFlightDay = true;
-    } else if (arrDate && d === arrDate && isOvernightOutbound) {
-      // Jour d'arrivée à destination (vol overnight)
-      titre = `Arrivée à ${villeDestination ?? "destination"}`;
-      lieu = villeDestination;
-      isFlightDay = true;
-      const hh = heureArriveeDest ? ` à ${fmtTime(heureArriveeDest)}` : "";
-      description = `Arrivée à ${villeDestination ?? "destination"} le ${fmtDateLong(arrDate)}${hh}. Début du programme réceptif.`;
-    } else if (transitInfo.has(d)) {
-      const t = transitInfo.get(d)!;
-      titre = `Transit ${t.ville}`;
-      lieu = t.ville;
-      isFlightDay = true;
-      const plage =
-        t.heureArr && t.heureDep
-          ? ` Escale de ${fmtTime(t.heureArr)} à ${fmtTime(t.heureDep)}.`
-          : "";
-      description = `Transit à ${t.ville} le ${fmtDateLong(d)}.${plage}`;
-    } else if (isReturnDay || (isLast && inbound.length > 0)) {
-      titre = `Retour à ${villeRetour ?? "votre ville"}`;
-      description = inboundNarr || null;
-      lieu = villeDestination;
-      isFlightDay = true;
-    } else {
-      // Jour intermédiaire
-      lieu = villeDestination;
-      titre = `Jour ${i + 1} — ${villeDestination ?? "À compléter"}`;
+      type_jour = "final_arrival";
+      const segs = inbound.filter(s => (s.date_arrivee ?? s.date_depart) === d);
+      const lines = segs.map(s => segmentSentence(s, vol.compagnie));
+      description = `Arrivée à ${villeOrigine ?? paysOrigineNom} après votre vol international.\n${lines.join("\n")}\nFin de votre voyage.`.trim();
     }
-
-    return {
-      ordre: i + 1,
-      date_jour: d,
-      titre,
-      lieu,
-      description,
-      isFlightDay,
-    };
-  });
-
-  // Détection automatique des transits entre segments (escales longues / nuits hors réceptif).
-  // Pour chaque paire (segment N → N+1) du vol aller puis du vol retour, on calcule la
-  // durée au sol et le type de connexion. Les ESCALES (<8h) ne créent pas de jour ; les
-  // NUIT_ENTIERE et STOPOVER_JOUR enrichissent le jour correspondant à la date d'arrivée.
-  const enrichTransit = (segs: FlightSegmentLite[]) => {
-    for (let i = 0; i < segs.length - 1; i++) {
-      const cur = segs[i];
-      const nxt = segs[i + 1];
-      if (!cur.date_arrivee || !cur.heure_arrivee || !nxt.date_depart || !nxt.heure_depart) continue;
-      const a: VolPoint = {
-        ville: iataToCity(cur.aeroport_arrivee),
-        codeIATA: cur.aeroport_arrivee,
-        dateArrivee: cur.date_arrivee,
-        heureArrivee: cur.heure_arrivee.slice(0, 5),
-        dateDepart: cur.date_arrivee,
-        heureDepart: cur.heure_arrivee.slice(0, 5),
-      };
-      const b: VolPoint = {
-        ...a,
-        dateDepart: nxt.date_depart,
-        heureDepart: nxt.heure_depart.slice(0, 5),
-      };
-      const conn = analyserConnexionVol(a, b);
-      if (!conn.jourDedie) continue;
-      const target = days.find((d) => d.date_jour === cur.date_arrivee);
-      if (!target) continue;
-      // Ne pas écraser un jour d'arrivée à destination déjà correctement typé
-      if (target.isFlightDay && /arriv/i.test(target.titre ?? "")) continue;
-      target.titre = conn.titreJour || target.titre;
-      target.lieu = conn.ville;
-      target.isFlightDay = true;
-      const alerte = conn.alerte ? `${conn.alerte}\n\n` : "";
-      target.description = `${alerte}Transit ${conn.ville} — durée ${conn.dureeHeures}h.`;
+    // ===== JOUR DE RETOUR INTERNATIONAL =====
+    else if (inboundDepartureDate && d === inboundDepartureDate && inbound.length > 0) {
+      titre = `Vol retour vers ${paysOrigineNom}`;
+      lieu = villeDestination;
+      isFlightDay = true;
+      type_jour = "inbound_flight";
+      const segs = inboundByDate.get(d) ?? [];
+      const compagnie = airlineName(segs[0]?.compagnie || vol.compagnie || "");
+      const villeDep = segs[0] ? iataToCity(segs[0].aeroport_depart) : (villeDestination ?? "");
+      const lines = segs.map(s => segmentSentence(s, vol.compagnie));
+      const lastSeg = segs[segs.length - 1];
+      const overnight = lastSeg && lastSeg.date_arrivee && lastSeg.date_depart && lastSeg.date_arrivee !== lastSeg.date_depart;
+      const closing = overnight ? "\nNuit en vol." : "";
+      description = `Après votre transfert vers l'aéroport de ${villeDep}, envol vers ${paysOrigineNom}${compagnie ? ` sur compagnie ${compagnie}` : ""}.\n${lines.join("\n")}${closing}`.trim();
     }
-  };
-  enrichTransit(outbound);
-  enrichTransit(inbound);
-
-  // Enrichissement des titres avec vols domestiques (segment intra-pays sur un jour réceptif)
-  const enrichVolsDomestiques = (segs: FlightSegmentLite[]) => {
-    for (const seg of segs) {
-      if (!seg.date_depart || !seg.numero_vol) continue;
-
-      // Détection pays via table IATA_COUNTRY — fiable pour tous les pays
-      // (l'heuristique 2-lettres échoue p.ex. pour l'Indonésie : CGK≠YIA≠DPS)
-      const paysDepart = IATA_COUNTRY[seg.aeroport_depart.toUpperCase()];
-      const paysArrivee = IATA_COUNTRY[seg.aeroport_arrivee.toUpperCase()];
-      const isDomestic = paysDepart && paysArrivee && paysDepart === paysArrivee;
-      if (!isDomestic) continue;
-
-      const target = days.find((d) => d.date_jour === seg.date_depart);
-      if (!target || target.isFlightDay) continue;
-
-      const villeDepart = iataToCity(seg.aeroport_depart);
-      const villeArrivee = iataToCity(seg.aeroport_arrivee);
-      const volRef = seg.numero_vol ? ` (${seg.compagnie ?? ""}${seg.numero_vol})` : "";
-
-      if (!target.titre.toLowerCase().includes("vol")) {
-        const titreActuel = target.titre;
-        if (titreActuel.toLowerCase().includes(villeDepart.toLowerCase())) {
-          target.titre = titreActuel.replace(
-            new RegExp(villeDepart, "i"),
-            `${villeDepart} - ${villeArrivee} (vol domestique${volRef})`,
-          );
-        } else {
-          target.titre = `${titreActuel} — Vol domestique vers ${villeArrivee}${volRef}`;
-        }
+    // ===== JOUR D'ARRIVÉE À DESTINATION =====
+    else if (arrivalDate && d === arrivalDate && outbound.length > 0 && d !== departureDate) {
+      titre = `Arrivée à ${villeArriveeFinale ?? villeDestination ?? paysDestNom}`;
+      lieu = villeArriveeFinale ?? villeDestination;
+      isFlightDay = true;
+      type_jour = "arrival_day";
+      // Inclut tous les segments outbound qui atterrissent ce jour-là (ex: dernier intl + domestique)
+      const segsArr = outboundArrByDate.get(d) ?? [];
+      const segsDay = outboundByDate.get(d) ?? [];
+      const allSegs = [...segsArr, ...segsDay].filter((s, idx, arr) => arr.findIndex(x => x.id === s.id) === idx)
+        .sort((a, b) => (a.heure_depart ?? "").localeCompare(b.heure_depart ?? ""));
+      const lines = allSegs.map(s => segmentSentence(s, vol.compagnie));
+      const heure = heureArriveeFinale ? ` à ${fmtTime(heureArriveeFinale)}` : "";
+      description = `Arrivée à l'aéroport de ${villeArriveeFinale ?? paysDestNom}${heure} après vos vols internationaux.\n${lines.join("\n")}\nAccueil par votre guide puis transfert vers votre hébergement.`.trim();
+    }
+    // ===== JOUR DE DÉPART INTERNATIONAL =====
+    else if (d === departureDate && outbound.length > 0) {
+      titre = `Départ de ${villeOrigine ?? paysOrigineNom} à destination de ${paysDestNom}`;
+      lieu = villeOrigine;
+      isFlightDay = true;
+      type_jour = "departure_day";
+      const segsDay = outboundByDate.get(d) ?? outbound.slice(0, 1);
+      const compagnie = airlineName(segsDay[0]?.compagnie || vol.compagnie || "");
+      const lines = segsDay.map(s => segmentSentence(s, vol.compagnie));
+      const heureDep = segsDay[0]?.heure_depart ? fmtTime(segsDay[0].heure_depart) : null;
+      const moment = heureDep
+        ? (heureDep < "12:00" ? "En matinée" : heureDep < "18:00" ? "En après-midi" : "En fin de journée")
+        : "";
+      const opener = `${moment ? moment + ", e" : "E"}nvol depuis ${villeOrigine ?? "votre ville"} à destination de ${paysDestNom}${compagnie ? ` sur compagnie ${compagnie}` : ""}.`;
+      // Nuit en vol si arrivée à destination > date de départ
+      const overnight = arrivalDate && arrivalDate !== d;
+      const closing = overnight ? "\nCorrespondance puis continuation. Nuit en vol." : "";
+      description = `${opener}\n${lines.join("\n")}${closing}`.trim();
+    }
+    // ===== JOUR DE SÉJOUR (intermédiaire) =====
+    else {
+      // Vol domestique sur un jour de séjour : enrichit le titre sans en faire un "Transit"
+      const segsDay = outboundByDate.get(d) ?? [];
+      const inSegsDay = inboundByDate.get(d) ?? [];
+      const allDaySegs = [...segsDay, ...inSegsDay];
+      const domestic = allDaySegs.find(s => {
+        const cF = IATA_COUNTRY[s.aeroport_depart.toUpperCase()];
+        const cT = IATA_COUNTRY[s.aeroport_arrivee.toUpperCase()];
+        return cF && cT && cF === cT && cF === destCountry;
+      });
+      if (domestic) {
+        const villeA = iataToCity(domestic.aeroport_depart);
+        const villeB = iataToCity(domestic.aeroport_arrivee);
+        titre = `${villeA} → ${villeB}`;
+        lieu = villeB;
+        isFlightDay = true;
+        type_jour = "domestic_transfer";
+        description = segmentSentence(domestic, vol.compagnie);
+      } else {
+        titre = `Jour ${ordre} — ${villeDestination ?? "À compléter"}`;
+        lieu = villeDestination;
+        type_jour = "stay";
       }
     }
-  };
-  enrichVolsDomestiques(outbound);
-  enrichVolsDomestiques(inbound);
+
+    return { ordre, date_jour: d, titre, lieu, description, isFlightDay, type_jour };
+  });
 
   return days;
 }
