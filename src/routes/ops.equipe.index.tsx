@@ -20,6 +20,8 @@ import {
   frenchHolidays,
   isJourOuvre,
   calcCompteurMensuel,
+  heuresContractuellesParJour,
+  planningEntryDays,
   CONTRACT_TYPE_LABELS,
   type Employee,
   type ContractType,
@@ -154,7 +156,7 @@ function EquipeIndex() {
         const heuresRecup = recups
           .filter((r) => r.employee_id === emp.id && r.statut === "approuvee")
           .reduce((s, r) => s + (r.heures_demandees ?? 0), 0);
-        const hParJour = 7;
+        const hParJour = heuresContractuellesParJour(emp);
         // Base = forfait mensualisé paie (jours rythme/sem × h/jour × 52/12)
         // Lisa temps plein → 151,67h, identique à la fiche de paie
         const ouvresSet = new Set(joursOuvres);
@@ -168,7 +170,18 @@ function EquipeIndex() {
             if (ouvresSet.has(iso)) joursNeutralises.push(iso);
           }
         }
-        const empPlanning = planning.filter((p) => p.employee_id === emp.id);
+        const linkedRecupPlanningIds = new Set(recups.map((r) => r.planning_entry_id).filter(Boolean));
+        const approvedRecupDates = new Set(
+          recups
+            .filter((r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee)
+            .map((r) => r.date_souhaitee!),
+        );
+        const empPlanning = planning.filter(
+          (p) =>
+            p.employee_id === emp.id &&
+            !linkedRecupPlanningIds.has(p.id) &&
+            !(p.type === "recuperation" && planningEntryDays(p).some((d) => approvedRecupDates.has(d))),
+        );
         // Injecte les récups approuvées comme entrées planning de type "recuperation"
         const empRecups = recups
           .filter((r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee)
@@ -184,6 +197,7 @@ function EquipeIndex() {
             note: null,
             group_id: null,
             pause_minutes: null,
+            heures_recup: r.heures_demandees,
           }));
         const empPlanningAvecRecups = [...empPlanning, ...empRecups];
         const calc = calcCompteurMensuel(
