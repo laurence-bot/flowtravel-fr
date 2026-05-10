@@ -355,6 +355,28 @@ function AnneePage() {
                         );
                       });
                     })}
+                    <td className="px-2 py-1 border-l text-right tabular-nums">
+                      {cum ? (
+                        <span className="text-muted-foreground">
+                          <span className="font-medium text-foreground">{cum.congesPris}</span>
+                          {(emp.jours_conges_par_an ?? 0) > 0 && <> / {emp.jours_conges_par_an}</>}
+                        </span>
+                      ) : "—"}
+                    </td>
+                    <td className="px-2 py-1 border-l text-right tabular-nums">
+                      {(emp.jours_rtt_par_an ?? 0) > 0 && cum ? (
+                        <span className="text-muted-foreground">
+                          <span className="font-medium text-foreground">{cum.rttPris}</span> / {emp.jours_rtt_par_an}
+                        </span>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="px-2 py-1 border-l text-right tabular-nums">
+                      {(emp.jours_rtt_par_an ?? 0) > 0 && cum ? (
+                        <span className={cum.rttAcquises > 0 ? "text-emerald-600 font-medium" : "text-muted-foreground"}>
+                          {cum.rttAcquises}h
+                        </span>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
                     <td className="px-2 py-1 border-l text-right tabular-nums font-medium">
                       {cum ? (
                         <span className={cum.heuresSup > 0 ? "text-emerald-600" : "text-muted-foreground"}>
