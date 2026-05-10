@@ -1281,6 +1281,7 @@ export function alertesFinDeMois(
 export type DocCategorie =
   | "contrat"
   | "avenant"
+  | "bulletin_paie"
   | "deplacement"
   | "formation"
   | "evaluation"
@@ -1292,6 +1293,7 @@ export type DocCategorie =
 export const DOC_CATEGORIE_LABELS: Record<DocCategorie, string> = {
   contrat: "Contrat de travail",
   avenant: "Avenant",
+  bulletin_paie: "Bulletin de paie",
   deplacement: "Note de déplacement",
   formation: "Formation",
   evaluation: "Évaluation",
@@ -1304,6 +1306,7 @@ export const DOC_CATEGORIE_LABELS: Record<DocCategorie, string> = {
 export const DOC_CATEGORIE_ICONS: Record<DocCategorie, string> = {
   contrat: "📄",
   avenant: "📝",
+  bulletin_paie: "💶",
   deplacement: "✈️",
   formation: "🎓",
   evaluation: "⭐",
