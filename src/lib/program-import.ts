@@ -394,7 +394,7 @@ export async function upsertJoursProgramme(
       }
     }
 
-    return { inserted, updated, skipped: 0, error: null };
+    return { inserted, updated, skipped: outOfRange, error: null };
   } catch (e) {
     return {
       inserted: 0,
