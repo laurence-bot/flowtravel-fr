@@ -555,7 +555,7 @@ function PlanningPage() {
                 setSaving(false);
                 return;
               }
-              await Promise.all(conflictEntries.map((e) => deletePlanning(e.id)));
+              for (const e of conflictEntries) await deletePlanning(e.id);
             }
           }
           const groupId = dates.length > 1 ? crypto.randomUUID() : null;
