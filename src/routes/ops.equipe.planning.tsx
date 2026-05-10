@@ -34,6 +34,7 @@ import {
   alertesFinDeMois,
   PLANNING_TYPE_LABELS,
   planningEntryCoversDate,
+  planningEntryDays,
   type Employee,
   type PlanningEntry,
   type PlanningType,
@@ -305,10 +306,24 @@ function PlanningPage() {
     setEntries(plan);
     setRecups(recs);
     const joursOuvres = days.filter((d) => isJourOuvre(d, holidays));
+    const linkedRecupPlanningIds = new Set(recs.map((r) => r.planning_entry_id).filter(Boolean));
+    const approvedRecupDatesByEmp = new Map<string, Set<string>>();
+    for (const r of recs) {
+      if (r.statut !== "approuvee" || !r.date_souhaitee) continue;
+      const set = approvedRecupDatesByEmp.get(r.employee_id) ?? new Set<string>();
+      set.add(r.date_souhaitee);
+      approvedRecupDatesByEmp.set(r.employee_id, set);
+    }
     const ouvresSet = new Set(joursOuvres);
     await Promise.all(
       actifs.map(async (emp) => {
-        const empEntries = plan.filter((e) => e.employee_id === emp.id);
+        const recupDates = approvedRecupDatesByEmp.get(emp.id) ?? new Set<string>();
+        const empEntries = plan.filter(
+          (e) =>
+            e.employee_id === emp.id &&
+            !linkedRecupPlanningIds.has(e.id) &&
+            !(e.type === "recuperation" && planningEntryDays(e).some((d) => recupDates.has(d))),
+        );
         const empAbs = absences.filter((a) => a.employee_id === emp.id);
         const joursNeutralises: string[] = [];
         for (const a of empAbs) {
@@ -335,6 +350,7 @@ function PlanningPage() {
             note: null,
             group_id: null,
             pause_minutes: null,
+            heures_recup: r.heures_demandees,
           }));
         const hParJour = heuresContractuellesParJour(emp);
         const c = calcCompteurMensuel(
@@ -356,8 +372,16 @@ function PlanningPage() {
   }, [month]);
 
   const days = daysInMonth(month);
-  const cellFor = (empId: string, date: string) =>
-    entries.filter((e) => e.employee_id === empId && planningEntryCoversDate(e, date));
+  const cellFor = (empId: string, date: string) => {
+    const emp = employees.find((e) => e.id === empId);
+    return entries.filter((e) => {
+      if (e.employee_id !== empId || !planningEntryCoversDate(e, date)) return false;
+      if ((e.type === "deplacement" || e.type === "formation") && (!isJourOuvre(date, holidays) || (emp && !estJourTravaille(emp, date)))) {
+        return false;
+      }
+      return true;
+    });
+  };
 
   const openAdd = (emp?: Employee, date?: string) => {
     setForm({ ...EMPTY_FORM, employee_id: emp?.id ?? "", date_debut: date ?? new Date().toISOString().slice(0, 10) });
