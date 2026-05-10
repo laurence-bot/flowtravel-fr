@@ -486,6 +486,11 @@ function ContractsPage() {
                                 </Button>
                               </a>
                             )}
+                            {doc.pdf_url && (
+                              <Button size="sm" variant="ghost" onClick={() => sendDocToEmployee(doc)}>
+                                <Send className="h-3.5 w-3.5 mr-1" /> Envoyer
+                              </Button>
+                            )}
                             <Button size="sm" variant="ghost" onClick={() => openEditDoc(doc)}>
                               Modifier
                             </Button>
