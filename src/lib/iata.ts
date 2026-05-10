@@ -632,6 +632,34 @@ export const IATA_COUNTRY: Record<string, string> = {
   PTY: "PA",
 };
 
+/** Nom du pays en français à partir du code ISO-2. Utilisé pour les titres premium. */
+export const COUNTRY_FR: Record<string, string> = {
+  FR: "France", GB: "Royaume-Uni", IE: "Irlande", NL: "Pays-Bas", BE: "Belgique",
+  DE: "Allemagne", CH: "Suisse", AT: "Autriche", ES: "Espagne", IT: "Italie",
+  PT: "Portugal", GR: "Grèce", DK: "Danemark", SE: "Suède", NO: "Norvège",
+  FI: "Finlande", PL: "Pologne", CZ: "République tchèque", HU: "Hongrie",
+  RO: "Roumanie", BG: "Bulgarie", TR: "Turquie",
+  MA: "Maroc", TN: "Tunisie", DZ: "Algérie", EG: "Égypte", NG: "Nigeria",
+  KE: "Kenya", TZ: "Tanzanie", ET: "Éthiopie", GH: "Ghana", SN: "Sénégal",
+  CI: "Côte d'Ivoire", ZA: "Afrique du Sud", MU: "Maurice", RE: "La Réunion",
+  MG: "Madagascar", SC: "Seychelles",
+  AE: "Émirats arabes unis", QA: "Qatar", KW: "Koweït", BH: "Bahreïn",
+  OM: "Oman", SA: "Arabie saoudite", IL: "Israël", JO: "Jordanie", LB: "Liban",
+  TH: "Thaïlande", SG: "Singapour", MY: "Malaisie", VN: "Vietnam",
+  KH: "Cambodge", LA: "Laos", MM: "Birmanie", IN: "Inde", LK: "Sri Lanka",
+  MV: "Maldives", NP: "Népal", BD: "Bangladesh", CN: "Chine", JP: "Japon",
+  KR: "Corée du Sud", TW: "Taïwan", PH: "Philippines", ID: "Indonésie",
+  AU: "Australie", NZ: "Nouvelle-Zélande", FJ: "Fidji", PF: "Polynésie française",
+  US: "États-Unis", CA: "Canada", BR: "Brésil", AR: "Argentine", CL: "Chili",
+  PE: "Pérou", CO: "Colombie", EC: "Équateur", VE: "Venezuela", MX: "Mexique",
+  CU: "Cuba", CR: "Costa Rica", PA: "Panama",
+};
+
+export function countryNameFr(iso2: string | null | undefined): string | null {
+  if (!iso2) return null;
+  return COUNTRY_FR[iso2.toUpperCase()] ?? null;
+}
+
 /**
  * Formate un routing brut saisi côté admin pour un affichage client.
  * - "MRS → CDG → JFK" devient "Marseille Provence → Paris Charles-de-Gaulle → New York JFK"
