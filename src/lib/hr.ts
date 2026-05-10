@@ -955,10 +955,12 @@ export function calcCompteurMensuel(
           const rttCredit = Math.max(0, Math.min(effective, heuresParJour) - basePaieJour);
           const overtimeBeyondContract = Math.max(0, effective - heuresParJour);
           rttAcquises += rttCredit;
-          // Le 0h30 entre base de paie (7h) et base contractuelle (7h30) est déjà
-          // comptabilisé dans rttAcquises — il ne doit pas être ajouté au solde.
-          // Seul ce qui dépasse le contrat journalier (>7h30) compte comme heures sup.
-          dayImpact = effective < heuresParJour ? effective - heuresParJour : overtimeBeyondContract;
+          // Le crédit RTT journalier (0h30 entre base de paie 7h et contrat 7h30)
+          // alimente le solde = heures à rattraper. Seules les heures au-delà du
+          // contrat journalier sont en plus comptées comme heures sup.
+          dayImpact = effective < heuresParJour
+            ? effective - heuresParJour
+            : rttCredit + overtimeBeyondContract;
         } else {
           dayImpact = effective - heuresParJour;
         }
