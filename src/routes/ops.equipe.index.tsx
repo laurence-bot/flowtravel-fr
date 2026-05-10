@@ -343,6 +343,8 @@ function EquipeIndex() {
           jours_ouvres: calc.joursRythme,
           h_par_jour: hParJour,
           heures_brutes: calc.base,
+          base_paie: basePaieMensuelle(emp),
+          a_rtt: (emp.jours_rtt_par_an ?? 0) > 0,
         };
       }),
     [employees, compteurs, absences, recups, joursOuvres, planning],
