@@ -304,6 +304,8 @@ function PlanningPage() {
     employee_id: "",
     type: "heures" as RecupDemande["type"],
     heures_demandees: "7",
+    heure_debut: "14:00",
+    heure_fin: "16:30",
     date_souhaitee: "",
     motif: "",
   });
