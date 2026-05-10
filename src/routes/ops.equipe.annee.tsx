@@ -125,15 +125,38 @@ function AnneePage() {
 
   // Cumul annuel par employé
   const cumulByEmp = useMemo(() => {
-    const map = new Map<string, { heuresSup: number; soldeAnnuel: number; basePaie: number; baseReelle: number }>();
+    const map = new Map<string, { heuresSup: number; soldeAnnuel: number; basePaie: number; baseReelle: number; congesPris: number; rttPris: number; rttAcquises: number }>();
+    const yearStart = startDate;
+    const yearEnd = endDate;
     for (const emp of employees) {
       const hParJour = heuresContractuellesParJour(emp);
       let heuresSup = 0;
       let soldeAnnuel = 0;
       let basePaieTotal = 0;
       let baseReelleTotal = 0;
+      let rttAcquisesTotal = 0;
       const empAbs = absences.filter((a) => a.employee_id === emp.id);
       const empRecups = recups.filter((r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee);
+
+      // Congés / RTT pris (jours ouvrés sur la période)
+      let congesPris = 0;
+      let rttPris = 0;
+      for (const a of empAbs) {
+        if (a.type !== "conge_paye" && a.type !== "rtt") continue;
+        const startD = a.date_debut > yearStart ? a.date_debut : yearStart;
+        const endD = a.date_fin < yearEnd ? a.date_fin : yearEnd;
+        if (startD > endD) continue;
+        const s = new Date(`${startD}T00:00:00Z`);
+        const e = new Date(`${endD}T00:00:00Z`);
+        for (let dt = new Date(s); dt <= e; dt.setUTCDate(dt.getUTCDate() + 1)) {
+          const iso = dt.toISOString().slice(0, 10);
+          const yr = Number(iso.slice(0, 4));
+          if (!isJourOuvre(iso, frenchHolidays(yr))) continue;
+          if (a.type === "conge_paye") congesPris += 1;
+          else rttPris += 1;
+        }
+      }
+
       for (const m of months) {
         const days = monthDays(m);
         const holidays = frenchHolidays(Number(m.slice(0, 4)));
@@ -180,16 +203,20 @@ function AnneePage() {
         soldeAnnuel += c.solde;
         basePaieTotal += basePaieMensuelle(emp);
         baseReelleTotal += c.base;
+        rttAcquisesTotal += c.rttAcquises ?? 0;
       }
       map.set(emp.id, {
         heuresSup: Math.round(heuresSup * 100) / 100,
         soldeAnnuel: Math.round(soldeAnnuel * 100) / 100,
         basePaie: Math.round(basePaieTotal * 100) / 100,
         baseReelle: Math.round(baseReelleTotal * 100) / 100,
+        congesPris,
+        rttPris,
+        rttAcquises: Math.round(rttAcquisesTotal * 100) / 100,
       });
     }
     return map;
-  }, [employees, entries, absences, recups, months]);
+  }, [employees, entries, absences, recups, months, startDate, endDate]);
 
   // Agrège pour chaque jour le type d'événement le plus parlant.
   const cellEvent = (empId: string, date: string): EventType | null => {
