@@ -304,6 +304,8 @@ function PlanningPage() {
     employee_id: "",
     type: "heures" as RecupDemande["type"],
     heures_demandees: "7",
+    heure_debut: "14:00",
+    heure_fin: "16:30",
     date_souhaitee: "",
     motif: "",
   });
@@ -644,10 +646,34 @@ function PlanningPage() {
     }
   };
 
+  const recupHeuresFromRange = (debut: string, fin: string): number => {
+    if (!debut || !fin) return 0;
+    const [h1, m1] = debut.split(":").map(Number);
+    const [h2, m2] = fin.split(":").map(Number);
+    const diff = (h2 * 60 + m2 - (h1 * 60 + m1)) / 60;
+    return Math.round(diff * 100) / 100;
+  };
+
   const saveRecup = async () => {
     if (savingRecup) return;
-    if (!recupForm.employee_id || !recupForm.heures_demandees) {
+    if (!recupForm.employee_id) {
       toast.error("Champs requis");
+      return;
+    }
+    let heures = Number(recupForm.heures_demandees);
+    let heure_debut: string | undefined;
+    let heure_fin: string | undefined;
+    if (recupForm.type === "heures") {
+      heures = recupHeuresFromRange(recupForm.heure_debut, recupForm.heure_fin);
+      if (heures <= 0) {
+        toast.error("L'heure de fin doit être après l'heure de début");
+        return;
+      }
+      heure_debut = recupForm.heure_debut;
+      heure_fin = recupForm.heure_fin;
+    }
+    if (!heures || heures <= 0) {
+      toast.error("Heures invalides");
       return;
     }
     setSavingRecup(true);
@@ -656,8 +682,10 @@ function PlanningPage() {
         employee_id: recupForm.employee_id,
         mois: month,
         type: recupForm.type,
-        heures_demandees: Number(recupForm.heures_demandees),
+        heures_demandees: heures,
         date_souhaitee: recupForm.date_souhaitee || undefined,
+        heure_debut,
+        heure_fin,
         motif: recupForm.motif || undefined,
       });
       toast.success("Demande créée");
@@ -998,6 +1026,8 @@ function PlanningPage() {
                                   employee_id: emp.id,
                                   type: "heures",
                                   heures_demandees: String(c.solde),
+                                  heure_debut: "14:00",
+                                  heure_fin: "16:30",
                                   date_souhaitee: "",
                                   motif: "",
                                 });
@@ -1485,25 +1515,65 @@ function PlanningPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Heures à récupérer</Label>
-                <Input
-                  type="number"
-                  step="0.5"
-                  value={recupForm.heures_demandees}
-                  onChange={(e) => setRecupForm({ ...recupForm, heures_demandees: e.target.value })}
-                />
+            {recupForm.type === "heures" ? (
+              <>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <Label>Heure de début</Label>
+                    <Input
+                      type="time"
+                      value={recupForm.heure_debut}
+                      onChange={(e) => setRecupForm({ ...recupForm, heure_debut: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Heure de fin</Label>
+                    <Input
+                      type="time"
+                      value={recupForm.heure_fin}
+                      onChange={(e) => setRecupForm({ ...recupForm, heure_fin: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Total</Label>
+                    <Input
+                      type="text"
+                      readOnly
+                      value={`${recupHeuresFromRange(recupForm.heure_debut, recupForm.heure_fin)} h`}
+                      className="bg-muted"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Date souhaitée</Label>
+                  <Input
+                    type="date"
+                    value={recupForm.date_souhaitee}
+                    onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Heures à récupérer</Label>
+                  <Input
+                    type="number"
+                    step="0.5"
+                    value={recupForm.heures_demandees}
+                    onChange={(e) => setRecupForm({ ...recupForm, heures_demandees: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Date souhaitée</Label>
+                  <Input
+                    type="date"
+                    value={recupForm.date_souhaitee}
+                    onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })}
+                  />
+                </div>
               </div>
-              <div>
-                <Label>Date souhaitée</Label>
-                <Input
-                  type="date"
-                  value={recupForm.date_souhaitee}
-                  onChange={(e) => setRecupForm({ ...recupForm, date_souhaitee: e.target.value })}
-                />
-              </div>
-            </div>
+            )}
             <div>
               <Label>Motif (optionnel)</Label>
               <Textarea
