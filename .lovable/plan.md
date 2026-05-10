@@ -1,55 +1,44 @@
-## Objectif
+## Contexte
 
-Aligner la **base RH** sur le **forfait mensualisé paie** (151,67h pour Lisa temps plein 35h) au lieu du calcul "jours rythme réels du mois". Conséquence : le solde RH ne fluctue plus selon le nombre de fériés du mois.
+Actuellement dans `src/lib/hr.ts`, les jours de **déplacement** et **formation** sont comptés à hauteur de `heures_par_jour` du contrat (= 7h30 pour Lisa, soit sa journée contractuelle complète hors pause).
 
-## Formule
+C'est incorrect. La règle métier réelle est :
 
+> **Déplacement / formation = 7h de travail effectif par jour, max 5 jours / semaine, pas de dépassement.**
+> La pause de 30 min s'ajoute en amplitude horaire mais n'est jamais payée ni comptée.
+
+Donc une journée de déplacement de Lisa doit compter **7h** (pas 7h30), même si son contrat normal est à 7h30/jour. La différence (-0h30) est absorbée — pas d'heures sup, pas de manque non plus puisque c'est la règle.
+
+## Changements
+
+### 1. `src/lib/hr.ts` — `calcCompteurMensuel()`
+
+Remplacer le plafond `heuresParJour` par une **constante de 7h** pour les types `deplacement` et `formation` :
+
+```ts
+const PLAFOND_DEPLACEMENT_FORMATION = 7; // heures de travail effectif, hors pause
 ```
-base_mensuelle = jours_rythme_par_semaine × heures_par_jour × 52 / 12
-```
 
-- Lisa (5 jours × 7h) → **5 × 7 × 52/12 = 151,67h**
-- Temps partiel 4 jours × 7h → 121,33h
-- Rythme A/B → moyenne des deux semaines
+- Pour chaque jour `deplacement` ou `formation` tombant sur un jour travaillé du rythme A/B :
+  - compter **exactement 7h** (ignorer toute valeur saisie supérieure)
+  - si valeur saisie < 7h, prendre la valeur saisie (cas demi-journée)
+- Si le jour tombe sur un jour non travaillé du rythme ou un férié → **ne rien compter** (déjà en place, on garde).
+- Garder la limite "max 5 jours / semaine" déjà implémentée.
 
-## 1. `src/lib/hr.ts` — `calcCompteurMensuel`
+### 2. Documentation inline
 
-- Remplacer `const base = joursRythme.length * heuresParJour;` par le calcul forfait :
-  ```ts
-  const joursParSemaine = emp ? moyenneJoursParSemaine(emp) : 5;
-  const base = joursParSemaine * heuresParJour * 52 / 12;
-  ```
-- Ajouter helper `moyenneJoursParSemaine(emp)` :
-  - `fixe` → `semaine_a_jours.length` (fallback 5)
-  - `ab` → `(semaine_a_jours.length + semaine_b_jours.length) / 2`
-- Le reste du calcul (réalisé, neutralisations CP, récup, déplacement forfait, remplacement) ne change pas.
-- `joursNeutralises` (CP, maladie, RTT) restent comptés "comme travaillés" pour ne pas creuser le solde — comportement OK avec le forfait.
+Ajouter un commentaire au-dessus de la constante expliquant la règle métier (7h effectif + 30 min pause non payée = 7h30 d'amplitude), pour éviter qu'un futur dev re-confonde avec `heures_par_jour`.
 
-## 2. UI — labels et tooltips
+### 3. Vérification visuelle
 
-`src/routes/ops.equipe.index.tsx` :
-- Commentaire ligne 158-159 : remplacer par "Base = forfait mensualisé (jours rythme/sem × h/jour × 52/12)"
-- Si un tooltip mentionne "133h" ou "jours rythme du mois", le mettre à jour : "151,67h pour un temps plein 5j × 7h, identique à la fiche de paie"
-
-`src/routes/ops.equipe.planning.tsx` : aucun changement de signature, juste vérifier que l'affichage du compteur dit bien "Base 151,67h" et non "Base 119h".
-
-## 3. Migration & nettoyage
-
-- Pas de schéma à modifier.
-- Vider `hr_compteur_heures` pour forcer recalcul (déjà géré par `clearCompteursMois` au load + bouton "Forcer le recalcul").
-
-## Impact
-
-| Mois 2026 | Ancienne base (réelle) | Nouvelle base (forfait) |
-|---|---|---|
-| Janvier | 147h | **151,67h** |
-| Février | 140h | **151,67h** |
-| Mars | 154h | **151,67h** |
-| Mai | 119h | **151,67h** |
-
-Le solde RH reflètera désormais l'**effort réel vs contrat paie**, pas les variations de calendrier.
+Aucun changement UI. Après déploiement, l'utilisateur clique **« Forcer le recalcul »** sur le planning de mai pour voir le solde de Lisa s'ajuster.
 
 ## Hors scope
 
-- Soldes annuels CP / RTT
-- Modulation annuelle 1607h (à faire si un jour vous signez un accord de modulation)
+- Pas de changement sur les autres types (travail normal, récup, congés, RTT, fériés).
+- Pas de changement de schéma DB.
+- Pas de changement du contrat de Lisa (reste à 7h30/jour, 30 min pause, 162.5h/mois).
+
+## Question ouverte (à confirmer avant ou après implémentation)
+
+La constante 7h est-elle **globale à toute l'entreprise**, ou doit-elle devenir un champ configurable par employé (`heures_deplacement_par_jour`) ? Pour l'instant je pars sur **constante globale 7h** ; on pourra extraire en colonne DB plus tard si besoin.
