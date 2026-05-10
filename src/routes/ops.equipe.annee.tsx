@@ -238,7 +238,9 @@ function AnneePage() {
     for (const emp of employees) {
       const hParJour = heuresContractuellesParJour(emp);
       const empAbs = absences.filter((a) => a.employee_id === emp.id);
-      const empRecups = recups.filter((r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee);
+      const empRecups = recups.filter(
+        (r) => r.employee_id === emp.id && r.statut === "approuvee" && r.date_souhaitee && !(r as any).planning_entry_id,
+      );
       const inner = new Map<string, MonthDetail>();
       for (const m of months) {
         const days = monthDays(m);
