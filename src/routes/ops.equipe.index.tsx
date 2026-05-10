@@ -224,7 +224,8 @@ function EquipeIndex() {
         kind: "absence",
         id: absence.id,
         label: `Absence : ${absence.type}${absence.motif ? " — " + absence.motif : ""}`,
-        range: absence.date_debut === absence.date_fin ? absence.date_debut : `${absence.date_debut} → ${absence.date_fin}`,
+        range:
+          absence.date_debut === absence.date_fin ? absence.date_debut : `${absence.date_debut} → ${absence.date_fin}`,
       };
     }
     const plan = planning.find((p) => p.employee_id === empId && p.date_start <= date && date <= p.date_end);
@@ -240,10 +241,7 @@ function EquipeIndex() {
   };
 
   // État du dialog de suppression
-  const [delTarget, setDelTarget] = useState<
-    | { source: CellSource; empName: string; date: string }
-    | null
-  >(null);
+  const [delTarget, setDelTarget] = useState<{ source: CellSource; empName: string; date: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const confirmDelete = async () => {
@@ -274,7 +272,7 @@ function EquipeIndex() {
           .filter((a) => ["conge_paye", "rtt", "parental", "sans_solde"].includes(a.type))
           .reduce((s, a) => s + (a.nb_jours ?? 0), 0);
         const joursMaladie = empAbs.filter((a) => a.type === "maladie").reduce((s, a) => s + (a.nb_jours ?? 0), 0);
-        const heuresRecup = recups
+        const heuresRecupPrises = recups
           .filter((r) => r.employee_id === emp.id && r.statut === "approuvee")
           .reduce((s, r) => s + (r.heures_demandees ?? 0), 0);
         const hParJour = heuresContractuellesParJour(emp);
@@ -334,11 +332,18 @@ function EquipeIndex() {
           poste: emp.poste ?? "",
           contrat: emp.type_contrat,
           heures_contractuelles: compteur?.heures_contractuelles ?? 0,
-          heures_realisees: calc.realisees,
+          // H. réalisées = heures réellement saisies dans le planning.
+          // Les jours fériés ne sont pas ajoutés ici.
+          // Déplacement/formation sont visibles et comptés 7h max/jour.
+          heures_realisees: Math.round((calc.travailReel + calc.depForm) * 100) / 100,
+          // Solde = RTT/heures à récupérer - récupérations prises.
           solde: calc.solde,
           jours_conge: joursConge,
           jours_maladie: joursMaladie,
-          heures_recup: heuresRecup,
+          // Colonne Récup (H) = heures disponibles à récupérer en fin de mois.
+          heures_recup: Math.max(0, Math.round(calc.solde * 100) / 100),
+          heures_recup_prises: heuresRecupPrises,
+          rtt_acquises: calc.rttAcquises,
           // Contexte explicatif
           jours_ouvres: calc.joursRythme,
           h_par_jour: hParJour,
@@ -651,9 +656,7 @@ function EquipeIndex() {
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums">
                         <span className="font-medium">{r.base_paie}h</span>
-                        {r.a_rtt && (
-                          <div className="text-[10px] text-muted-foreground">RTT</div>
-                        )}
+                        {r.a_rtt && <div className="text-[10px] text-muted-foreground">RTT</div>}
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums">
                         <span className="font-medium">{r.heures_brutes}h</span>
