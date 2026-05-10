@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
-import { Plus, Users, Settings as SettingsIcon, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Users, Settings as SettingsIcon, Download, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
