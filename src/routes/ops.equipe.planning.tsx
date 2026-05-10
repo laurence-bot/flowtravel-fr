@@ -289,6 +289,7 @@ function PlanningPage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [savingRecup, setSavingRecup] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{ emp: Employee; date: string } | null>(null);
   const [tab, setTab] = useState("planning");
   const [actionEntry, setActionEntry] = useState<{ entry: PlanningEntry; emp: Employee } | null>(null);
