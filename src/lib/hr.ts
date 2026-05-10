@@ -849,22 +849,36 @@ function dureeNetteEntry(e: PlanningEntry): number {
 }
 
 /**
- * Compteur mensuel basé sur la **réalité du mois** :
- * - base = forfait mensualisé paie (jours rythme/sem × heuresParJour × 52 / 12)
- * - travail/teletravail/reunion : durée nette saisie (avec pause auto 30 min si oubliée)
- * - deplacement/formation : si jour rythme ouvré → forfait contractuel pile (heuresParJour),
- *   sinon 0 ; jamais d'heures sup, jamais de perte. Durée saisie ignorée pour le compteur.
- * - remplacement : 0 (impact via table hr_jours_dus)
- * - recuperation : valeur demandée/saisie, plafonnée à la journée contractuelle
- * - jours neutralisés (fériés chômés, CP, maladie, RTT) : comptés au forfait pour ne pas creuser le solde
+ * Compteur mensuel FlowTravel — logique RH par exception.
+ *
+ * IMPORTANT METIER :
+ * Le planning ne sert pas à prouver que l'employé a travaillé chaque jour.
+ * Un mois normal, sans saisie particulière, vaut 0h de solde.
+ *
+ * Le compteur calcule uniquement l'impact sur le compteur :
+ * - travail / télétravail / réunion : impact = durée nette saisie - forfait du jour
+ *   sur un jour normalement travaillé ; sur un jour non travaillé, la durée saisie
+ *   devient une heure supplémentaire explicite.
+ * - déplacement / formation : visible dans le calendrier, assimilé travail, mais
+ *   neutralisé dans le compteur. Crédit métier max 7h/jour, jamais d'heure sup,
+ *   jamais d'impact négatif, même sur une plage longue.
+ * - récupération : retire les heures posées du compteur.
+ * - jours fériés / absences neutralisées : ne sont PAS des heures réalisées ; ils
+ *   neutralisent seulement la base attendue et ne créent aucun impact.
+ *
+ * Résultat :
+ * - planning vide = solde 0h ;
+ * - jours fériés = 0h affichées dans l'impact, pas +22,5h ;
+ * - déplacement / formation = visible, mais solde inchangé ;
+ * - seules les heures sup explicites et les récupérations modifient le solde.
  */
 export function calcCompteurMensuel(
   entries: PlanningEntry[],
   joursOuvres: string[],
-  heuresParJour: number = 7,
+  heuresParJour: number = 7.5,
   emp?: Employee,
   _baseMensuelleFixe?: number,
-  joursNeutralises: string[] = [],
+  _joursNeutralises: string[] = [],
 ): {
   base: number;
   travailReel: number;
@@ -877,104 +891,75 @@ export function calcCompteurMensuel(
   const joursRythme = emp ? joursOuvres.filter((d) => estJourTravaille(emp, d)) : joursOuvres;
   const rythmeSet = new Set(joursRythme);
   const joursOuvresSet = new Set(joursOuvres);
-
-  /**
-   * IMPORTANT METIER RH
-   * Le compteur opérationnel du mois doit se calculer sur les jours réellement dus du mois,
-   * pas sur une moyenne annuelle mensualisée.
-   *
-   * Exemple : si un déplacement ou une formation couvre des jours ouvrés habituels,
-   * ces journées valent exactement le forfait contractuel du jour. Elles ne créent donc
-   * ni heure supplémentaire, ni heure manquante.
-   */
   const base = joursRythme.length * heuresParJour;
 
-  const heuresParJourMap = new Map<string, number>();
-  const heuresRecupParJour = new Map<string, number>();
+  let impact = 0;
+  let heuresSup = 0;
+  let heuresRecup = 0;
+  let travailSaisi = 0;
+  let depFormNeutralise = 0;
 
-  const month = joursOuvres[0]?.slice(0, 7);
-  if (month) {
-    const holidays = frenchHolidays(Number(month.slice(0, 4)));
-    for (const d of daysInIsoMonth(month)) {
-      if (!isJourFerie(d, holidays)) continue;
-      if (emp ? estJourTravaille(emp, d) : new Date(`${d}T00:00:00Z`).getUTCDay() !== 0) {
-        heuresParJourMap.set(d, heuresParJour);
-      }
-    }
-  }
+  const round = (n: number) => Math.round(n * 100) / 100;
 
   for (const e of entries) {
-    if (e.type === "recuperation") {
-      const explicit = Number((e as any).heures_recup ?? 0);
-      const duree = dureeNetteEntry(e);
-      const value = Math.min(heuresParJour, explicit > 0 ? explicit : duree > 0 ? duree : heuresParJour);
-
-      for (const d of planningEntryDays(e)) {
-        if (!joursOuvresSet.has(d)) continue;
-        heuresRecupParJour.set(d, Math.min(heuresParJour, (heuresRecupParJour.get(d) ?? 0) + value));
-      }
-      continue;
-    }
-
-    if (e.type === "remplacement") {
-      continue;
-    }
-
-    const PRESENCE_TYPES: PlanningType[] = ["travail", "teletravail", "reunion", "deplacement", "formation"];
-    if (!PRESENCE_TYPES.includes(e.type)) continue;
-
-    const isNeutralPresence = e.type === "deplacement" || e.type === "formation";
+    const days = planningEntryDays(e);
+    const isRange = days.length > 1;
     const duree = dureeNetteEntry(e);
 
-    for (const d of planningEntryDays(e)) {
+    if (e.type === "recuperation") {
+      const explicit = Number((e as any).heures_recup ?? 0);
+      const fallback = duree > 0 ? duree : heuresParJour;
+      const value = Math.min(heuresParJour, explicit > 0 ? explicit : fallback);
+
+      for (const d of days) {
+        if (!joursOuvresSet.has(d)) continue;
+        if (!rythmeSet.has(d) && isRange) continue;
+        heuresRecup += value;
+      }
+      continue;
+    }
+
+    if (e.type === "remplacement") continue;
+
+    if (e.type === "deplacement" || e.type === "formation") {
+      for (const d of days) {
+        if (!joursOuvresSet.has(d)) continue;
+        if (!rythmeSet.has(d)) continue;
+        // Demande métier : déplacement/formation = 7h max comptées, sans heure sup.
+        depFormNeutralise += Math.min(7, heuresParJour);
+      }
+      continue;
+    }
+
+    if (!["travail", "teletravail", "reunion"].includes(e.type)) continue;
+
+    for (const d of days) {
       if (!joursOuvresSet.has(d)) continue;
-      const existing = heuresParJourMap.get(d);
+      const isNormalWorkedDay = rythmeSet.has(d);
 
-      if (isNeutralPresence) {
-        /**
-         * Déplacement / formation : temps de travail neutralisé.
-         * - sur un jour contractuellement travaillé : forfait exact du jour ;
-         * - sur week-end / jour non travaillé : 0h compteur ;
-         * - les horaires saisis sont purement informatifs.
-         */
-        if (rythmeSet.has(d) && existing == null) {
-          heuresParJourMap.set(d, heuresParJour);
-        }
-        continue;
-      }
+      // Une plage longue de travail sert à poser un planning-type : elle ne doit
+      // pas générer d'heures sur les jours habituellement non travaillés.
+      if (isRange && !isNormalWorkedDay) continue;
 
-      /**
-       * Travail / télétravail / réunion : heures réelles si horaires saisis,
-       * sinon forfait contractuel sur un jour travaillé.
-       */
-      if (duree > 0) {
-        heuresParJourMap.set(d, (existing ?? 0) + duree);
-      } else if (existing == null && rythmeSet.has(d)) {
-        heuresParJourMap.set(d, heuresParJour);
-      }
+      const effective = duree > 0 ? duree : isNormalWorkedDay ? heuresParJour : 0;
+      if (effective <= 0) continue;
+
+      travailSaisi += effective;
+      const dayImpact = isNormalWorkedDay ? effective - heuresParJour : effective;
+      impact += dayImpact;
+      if (dayImpact > 0) heuresSup += dayImpact;
     }
   }
 
-  /** Absences neutralisées : on crédite le forfait du jour pour ne pas creuser le compteur. */
-  for (const d of joursNeutralises) {
-    if (rythmeSet.has(d) && !heuresParJourMap.has(d)) {
-      heuresParJourMap.set(d, heuresParJour);
-    }
-  }
-
-  const travailReel = Array.from(heuresParJourMap.values()).reduce((s, h) => s + h, 0);
-  const heuresRecup = Array.from(heuresRecupParJour.values()).reduce((s, h) => s + h, 0);
-  const realisees = travailReel - heuresRecup;
-  const solde = Math.round((realisees - base) * 100) / 100;
-  const heuresSup = Math.round(Math.max(0, realisees - base) * 100) / 100;
+  impact -= heuresRecup;
 
   return {
-    base: Math.round(base * 100) / 100,
-    travailReel: Math.round(travailReel * 100) / 100,
-    depForm: 0,
-    realisees: Math.round(realisees * 100) / 100,
-    solde,
-    heuresSup,
+    base: round(base),
+    travailReel: round(travailSaisi),
+    depForm: round(depFormNeutralise),
+    realisees: round(impact),
+    solde: round(impact),
+    heuresSup: round(heuresSup),
     joursRythme: joursRythme.length,
   };
 }
@@ -1009,7 +994,7 @@ export async function getCompteur(employeeId: string, mois: string): Promise<Com
     .maybeSingle();
   if (!data) return null;
   const d: any = data;
-  return { ...d, solde: d.heures_realisees - d.heures_contractuelles + d.heures_report } as CompteurHeures;
+  return { ...d, solde: d.heures_realisees + d.heures_report } as CompteurHeures;
 }
 
 export async function upsertCompteur(
@@ -1050,7 +1035,7 @@ export async function listCompteurs(mois: string): Promise<CompteurHeures[]> {
   if (error) throw error;
   return ((data ?? []) as any[]).map((d) => ({
     ...d,
-    solde: d.heures_realisees - d.heures_contractuelles + d.heures_report,
+    solde: d.heures_realisees + d.heures_report,
   }));
 }
 
