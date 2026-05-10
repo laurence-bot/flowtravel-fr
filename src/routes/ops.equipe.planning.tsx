@@ -377,7 +377,12 @@ function PlanningPage() {
     const emp = employees.find((e) => e.id === empId);
     return entries.filter((e) => {
       if (e.employee_id !== empId || !planningEntryCoversDate(e, date)) return false;
-      if ((e.type === "deplacement" || e.type === "formation") && (!isJourOuvre(date, holidays) || (emp && !estJourTravaille(emp, date)))) {
+      // Sur un jour férié : aucun badge "travaillé" affiché (jour payé non travaillé).
+      // Les heures restent comptées via le forfait contractuel côté compteur.
+      if (isJourFerie(date, holidays) && ["travail", "teletravail", "reunion", "deplacement", "formation"].includes(e.type)) {
+        return false;
+      }
+      if ((e.type === "deplacement" || e.type === "formation") && (emp && !estJourTravaille(emp, date))) {
         return false;
       }
       return true;
