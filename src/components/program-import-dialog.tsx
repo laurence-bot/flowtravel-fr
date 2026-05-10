@@ -388,6 +388,16 @@ export function ProgramImportDialog({ cotationId, userId, canWrite, onImported }
           )}
 
           <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setOpen(false);
+                reset();
+              }}
+              disabled={importing}
+            >
+              Annuler
+            </Button>
             {result && (
               <>
                 <Button variant="ghost" onClick={reset} disabled={importing}>
