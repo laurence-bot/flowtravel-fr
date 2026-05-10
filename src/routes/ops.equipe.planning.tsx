@@ -646,10 +646,34 @@ function PlanningPage() {
     }
   };
 
+  const recupHeuresFromRange = (debut: string, fin: string): number => {
+    if (!debut || !fin) return 0;
+    const [h1, m1] = debut.split(":").map(Number);
+    const [h2, m2] = fin.split(":").map(Number);
+    const diff = (h2 * 60 + m2 - (h1 * 60 + m1)) / 60;
+    return Math.round(diff * 100) / 100;
+  };
+
   const saveRecup = async () => {
     if (savingRecup) return;
-    if (!recupForm.employee_id || !recupForm.heures_demandees) {
+    if (!recupForm.employee_id) {
       toast.error("Champs requis");
+      return;
+    }
+    let heures = Number(recupForm.heures_demandees);
+    let heure_debut: string | undefined;
+    let heure_fin: string | undefined;
+    if (recupForm.type === "heures") {
+      heures = recupHeuresFromRange(recupForm.heure_debut, recupForm.heure_fin);
+      if (heures <= 0) {
+        toast.error("L'heure de fin doit être après l'heure de début");
+        return;
+      }
+      heure_debut = recupForm.heure_debut;
+      heure_fin = recupForm.heure_fin;
+    }
+    if (!heures || heures <= 0) {
+      toast.error("Heures invalides");
       return;
     }
     setSavingRecup(true);
@@ -658,8 +682,10 @@ function PlanningPage() {
         employee_id: recupForm.employee_id,
         mois: month,
         type: recupForm.type,
-        heures_demandees: Number(recupForm.heures_demandees),
+        heures_demandees: heures,
         date_souhaitee: recupForm.date_souhaitee || undefined,
+        heure_debut,
+        heure_fin,
         motif: recupForm.motif || undefined,
       });
       toast.success("Demande créée");
