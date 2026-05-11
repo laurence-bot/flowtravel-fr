@@ -53,7 +53,12 @@ import {
   type FlightSegmentLite,
 } from "@/lib/itinerary-from-flights";
 import { buildJourSyncPlan, duplicateLineKey, normKey, type SyncJour } from "@/lib/cotation-sync";
-import { extractProgramFromFile, insertLignes, upsertJoursProgramme, upsertSupplierLinesFromPdf } from "@/lib/program-import";
+import {
+  extractProgramFromFile,
+  insertLignes,
+  upsertJoursProgramme,
+  upsertSupplierLinesFromPdf,
+} from "@/lib/program-import";
 import { ProgramImportDialog } from "@/components/program-import-dialog";
 import {
   AlertDialog,
@@ -812,12 +817,15 @@ export function QuoteContentEditorBlock({
             // Sync IDEMPOTENTE : upsertJoursProgramme fusionne par date_jour
             // (puis titre normalisé) au lieu d'ajouter en aveugle. Cliquer
             // plusieurs fois sur "Sync PDF + vols" doit donner le même résultat.
-            const joursResult = await upsertJoursProgramme(
-              userId,
-              cotationId,
-              extracted.result.jours,
-              { dateDepart: newDepart },
-            );
+            const pdfProgramStart =
+              generated.find((j) => j.type_jour === "arrival_day")?.date_jour ??
+              generated.find((j) => !j.isFlightDay)?.date_jour ??
+              newDepart;
+
+            const joursResult = await upsertJoursProgramme(userId, cotationId, extracted.result.jours, {
+              dateDepart: pdfProgramStart,
+              dateRetour: newRetour,
+            });
             if (joursResult.error) throw new Error(joursResult.error);
 
             const lignesResult = await upsertSupplierLinesFromPdf(userId, cotationId, extracted.result.lignes);
@@ -891,10 +899,7 @@ export function QuoteContentEditorBlock({
       let mergedDups = 0;
       if (toDelete.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: dErr } = await (supabase as any)
-          .from("cotation_jours")
-          .delete()
-          .in("id", toDelete);
+        const { error: dErr } = await (supabase as any).from("cotation_jours").delete().in("id", toDelete);
         if (dErr) throw dErr;
         mergedDups = toDelete.length;
 
@@ -910,7 +915,10 @@ export function QuoteContentEditorBlock({
         await Promise.all(
           remaining.map((j, i) =>
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (supabase as any).from("cotation_jours").update({ ordre: i + 1 }).eq("id", j.id),
+            (supabase as any)
+              .from("cotation_jours")
+              .update({ ordre: i + 1 })
+              .eq("id", j.id),
           ),
         );
       }
@@ -1120,7 +1128,11 @@ export function QuoteContentEditorBlock({
                   disabled={cleanLoading}
                   title="Supprime en masse les doublons de jours et de lignes prix"
                 >
-                  {cleanLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}
+                  {cleanLoading ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4 mr-1" />
+                  )}
                   Doublons
                 </Button>
               </StepBadge>
@@ -1184,7 +1196,11 @@ export function QuoteContentEditorBlock({
                       : "Ajoutez d'abord les vols pour activer cette option"
                   }
                 >
-                  {regenLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plane className="h-4 w-4 mr-1" />}
+                  {regenLoading ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <Plane className="h-4 w-4 mr-1" />
+                  )}
                   {jours.length === 0 ? "Générer" : "Depuis les vols"}
                 </Button>
               </StepBadge>
@@ -1195,27 +1211,29 @@ export function QuoteContentEditorBlock({
             </div>
           )}
         </div>
-        {canWrite && (() => {
-          const hasJours = jours.length > 0;
-          const hasPdf = !!programmePdfUrl;
-          let msg: string | null = null;
-          if (!hasJours && !hasPdf && !hasFlights) {
-            msg = "Commencez par ① importer votre programme fournisseur (PDF), ou ajoutez un jour manuellement.";
-          } else if (!hasJours && hasFlights) {
-            msg = "Vols détectés — cliquez sur ⑦ Générer depuis les vols pour construire l'itinéraire automatiquement.";
-          } else if (hasJours && hasFlights) {
-            msg = "Programme importé — utilisez ② Sync PDF + vols pour aligner les dates sur vos vols.";
-          } else if (hasJours && !hasFlights) {
-            msg = "Programme importé — ajoutez vos vols puis utilisez ② Sync pour aligner les dates.";
-          }
-          if (!msg) return null;
-          return (
-            <div className="text-xs text-muted-foreground bg-muted/50 border border-dashed rounded p-3 flex items-start gap-2">
-              <Plane className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[color:var(--gold)]" />
-              <div>{msg}</div>
-            </div>
-          );
-        })()}
+        {canWrite &&
+          (() => {
+            const hasJours = jours.length > 0;
+            const hasPdf = !!programmePdfUrl;
+            let msg: string | null = null;
+            if (!hasJours && !hasPdf && !hasFlights) {
+              msg = "Commencez par ① importer votre programme fournisseur (PDF), ou ajoutez un jour manuellement.";
+            } else if (!hasJours && hasFlights) {
+              msg =
+                "Vols détectés — cliquez sur ⑦ Générer depuis les vols pour construire l'itinéraire automatiquement.";
+            } else if (hasJours && hasFlights) {
+              msg = "Programme importé — utilisez ② Sync PDF + vols pour aligner les dates sur vos vols.";
+            } else if (hasJours && !hasFlights) {
+              msg = "Programme importé — ajoutez vos vols puis utilisez ② Sync pour aligner les dates.";
+            }
+            if (!msg) return null;
+            return (
+              <div className="text-xs text-muted-foreground bg-muted/50 border border-dashed rounded p-3 flex items-start gap-2">
+                <Plane className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[color:var(--gold)]" />
+                <div>{msg}</div>
+              </div>
+            );
+          })()}
 
         {loading ? (
           <div className="text-sm text-muted-foreground text-center py-6">Chargement…</div>
