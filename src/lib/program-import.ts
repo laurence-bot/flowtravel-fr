@@ -325,11 +325,23 @@ export async function upsertJoursProgramme(
 
       if (match && !usedExistingIds.has(match.id)) {
         usedExistingIds.add(match.id);
+        const existingText = `${match.titre ?? ""} ${match.description ?? ""}`;
+        const incomingText = `${j.titre ?? ""} ${j.description ?? ""}`;
+        const flightRegex =
+          /\b(vol|envol|flight|départ|depart|arrivée|arrivee|aéroport|aeroport|airport|nuit en vol|nuit à bord|embarquement|atterrissage)\b/i;
+        const existingIsFlightDay = flightRegex.test(existingText);
+        const incomingIsFlightDay = flightRegex.test(incomingText);
+        const preserveExistingFlight = existingIsFlightDay && !incomingIsFlightDay;
+
+        const mergedDescription = preserveExistingFlight
+          ? [match.description, j.description].filter(Boolean).join("\n\n")
+          : (j.description ?? match.description);
+
         const patch: Record<string, unknown> = {
-          titre: j.titre ?? match.titre,
+          titre: preserveExistingFlight ? match.titre : (j.titre ?? match.titre),
           lieu: j.lieu ?? match.lieu,
-          date_jour: j.date_jour ?? match.date_jour,
-          description: j.description ?? match.description,
+          date_jour: match.date_jour ?? j.date_jour ?? null,
+          description: mergedDescription,
           hotel_nom: j.hotel_nom ?? match.hotel_nom,
           // Préserve les inclusions existantes si l'extraction n'en fournit pas
           inclusions: j.inclusions ?? match.inclusions ?? null,
