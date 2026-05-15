@@ -31,7 +31,7 @@ import {
   type DemandeStatut,
   type DemandeCanal,
 } from "@/lib/demandes";
-import { Inbox, Plus, ChevronRight, AlertTriangle, TrendingUp, Target, CheckCircle2, XCircle } from "lucide-react";
+import { Inbox, Plus, ChevronRight, AlertTriangle, TrendingUp, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/demandes")({
@@ -70,6 +70,9 @@ const TONE_CLASS: Record<string, string> = {
   danger: "bg-destructive/15 text-destructive border-destructive/30",
 };
 
+// Sentinelle pour l'option "Aucun client" du <Select> (les Select shadcn n'acceptent pas "" en value).
+const NO_CLIENT = "__none__";
+
 export function StatutPill({ statut }: { statut: DemandeStatut }) {
   return (
     <Badge variant="outline" className={TONE_CLASS[DEMANDE_STATUT_TONES[statut]]}>
@@ -78,6 +81,21 @@ export function StatutPill({ statut }: { statut: DemandeStatut }) {
   );
 }
 
+const EMPTY_FORM = {
+  nom_client: "",
+  client_id: "",
+  email: "",
+  telephone: "",
+  canal: "email" as DemandeCanal,
+  destination: "",
+  date_depart_souhaitee: "",
+  date_retour_souhaitee: "",
+  budget: "",
+  nombre_pax: "1",
+  message_client: "",
+  creer_client: false,
+};
+
 function DemandesPage() {
   const { user } = useAuth();
   const { agenceId } = useRole();
@@ -85,24 +103,47 @@ function DemandesPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: demandes, loading, refetch } = useTable<Demande>("demandes" as any);
   const { data: contacts } = useTable<Contact>("contacts");
-  const clients = contacts.filter((c) => c.type === "client");
+  const clients = useMemo(
+    () =>
+      contacts
+        .filter((c) => c.type === "client")
+        .sort((a, b) => a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" })),
+    [contacts],
+  );
+  const clientsById = useMemo(() => new Map(clients.map((c) => [c.id, c])), [clients]);
 
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({
-    nom_client: "",
-    client_id: "",
-    email: "",
-    telephone: "",
-    canal: "email" as DemandeCanal,
-    destination: "",
-    date_depart_souhaitee: "",
-    date_retour_souhaitee: "",
-    budget: "",
-    nombre_pax: "1",
-    message_client: "",
-    creer_client: false,
-  });
+  const [form, setForm] = useState(EMPTY_FORM);
+
+  /**
+   * Sélection d'un client existant : on hydrate automatiquement nom, email et téléphone
+   * à partir de la fiche contact. Désélection : on remet à zéro ces trois champs
+   * (sinon on garderait des données fantômes du client précédent).
+   * "creer_client" est forcé à false dès qu'un client existant est choisi.
+   */
+  const handleSelectClient = (value: string) => {
+    if (value === NO_CLIENT || !value) {
+      setForm((f) => ({
+        ...f,
+        client_id: "",
+        nom_client: "",
+        email: "",
+        telephone: "",
+      }));
+      return;
+    }
+    const client = clientsById.get(value);
+    if (!client) return;
+    setForm((f) => ({
+      ...f,
+      client_id: client.id,
+      nom_client: client.nom,
+      email: client.email ?? "",
+      telephone: client.telephone ?? "",
+      creer_client: false,
+    }));
+  };
 
   const [fStatut, setFStatut] = useState<string>("tous");
   const [fCanal, setFCanal] = useState<string>("tous");
@@ -172,7 +213,7 @@ function DemandesPage() {
       .insert({
         user_id: user.id,
         nom_client: parsed.data.nom_client,
-        client_id: clientId,
+        client_id: clientId, // ← LIEN avec la fiche client (était oublié)
         email: parsed.data.email || null,
         telephone: parsed.data.telephone || null,
         canal: parsed.data.canal,
@@ -199,23 +240,19 @@ function DemandesPage() {
       description: `Demande créée : ${parsed.data.nom_client}`,
     });
     setOpen(false);
-    setForm({
-      nom_client: "",
-      client_id: "",
-      email: "",
-      telephone: "",
-      canal: "email",
-      destination: "",
-      date_depart_souhaitee: "",
-      date_retour_souhaitee: "",
-      budget: "",
-      nombre_pax: "1",
-      message_client: "",
-      creer_client: false,
-    });
+    setForm(EMPTY_FORM);
     toast.success(form.creer_client && !parsed.data.client_id ? "Demande et client créés." : "Demande créée.");
     refetch();
   };
+
+  // Quand le dialog se ferme (croix, Échap, clic extérieur), on reset le formulaire
+  // pour éviter de garder l'état d'une demande abandonnée.
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next) setForm(EMPTY_FORM);
+  };
+
+  const selectedClient = form.client_id ? clientsById.get(form.client_id) : undefined;
 
   return (
     <div className="space-y-6">
@@ -224,7 +261,7 @@ function DemandesPage() {
         description="Gestion des demandes entrantes : du prospect à la cotation."
         action={
           canWrite && (
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={handleOpenChange}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" /> Nouvelle demande
@@ -236,6 +273,39 @@ function DemandesPage() {
                 </DialogHeader>
                 <form onSubmit={submit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
+                    {/* Client existant en PREMIER : si choisi, il remplit auto les champs ci-dessous */}
+                    <div className="col-span-2">
+                      <Label>Client existant</Label>
+                      <Select
+                        value={form.client_id || NO_CLIENT}
+                        onValueChange={handleSelectClient}
+                        disabled={form.creer_client}
+                      >
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={
+                              form.creer_client ? "Nouveau client" : "Optionnel — sélectionner un client existant"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={NO_CLIENT}>— Aucun (saisie manuelle) —</SelectItem>
+                          {clients.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.nom}
+                              {c.email ? ` · ${c.email}` : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {selectedClient && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Fiche client liée — les champs ci-dessous sont pré-remplis et restent modifiables pour cette
+                          demande.
+                        </p>
+                      )}
+                    </div>
+
                     <div>
                       <Label>Nom du contact *</Label>
                       <Input
@@ -245,28 +315,19 @@ function DemandesPage() {
                       />
                     </div>
                     <div>
-                      <Label>Client existant</Label>
-                      <Select
-                        value={form.client_id}
-                        onValueChange={(v) => setForm({ ...form, client_id: v, creer_client: false })}
-                        disabled={form.creer_client}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={form.creer_client ? "Nouveau client" : "Optionnel"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {clients.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.nom}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label>Email</Label>
+                      <Input
+                        type="email"
+                        value={form.email}
+                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      />
                     </div>
+
                     <div className="col-span-2 flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
                       <Checkbox
                         id="creer-client"
                         checked={form.creer_client}
+                        disabled={!!form.client_id}
                         onCheckedChange={(c) =>
                           setForm({
                             ...form,
@@ -282,14 +343,7 @@ function DemandesPage() {
                         </span>
                       </Label>
                     </div>
-                    <div>
-                      <Label>Email</Label>
-                      <Input
-                        type="email"
-                        value={form.email}
-                        onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      />
-                    </div>
+
                     <div>
                       <Label>Téléphone</Label>
                       <Input value={form.telephone} onChange={(e) => setForm({ ...form, telephone: e.target.value })} />
