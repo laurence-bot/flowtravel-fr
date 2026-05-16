@@ -228,6 +228,220 @@ function addDaysISO(dateDepart: string, daysOffset: number): string {
   return `${yy}-${mm}-${dd}`;
 }
 
+function isISODate(value: string | null | undefined): value is string {
+  return !!value && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function diffDaysISO(start: string, end: string): number {
+  const [sy, sm, sd] = start.split("-").map(Number);
+  const [ey, em, ed] = end.split("-").map(Number);
+  const s = Date.UTC(sy, sm - 1, sd);
+  const e = Date.UTC(ey, em - 1, ed);
+  return Math.round((e - s) / 86400000);
+}
+
+function isoYear(date: string): number {
+  return Number(date.slice(0, 4));
+}
+
+function replaceYearISO(date: string, year: number): string {
+  return `${year}${date.slice(4)}`;
+}
+
+function clampText(value: string | null | undefined): string | null {
+  const text = value?.trim();
+  return text ? text : null;
+}
+
+function looksLikeGenericDayTitle(title: string | null | undefined): boolean {
+  const t = normalizeTitre(title);
+  return /^jour\s+\d+(\s+[a-z ]+)?$/.test(t) || /^j\s*\d+$/.test(t);
+}
+
+function looksLikeFlightOrTransferDay(
+  title: string | null | undefined,
+  description: string | null | undefined,
+): boolean {
+  const text = `${title ?? ""} ${description ?? ""}`;
+  return /\b(vol|flight|a[eé]roport|aeroport|transfert|embarquement|arriv[eé]e|d[eé]part|cdg|mrs|gru|gig|ssa|igu)\b/i.test(
+    text,
+  );
+}
+
+function cityFromTitleOrLieu(j: JourExtrait): string | null {
+  const lieu = clampText(j.lieu);
+  if (lieu) return lieu;
+  const title = clampText(j.titre);
+  if (!title) return null;
+  const m = title.match(/[—-]\s*([^—-]+)$/);
+  if (m?.[1]) return m[1].trim();
+  return null;
+}
+
+function mergeUniqueStrings(values: Array<string | null | undefined>, separator = "\n\n"): string | null {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const value of values) {
+    const text = value?.trim();
+    if (!text) continue;
+    const key = normalizeTitre(text).slice(0, 220);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(text);
+  }
+  return out.length > 0 ? out.join(separator) : null;
+}
+
+function mergeInclusions(values: Array<string[] | null | undefined>): string[] | null {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const list of values) {
+    for (const item of list ?? []) {
+      const text = item?.trim();
+      if (!text) continue;
+      const key = normalizeTitre(text);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(text);
+    }
+  }
+  return out.length > 0 ? out : null;
+}
+
+function makeFreeDayTitle(lieu: string | null, ordre: number): string {
+  return lieu ? `Journée libre à ${lieu}` : `Journée libre — Jour ${ordre}`;
+}
+
+/**
+ * Recale les dates du PDF sur les dates des vols/cotation.
+ * Cas typique : PDF fournisseur daté en 2027, vols saisis en 2026.
+ * On conserve le mois/jour du PDF mais on force l'année du voyage.
+ */
+function alignPdfDateToTrip(
+  date: string | null | undefined,
+  dateDepart: string | null,
+  dateRetour: string | null,
+): string | null {
+  if (!isISODate(date)) return null;
+  if (!dateDepart) return date;
+  const tripYear = isoYear(dateDepart);
+  let candidate = replaceYearISO(date, tripYear);
+
+  if (dateRetour && (candidate < dateDepart || candidate > dateRetour)) {
+    const next = replaceYearISO(date, tripYear + 1);
+    const prev = replaceYearISO(date, tripYear - 1);
+    if (next >= dateDepart && next <= dateRetour) candidate = next;
+    else if (prev >= dateDepart && prev <= dateRetour) candidate = prev;
+  }
+
+  return candidate;
+}
+
+/**
+ * Reconstruit une timeline terrestre propre :
+ * - une ligne par date,
+ * - recalage d'année PDF ↔ vols,
+ * - création des jours manquants,
+ * - propagation des hôtels entre deux check-in,
+ * - conservation des descriptions/activités déjà extraites.
+ */
+function rebuildProgramTimeline(
+  jours: JourExtrait[],
+  dateDepart: string | null,
+  dateRetour: string | null,
+): JourExtrait[] {
+  if (jours.length === 0) return [];
+
+  const sortedRaw = [...jours].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
+  const withDates = sortedRaw.map((j) => {
+    const alignedDate = alignPdfDateToTrip(j.date_jour, dateDepart, dateRetour);
+    const computedDate =
+      !alignedDate && dateDepart && typeof j.ordre === "number" && j.ordre >= 1
+        ? addDaysISO(dateDepart, j.ordre - 1)
+        : null;
+    return { ...j, date_jour: alignedDate ?? computedDate };
+  });
+
+  const byDate = new Map<string, JourExtrait[]>();
+  const undated: JourExtrait[] = [];
+  for (const j of withDates) {
+    if (isISODate(j.date_jour)) {
+      const arr = byDate.get(j.date_jour) ?? [];
+      arr.push(j);
+      byDate.set(j.date_jour, arr);
+    } else {
+      undated.push(j);
+    }
+  }
+
+  const dates: string[] = [];
+  if (dateDepart && dateRetour && dateRetour >= dateDepart) {
+    const count = diffDaysISO(dateDepart, dateRetour) + 1;
+    for (let i = 0; i < count; i++) dates.push(addDaysISO(dateDepart, i));
+  } else {
+    dates.push(...Array.from(byDate.keys()).sort());
+  }
+
+  let currentHotel: string | null = null;
+  let currentLieu: string | null = null;
+  const rebuilt: JourExtrait[] = [];
+
+  for (let i = 0; i < dates.length; i++) {
+    const date = dates[i];
+    const items = (byDate.get(date) ?? []).sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
+
+    for (const item of items) {
+      const lieu = cityFromTitleOrLieu(item);
+      if (lieu && !looksLikeFlightOrTransferDay(item.titre, item.description)) currentLieu = lieu;
+      if (clampText(item.hotel_nom)) currentHotel = clampText(item.hotel_nom);
+    }
+
+    if (items.length === 0) {
+      rebuilt.push({
+        ordre: i + 1,
+        titre: makeFreeDayTitle(currentLieu, i + 1),
+        lieu: currentLieu,
+        date_jour: date,
+        description: null,
+        hotel_nom: currentHotel,
+        inclusions: currentHotel ? ["Hébergement"] : null,
+      });
+      continue;
+    }
+
+    const meaningfulItems = items.filter(
+      (item) => !looksLikeGenericDayTitle(item.titre) || clampText(item.description),
+    );
+    const primary = meaningfulItems[0] ?? items[0];
+    const nonGenericTitles = meaningfulItems
+      .map((item) => clampText(item.titre))
+      .filter((title): title is string => !!title && !looksLikeGenericDayTitle(title));
+    const title = nonGenericTitles.length > 1 ? nonGenericTitles.join(" + ") : (nonGenericTitles[0] ?? primary.titre);
+    const lieu = items.map(cityFromTitleOrLieu).find(Boolean) ?? currentLieu;
+    const hotel = items.map((item) => clampText(item.hotel_nom)).find(Boolean) ?? currentHotel;
+
+    if (lieu && !looksLikeFlightOrTransferDay(title, primary.description)) currentLieu = lieu;
+    if (hotel) currentHotel = hotel;
+
+    rebuilt.push({
+      ordre: i + 1,
+      titre: title,
+      lieu: lieu ?? null,
+      date_jour: date,
+      description: mergeUniqueStrings(items.map((item) => item.description)),
+      hotel_nom: hotel ?? null,
+      inclusions: mergeInclusions(items.map((item) => item.inclusions)) ?? (hotel ? ["Hébergement"] : null),
+    });
+  }
+
+  // On rattache les éventuels éléments non datés à la fin, sans casser la timeline.
+  for (const item of undated) {
+    rebuilt.push({ ...item, ordre: rebuilt.length + 1, hotel_nom: clampText(item.hotel_nom) ?? currentHotel });
+  }
+
+  return rebuilt;
+}
+
 export async function upsertJoursProgramme(
   userId: string,
   cotationId: string,
@@ -251,18 +465,14 @@ export async function upsertJoursProgramme(
       dateRetour = dateRetour ?? cot?.date_retour ?? null;
     }
 
-    // 2) Calcule date_jour manquante à partir de date_depart si dispo.
-    const enrichedAll: JourExtrait[] = jours.map((j) => {
-      if (j.date_jour) return j;
-      if (dateDepart && typeof j.ordre === "number" && j.ordre >= 1) {
-        return { ...j, date_jour: addDaysISO(dateDepart, j.ordre - 1) };
-      }
-      return j;
-    });
+    // 2) Reconstruit une timeline complète et recale les années PDF sur les vols.
+    //    Exemple : PDF en 2027 + vols en 2026 => 01/02, 04/02, 13/02... passent en 2026.
+    //    Les jours absents du PDF sont créés comme journées libres, avec hôtel propagé.
+    const enrichedAll = rebuildProgramTimeline(jours, dateDepart, dateRetour);
 
     // 2bis) Garde-fou global : on ignore tout jour hors plage [dateDepart, dateRetour].
-    //       Règle métier FlowTravel : aucun jour de programme ne peut tomber
-    //       avant le départ ou après le retour de la cotation.
+    //       Cette étape intervient APRES le recalage d'année, sinon un PDF 2027
+    //       serait rejeté à tort pour des vols 2026.
     let outOfRange = 0;
     const enriched: JourExtrait[] = enrichedAll.filter((j) => {
       if (!j.date_jour) return true;
