@@ -60,11 +60,15 @@ const KEYWORDS: Record<InclusionKey, { inclus: RegExp[]; exclus: RegExp[] }> = {
   },
   dejeuner: {
     inclus: [/déjeuner/i, /dejeuner/i, /lunch/i, /repas\s+de\s+midi/i, /dîner\s+et\s+déjeuner/i],
-    exclus: [/non\s+inclus/i, /libre/i, /à\s+votre\s+charge/i],
+    // FIX : "/libre/i" global remplacé par des patterns ciblés "déjeuner libre"
+    // pour ne pas exclure le déjeuner inclus quand "Dîner libre" apparaît
+    // ailleurs dans la même description.
+    exclus: [/non\s+inclus/i, /d[eé]jeuner\s+libre/i, /à\s+votre\s+charge/i],
   },
   diner: {
     inclus: [/dîner/i, /diner/i, /dinner/i, /repas\s+du\s+soir/i, /soirée\s+gastronomique/i],
-    exclus: [/non\s+inclus/i, /libre/i, /à\s+votre\s+charge/i],
+    // FIX : "/libre/i" global remplacé par "dîner libre" / "diner libre" ciblé.
+    exclus: [/non\s+inclus/i, /d[iî]ner\s+libre/i],
   },
   guide: {
     inclus: [/guide/i, /guide\s+francophone/i, /accompagnateur/i, /escort/i],
@@ -93,7 +97,9 @@ const KEYWORDS: Record<InclusionKey, { inclus: RegExp[]; exclus: RegExp[] }> = {
 // ─────────────────────────────────────────────
 function detectFromText(text: string): Inclusions {
   const result: Inclusions = {};
-  for (const [key, { inclus, exclus }] of Object.entries(KEYWORDS) as Array<[InclusionKey, { inclus: RegExp[]; exclus: RegExp[] }]>) {
+  for (const [key, { inclus, exclus }] of Object.entries(KEYWORDS) as Array<
+    [InclusionKey, { inclus: RegExp[]; exclus: RegExp[] }]
+  >) {
     const found = inclus.some((re) => re.test(text));
     if (!found) continue;
     const isExcluded = exclus.some((re) => {
@@ -240,16 +246,16 @@ export function inferTripContext(segments: FlightSegmentLite[]): TripFlightConte
 // ─────────────────────────────────────────────
 export const INCLUSION_CONFIG: Record<InclusionKey, { label: string; icon: string }> = {
   vol_international: { label: "Vol international", icon: "plane" },
-  vol_domestique:   { label: "Vol domestique",    icon: "plane" },
-  hebergement:      { label: "Hébergement",       icon: "hotel" },
-  petit_dejeuner:   { label: "Petit-déjeuner",    icon: "coffee" },
-  dejeuner:         { label: "Déjeuner",          icon: "utensils" },
-  diner:            { label: "Dîner",             icon: "utensils" },
-  guide:            { label: "Guide",             icon: "user" },
-  transfert:        { label: "Transfert",         icon: "car" },
-  location_voiture: { label: "Location voiture",  icon: "car" },
-  excursion:        { label: "Excursion",         icon: "map" },
-  entrees:          { label: "Entrées",           icon: "ticket" },
+  vol_domestique: { label: "Vol domestique", icon: "plane" },
+  hebergement: { label: "Hébergement", icon: "hotel" },
+  petit_dejeuner: { label: "Petit-déjeuner", icon: "coffee" },
+  dejeuner: { label: "Déjeuner", icon: "utensils" },
+  diner: { label: "Dîner", icon: "utensils" },
+  guide: { label: "Guide", icon: "user" },
+  transfert: { label: "Transfert", icon: "car" },
+  location_voiture: { label: "Location voiture", icon: "car" },
+  excursion: { label: "Excursion", icon: "map" },
+  entrees: { label: "Entrées", icon: "ticket" },
 };
 
 // ─────────────────────────────────────────────
@@ -336,17 +342,13 @@ export function generateInclusText(params: {
   const dejManquants = totalJours - (counts.dejeuner ?? 0);
   if (dejManquants > 0 && totalJours > 0) {
     repasManquants.push(
-      dejManquants === totalJours
-        ? "déjeuners"
-        : `${dejManquants} déjeuner${dejManquants > 1 ? "s" : ""}`,
+      dejManquants === totalJours ? "déjeuners" : `${dejManquants} déjeuner${dejManquants > 1 ? "s" : ""}`,
     );
   }
   const dinerManquants = totalJours - (counts.diner ?? 0);
   if (dinerManquants > 0 && totalJours > 0) {
     repasManquants.push(
-      dinerManquants === totalJours
-        ? "dîners"
-        : `${dinerManquants} dîner${dinerManquants > 1 ? "s" : ""}`,
+      dinerManquants === totalJours ? "dîners" : `${dinerManquants} dîner${dinerManquants > 1 ? "s" : ""}`,
     );
   }
   if (repasManquants.length > 0) {
