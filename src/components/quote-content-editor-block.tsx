@@ -155,28 +155,45 @@ export function QuoteContentEditorBlock({
       const optsRes = await (supabase as any).from("flight_options").select("id").eq("cotation_id", cotationId);
       const optionIds = ((optsRes.data ?? []) as Array<{ id: string }>).map((v) => v.id);
 
-      let segments: Array<{ aeroport_depart: string; aeroport_arrivee: string }> = [];
+      let segments: Array<{
+        aeroport_depart: string;
+        aeroport_arrivee: string;
+        date_depart?: string | null;
+        ordre: number;
+      }> = [];
       if (optionIds.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const segsRes = await (supabase as any)
           .from("flight_segments")
-          .select("aeroport_depart, aeroport_arrivee")
-          .in("flight_option_id", optionIds);
+          .select("aeroport_depart, aeroport_arrivee, date_depart, ordre")
+          .in("flight_option_id", optionIds)
+          .order("ordre", { ascending: true });
         segments = (segsRes.data ?? []) as typeof segments;
       }
 
-      const hasVolInternational = segments.some(
-        (s) => s.aeroport_depart.slice(0, 2) !== s.aeroport_arrivee.slice(0, 2),
-      );
-      const hasVolDomestique = segments.some((s) => s.aeroport_depart.slice(0, 2) === s.aeroport_arrivee.slice(0, 2));
+      const tripContext = inferTripContext(segments as Parameters<typeof inferTripContext>[0]);
 
-      const { inclus_text, non_inclus_text } = generateInclusText({
-        jours: jours.map((j) => ({
+      // Détection à la volée depuis le texte de chaque jour —
+      // sans dépendre du JSONB pré-sauvegardé (bouton ⑥ non obligatoire).
+      const joursDetectes = jours.map((j) => ({
+        titre: j.titre,
+        description: j.description,
+        date_jour: j.date_jour,
+        inclusions: detectInclusions({
           titre: j.titre,
           description: j.description,
-          date_jour: j.date_jour,
-          inclusions: j.inclusions ?? null,
-        })),
+          segments: segments as Parameters<typeof detectInclusions>[0]["segments"],
+          jourDate: j.date_jour ?? null,
+          existingInclusions: null,
+          tripContext,
+        }),
+      }));
+
+      const hasVolInternational = joursDetectes.some((j) => j.inclusions.vol_international === true);
+      const hasVolDomestique = joursDetectes.some((j) => j.inclusions.vol_domestique === true);
+
+      const { inclus_text, non_inclus_text } = generateInclusText({
+        jours: joursDetectes,
         nombrePax: nombrePax ?? 2,
         hasVolInternational,
         hasVolDomestique,
