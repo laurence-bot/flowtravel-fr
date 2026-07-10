@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useState } from "react";
-import { getMariagePublic, submitMariageContribution } from "@/server/mariage-public.functions";
+import { getMariagePublic, submitMariageContribution } from "@/lib/mariage-public.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
