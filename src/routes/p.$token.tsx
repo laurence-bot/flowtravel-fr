@@ -5,7 +5,7 @@ import {
   requestCallback,
   requestModification,
   chooseFlightOption,
-} from "@/server/quote-public.functions";
+} from "@/lib/quote-public.functions";
 import { themeStyle } from "@/lib/agency-theme";
 import { formatEUR, formatDate } from "@/lib/format";
 import { computeCotationFinance, ligneEcheances, computeAcompteClient } from "@/lib/cotations";

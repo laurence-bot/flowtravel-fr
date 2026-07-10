@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { ShieldAlert, Building2, FileText, Check, X, Loader2, ExternalLink, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { verifySiret, approveAgence, type SiretVerifResult } from "@/server/agences.functions";
+import { verifySiret, approveAgence, type SiretVerifResult } from "@/lib/agences.functions";
 
 export const Route = createFileRoute("/admin-agences")({
   component: AdminAgencesRoute,

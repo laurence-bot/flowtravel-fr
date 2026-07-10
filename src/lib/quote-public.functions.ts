@@ -174,7 +174,7 @@ export const acceptPublicQuote = createServerFn({ method: "POST" })
         const { data: client } = cot.client_id
           ? await supabaseAdmin.from("contacts").select("nom").eq("id", cot.client_id).maybeSingle()
           : { data: null as any };
-        const { notifyAgent } = await import("./agent-notifications.server");
+        const { notifyAgent } = await import("../server/agent-notifications.server");
         await notifyAgent({
           ownerUserId: cot.user_id,
           agentId: cot.agent_id,
@@ -262,7 +262,7 @@ export const declarePaymentDone = createServerFn({ method: "POST" })
         const { data: client } = cot.client_id
           ? await supabaseAdmin.from("contacts").select("nom").eq("id", cot.client_id).maybeSingle()
           : { data: null as any };
-        const { notifyAgent } = await import("./agent-notifications.server");
+        const { notifyAgent } = await import("../server/agent-notifications.server");
         await notifyAgent({
           ownerUserId: cot.user_id,
           agentId: cot.agent_id,

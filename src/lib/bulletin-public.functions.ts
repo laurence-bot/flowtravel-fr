@@ -222,7 +222,7 @@ export const signBulletin = createServerFn({ method: "POST" })
       const { data: client } = bulletin.client_id
         ? await sb.from("contacts").select("nom").eq("id", bulletin.client_id).maybeSingle()
         : { data: null as any };
-      const { notifyAgent } = await import("./agent-notifications.server");
+      const { notifyAgent } = await import("../server/agent-notifications.server");
       await notifyAgent({
         ownerUserId: bulletin.user_id,
         agentId: cot?.agent_id ?? null,

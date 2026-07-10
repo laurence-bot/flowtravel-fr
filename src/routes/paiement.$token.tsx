@@ -1,7 +1,7 @@
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { getPublicPaymentInfo } from "@/server/payment-public.functions";
-import { acceptPublicQuote, declarePaymentDone } from "@/server/quote-public.functions";
+import { getPublicPaymentInfo } from "@/lib/payment-public.functions";
+import { acceptPublicQuote, declarePaymentDone } from "@/lib/quote-public.functions";
 import { themeStyle } from "@/lib/agency-theme";
 import { formatEUR } from "@/lib/format";
 import { Building2, CreditCard, Copy, ExternalLink, Check, ArrowLeft, Info } from "lucide-react";

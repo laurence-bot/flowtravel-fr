@@ -8,9 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { ImagePicker } from "@/components/image-picker";
-import { generateDayText } from "@/server/quote-day-text.functions";
-import { suggestDayPhoto } from "@/server/quote-images.functions";
-import { generateQuoteIntro } from "@/server/quote-intro.functions";
+import { generateDayText } from "@/lib/quote-day-text.functions";
+import { suggestDayPhoto } from "@/lib/quote-images.functions";
+import { generateQuoteIntro } from "@/lib/quote-intro.functions";
 import type { CotationJour, Inclusions } from "@/lib/quote-public";
 import { detectInclusions, generateInclusText, inferTripContext } from "@/lib/detect-inclusions";
 import { InclusionPills } from "@/components/cotation/InclusionPills";

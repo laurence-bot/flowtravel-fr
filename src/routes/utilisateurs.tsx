@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import { ShieldAlert, Users, UserPlus, Trash2, KeyRound, Copy } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { inviteUser, deleteUser, setUserPassword } from "@/server/users.functions";
+import { inviteUser, deleteUser, setUserPassword } from "@/lib/users.functions";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
