@@ -190,7 +190,7 @@ function InscriptionAgencePage() {
       ]);
 
       // 2. Création atomique compte auth + agence (statut=en_attente, profil actif=false)
-      const { registerAgence } = await import("@/server/agences.functions");
+      const { registerAgence } = await import("@/lib/agences.functions");
       const result = await registerAgence({
         data: {
           nom_commercial: parsed.data.nom_commercial,

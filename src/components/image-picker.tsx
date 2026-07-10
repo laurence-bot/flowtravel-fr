@@ -12,7 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { searchUnsplash, generateAiImage } from "@/server/quote-images.functions";
+import { searchUnsplash, generateAiImage } from "@/lib/quote-images.functions";
 import { Upload, Search, Sparkles, Link2, Loader2, Image as ImageIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 

@@ -1,5 +1,5 @@
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
-import { getPublicBulletinDocuments } from "@/server/bulletin-public.functions";
+import { getPublicBulletinDocuments } from "@/lib/bulletin-public.functions";
 import { formatEUR, formatDate } from "@/lib/format";
 import { FileText, CheckCircle2, Download } from "lucide-react";
 
