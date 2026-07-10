@@ -417,8 +417,8 @@ function rebuildProgramTimeline(
       .map((item) => clampText(item.titre))
       .filter((title): title is string => !!title && !looksLikeGenericDayTitle(title));
     const title = nonGenericTitles.length > 1 ? nonGenericTitles.join(" + ") : (nonGenericTitles[0] ?? primary.titre);
-    const lieu = items.map(cityFromTitleOrLieu).find(Boolean) ?? currentLieu;
-    const hotel = items.map((item) => clampText(item.hotel_nom)).find(Boolean) ?? currentHotel;
+    const lieu: string | null = items.map(cityFromTitleOrLieu).find(Boolean) ?? currentLieu;
+    const hotel: string | null = items.map((item) => clampText(item.hotel_nom)).find(Boolean) ?? currentHotel;
 
     if (lieu && !looksLikeFlightOrTransferDay(title, primary.description)) currentLieu = lieu;
     if (hotel) currentHotel = hotel;
