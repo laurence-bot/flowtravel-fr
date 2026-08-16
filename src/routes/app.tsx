@@ -156,6 +156,14 @@ function Dashboard() {
       <PageHeader
         title="Tableau de bord"
         description="Vision financière consolidée de l'agence"
+        action={
+          <Badge
+            variant="outline"
+            className="border-[color:var(--gold)]/60 bg-[color:var(--gold)]/10 text-[color:var(--gold)]"
+          >
+            Test de synchronisation Lovable
+          </Badge>
+        }
       />
 
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

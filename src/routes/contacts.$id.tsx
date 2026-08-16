@@ -25,7 +25,7 @@ import {
   type CotationLigne,
 } from "@/lib/cotations";
 import {
-  DEMANDE_STATUT_LABELS, DEMANDE_STATUT_TONES,
+  DEMANDE_STATUT_LABELS, DEMANDE_STATUT_TONES, resolveDemandeTravelDetails,
   type Demande, type DemandeStatut,
 } from "@/lib/demandes";
 import { formatEUR, formatPercent, formatDate } from "@/lib/format";
@@ -356,26 +356,33 @@ function ContactDetail() {
                   description="Aucune demande n'est associée à ce client." />
               ) : (
                 <ul className="divide-y divide-border/60">
-                  {mesDemandes.map((d) => (
-                    <li key={d.id}>
-                      <Link to="/demandes/$id" params={{ id: d.id }}
-                        className="px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-secondary/40 transition-colors">
-                        <div className="min-w-0">
-                          <div className="font-medium truncate">{d.destination ?? "Sans destination"}</div>
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {formatDate(d.created_at)} · {d.nombre_pax} pax
-                            {d.budget ? ` · ${formatEUR(d.budget)}` : ""}
+                  {mesDemandes.map((d) => {
+                    const travelDetails = resolveDemandeTravelDetails(d);
+                    return (
+                      <li key={d.id}>
+                        <Link to="/demandes/$id" params={{ id: d.id }}
+                          className="px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-secondary/40 transition-colors">
+                          <div className="min-w-0">
+                            <div className="font-medium truncate">{travelDetails.destination ?? "Sans destination"}</div>
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              {formatDate(d.created_at)} · {travelDetails.nombrePaxLabel} pax
+                              {typeof d.budget === "number" && d.budget > 0
+                                ? ` · ${formatEUR(d.budget)}`
+                                : travelDetails.budgetLabel
+                                  ? ` · ${travelDetails.budgetLabel}`
+                                  : ""}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <Badge variant="outline" className={TONE_CLASS[DEMANDE_STATUT_TONES[d.statut]]}>
-                            {DEMANDE_STATUT_LABELS[d.statut]}
-                          </Badge>
-                          <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      </Link>
-                    </li>
-                  ))}
+                          <div className="flex items-center gap-3 shrink-0">
+                            <Badge variant="outline" className={TONE_CLASS[DEMANDE_STATUT_TONES[d.statut]]}>
+                              {DEMANDE_STATUT_LABELS[d.statut]}
+                            </Badge>
+                            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </Card>

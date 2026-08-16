@@ -27,6 +27,7 @@ import {
   DEMANDE_CANAL_LABELS,
   isSansReponse,
   joursDepuisContact,
+  resolveDemandeTravelDetails,
   type Demande,
   type DemandeStatut,
   type DemandeCanal,
@@ -155,8 +156,9 @@ function DemandesPage() {
       demandes.filter((d) => {
         if (fStatut !== "tous" && d.statut !== fStatut) return false;
         if (fCanal !== "tous" && d.canal !== fCanal) return false;
-        if (fDest.trim() && !(d.destination ?? "").toLowerCase().includes(fDest.toLowerCase())) return false;
-        if (fDate && (!d.date_depart_souhaitee || d.date_depart_souhaitee < fDate)) return false;
+        const travelDetails = resolveDemandeTravelDetails(d);
+        if (fDest.trim() && !(travelDetails.destination ?? "").toLowerCase().includes(fDest.toLowerCase())) return false;
+        if (fDate && (!travelDetails.dateDepart || travelDetails.dateDepart < fDate)) return false;
         return true;
       }),
     [demandes, fStatut, fCanal, fDest, fDate],
@@ -555,19 +557,20 @@ function DemandesPage() {
             <TableBody>
               {filtered.map((d) => {
                 const alerte = isSansReponse(d);
+                const travelDetails = resolveDemandeTravelDetails(d);
                 return (
                   <TableRow key={d.id}>
                     <TableCell className="font-medium">
                       {d.nom_client}
                       {d.email && <div className="text-xs text-muted-foreground">{d.email}</div>}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{d.destination ?? "—"}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {d.date_depart_souhaitee
-                        ? `${d.date_depart_souhaitee}${d.date_retour_souhaitee ? ` → ${d.date_retour_souhaitee}` : ""}`
-                        : "—"}
+                    <TableCell className="text-sm text-muted-foreground">{travelDetails.destination ?? "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{travelDetails.dateLabel ?? "—"}</TableCell>
+                    <TableCell className="text-right tabular">
+                      {typeof d.budget === "number" && d.budget > 0
+                        ? formatEUR(d.budget)
+                        : travelDetails.budgetLabel ?? "—"}
                     </TableCell>
-                    <TableCell className="text-right tabular">{d.budget ? formatEUR(d.budget) : "—"}</TableCell>
                     <TableCell className="text-xs">{DEMANDE_CANAL_LABELS[d.canal]}</TableCell>
                     <TableCell>
                       <StatutPill statut={d.statut} />

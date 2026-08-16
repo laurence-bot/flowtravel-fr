@@ -19,7 +19,13 @@ import { useAgents, agentLabel } from "@/hooks/use-agents";
 import { formatEUR, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { logAudit } from "@/lib/audit";
-import { DEMANDE_STATUT_LABELS, DEMANDE_CANAL_LABELS, type Demande, type DemandeStatut } from "@/lib/demandes";
+import {
+  DEMANDE_STATUT_LABELS,
+  DEMANDE_CANAL_LABELS,
+  resolveDemandeTravelDetails,
+  type Demande,
+  type DemandeStatut,
+} from "@/lib/demandes";
 import { StatutPill } from "@/routes/demandes";
 import {
   ArrowLeft,
@@ -71,7 +77,8 @@ function DemandeDetail() {
   useEffect(() => {
     if (demande) {
       setNotes(demande.notes ?? "");
-      setTransformTitre(demande.destination ? `Voyage ${demande.destination}` : `Voyage ${demande.nom_client}`);
+      const destination = resolveDemandeTravelDetails(demande).destination;
+      setTransformTitre(destination ? `Voyage ${destination}` : `Voyage ${demande.nom_client}`);
       // Charger l'historique depuis audit_logs
       supabase
         .from("audit_logs")
@@ -103,6 +110,7 @@ function DemandeDetail() {
   }
 
   const client = contacts.find((c) => c.id === demande.client_id);
+  const travelDetails = resolveDemandeTravelDetails(demande);
 
   const updateStatut = async (statut: DemandeStatut, raison?: string) => {
     if (!user) return;
@@ -236,10 +244,10 @@ function DemandeDetail() {
         agence_id: agenceId ?? null,
         client_id: clientId,
         titre: transformTitre || `Voyage ${demande.nom_client}`,
-        destination: demande.destination,
-        date_depart: demande.date_depart_souhaitee,
-        date_retour: demande.date_retour_souhaitee,
-        nombre_pax: demande.nombre_pax,
+        destination: travelDetails.destination,
+        date_depart: travelDetails.dateDepart,
+        date_retour: travelDetails.dateRetour,
+        nombre_pax: travelDetails.nombrePax,
         prix_vente_ttc: 0, // Le budget client n'est pas le prix — à définir via le calculateur de marge
         statut: "brouillon",
         demande_id: demande.id,
@@ -379,23 +387,23 @@ function DemandeDetail() {
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <div className="text-xs text-muted-foreground">Destination</div>
-              <div className="font-medium">{demande.destination ?? "—"}</div>
+              <div className="font-medium">{travelDetails.destination ?? "—"}</div>
             </div>
             <div>
               <div className="text-xs text-muted-foreground">Pax</div>
-              <div className="font-medium">{demande.nombre_pax}</div>
+              <div className="font-medium">{travelDetails.nombrePaxLabel}</div>
             </div>
             <div>
               <div className="text-xs text-muted-foreground">Dates</div>
-              <div className="font-medium">
-                {demande.date_depart_souhaitee
-                  ? `${demande.date_depart_souhaitee}${demande.date_retour_souhaitee ? ` → ${demande.date_retour_souhaitee}` : ""}`
-                  : "—"}
-              </div>
+              <div className="font-medium">{travelDetails.dateLabel ?? "—"}</div>
             </div>
             <div>
               <div className="text-xs text-muted-foreground">Budget</div>
-              <div className="font-medium">{demande.budget ? formatEUR(demande.budget) : "—"}</div>
+              <div className="font-medium">
+                {typeof demande.budget === "number" && demande.budget > 0
+                  ? formatEUR(demande.budget)
+                  : travelDetails.budgetLabel ?? "—"}
+              </div>
             </div>
           </div>
           {demande.message_client && (
