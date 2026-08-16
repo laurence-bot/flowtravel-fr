@@ -400,9 +400,10 @@ function DemandeDetail() {
             <div>
               <div className="text-xs text-muted-foreground">Budget</div>
               <div className="font-medium">
-                {typeof demande.budget === "number" && demande.budget > 0
-                  ? formatEUR(demande.budget)
-                  : travelDetails.budgetLabel ?? "—"}
+                {travelDetails.budgetLabel ??
+                  (typeof demande.budget === "number" && demande.budget > 0
+                    ? formatEUR(demande.budget)
+                    : "—")}
               </div>
             </div>
           </div>

@@ -32,7 +32,7 @@ import {
   type DemandeStatut,
   type DemandeCanal,
 } from "@/lib/demandes";
-import { Inbox, Plus, ChevronRight, AlertTriangle, TrendingUp, CheckCircle2, XCircle } from "lucide-react";
+import { Inbox, Plus, ChevronRight, AlertTriangle, TrendingUp, CheckCircle2, XCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/demandes")({
@@ -99,7 +99,7 @@ const EMPTY_FORM = {
 
 function DemandesPage() {
   const { user } = useAuth();
-  const { agenceId } = useRole();
+  const { agenceId, isSuperAdmin } = useRole();
   const { canWrite } = usePageWriteAccess();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: demandes, loading, refetch } = useTable<Demande>("demandes" as any);
@@ -115,6 +115,7 @@ function DemandesPage() {
 
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
 
   /**
@@ -244,6 +245,40 @@ function DemandesPage() {
     setOpen(false);
     setForm(EMPTY_FORM);
     toast.success(form.creer_client && !parsed.data.client_id ? "Demande et client créés." : "Demande créée.");
+    refetch();
+  };
+
+  const supprimerDemande = async (demande: Demande) => {
+    if (!isSuperAdmin || deletingId) return;
+    const confirmed = window.confirm(
+      `Supprimer définitivement la demande de ${demande.nom_client} ?`,
+    );
+    if (!confirmed) return;
+
+    setDeletingId(demande.id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("demandes")
+      .delete()
+      .eq("id", demande.id);
+
+    if (error) {
+      toast.error(error.message ?? "Suppression impossible.");
+      setDeletingId(null);
+      return;
+    }
+
+    if (user) {
+      await logAudit({
+        userId: user.id,
+        entity: "demande",
+        entityId: demande.id,
+        action: "delete",
+        description: `Demande supprimée : ${demande.nom_client}`,
+      });
+    }
+    toast.success("Demande supprimée.");
+    setDeletingId(null);
     refetch();
   };
 
@@ -552,6 +587,7 @@ function DemandesPage() {
                 <TableHead>Créée</TableHead>
                 <TableHead>Dernier contact</TableHead>
                 <TableHead></TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -567,9 +603,10 @@ function DemandesPage() {
                     <TableCell className="text-sm text-muted-foreground">{travelDetails.destination ?? "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{travelDetails.dateLabel ?? "—"}</TableCell>
                     <TableCell className="text-right tabular">
-                      {typeof d.budget === "number" && d.budget > 0
-                        ? formatEUR(d.budget)
-                        : travelDetails.budgetLabel ?? "—"}
+                      {travelDetails.budgetLabel ??
+                        (typeof d.budget === "number" && d.budget > 0
+                          ? formatEUR(d.budget)
+                          : "—")}
                     </TableCell>
                     <TableCell className="text-xs">{DEMANDE_CANAL_LABELS[d.canal]}</TableCell>
                     <TableCell>
@@ -591,6 +628,21 @@ function DemandesPage() {
                           <ChevronRight className="h-4 w-4" />
                         </Link>
                       </Button>
+                    </TableCell>
+                    <TableCell>
+                      {isSuperAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                          aria-label={`Supprimer la demande de ${d.nom_client}`}
+                          title="Supprimer la demande"
+                          disabled={deletingId === d.id}
+                          onClick={() => void supprimerDemande(d)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 );

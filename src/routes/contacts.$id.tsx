@@ -366,10 +366,10 @@ function ContactDetail() {
                             <div className="font-medium truncate">{travelDetails.destination ?? "Sans destination"}</div>
                             <div className="text-xs text-muted-foreground mt-0.5">
                               {formatDate(d.created_at)} · {travelDetails.nombrePaxLabel} pax
-                              {typeof d.budget === "number" && d.budget > 0
-                                ? ` · ${formatEUR(d.budget)}`
-                                : travelDetails.budgetLabel
-                                  ? ` · ${travelDetails.budgetLabel}`
+                              {travelDetails.budgetLabel
+                                ? ` · ${travelDetails.budgetLabel}`
+                                : typeof d.budget === "number" && d.budget > 0
+                                  ? ` · ${formatEUR(d.budget)}`
                                   : ""}
                             </div>
                           </div>
