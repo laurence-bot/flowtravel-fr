@@ -37,6 +37,7 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
+  ExternalLink,
 } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
@@ -53,6 +54,7 @@ type NavItem = {
   to: string;
   label: string;
   icon: typeof LayoutDashboard;
+  externalUrl?: string;
   superAdminOnly?: boolean;
 };
 
@@ -139,6 +141,12 @@ const navAgenceGroups: NavGroup[] = [
       { to: "/comptes", label: "Comptes & Trésorerie", icon: Landmark },
       { to: "/couvertures-fx", label: "Couvertures FX", icon: Shield },
       { to: "/previsions", label: "Prévisions", icon: LineChart },
+      {
+        to: "tiime-facturation",
+        label: "Tiime · Facturation électronique",
+        icon: ExternalLink,
+        externalUrl: "https://apps.tiime.fr/companies/726831/invoice/invoices?page=1",
+      },
     ],
   },
   {
@@ -297,6 +305,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const renderNavItem = useCallback(
     (item: NavItem, onClick?: () => void, indent?: boolean) => {
       const Icon = item.icon;
+      if (item.externalUrl) {
+        return (
+          <a
+            key={item.to}
+            href={item.externalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onClick}
+            className={cn(
+              "group flex items-center gap-3 px-3 py-2 rounded-md text-[13px] transition-all relative text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+              indent && "pl-8",
+            )}
+          >
+            <Icon className="h-4 w-4 shrink-0" />
+            <span className="font-medium tracking-wide truncate flex-1">{item.label}</span>
+            <ExternalLink className="h-3 w-3 shrink-0 opacity-50" aria-hidden="true" />
+          </a>
+        );
+      }
       const active = isActive(item.to);
       return (
         <Link
