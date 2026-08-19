@@ -94,6 +94,11 @@ function PaiementsPage() {
       toast.error("Montant invalide");
       return;
     }
+    const compte = comptes.find((item) => item.id === parsed.data.compte_id);
+    if (!compte || compte.devise !== fxDb.devise) {
+      toast.error(`Sélectionnez un compte en ${fxDb.devise} pour ce paiement`);
+      return;
+    }
     setSubmitting(true);
     const { data: inserted, error } = await supabase
       .from("paiements")
@@ -130,6 +135,7 @@ function PaiementsPage() {
   const personnesFiltrees = contacts.filter((c) =>
     form.type === "paiement_client" ? c.type === "client" : c.type === "fournisseur",
   );
+  const comptesCompatibles = comptes.filter((c) => c.devise === fx.devise);
   const dossierTitre = (id: string | null) => dossiers.find((d) => d.id === id)?.titre ?? "—";
   const personneNom = (id: string | null) => contacts.find((c) => c.id === id)?.nom ?? "—";
   const compteNom = (id: string | null) => comptes.find((c) => c.id === id)?.nom ?? "—";
@@ -261,19 +267,25 @@ function PaiementsPage() {
             </Label>
             <Select value={form.compte_id} onValueChange={(v) => setForm({ ...form, compte_id: v })}>
               <SelectTrigger>
-                <SelectValue placeholder={comptes.length === 0 ? "Créez d'abord un compte" : "Choisir le compte"} />
+                <SelectValue
+                  placeholder={
+                    comptesCompatibles.length === 0
+                      ? `Créez d'abord un compte en ${fx.devise}`
+                      : `Choisir un compte en ${fx.devise}`
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
-                {comptes.map((c) => (
+                {comptesCompatibles.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
-                    {c.nom}
+                    {c.nom} · {c.devise}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {comptes.length === 0 && (
+            {comptesCompatibles.length === 0 && (
               <p className="text-xs text-muted-foreground">
-                Rendez-vous dans <span className="font-medium">Comptes & Trésorerie</span> pour créer vos comptes.
+                Rendez-vous dans <span className="font-medium">Comptes & Trésorerie</span> pour créer un compte en {fx.devise}.
               </p>
             )}
           </div>

@@ -27,6 +27,10 @@ export type Dossier = {
   prix_vente: number;
   cout_total: number;
   taux_tva_marge: number;
+  pays_destination?: string | null;
+  date_ouverture?: string | null;
+  date_depart?: string | null;
+  date_retour?: string | null;
   created_at: string;
 };
 
@@ -144,6 +148,10 @@ export type Compte = {
   banque: CompteBanque;
   categorie: CompteCategorie;
   solde_initial: number;
+  devise: import("@/lib/fx").DeviseCode;
+  solde_initial_devise: number;
+  taux_solde_eur: number;
+  date_solde_initial: string | null;
   actif: boolean;
   created_at: string;
 };

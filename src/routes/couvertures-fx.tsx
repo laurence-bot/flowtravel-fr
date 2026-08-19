@@ -78,7 +78,10 @@ function CouverturesFXPage() {
   const { data: echeances } = useTable<FactureEcheance>("facture_echeances");
   const { data: paiements } = useTable<Paiement>("paiements");
 
-  const totalEUR = coverages.reduce((s, c) => s + Number(c.montant_devise) * Number(c.taux_change), 0);
+  const totalEUR = coverages.reduce(
+    (s, c) => s + Number(c.solde_reel_eur ?? Number(c.solde_reel_devise ?? c.montant_devise) * Number(c.taux_change)),
+    0,
+  );
   const ouvertes = coverages.filter((c) => c.statut === "ouverte").length;
   const reservees = coverages.filter((c) => c.statut === "reservee").length;
   const anomalies = coverages.filter((c) => c.statut === "anomalie" || c.statut === "expiree").length;
@@ -90,11 +93,12 @@ function CouverturesFXPage() {
     const { reserve, engage, disponible } = coverageBalance(c, reservations);
     const k = c.devise;
     if (!acc[k]) acc[k] = { total: 0, disponible: 0, engage: 0, reserve: 0, eur: 0 };
-    acc[k].total += Number(c.montant_devise);
+    const soldeReel = Number(c.solde_reel_devise ?? c.montant_devise);
+    acc[k].total += soldeReel;
     acc[k].disponible += disponible;
     acc[k].engage += engage;
     acc[k].reserve += reserve;
-    acc[k].eur += Number(c.montant_devise) * Number(c.taux_change);
+    acc[k].eur += Number(c.solde_reel_eur ?? soldeReel * Number(c.taux_change));
     return acc;
   }, {});
   const stockEntries = Object.entries(stockParDevise).sort((a, b) => b[1].eur - a[1].eur);
@@ -177,7 +181,8 @@ function CouverturesFXPage() {
               <TableRow>
                 <TableHead>Référence</TableHead>
                 <TableHead>Devise</TableHead>
-                <TableHead className="text-right">Montant devise</TableHead>
+                <TableHead className="text-right">Contrat initial</TableHead>
+                <TableHead className="text-right">Solde Ebury réel</TableHead>
                 <TableHead className="text-right">Taux</TableHead>
                 <TableHead className="text-right">Équivalent EUR</TableHead>
                 <TableHead className="min-w-[160px]">Utilisation</TableHead>
@@ -192,7 +197,8 @@ function CouverturesFXPage() {
             <TableBody>
               {coverages.map((c) => {
                 const { reserve, engage, disponible } = coverageBalance(c, reservations);
-                const eur = Number(c.montant_devise) * Number(c.taux_change);
+                const soldeReel = Number(c.solde_reel_devise ?? c.montant_devise);
+                const eur = Number(c.solde_reel_eur ?? soldeReel * Number(c.taux_change));
                 return (
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.reference || "—"}</TableCell>
@@ -202,6 +208,12 @@ function CouverturesFXPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{formatMoney(c.montant_devise, c.devise)}</TableCell>
+                    <TableCell className="text-right tabular-nums font-medium">
+                      {formatMoney(soldeReel, c.devise)}
+                      {c.date_solde_reel && (
+                        <div className="text-[10px] text-muted-foreground mt-0.5">au {formatDate(c.date_solde_reel)}</div>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right tabular-nums text-muted-foreground">
                       {Number(c.taux_change).toFixed(4)}
                     </TableCell>
@@ -211,7 +223,7 @@ function CouverturesFXPage() {
                         engage={engage}
                         reserve={reserve}
                         disponible={disponible}
-                        total={Number(c.montant_devise)}
+                        total={soldeReel}
                       />
                     </TableCell>
                     <TableCell className="text-right tabular-nums text-destructive">
@@ -473,6 +485,9 @@ function NewCoverageDialog({
         reference: parsed.data.reference ?? null,
         devise: parsed.data.devise,
         montant_devise: parsed.data.montant_devise,
+        solde_reel_devise: parsed.data.montant_devise,
+        solde_reel_eur: parsed.data.montant_devise * parsed.data.taux_change,
+        date_solde_reel: new Date().toISOString().slice(0, 10),
         taux_change: parsed.data.taux_change,
         date_ouverture: parsed.data.date_ouverture,
         date_echeance: parsed.data.date_echeance,
@@ -616,6 +631,11 @@ function CoverageRowActions({
     reference: coverage.reference ?? "",
     devise: coverage.devise as Exclude<DeviseCode, "EUR">,
     montant_devise: String(coverage.montant_devise),
+    solde_reel_devise: String(coverage.solde_reel_devise ?? coverage.montant_devise),
+    solde_reel_eur: String(
+      coverage.solde_reel_eur ?? Number(coverage.solde_reel_devise ?? coverage.montant_devise) * Number(coverage.taux_change),
+    ),
+    date_solde_reel: coverage.date_solde_reel ?? "",
     taux_change: String(coverage.taux_change),
     date_ouverture: coverage.date_ouverture,
     date_echeance: coverage.date_echeance,
@@ -645,6 +665,9 @@ function CoverageRowActions({
         reference: parsed.data.reference ?? null,
         devise: parsed.data.devise,
         montant_devise: parsed.data.montant_devise,
+        solde_reel_devise: Math.max(0, Number(form.solde_reel_devise)),
+        solde_reel_eur: Math.max(0, Number(form.solde_reel_eur)),
+        date_solde_reel: form.date_solde_reel || null,
         taux_change: parsed.data.taux_change,
         date_ouverture: parsed.data.date_ouverture,
         date_echeance: parsed.data.date_echeance,
@@ -731,7 +754,7 @@ function CoverageRowActions({
                 </Select>
               </div>
               <div>
-                <Label>Montant en devise</Label>
+                <Label>Montant contractuel initial</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -748,6 +771,42 @@ function CoverageRowActions({
                 value={form.taux_change}
                 onChange={(e) => setForm({ ...form, taux_change: e.target.value })}
               />
+            </div>
+            <div className="rounded-md border border-border/60 p-3 space-y-3 bg-secondary/20">
+              <div>
+                <div className="text-sm font-medium">Dernier solde communiqué par Ebury</div>
+                <p className="text-xs text-muted-foreground">Le contrat initial ci-dessus n'est jamais écrasé.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <Label>Solde {form.devise}</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.solde_reel_devise}
+                    onChange={(e) => setForm({ ...form, solde_reel_devise: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Équivalent EUR</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.solde_reel_eur}
+                    onChange={(e) => setForm({ ...form, solde_reel_eur: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Date du solde</Label>
+                  <Input
+                    type="date"
+                    value={form.date_solde_reel}
+                    onChange={(e) => setForm({ ...form, date_solde_reel: e.target.value })}
+                  />
+                </div>
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>

@@ -18,6 +18,7 @@ import {
   Shield,
   FileScan,
   FileText,
+  FileLock2,
   Inbox,
   Building2,
   Video,
@@ -154,6 +155,7 @@ const navAgenceGroups: NavGroup[] = [
     label: "Imports & Compta",
     icon: Upload,
     items: [
+      { to: "/documents", label: "Documents sécurisés", icon: FileLock2 },
       { to: "/import-bancaire", label: "Import bancaire", icon: Upload },
       { to: "/import-pdf", label: "Import PDF", icon: FileScan },
       { to: "/rapprochement", label: "Rapprochement", icon: Link2 },

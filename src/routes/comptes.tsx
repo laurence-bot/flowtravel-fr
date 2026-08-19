@@ -29,6 +29,7 @@ import { EmptyState } from "@/components/empty-state";
 import { Plus, Landmark, ArrowRightLeft, TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
+import { DEVISES, formatMoney, type DeviseCode } from "@/lib/fx";
 
 export const Route = createFileRoute("/comptes")({
   component: () => (
@@ -43,6 +44,10 @@ const compteSchema = z.object({
   banque: z.enum(["sg", "cic", "ebury", "autre"]),
   categorie: z.enum(["gestion", "anticipation", "clients", "fournisseurs", "plateforme"]),
   solde_initial: z.number().finite(),
+  solde_initial_devise: z.number().finite(),
+  devise: z.enum(["EUR", "USD", "GBP", "ZAR", "CHF", "CAD", "AUD", "JPY", "AED", "MAD", "TND"]),
+  taux_solde_eur: z.number().positive(),
+  date_solde_initial: z.string().optional(),
 });
 
 const transfertSchema = z.object({
@@ -109,6 +114,7 @@ function ComptesPage() {
                 <TableHead>Compte</TableHead>
                 <TableHead>Banque</TableHead>
                 <TableHead>Catégorie</TableHead>
+                <TableHead>Devise</TableHead>
                 <TableHead className="text-right">Entrées</TableHead>
                 <TableHead className="text-right">Sorties</TableHead>
                 <TableHead className="text-right">Solde</TableHead>
@@ -124,10 +130,18 @@ function ComptesPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground capitalize">{CATEGORIE_LABELS[s.compte.categorie]}</TableCell>
-                  <TableCell className="text-right tabular text-[color:var(--revenue)]">+{formatEUR(s.entrees)}</TableCell>
-                  <TableCell className="text-right tabular text-[color:var(--cost)]">−{formatEUR(s.sorties)}</TableCell>
+                  <TableCell><Badge variant="outline" className="font-mono">{s.compte.devise}</Badge></TableCell>
+                  <TableCell className="text-right tabular text-[color:var(--revenue)]">
+                    +{formatMoney(s.entreesDevise, s.compte.devise)}
+                  </TableCell>
+                  <TableCell className="text-right tabular text-[color:var(--cost)]">
+                    −{formatMoney(s.sortiesDevise, s.compte.devise)}
+                  </TableCell>
                   <TableCell className={`text-right tabular font-semibold ${s.solde >= 0 ? "" : "text-destructive"}`}>
-                    {formatEUR(s.solde)}
+                    {formatMoney(s.soldeDevise, s.compte.devise)}
+                    {s.compte.devise !== "EUR" && (
+                      <div className="text-[10px] text-muted-foreground font-normal mt-0.5">≈ {formatEUR(s.solde)}</div>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -224,6 +238,10 @@ function NewCompteDialog({ userId, onDone }: { userId?: string; onDone: () => vo
     banque: "sg" as CompteBanque,
     categorie: "gestion" as CompteCategorie,
     solde_initial: "0",
+    solde_initial_devise: "0",
+    devise: "EUR" as DeviseCode,
+    taux_solde_eur: "1",
+    date_solde_initial: new Date().toISOString().slice(0, 10),
   });
 
   const submit = async (e: React.FormEvent) => {
@@ -233,7 +251,11 @@ function NewCompteDialog({ userId, onDone }: { userId?: string; onDone: () => vo
       nom: form.nom,
       banque: form.banque,
       categorie: form.categorie,
-      solde_initial: Number(form.solde_initial),
+      solde_initial_devise: Number(form.solde_initial_devise),
+      devise: form.devise,
+      taux_solde_eur: Number(form.taux_solde_eur),
+      solde_initial: Number(form.solde_initial_devise) * Number(form.taux_solde_eur),
+      date_solde_initial: form.date_solde_initial || undefined,
     });
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
     setSubmitting(true);
@@ -248,12 +270,21 @@ function NewCompteDialog({ userId, onDone }: { userId?: string; onDone: () => vo
       entity: "compte",
       action: "create",
       entityId: inserted?.id,
-      description: `Compte créé : ${parsed.data.nom} (${parsed.data.banque}, solde initial ${parsed.data.solde_initial} €)`,
+      description: `Compte créé : ${parsed.data.nom} (${parsed.data.banque}, solde initial ${parsed.data.solde_initial_devise} ${parsed.data.devise})`,
       newValue: inserted,
     });
     toast.success("Compte créé");
     setOpen(false);
-    setForm({ nom: "", banque: "sg", categorie: "gestion", solde_initial: "0" });
+    setForm({
+      nom: "",
+      banque: "sg",
+      categorie: "gestion",
+      solde_initial: "0",
+      solde_initial_devise: "0",
+      devise: "EUR",
+      taux_solde_eur: "1",
+      date_solde_initial: new Date().toISOString().slice(0, 10),
+    });
     onDone();
   };
 
@@ -298,9 +329,33 @@ function NewCompteDialog({ userId, onDone }: { userId?: string; onDone: () => vo
               </Select>
             </div>
           </div>
-          <div className="space-y-2">
-            <Label>Solde initial (€)</Label>
-            <Input type="number" step="0.01" value={form.solde_initial} onChange={(e) => setForm({ ...form, solde_initial: e.target.value })} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Devise du compte</Label>
+              <Select
+                value={form.devise}
+                onValueChange={(v: DeviseCode) => setForm({ ...form, devise: v, taux_solde_eur: v === "EUR" ? "1" : form.taux_solde_eur })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {DEVISES.map((d) => <SelectItem key={d.code} value={d.code}>{d.code} · {d.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Date du solde initial</Label>
+              <Input type="date" value={form.date_solde_initial} onChange={(e) => setForm({ ...form, date_solde_initial: e.target.value })} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Solde initial ({form.devise})</Label>
+              <Input type="number" step="0.01" value={form.solde_initial_devise} onChange={(e) => setForm({ ...form, solde_initial_devise: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Taux vers EUR</Label>
+              <Input type="number" min="0.00000001" step="0.000001" disabled={form.devise === "EUR"} value={form.taux_solde_eur} onChange={(e) => setForm({ ...form, taux_solde_eur: e.target.value })} />
+            </div>
           </div>
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? "Création…" : "Créer le compte"}

@@ -30,6 +30,10 @@ import {
   Users as UsersIcon,
   FileSignature,
   Mail,
+  Globe2,
+  Pencil,
+  FileLock2,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
@@ -56,6 +60,7 @@ function DossierDetail() {
   const { data: contacts } = useTable<Contact>("contacts");
   const { data: paiements } = useTable<Paiement>("paiements");
   const { data: factures, refetch: refetchFactures } = useTable<Facture>("factures_fournisseurs");
+  const { data: documents } = useTable<{ id: string; dossier_id: string | null; file_name: string; storage_path: string; categorie: string }>("documents_securises");
   const { agents } = useAgents();
 
   const reassignAgent = async (newAgentId: string) => {
@@ -159,6 +164,13 @@ function DossierDetail() {
 
   const paiementsClients = paiementsDossier.filter((p) => p.type === "paiement_client");
   const paiementsFournisseurs = paiementsDossier.filter((p) => p.type === "paiement_fournisseur");
+  const documentsDossier = documents.filter((d) => d.dossier_id === dossier.id);
+
+  const ouvrirDocument = async (storagePath: string) => {
+    const { data, error } = await supabase.storage.from("documents-securises").createSignedUrl(storagePath, 120);
+    if (error || !data?.signedUrl) return toast.error(error?.message ?? "Document inaccessible");
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  };
 
   const supprimer = async () => {
     if (!dossier) return;
@@ -240,6 +252,25 @@ function DossierDetail() {
           Supprimer
         </Button>
       </header>
+
+      <Card className="p-5 border-border/60">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-3 text-sm">
+            <div><div className="text-xs text-muted-foreground">Ouverture</div><div className="font-medium mt-1">{formatDate(dossier.date_ouverture ?? dossier.created_at)}</div></div>
+            <div><div className="text-xs text-muted-foreground">Départ</div><div className="font-medium mt-1">{formatDate(dossier.date_depart)}</div></div>
+            <div><div className="text-xs text-muted-foreground">Retour</div><div className="font-medium mt-1">{formatDate(dossier.date_retour)}</div></div>
+            <div>
+              <div className="text-xs text-muted-foreground">TVA voyage</div>
+              <div className="font-medium mt-1 flex items-center gap-1.5">
+                <Globe2 className="h-3.5 w-3.5" />
+                {Number(dossier.taux_tva_marge) === 0 ? "Hors UE · exonérée" : `TVA sur marge ${dossier.taux_tva_marge} %`}
+              </div>
+              {Number(dossier.taux_tva_marge) === 0 && <div className="text-[10px] text-muted-foreground mt-0.5">CGI, art. 262 bis</div>}
+            </div>
+          </div>
+          <DossierMetaDialog dossier={dossier} onSaved={(updated) => setDossier(updated)} />
+        </div>
+      </Card>
 
       {/* KPIs financiers */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -393,6 +424,26 @@ function DossierDetail() {
       {/* Suivi opérationnel */}
       <DossierTasksBlock dossierId={dossier.id} />
 
+      <Card className="p-6 border-border/60">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h2 className="font-display text-xl flex items-center gap-2"><FileLock2 className="h-5 w-5 text-muted-foreground" />Documents sécurisés</h2>
+            <p className="text-xs text-muted-foreground mt-1">{documentsDossier.length} document(s) rattaché(s) directement à ce dossier.</p>
+          </div>
+          <Button asChild variant="outline" size="sm"><Link to="/documents">Classer des documents</Link></Button>
+        </div>
+        {documentsDossier.length > 0 && (
+          <ul className="mt-4 divide-y divide-border/60">
+            {documentsDossier.slice(0, 12).map((doc) => (
+              <li key={doc.id} className="py-2.5 flex items-center justify-between gap-3 text-sm">
+                <div className="min-w-0"><div className="font-medium truncate">{doc.file_name}</div><div className="text-[10px] text-muted-foreground">{doc.categorie.replaceAll("_", " ")}</div></div>
+                <Button size="sm" variant="ghost" onClick={() => ouvrirDocument(doc.storage_path)}><ExternalLink className="h-3.5 w-3.5 mr-1.5" />Ouvrir</Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
       {/* Bulletin d'inscription */}
       {cotationId && (
         <Card className="p-5 border-border/60">
@@ -453,6 +504,66 @@ function DossierDetail() {
         />
       </section>
     </div>
+  );
+}
+
+function DossierMetaDialog({ dossier, onSaved }: { dossier: Dossier; onSaved: (d: Dossier) => void }) {
+  const { user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    pays_destination: dossier.pays_destination ?? "",
+    date_ouverture: dossier.date_ouverture ?? "",
+    date_depart: dossier.date_depart ?? "",
+    date_retour: dossier.date_retour ?? "",
+    regime_tva: Number(dossier.taux_tva_marge) === 0 ? "hors_ue" : "marge_ue",
+  });
+
+  const save = async () => {
+    if (form.date_depart && form.date_retour && form.date_retour < form.date_depart) {
+      toast.error("La date de retour doit être postérieure au départ.");
+      return;
+    }
+    const changes = {
+      pays_destination: form.pays_destination || null,
+      date_ouverture: form.date_ouverture || null,
+      date_depart: form.date_depart || null,
+      date_retour: form.date_retour || null,
+      taux_tva_marge: form.regime_tva === "hors_ue" ? 0 : 20,
+    };
+    setSaving(true);
+    const { data, error } = await supabase.from("dossiers").update(changes).eq("id", dossier.id).select().single();
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    if (user) await logAudit({ userId: user.id, entity: "dossier", entityId: dossier.id, action: "update", description: "Dates métier et régime TVA du dossier mis à jour", newValue: changes });
+    onSaved(data as Dossier);
+    setOpen(false);
+    toast.success("Informations du dossier mises à jour");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild><Button variant="outline" size="sm"><Pencil className="h-3.5 w-3.5 mr-1.5" />Modifier</Button></DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>Dates et fiscalité du dossier</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2"><Label>Destination</Label><Input value={form.pays_destination} onChange={(e) => setForm({ ...form, pays_destination: e.target.value })} /></div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="space-y-2"><Label>Ouverture</Label><Input type="date" value={form.date_ouverture} onChange={(e) => setForm({ ...form, date_ouverture: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Départ</Label><Input type="date" value={form.date_depart} onChange={(e) => setForm({ ...form, date_depart: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Retour</Label><Input type="date" value={form.date_retour} onChange={(e) => setForm({ ...form, date_retour: e.target.value })} /></div>
+          </div>
+          <div className="space-y-2">
+            <Label>Régime TVA</Label>
+            <Select value={form.regime_tva} onValueChange={(v) => setForm({ ...form, regime_tva: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="hors_ue">Hors UE · exonéré</SelectItem><SelectItem value="marge_ue">UE · TVA sur marge 20 %</SelectItem></SelectContent>
+            </Select>
+          </div>
+          <Button className="w-full" onClick={save} disabled={saving}>{saving ? "Enregistrement…" : "Enregistrer"}</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

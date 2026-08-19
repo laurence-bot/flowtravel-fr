@@ -71,7 +71,12 @@ export type FxCoverage = {
   user_id: string;
   reference: string | null;
   devise: DeviseCode;
+  /** Montant nominal signé au contrat, immuable. */
   montant_devise: number;
+  /** Solde encore disponible communiqué par Ebury à la date de contrôle. */
+  solde_reel_devise: number | null;
+  solde_reel_eur: number | null;
+  date_solde_reel: string | null;
   taux_change: number;
   date_ouverture: string;
   date_echeance: string;
@@ -132,7 +137,7 @@ export function coverageBalance(coverage: FxCoverage, reservations: FxReservatio
   const engage = lignesCouverture
     .filter((r) => isReservationEngagee(r.statut))
     .reduce((s, r) => s + Number(r.montant_devise), 0);
-  const total = Number(coverage.montant_devise);
+  const total = Number(coverage.solde_reel_devise ?? coverage.montant_devise);
   return {
     reserve,
     engage,

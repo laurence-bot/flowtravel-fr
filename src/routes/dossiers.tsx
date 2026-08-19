@@ -13,7 +13,7 @@ import { useTable, type Contact, type Dossier } from "@/hooks/use-data";
 import { useAgents, agentLabel } from "@/hooks/use-agents";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { formatEUR } from "@/lib/format";
+import { formatEUR, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { StatutBadge } from "@/components/statut-badge";
@@ -42,6 +42,10 @@ const dossierSchema = z.object({
   prix_vente: z.number().min(0, "Le prix doit être positif"),
   cout_total: z.number().min(0, "Le coût doit être positif"),
   taux_tva_marge: z.number().min(0, "Taux invalide").max(99, "Taux invalide"),
+  pays_destination: z.string().trim().max(100).optional(),
+  date_ouverture: z.string().optional(),
+  date_depart: z.string().optional(),
+  date_retour: z.string().optional(),
 });
 
 function DossiersPage() {
@@ -59,7 +63,12 @@ function DossiersPage() {
     statut: "brouillon" as Dossier["statut"],
     prix_vente: "",
     cout_total: "",
-    taux_tva_marge: "20",
+    taux_tva_marge: "0",
+    regime_tva: "hors_ue" as "hors_ue" | "marge_ue",
+    pays_destination: "",
+    date_ouverture: "",
+    date_depart: "",
+    date_retour: "",
   });
 
   const submit = async (e: React.FormEvent) => {
@@ -72,6 +81,10 @@ function DossiersPage() {
       prix_vente: Number(form.prix_vente) || 0,
       cout_total: Number(form.cout_total) || 0,
       taux_tva_marge: Number(form.taux_tva_marge) || 0,
+      pays_destination: form.pays_destination,
+      date_ouverture: form.date_ouverture,
+      date_depart: form.date_depart,
+      date_retour: form.date_retour,
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
@@ -87,6 +100,10 @@ function DossiersPage() {
       prix_vente: parsed.data.prix_vente,
       cout_total: parsed.data.cout_total,
       taux_tva_marge: parsed.data.taux_tva_marge,
+      pays_destination: parsed.data.pays_destination || null,
+      date_ouverture: parsed.data.date_ouverture || null,
+      date_depart: parsed.data.date_depart || null,
+      date_retour: parsed.data.date_retour || null,
     }).select().single();
     setSubmitting(false);
     if (error) return toast.error(error.message);
@@ -100,7 +117,10 @@ function DossiersPage() {
     });
     toast.success("Dossier créé");
     setOpen(false);
-    setForm({ titre: "", client_id: "", agent_id: "", statut: "brouillon", prix_vente: "", cout_total: "", taux_tva_marge: "20" });
+    setForm({
+      titre: "", client_id: "", agent_id: "", statut: "brouillon", prix_vente: "", cout_total: "",
+      taux_tva_marge: "0", regime_tva: "hors_ue", pays_destination: "", date_ouverture: "", date_depart: "", date_retour: "",
+    });
     refetch();
   };
 
@@ -198,19 +218,29 @@ function DossiersPage() {
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Taux de TVA sur marge (%)</Label>
-            <Input
-              type="number"
-              step="0.1"
-              min="0"
-              max="99"
-              value={form.taux_tva_marge}
-              onChange={(e) => setForm({ ...form, taux_tva_marge: e.target.value })}
-              placeholder="20"
-            />
+            <Label>Destination</Label>
+            <Input value={form.pays_destination} onChange={(e) => setForm({ ...form, pays_destination: e.target.value })} placeholder="Ex. Afrique du Sud" />
+          </div>
+          <div className="space-y-2">
+            <Label>Régime TVA du voyage</Label>
+            <Select
+              value={form.regime_tva}
+              onValueChange={(v: "hors_ue" | "marge_ue") => setForm({ ...form, regime_tva: v, taux_tva_marge: v === "hors_ue" ? "0" : "20" })}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hors_ue">Hors UE · exonéré de TVA</SelectItem>
+                <SelectItem value="marge_ue">Union européenne · TVA sur marge</SelectItem>
+              </SelectContent>
+            </Select>
             <p className="text-[11px] text-muted-foreground">
-              Régime spécifique des agences de voyages. 20 % par défaut.
+              Hors UE : exonération pour les prestations exécutées hors de l'Union européenne (CGI, art. 262 bis).
             </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="space-y-2"><Label>Ouverture du dossier</Label><Input type="date" value={form.date_ouverture} onChange={(e) => setForm({ ...form, date_ouverture: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Départ</Label><Input type="date" value={form.date_depart} onChange={(e) => setForm({ ...form, date_depart: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Retour</Label><Input type="date" value={form.date_retour} onChange={(e) => setForm({ ...form, date_retour: e.target.value })} /></div>
           </div>
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? "Enregistrement…" : "Enregistrer le dossier"}
@@ -271,6 +301,8 @@ function DossiersPage() {
                 <TableHead>Client</TableHead>
                 <TableHead>Agent</TableHead>
                 <TableHead>Statut</TableHead>
+                <TableHead>Ouverture</TableHead>
+                <TableHead>Départ</TableHead>
                 <TableHead className="text-right">Prix de vente</TableHead>
                 <TableHead className="text-right">Coût</TableHead>
                 <TableHead className="text-right">Marge</TableHead>
@@ -293,6 +325,8 @@ function DossiersPage() {
                     <TableCell className="text-muted-foreground">{clientName(d.client_id)}</TableCell>
                     <TableCell className="text-sm">{agentName(d.agent_id)}</TableCell>
                     <TableCell><StatutBadge statut={d.statut} /></TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{formatDate(d.date_ouverture ?? d.created_at)}</TableCell>
+                    <TableCell className="text-sm">{formatDate(d.date_depart)}</TableCell>
                     <TableCell className="text-right tabular">{formatEUR(prix)}</TableCell>
                     <TableCell className="text-right tabular text-muted-foreground">{formatEUR(cout)}</TableCell>
                     <TableCell className="text-right tabular">

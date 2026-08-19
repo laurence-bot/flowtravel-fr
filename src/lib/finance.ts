@@ -56,10 +56,13 @@ export function computeTvaMarge(
 ): TvaMarge {
   const prix = num(dossier.prix_vente);
   const cout = num(dossier.cout_total);
-  const tauxRaw = num(dossier.taux_tva_marge);
-  const tauxTva = tauxRaw > 0 && tauxRaw < 100 ? tauxRaw : 20;
+  const tauxRaw = Number(dossier.taux_tva_marge);
+  // 0 est une valeur métier valide : voyage entièrement hors UE, exonéré
+  // conformément à l'article 262 bis du CGI. Seules les valeurs absentes ou
+  // incohérentes retombent sur le taux UE par défaut.
+  const tauxTva = Number.isFinite(tauxRaw) && tauxRaw >= 0 && tauxRaw < 100 ? tauxRaw : 20;
   const margeBrute = prix - cout;
-  if (margeBrute <= 0) {
+  if (margeBrute <= 0 || tauxTva === 0) {
     return { margeBrute, tauxTva, tvaSurMarge: 0, margeNette: margeBrute };
   }
   const t = tauxTva / 100;
@@ -182,9 +185,12 @@ export type CompteSolde = {
   compte: Compte;
   entrees: number;
   sorties: number;
+  entreesDevise: number;
+  sortiesDevise: number;
   transfertsEntrants: number;
   transfertsSortants: number;
   solde: number;
+  soldeDevise: number;
 };
 
 export function computeComptesSoldes(
@@ -193,12 +199,23 @@ export function computeComptesSoldes(
   transferts: Transfert[],
 ): CompteSolde[] {
   return comptes.map((compte) => {
-    const entrees = paiements
-      .filter((p) => p.compte_id === compte.id && p.type === "paiement_client")
+    const paiementsCompte = paiements.filter((p) => p.compte_id === compte.id);
+    const entrees = paiementsCompte
+      .filter((p) => p.type === "paiement_client")
       .reduce((s, p) => s + paiementEUR(p), 0);
-    const sorties = paiements
-      .filter((p) => p.compte_id === compte.id && p.type === "paiement_fournisseur")
+    const sorties = paiementsCompte
+      .filter((p) => p.type === "paiement_fournisseur")
       .reduce((s, p) => s + paiementEUR(p), 0);
+    const paiementDansDeviseCompte = (p: Paiement) =>
+      p.devise === compte.devise && p.montant_devise != null
+        ? num(p.montant_devise)
+        : paiementEUR(p) / Math.max(num(compte.taux_solde_eur), 0.00000001);
+    const entreesDevise = paiementsCompte
+      .filter((p) => p.type === "paiement_client")
+      .reduce((s, p) => s + paiementDansDeviseCompte(p), 0);
+    const sortiesDevise = paiementsCompte
+      .filter((p) => p.type === "paiement_fournisseur")
+      .reduce((s, p) => s + paiementDansDeviseCompte(p), 0);
     const transfertsEntrants = transferts
       .filter((t) => t.compte_destination_id === compte.id)
       .reduce((s, t) => s + num(t.montant), 0);
@@ -206,18 +223,28 @@ export function computeComptesSoldes(
       .filter((t) => t.compte_source_id === compte.id)
       .reduce((s, t) => s + num(t.montant), 0);
 
+    const solde =
+      num(compte.solde_initial) +
+      entrees -
+      sorties +
+      transfertsEntrants -
+      transfertsSortants;
+    const soldeDevise =
+      num(compte.solde_initial_devise ?? compte.solde_initial) +
+      entreesDevise -
+      sortiesDevise +
+      (compte.devise === "EUR" ? transfertsEntrants - transfertsSortants : 0);
+
     return {
       compte,
       entrees,
       sorties,
+      entreesDevise,
+      sortiesDevise,
       transfertsEntrants,
       transfertsSortants,
-      solde:
-        num(compte.solde_initial) +
-        entrees -
-        sorties +
-        transfertsEntrants -
-        transfertsSortants,
+      solde,
+      soldeDevise,
     };
   });
 }

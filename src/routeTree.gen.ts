@@ -9,282 +9,98 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as UtilisateursRouteImport } from './routes/utilisateurs'
-import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
-import { Route as TarifsRouteImport } from './routes/tarifs'
-import { Route as SupportRouteImport } from './routes/support'
-import { Route as SuiviDossiersRouteImport } from './routes/suivi-dossiers'
-import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
-import { Route as RapprochementRouteImport } from './routes/rapprochement'
-import { Route as QaRouteImport } from './routes/qa'
-import { Route as PrevisionsRouteImport } from './routes/previsions'
-import { Route as PilotageRouteImport } from './routes/pilotage'
-import { Route as ParametresAgenceRouteImport } from './routes/parametres-agence'
-import { Route as PaiementsRouteImport } from './routes/paiements'
-import { Route as OpsRouteImport } from './routes/ops'
-import { Route as NotificationsRouteImport } from './routes/notifications'
-import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
-import { Route as MariagesRouteImport } from './routes/mariages'
-import { Route as InscriptionAgenceRouteImport } from './routes/inscription-agence'
-import { Route as ImportPdfRouteImport } from './routes/import-pdf'
-import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
-import { Route as FacturesClientsRouteImport } from './routes/factures-clients'
-import { Route as ExportRouteImport } from './routes/export'
-import { Route as DossiersRouteImport } from './routes/dossiers'
-import { Route as DemoRouteImport } from './routes/demo'
-import { Route as DemandesRouteImport } from './routes/demandes'
-import { Route as CouverturesFxRouteImport } from './routes/couvertures-fx'
-import { Route as CotationsRouteImport } from './routes/cotations'
-import { Route as ContactsRouteImport } from './routes/contacts'
-import { Route as ComptesRouteImport } from './routes/comptes'
-import { Route as CoachingRouteImport } from './routes/coaching'
-import { Route as CarnetsRouteImport } from './routes/carnets'
-import { Route as BulletinsRouteImport } from './routes/bulletins'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuditRouteImport } from './routes/audit'
-import { Route as AppRouteImport } from './routes/app'
-import { Route as AdminMessagesRouteImport } from './routes/admin-messages'
-import { Route as AdminErrorsRouteImport } from './routes/admin-errors'
-import { Route as AdminDemosRouteImport } from './routes/admin-demos'
-import { Route as AdminDashboardRouteImport } from './routes/admin-dashboard'
-import { Route as AdminAgencesRouteImport } from './routes/admin-agences'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as OpsIndexRouteImport } from './routes/ops.index'
-import { Route as PaiementTokenRouteImport } from './routes/paiement.$token'
-import { Route as PTokenRouteImport } from './routes/p.$token'
-import { Route as OpsMessagesRouteImport } from './routes/ops.messages'
-import { Route as OpsErrorsRouteImport } from './routes/ops.errors'
-import { Route as OpsDemosRouteImport } from './routes/ops.demos'
-import { Route as OpsDashboardRouteImport } from './routes/ops.dashboard'
-import { Route as OpsAgencesRouteImport } from './routes/ops.agences'
-import { Route as MonEspacePointageRouteImport } from './routes/mon-espace.pointage'
-import { Route as MonEspaceEvaluationRouteImport } from './routes/mon-espace.evaluation'
-import { Route as MonEspaceDocumentsRouteImport } from './routes/mon-espace.documents'
-import { Route as MonEspaceContratsRouteImport } from './routes/mon-espace.contrats'
-import { Route as MonEspaceCongesRouteImport } from './routes/mon-espace.conges'
-import { Route as MesDocumentsTokenRouteImport } from './routes/mes-documents.$token'
-import { Route as MariageTokenRouteImport } from './routes/mariage.$token'
-import { Route as FacturesIdRouteImport } from './routes/factures.$id'
-import { Route as FacturesClientsIdRouteImport } from './routes/factures-clients.$id'
-import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
-import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
-import { Route as DemandesIdRouteImport } from './routes/demandes.$id'
-import { Route as CotationsIdRouteImport } from './routes/cotations.$id'
-import { Route as ContratSignerTokenRouteImport } from './routes/contrat-signer.$token'
-import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
-import { Route as CongeSignerTokenRouteImport } from './routes/conge-signer.$token'
-import { Route as CarnetTokenRouteImport } from './routes/carnet.$token'
+import { Route as AdminAgencesRouteImport } from './routes/admin-agences'
+import { Route as AdminDashboardRouteImport } from './routes/admin-dashboard'
+import { Route as AdminDemosRouteImport } from './routes/admin-demos'
+import { Route as AdminErrorsRouteImport } from './routes/admin-errors'
+import { Route as AdminMessagesRouteImport } from './routes/admin-messages'
+import { Route as AppRouteImport } from './routes/app'
+import { Route as AuditRouteImport } from './routes/audit'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BulletinsRouteImport } from './routes/bulletins'
+import { Route as CarnetsRouteImport } from './routes/carnets'
+import { Route as CoachingRouteImport } from './routes/coaching'
+import { Route as ComptesRouteImport } from './routes/comptes'
+import { Route as ContactsRouteImport } from './routes/contacts'
+import { Route as CotationsRouteImport } from './routes/cotations'
+import { Route as CouverturesFxRouteImport } from './routes/couvertures-fx'
+import { Route as DemandesRouteImport } from './routes/demandes'
+import { Route as DemoRouteImport } from './routes/demo'
+import { Route as DocumentsRouteImport } from './routes/documents'
+import { Route as DossiersRouteImport } from './routes/dossiers'
+import { Route as ExportRouteImport } from './routes/export'
+import { Route as FacturesClientsRouteImport } from './routes/factures-clients'
+import { Route as ImportBancaireRouteImport } from './routes/import-bancaire'
+import { Route as ImportPdfRouteImport } from './routes/import-pdf'
+import { Route as InscriptionAgenceRouteImport } from './routes/inscription-agence'
+import { Route as MariagesRouteImport } from './routes/mariages'
+import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as OpsRouteImport } from './routes/ops'
+import { Route as PaiementsRouteImport } from './routes/paiements'
+import { Route as ParametresAgenceRouteImport } from './routes/parametres-agence'
+import { Route as PilotageRouteImport } from './routes/pilotage'
+import { Route as PrevisionsRouteImport } from './routes/previsions'
+import { Route as QaRouteImport } from './routes/qa'
+import { Route as RapprochementRouteImport } from './routes/rapprochement'
+import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
+import { Route as SuiviDossiersRouteImport } from './routes/suivi-dossiers'
+import { Route as SupportRouteImport } from './routes/support'
+import { Route as TarifsRouteImport } from './routes/tarifs'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
+import { Route as UtilisateursRouteImport } from './routes/utilisateurs'
 import { Route as BulletinTokenRouteImport } from './routes/bulletin.$token'
-import { Route as OpsEquipeIndexRouteImport } from './routes/ops.equipe.index'
-import { Route as OpsEquipePointageRouteImport } from './routes/ops.equipe.pointage'
-import { Route as OpsEquipePlanningRouteImport } from './routes/ops.equipe.planning'
-import { Route as OpsEquipeParametresRouteImport } from './routes/ops.equipe.parametres'
-import { Route as OpsEquipeFichesPosteRouteImport } from './routes/ops.equipe.fiches-poste'
-import { Route as OpsEquipeEvaluationsRouteImport } from './routes/ops.equipe.evaluations'
-import { Route as OpsEquipeContratsRouteImport } from './routes/ops.equipe.contrats'
-import { Route as OpsEquipeAnneeRouteImport } from './routes/ops.equipe.annee'
-import { Route as OpsEquipeAbsencesRouteImport } from './routes/ops.equipe.absences'
-import { Route as OpsEquipeIdRouteImport } from './routes/ops.equipe.$id'
-import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
-import { Route as DemoVTokenRouteImport } from './routes/demo.v.$token'
+import { Route as CarnetTokenRouteImport } from './routes/carnet.$token'
+import { Route as CongeSignerTokenRouteImport } from './routes/conge-signer.$token'
+import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
+import { Route as ContratSignerTokenRouteImport } from './routes/contrat-signer.$token'
+import { Route as CotationsIdRouteImport } from './routes/cotations.$id'
+import { Route as DemandesIdRouteImport } from './routes/demandes.$id'
+import { Route as DossiersIdRouteImport } from './routes/dossiers.$id'
+import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as FacturesClientsIdRouteImport } from './routes/factures-clients.$id'
+import { Route as FacturesIdRouteImport } from './routes/factures.$id'
+import { Route as MariageTokenRouteImport } from './routes/mariage.$token'
+import { Route as MesDocumentsTokenRouteImport } from './routes/mes-documents.$token'
+import { Route as MonEspaceCongesRouteImport } from './routes/mon-espace.conges'
+import { Route as MonEspaceContratsRouteImport } from './routes/mon-espace.contrats'
+import { Route as MonEspaceDocumentsRouteImport } from './routes/mon-espace.documents'
+import { Route as MonEspaceEvaluationRouteImport } from './routes/mon-espace.evaluation'
+import { Route as MonEspacePointageRouteImport } from './routes/mon-espace.pointage'
+import { Route as OpsIndexRouteImport } from './routes/ops.index'
+import { Route as OpsAgencesRouteImport } from './routes/ops.agences'
+import { Route as OpsDashboardRouteImport } from './routes/ops.dashboard'
+import { Route as OpsDemosRouteImport } from './routes/ops.demos'
+import { Route as OpsErrorsRouteImport } from './routes/ops.errors'
+import { Route as OpsMessagesRouteImport } from './routes/ops.messages'
+import { Route as PTokenRouteImport } from './routes/p.$token'
+import { Route as PaiementTokenRouteImport } from './routes/paiement.$token'
 import { Route as DemoRdvTokenRouteImport } from './routes/demo.rdv.$token'
-import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
-import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
-import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
-import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
-import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
-import { Route as ApiPublicHooksRelanceBulletinsRouteImport } from './routes/api/public/hooks/relance-bulletins'
-import { Route as ApiPublicHooksRelanceAcomptesRouteImport } from './routes/api/public/hooks/relance-acomptes'
+import { Route as DemoVTokenRouteImport } from './routes/demo.v.$token'
+import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as OpsEquipeIndexRouteImport } from './routes/ops.equipe.index'
+import { Route as OpsEquipeIdRouteImport } from './routes/ops.equipe.$id'
+import { Route as OpsEquipeAbsencesRouteImport } from './routes/ops.equipe.absences'
+import { Route as OpsEquipeAnneeRouteImport } from './routes/ops.equipe.annee'
+import { Route as OpsEquipeContratsRouteImport } from './routes/ops.equipe.contrats'
+import { Route as OpsEquipeEvaluationsRouteImport } from './routes/ops.equipe.evaluations'
+import { Route as OpsEquipeFichesPosteRouteImport } from './routes/ops.equipe.fiches-poste'
+import { Route as OpsEquipeParametresRouteImport } from './routes/ops.equipe.parametres'
+import { Route as OpsEquipePlanningRouteImport } from './routes/ops.equipe.planning'
+import { Route as OpsEquipePointageRouteImport } from './routes/ops.equipe.pointage'
 import { Route as ApiPublicHooksPayrollSummaryRouteImport } from './routes/api/public/hooks/payroll-summary'
+import { Route as ApiPublicHooksRelanceAcomptesRouteImport } from './routes/api/public/hooks/relance-acomptes'
+import { Route as ApiPublicHooksRelanceBulletinsRouteImport } from './routes/api/public/hooks/relance-bulletins'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
+import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 
-const UtilisateursRoute = UtilisateursRouteImport.update({
-  id: '/utilisateurs',
-  path: '/utilisateurs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const UnsubscribeRoute = UnsubscribeRouteImport.update({
-  id: '/unsubscribe',
-  path: '/unsubscribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TarifsRoute = TarifsRouteImport.update({
-  id: '/tarifs',
-  path: '/tarifs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SupportRoute = SupportRouteImport.update({
-  id: '/support',
-  path: '/support',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SuiviDossiersRoute = SuiviDossiersRouteImport.update({
-  id: '/suivi-dossiers',
-  path: '/suivi-dossiers',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
-  id: '/reinitialiser-mot-de-passe',
-  path: '/reinitialiser-mot-de-passe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RapprochementRoute = RapprochementRouteImport.update({
-  id: '/rapprochement',
-  path: '/rapprochement',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const QaRoute = QaRouteImport.update({
-  id: '/qa',
-  path: '/qa',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrevisionsRoute = PrevisionsRouteImport.update({
-  id: '/previsions',
-  path: '/previsions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PilotageRoute = PilotageRouteImport.update({
-  id: '/pilotage',
-  path: '/pilotage',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ParametresAgenceRoute = ParametresAgenceRouteImport.update({
-  id: '/parametres-agence',
-  path: '/parametres-agence',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PaiementsRoute = PaiementsRouteImport.update({
-  id: '/paiements',
-  path: '/paiements',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OpsRoute = OpsRouteImport.update({
-  id: '/ops',
-  path: '/ops',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NotificationsRoute = NotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
-  id: '/mot-de-passe-oublie',
-  path: '/mot-de-passe-oublie',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MariagesRoute = MariagesRouteImport.update({
-  id: '/mariages',
-  path: '/mariages',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InscriptionAgenceRoute = InscriptionAgenceRouteImport.update({
-  id: '/inscription-agence',
-  path: '/inscription-agence',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ImportPdfRoute = ImportPdfRouteImport.update({
-  id: '/import-pdf',
-  path: '/import-pdf',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ImportBancaireRoute = ImportBancaireRouteImport.update({
-  id: '/import-bancaire',
-  path: '/import-bancaire',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FacturesClientsRoute = FacturesClientsRouteImport.update({
-  id: '/factures-clients',
-  path: '/factures-clients',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ExportRoute = ExportRouteImport.update({
-  id: '/export',
-  path: '/export',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DossiersRoute = DossiersRouteImport.update({
-  id: '/dossiers',
-  path: '/dossiers',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoRoute = DemoRouteImport.update({
-  id: '/demo',
-  path: '/demo',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemandesRoute = DemandesRouteImport.update({
-  id: '/demandes',
-  path: '/demandes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CouverturesFxRoute = CouverturesFxRouteImport.update({
-  id: '/couvertures-fx',
-  path: '/couvertures-fx',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CotationsRoute = CotationsRouteImport.update({
-  id: '/cotations',
-  path: '/cotations',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContactsRoute = ContactsRouteImport.update({
-  id: '/contacts',
-  path: '/contacts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ComptesRoute = ComptesRouteImport.update({
-  id: '/comptes',
-  path: '/comptes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CoachingRoute = CoachingRouteImport.update({
-  id: '/coaching',
-  path: '/coaching',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CarnetsRoute = CarnetsRouteImport.update({
-  id: '/carnets',
-  path: '/carnets',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BulletinsRoute = BulletinsRouteImport.update({
-  id: '/bulletins',
-  path: '/bulletins',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuditRoute = AuditRouteImport.update({
-  id: '/audit',
-  path: '/audit',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppRoute = AppRouteImport.update({
-  id: '/app',
-  path: '/app',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminMessagesRoute = AdminMessagesRouteImport.update({
-  id: '/admin-messages',
-  path: '/admin-messages',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminErrorsRoute = AdminErrorsRouteImport.update({
-  id: '/admin-errors',
-  path: '/admin-errors',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminDemosRoute = AdminDemosRouteImport.update({
-  id: '/admin-demos',
-  path: '/admin-demos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminDashboardRoute = AdminDashboardRouteImport.update({
-  id: '/admin-dashboard',
-  path: '/admin-dashboard',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAgencesRoute = AdminAgencesRouteImport.update({
@@ -292,134 +108,199 @@ const AdminAgencesRoute = AdminAgencesRouteImport.update({
   path: '/admin-agences',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/admin-dashboard',
+  path: '/admin-dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OpsIndexRoute = OpsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => OpsRoute,
-} as any)
-const PaiementTokenRoute = PaiementTokenRouteImport.update({
-  id: '/paiement/$token',
-  path: '/paiement/$token',
+const AdminDemosRoute = AdminDemosRouteImport.update({
+  id: '/admin-demos',
+  path: '/admin-demos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PTokenRoute = PTokenRouteImport.update({
-  id: '/p/$token',
-  path: '/p/$token',
+const AdminErrorsRoute = AdminErrorsRouteImport.update({
+  id: '/admin-errors',
+  path: '/admin-errors',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OpsMessagesRoute = OpsMessagesRouteImport.update({
-  id: '/messages',
-  path: '/messages',
-  getParentRoute: () => OpsRoute,
-} as any)
-const OpsErrorsRoute = OpsErrorsRouteImport.update({
-  id: '/errors',
-  path: '/errors',
-  getParentRoute: () => OpsRoute,
-} as any)
-const OpsDemosRoute = OpsDemosRouteImport.update({
-  id: '/demos',
-  path: '/demos',
-  getParentRoute: () => OpsRoute,
-} as any)
-const OpsDashboardRoute = OpsDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => OpsRoute,
-} as any)
-const OpsAgencesRoute = OpsAgencesRouteImport.update({
-  id: '/agences',
-  path: '/agences',
-  getParentRoute: () => OpsRoute,
-} as any)
-const MonEspacePointageRoute = MonEspacePointageRouteImport.update({
-  id: '/mon-espace/pointage',
-  path: '/mon-espace/pointage',
+const AdminMessagesRoute = AdminMessagesRouteImport.update({
+  id: '/admin-messages',
+  path: '/admin-messages',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MonEspaceEvaluationRoute = MonEspaceEvaluationRouteImport.update({
-  id: '/mon-espace/evaluation',
-  path: '/mon-espace/evaluation',
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MonEspaceDocumentsRoute = MonEspaceDocumentsRouteImport.update({
-  id: '/mon-espace/documents',
-  path: '/mon-espace/documents',
+const AuditRoute = AuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MonEspaceContratsRoute = MonEspaceContratsRouteImport.update({
-  id: '/mon-espace/contrats',
-  path: '/mon-espace/contrats',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MonEspaceCongesRoute = MonEspaceCongesRouteImport.update({
-  id: '/mon-espace/conges',
-  path: '/mon-espace/conges',
+const BulletinsRoute = BulletinsRouteImport.update({
+  id: '/bulletins',
+  path: '/bulletins',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MesDocumentsTokenRoute = MesDocumentsTokenRouteImport.update({
-  id: '/mes-documents/$token',
-  path: '/mes-documents/$token',
+const CarnetsRoute = CarnetsRouteImport.update({
+  id: '/carnets',
+  path: '/carnets',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MariageTokenRoute = MariageTokenRouteImport.update({
-  id: '/mariage/$token',
-  path: '/mariage/$token',
+const CoachingRoute = CoachingRouteImport.update({
+  id: '/coaching',
+  path: '/coaching',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FacturesIdRoute = FacturesIdRouteImport.update({
-  id: '/factures/$id',
-  path: '/factures/$id',
+const ComptesRoute = ComptesRouteImport.update({
+  id: '/comptes',
+  path: '/comptes',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FacturesClientsIdRoute = FacturesClientsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => FacturesClientsRoute,
-} as any)
-const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
-  id: '/email/unsubscribe',
-  path: '/email/unsubscribe',
+const ContactsRoute = ContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DossiersIdRoute = DossiersIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => DossiersRoute,
-} as any)
-const DemandesIdRoute = DemandesIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => DemandesRoute,
-} as any)
-const CotationsIdRoute = CotationsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => CotationsRoute,
-} as any)
-const ContratSignerTokenRoute = ContratSignerTokenRouteImport.update({
-  id: '/contrat-signer/$token',
-  path: '/contrat-signer/$token',
+const CotationsRoute = CotationsRouteImport.update({
+  id: '/cotations',
+  path: '/cotations',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ContactsIdRoute = ContactsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ContactsRoute,
-} as any)
-const CongeSignerTokenRoute = CongeSignerTokenRouteImport.update({
-  id: '/conge-signer/$token',
-  path: '/conge-signer/$token',
+const CouverturesFxRoute = CouverturesFxRouteImport.update({
+  id: '/couvertures-fx',
+  path: '/couvertures-fx',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CarnetTokenRoute = CarnetTokenRouteImport.update({
-  id: '/carnet/$token',
-  path: '/carnet/$token',
+const DemandesRoute = DemandesRouteImport.update({
+  id: '/demandes',
+  path: '/demandes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocumentsRoute = DocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DossiersRoute = DossiersRouteImport.update({
+  id: '/dossiers',
+  path: '/dossiers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExportRoute = ExportRouteImport.update({
+  id: '/export',
+  path: '/export',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FacturesClientsRoute = FacturesClientsRouteImport.update({
+  id: '/factures-clients',
+  path: '/factures-clients',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImportBancaireRoute = ImportBancaireRouteImport.update({
+  id: '/import-bancaire',
+  path: '/import-bancaire',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImportPdfRoute = ImportPdfRouteImport.update({
+  id: '/import-pdf',
+  path: '/import-pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InscriptionAgenceRoute = InscriptionAgenceRouteImport.update({
+  id: '/inscription-agence',
+  path: '/inscription-agence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MariagesRoute = MariagesRouteImport.update({
+  id: '/mariages',
+  path: '/mariages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
+  id: '/mot-de-passe-oublie',
+  path: '/mot-de-passe-oublie',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OpsRoute = OpsRouteImport.update({
+  id: '/ops',
+  path: '/ops',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaiementsRoute = PaiementsRouteImport.update({
+  id: '/paiements',
+  path: '/paiements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParametresAgenceRoute = ParametresAgenceRouteImport.update({
+  id: '/parametres-agence',
+  path: '/parametres-agence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PilotageRoute = PilotageRouteImport.update({
+  id: '/pilotage',
+  path: '/pilotage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrevisionsRoute = PrevisionsRouteImport.update({
+  id: '/previsions',
+  path: '/previsions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QaRoute = QaRouteImport.update({
+  id: '/qa',
+  path: '/qa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RapprochementRoute = RapprochementRouteImport.update({
+  id: '/rapprochement',
+  path: '/rapprochement',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
+  id: '/reinitialiser-mot-de-passe',
+  path: '/reinitialiser-mot-de-passe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuiviDossiersRoute = SuiviDossiersRouteImport.update({
+  id: '/suivi-dossiers',
+  path: '/suivi-dossiers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TarifsRoute = TarifsRouteImport.update({
+  id: '/tarifs',
+  path: '/tarifs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UtilisateursRoute = UtilisateursRouteImport.update({
+  id: '/utilisateurs',
+  path: '/utilisateurs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BulletinTokenRoute = BulletinTokenRouteImport.update({
@@ -427,49 +308,149 @@ const BulletinTokenRoute = BulletinTokenRouteImport.update({
   path: '/bulletin/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CarnetTokenRoute = CarnetTokenRouteImport.update({
+  id: '/carnet/$token',
+  path: '/carnet/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CongeSignerTokenRoute = CongeSignerTokenRouteImport.update({
+  id: '/conge-signer/$token',
+  path: '/conge-signer/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactsIdRoute = ContactsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ContactsRoute,
+} as any)
+const ContratSignerTokenRoute = ContratSignerTokenRouteImport.update({
+  id: '/contrat-signer/$token',
+  path: '/contrat-signer/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CotationsIdRoute = CotationsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CotationsRoute,
+} as any)
+const DemandesIdRoute = DemandesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => DemandesRoute,
+} as any)
+const DossiersIdRoute = DossiersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => DossiersRoute,
+} as any)
+const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
+  id: '/email/unsubscribe',
+  path: '/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FacturesClientsIdRoute = FacturesClientsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => FacturesClientsRoute,
+} as any)
+const FacturesIdRoute = FacturesIdRouteImport.update({
+  id: '/factures/$id',
+  path: '/factures/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MariageTokenRoute = MariageTokenRouteImport.update({
+  id: '/mariage/$token',
+  path: '/mariage/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MesDocumentsTokenRoute = MesDocumentsTokenRouteImport.update({
+  id: '/mes-documents/$token',
+  path: '/mes-documents/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonEspaceCongesRoute = MonEspaceCongesRouteImport.update({
+  id: '/mon-espace/conges',
+  path: '/mon-espace/conges',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonEspaceContratsRoute = MonEspaceContratsRouteImport.update({
+  id: '/mon-espace/contrats',
+  path: '/mon-espace/contrats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonEspaceDocumentsRoute = MonEspaceDocumentsRouteImport.update({
+  id: '/mon-espace/documents',
+  path: '/mon-espace/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonEspaceEvaluationRoute = MonEspaceEvaluationRouteImport.update({
+  id: '/mon-espace/evaluation',
+  path: '/mon-espace/evaluation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonEspacePointageRoute = MonEspacePointageRouteImport.update({
+  id: '/mon-espace/pointage',
+  path: '/mon-espace/pointage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OpsIndexRoute = OpsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsAgencesRoute = OpsAgencesRouteImport.update({
+  id: '/agences',
+  path: '/agences',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsDashboardRoute = OpsDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsDemosRoute = OpsDemosRouteImport.update({
+  id: '/demos',
+  path: '/demos',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsErrorsRoute = OpsErrorsRouteImport.update({
+  id: '/errors',
+  path: '/errors',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsMessagesRoute = OpsMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => OpsRoute,
+} as any)
+const PTokenRoute = PTokenRouteImport.update({
+  id: '/p/$token',
+  path: '/p/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaiementTokenRoute = PaiementTokenRouteImport.update({
+  id: '/paiement/$token',
+  path: '/paiement/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoRdvTokenRoute = DemoRdvTokenRouteImport.update({
+  id: '/rdv/$token',
+  path: '/rdv/$token',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DemoVTokenRoute = DemoVTokenRouteImport.update({
+  id: '/v/$token',
+  path: '/v/$token',
+  getParentRoute: () => DemoRoute,
+} as any)
+const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
+  id: '/lovable/email/suppression',
+  path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OpsEquipeIndexRoute = OpsEquipeIndexRouteImport.update({
   id: '/equipe/',
   path: '/equipe/',
-  getParentRoute: () => OpsRoute,
-} as any)
-const OpsEquipePointageRoute = OpsEquipePointageRouteImport.update({
-  id: '/equipe/pointage',
-  path: '/equipe/pointage',
-  getParentRoute: () => OpsRoute,
-} as any)
-const OpsEquipePlanningRoute = OpsEquipePlanningRouteImport.update({
-  id: '/equipe/planning',
-  path: '/equipe/planning',
-  getParentRoute: () => OpsRoute,
-} as any)
-const OpsEquipeParametresRoute = OpsEquipeParametresRouteImport.update({
-  id: '/equipe/parametres',
-  path: '/equipe/parametres',
-  getParentRoute: () => OpsRoute,
-} as any)
-const OpsEquipeFichesPosteRoute = OpsEquipeFichesPosteRouteImport.update({
-  id: '/equipe/fiches-poste',
-  path: '/equipe/fiches-poste',
-  getParentRoute: () => OpsRoute,
-} as any)
-const OpsEquipeEvaluationsRoute = OpsEquipeEvaluationsRouteImport.update({
-  id: '/equipe/evaluations',
-  path: '/equipe/evaluations',
-  getParentRoute: () => OpsRoute,
-} as any)
-const OpsEquipeContratsRoute = OpsEquipeContratsRouteImport.update({
-  id: '/equipe/contrats',
-  path: '/equipe/contrats',
-  getParentRoute: () => OpsRoute,
-} as any)
-const OpsEquipeAnneeRoute = OpsEquipeAnneeRouteImport.update({
-  id: '/equipe/annee',
-  path: '/equipe/annee',
-  getParentRoute: () => OpsRoute,
-} as any)
-const OpsEquipeAbsencesRoute = OpsEquipeAbsencesRouteImport.update({
-  id: '/equipe/absences',
-  path: '/equipe/absences',
   getParentRoute: () => OpsRoute,
 } as any)
 const OpsEquipeIdRoute = OpsEquipeIdRouteImport.update({
@@ -477,53 +458,50 @@ const OpsEquipeIdRoute = OpsEquipeIdRouteImport.update({
   path: '/equipe/$id',
   getParentRoute: () => OpsRoute,
 } as any)
-const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
-  id: '/lovable/email/suppression',
-  path: '/lovable/email/suppression',
-  getParentRoute: () => rootRouteImport,
+const OpsEquipeAbsencesRoute = OpsEquipeAbsencesRouteImport.update({
+  id: '/equipe/absences',
+  path: '/equipe/absences',
+  getParentRoute: () => OpsRoute,
 } as any)
-const DemoVTokenRoute = DemoVTokenRouteImport.update({
-  id: '/v/$token',
-  path: '/v/$token',
-  getParentRoute: () => DemoRoute,
+const OpsEquipeAnneeRoute = OpsEquipeAnneeRouteImport.update({
+  id: '/equipe/annee',
+  path: '/equipe/annee',
+  getParentRoute: () => OpsRoute,
 } as any)
-const DemoRdvTokenRoute = DemoRdvTokenRouteImport.update({
-  id: '/rdv/$token',
-  path: '/rdv/$token',
-  getParentRoute: () => DemoRoute,
+const OpsEquipeContratsRoute = OpsEquipeContratsRouteImport.update({
+  id: '/equipe/contrats',
+  path: '/equipe/contrats',
+  getParentRoute: () => OpsRoute,
 } as any)
-const LovableEmailTransactionalSendRoute =
-  LovableEmailTransactionalSendRouteImport.update({
-    id: '/lovable/email/transactional/send',
-    path: '/lovable/email/transactional/send',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableEmailTransactionalPreviewRoute =
-  LovableEmailTransactionalPreviewRouteImport.update({
-    id: '/lovable/email/transactional/preview',
-    path: '/lovable/email/transactional/preview',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableEmailQueueProcessRoute =
-  LovableEmailQueueProcessRouteImport.update({
-    id: '/lovable/email/queue/process',
-    path: '/lovable/email/queue/process',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
-  id: '/lovable/email/auth/webhook',
-  path: '/lovable/email/auth/webhook',
-  getParentRoute: () => rootRouteImport,
+const OpsEquipeEvaluationsRoute = OpsEquipeEvaluationsRouteImport.update({
+  id: '/equipe/evaluations',
+  path: '/equipe/evaluations',
+  getParentRoute: () => OpsRoute,
 } as any)
-const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
-  id: '/lovable/email/auth/preview',
-  path: '/lovable/email/auth/preview',
-  getParentRoute: () => rootRouteImport,
+const OpsEquipeFichesPosteRoute = OpsEquipeFichesPosteRouteImport.update({
+  id: '/equipe/fiches-poste',
+  path: '/equipe/fiches-poste',
+  getParentRoute: () => OpsRoute,
 } as any)
-const ApiPublicHooksRelanceBulletinsRoute =
-  ApiPublicHooksRelanceBulletinsRouteImport.update({
-    id: '/api/public/hooks/relance-bulletins',
-    path: '/api/public/hooks/relance-bulletins',
+const OpsEquipeParametresRoute = OpsEquipeParametresRouteImport.update({
+  id: '/equipe/parametres',
+  path: '/equipe/parametres',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsEquipePlanningRoute = OpsEquipePlanningRouteImport.update({
+  id: '/equipe/planning',
+  path: '/equipe/planning',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsEquipePointageRoute = OpsEquipePointageRouteImport.update({
+  id: '/equipe/pointage',
+  path: '/equipe/pointage',
+  getParentRoute: () => OpsRoute,
+} as any)
+const ApiPublicHooksPayrollSummaryRoute =
+  ApiPublicHooksPayrollSummaryRouteImport.update({
+    id: '/api/public/hooks/payroll-summary',
+    path: '/api/public/hooks/payroll-summary',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksRelanceAcomptesRoute =
@@ -532,10 +510,38 @@ const ApiPublicHooksRelanceAcomptesRoute =
     path: '/api/public/hooks/relance-acomptes',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksPayrollSummaryRoute =
-  ApiPublicHooksPayrollSummaryRouteImport.update({
-    id: '/api/public/hooks/payroll-summary',
-    path: '/api/public/hooks/payroll-summary',
+const ApiPublicHooksRelanceBulletinsRoute =
+  ApiPublicHooksRelanceBulletinsRouteImport.update({
+    id: '/api/public/hooks/relance-bulletins',
+    path: '/api/public/hooks/relance-bulletins',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalSendRoute =
+  LovableEmailTransactionalSendRouteImport.update({
+    id: '/lovable/email/transactional/send',
+    path: '/lovable/email/transactional/send',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -558,6 +564,7 @@ export interface FileRoutesByFullPath {
   '/couvertures-fx': typeof CouverturesFxRoute
   '/demandes': typeof DemandesRouteWithChildren
   '/demo': typeof DemoRouteWithChildren
+  '/documents': typeof DocumentsRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/factures-clients': typeof FacturesClientsRouteWithChildren
@@ -647,6 +654,7 @@ export interface FileRoutesByTo {
   '/couvertures-fx': typeof CouverturesFxRoute
   '/demandes': typeof DemandesRouteWithChildren
   '/demo': typeof DemoRouteWithChildren
+  '/documents': typeof DocumentsRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/factures-clients': typeof FacturesClientsRouteWithChildren
@@ -736,6 +744,7 @@ export interface FileRoutesById {
   '/couvertures-fx': typeof CouverturesFxRoute
   '/demandes': typeof DemandesRouteWithChildren
   '/demo': typeof DemoRouteWithChildren
+  '/documents': typeof DocumentsRoute
   '/dossiers': typeof DossiersRouteWithChildren
   '/export': typeof ExportRoute
   '/factures-clients': typeof FacturesClientsRouteWithChildren
@@ -827,6 +836,7 @@ export interface FileRouteTypes {
     | '/couvertures-fx'
     | '/demandes'
     | '/demo'
+    | '/documents'
     | '/dossiers'
     | '/export'
     | '/factures-clients'
@@ -916,6 +926,7 @@ export interface FileRouteTypes {
     | '/couvertures-fx'
     | '/demandes'
     | '/demo'
+    | '/documents'
     | '/dossiers'
     | '/export'
     | '/factures-clients'
@@ -1004,6 +1015,7 @@ export interface FileRouteTypes {
     | '/couvertures-fx'
     | '/demandes'
     | '/demo'
+    | '/documents'
     | '/dossiers'
     | '/export'
     | '/factures-clients'
@@ -1094,6 +1106,7 @@ export interface RootRouteChildren {
   CouverturesFxRoute: typeof CouverturesFxRoute
   DemandesRoute: typeof DemandesRouteWithChildren
   DemoRoute: typeof DemoRouteWithChildren
+  DocumentsRoute: typeof DocumentsRoute
   DossiersRoute: typeof DossiersRouteWithChildren
   ExportRoute: typeof ExportRoute
   FacturesClientsRoute: typeof FacturesClientsRouteWithChildren
@@ -1144,270 +1157,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/utilisateurs': {
-      id: '/utilisateurs'
-      path: '/utilisateurs'
-      fullPath: '/utilisateurs'
-      preLoaderRoute: typeof UtilisateursRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/unsubscribe': {
-      id: '/unsubscribe'
-      path: '/unsubscribe'
-      fullPath: '/unsubscribe'
-      preLoaderRoute: typeof UnsubscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tarifs': {
-      id: '/tarifs'
-      path: '/tarifs'
-      fullPath: '/tarifs'
-      preLoaderRoute: typeof TarifsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/support': {
-      id: '/support'
-      path: '/support'
-      fullPath: '/support'
-      preLoaderRoute: typeof SupportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/suivi-dossiers': {
-      id: '/suivi-dossiers'
-      path: '/suivi-dossiers'
-      fullPath: '/suivi-dossiers'
-      preLoaderRoute: typeof SuiviDossiersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reinitialiser-mot-de-passe': {
-      id: '/reinitialiser-mot-de-passe'
-      path: '/reinitialiser-mot-de-passe'
-      fullPath: '/reinitialiser-mot-de-passe'
-      preLoaderRoute: typeof ReinitialiserMotDePasseRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/rapprochement': {
-      id: '/rapprochement'
-      path: '/rapprochement'
-      fullPath: '/rapprochement'
-      preLoaderRoute: typeof RapprochementRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/qa': {
-      id: '/qa'
-      path: '/qa'
-      fullPath: '/qa'
-      preLoaderRoute: typeof QaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/previsions': {
-      id: '/previsions'
-      path: '/previsions'
-      fullPath: '/previsions'
-      preLoaderRoute: typeof PrevisionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pilotage': {
-      id: '/pilotage'
-      path: '/pilotage'
-      fullPath: '/pilotage'
-      preLoaderRoute: typeof PilotageRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/parametres-agence': {
-      id: '/parametres-agence'
-      path: '/parametres-agence'
-      fullPath: '/parametres-agence'
-      preLoaderRoute: typeof ParametresAgenceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/paiements': {
-      id: '/paiements'
-      path: '/paiements'
-      fullPath: '/paiements'
-      preLoaderRoute: typeof PaiementsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ops': {
-      id: '/ops'
-      path: '/ops'
-      fullPath: '/ops'
-      preLoaderRoute: typeof OpsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/notifications': {
-      id: '/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof NotificationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mot-de-passe-oublie': {
-      id: '/mot-de-passe-oublie'
-      path: '/mot-de-passe-oublie'
-      fullPath: '/mot-de-passe-oublie'
-      preLoaderRoute: typeof MotDePasseOublieRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mariages': {
-      id: '/mariages'
-      path: '/mariages'
-      fullPath: '/mariages'
-      preLoaderRoute: typeof MariagesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/inscription-agence': {
-      id: '/inscription-agence'
-      path: '/inscription-agence'
-      fullPath: '/inscription-agence'
-      preLoaderRoute: typeof InscriptionAgenceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/import-pdf': {
-      id: '/import-pdf'
-      path: '/import-pdf'
-      fullPath: '/import-pdf'
-      preLoaderRoute: typeof ImportPdfRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/import-bancaire': {
-      id: '/import-bancaire'
-      path: '/import-bancaire'
-      fullPath: '/import-bancaire'
-      preLoaderRoute: typeof ImportBancaireRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/factures-clients': {
-      id: '/factures-clients'
-      path: '/factures-clients'
-      fullPath: '/factures-clients'
-      preLoaderRoute: typeof FacturesClientsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/export': {
-      id: '/export'
-      path: '/export'
-      fullPath: '/export'
-      preLoaderRoute: typeof ExportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dossiers': {
-      id: '/dossiers'
-      path: '/dossiers'
-      fullPath: '/dossiers'
-      preLoaderRoute: typeof DossiersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo': {
-      id: '/demo'
-      path: '/demo'
-      fullPath: '/demo'
-      preLoaderRoute: typeof DemoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demandes': {
-      id: '/demandes'
-      path: '/demandes'
-      fullPath: '/demandes'
-      preLoaderRoute: typeof DemandesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/couvertures-fx': {
-      id: '/couvertures-fx'
-      path: '/couvertures-fx'
-      fullPath: '/couvertures-fx'
-      preLoaderRoute: typeof CouverturesFxRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/cotations': {
-      id: '/cotations'
-      path: '/cotations'
-      fullPath: '/cotations'
-      preLoaderRoute: typeof CotationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contacts': {
-      id: '/contacts'
-      path: '/contacts'
-      fullPath: '/contacts'
-      preLoaderRoute: typeof ContactsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/comptes': {
-      id: '/comptes'
-      path: '/comptes'
-      fullPath: '/comptes'
-      preLoaderRoute: typeof ComptesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/coaching': {
-      id: '/coaching'
-      path: '/coaching'
-      fullPath: '/coaching'
-      preLoaderRoute: typeof CoachingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/carnets': {
-      id: '/carnets'
-      path: '/carnets'
-      fullPath: '/carnets'
-      preLoaderRoute: typeof CarnetsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bulletins': {
-      id: '/bulletins'
-      path: '/bulletins'
-      fullPath: '/bulletins'
-      preLoaderRoute: typeof BulletinsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/audit': {
-      id: '/audit'
-      path: '/audit'
-      fullPath: '/audit'
-      preLoaderRoute: typeof AuditRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app': {
-      id: '/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AppRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin-messages': {
-      id: '/admin-messages'
-      path: '/admin-messages'
-      fullPath: '/admin-messages'
-      preLoaderRoute: typeof AdminMessagesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin-errors': {
-      id: '/admin-errors'
-      path: '/admin-errors'
-      fullPath: '/admin-errors'
-      preLoaderRoute: typeof AdminErrorsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin-demos': {
-      id: '/admin-demos'
-      path: '/admin-demos'
-      fullPath: '/admin-demos'
-      preLoaderRoute: typeof AdminDemosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin-dashboard': {
-      id: '/admin-dashboard'
-      path: '/admin-dashboard'
-      fullPath: '/admin-dashboard'
-      preLoaderRoute: typeof AdminDashboardRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin-agences': {
@@ -1417,186 +1171,277 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAgencesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/admin-dashboard': {
+      id: '/admin-dashboard'
+      path: '/admin-dashboard'
+      fullPath: '/admin-dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/ops/': {
-      id: '/ops/'
-      path: '/'
-      fullPath: '/ops/'
-      preLoaderRoute: typeof OpsIndexRouteImport
-      parentRoute: typeof OpsRoute
-    }
-    '/paiement/$token': {
-      id: '/paiement/$token'
-      path: '/paiement/$token'
-      fullPath: '/paiement/$token'
-      preLoaderRoute: typeof PaiementTokenRouteImport
+    '/admin-demos': {
+      id: '/admin-demos'
+      path: '/admin-demos'
+      fullPath: '/admin-demos'
+      preLoaderRoute: typeof AdminDemosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/p/$token': {
-      id: '/p/$token'
-      path: '/p/$token'
-      fullPath: '/p/$token'
-      preLoaderRoute: typeof PTokenRouteImport
+    '/admin-errors': {
+      id: '/admin-errors'
+      path: '/admin-errors'
+      fullPath: '/admin-errors'
+      preLoaderRoute: typeof AdminErrorsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/ops/messages': {
-      id: '/ops/messages'
-      path: '/messages'
-      fullPath: '/ops/messages'
-      preLoaderRoute: typeof OpsMessagesRouteImport
-      parentRoute: typeof OpsRoute
-    }
-    '/ops/errors': {
-      id: '/ops/errors'
-      path: '/errors'
-      fullPath: '/ops/errors'
-      preLoaderRoute: typeof OpsErrorsRouteImport
-      parentRoute: typeof OpsRoute
-    }
-    '/ops/demos': {
-      id: '/ops/demos'
-      path: '/demos'
-      fullPath: '/ops/demos'
-      preLoaderRoute: typeof OpsDemosRouteImport
-      parentRoute: typeof OpsRoute
-    }
-    '/ops/dashboard': {
-      id: '/ops/dashboard'
-      path: '/dashboard'
-      fullPath: '/ops/dashboard'
-      preLoaderRoute: typeof OpsDashboardRouteImport
-      parentRoute: typeof OpsRoute
-    }
-    '/ops/agences': {
-      id: '/ops/agences'
-      path: '/agences'
-      fullPath: '/ops/agences'
-      preLoaderRoute: typeof OpsAgencesRouteImport
-      parentRoute: typeof OpsRoute
-    }
-    '/mon-espace/pointage': {
-      id: '/mon-espace/pointage'
-      path: '/mon-espace/pointage'
-      fullPath: '/mon-espace/pointage'
-      preLoaderRoute: typeof MonEspacePointageRouteImport
+    '/admin-messages': {
+      id: '/admin-messages'
+      path: '/admin-messages'
+      fullPath: '/admin-messages'
+      preLoaderRoute: typeof AdminMessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/mon-espace/evaluation': {
-      id: '/mon-espace/evaluation'
-      path: '/mon-espace/evaluation'
-      fullPath: '/mon-espace/evaluation'
-      preLoaderRoute: typeof MonEspaceEvaluationRouteImport
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/mon-espace/documents': {
-      id: '/mon-espace/documents'
-      path: '/mon-espace/documents'
-      fullPath: '/mon-espace/documents'
-      preLoaderRoute: typeof MonEspaceDocumentsRouteImport
+    '/audit': {
+      id: '/audit'
+      path: '/audit'
+      fullPath: '/audit'
+      preLoaderRoute: typeof AuditRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/mon-espace/contrats': {
-      id: '/mon-espace/contrats'
-      path: '/mon-espace/contrats'
-      fullPath: '/mon-espace/contrats'
-      preLoaderRoute: typeof MonEspaceContratsRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/mon-espace/conges': {
-      id: '/mon-espace/conges'
-      path: '/mon-espace/conges'
-      fullPath: '/mon-espace/conges'
-      preLoaderRoute: typeof MonEspaceCongesRouteImport
+    '/bulletins': {
+      id: '/bulletins'
+      path: '/bulletins'
+      fullPath: '/bulletins'
+      preLoaderRoute: typeof BulletinsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/mes-documents/$token': {
-      id: '/mes-documents/$token'
-      path: '/mes-documents/$token'
-      fullPath: '/mes-documents/$token'
-      preLoaderRoute: typeof MesDocumentsTokenRouteImport
+    '/carnets': {
+      id: '/carnets'
+      path: '/carnets'
+      fullPath: '/carnets'
+      preLoaderRoute: typeof CarnetsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/mariage/$token': {
-      id: '/mariage/$token'
-      path: '/mariage/$token'
-      fullPath: '/mariage/$token'
-      preLoaderRoute: typeof MariageTokenRouteImport
+    '/coaching': {
+      id: '/coaching'
+      path: '/coaching'
+      fullPath: '/coaching'
+      preLoaderRoute: typeof CoachingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/factures/$id': {
-      id: '/factures/$id'
-      path: '/factures/$id'
-      fullPath: '/factures/$id'
-      preLoaderRoute: typeof FacturesIdRouteImport
+    '/comptes': {
+      id: '/comptes'
+      path: '/comptes'
+      fullPath: '/comptes'
+      preLoaderRoute: typeof ComptesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/factures-clients/$id': {
-      id: '/factures-clients/$id'
-      path: '/$id'
-      fullPath: '/factures-clients/$id'
-      preLoaderRoute: typeof FacturesClientsIdRouteImport
-      parentRoute: typeof FacturesClientsRoute
-    }
-    '/email/unsubscribe': {
-      id: '/email/unsubscribe'
-      path: '/email/unsubscribe'
-      fullPath: '/email/unsubscribe'
-      preLoaderRoute: typeof EmailUnsubscribeRouteImport
+    '/contacts': {
+      id: '/contacts'
+      path: '/contacts'
+      fullPath: '/contacts'
+      preLoaderRoute: typeof ContactsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dossiers/$id': {
-      id: '/dossiers/$id'
-      path: '/$id'
-      fullPath: '/dossiers/$id'
-      preLoaderRoute: typeof DossiersIdRouteImport
-      parentRoute: typeof DossiersRoute
-    }
-    '/demandes/$id': {
-      id: '/demandes/$id'
-      path: '/$id'
-      fullPath: '/demandes/$id'
-      preLoaderRoute: typeof DemandesIdRouteImport
-      parentRoute: typeof DemandesRoute
-    }
-    '/cotations/$id': {
-      id: '/cotations/$id'
-      path: '/$id'
-      fullPath: '/cotations/$id'
-      preLoaderRoute: typeof CotationsIdRouteImport
-      parentRoute: typeof CotationsRoute
-    }
-    '/contrat-signer/$token': {
-      id: '/contrat-signer/$token'
-      path: '/contrat-signer/$token'
-      fullPath: '/contrat-signer/$token'
-      preLoaderRoute: typeof ContratSignerTokenRouteImport
+    '/cotations': {
+      id: '/cotations'
+      path: '/cotations'
+      fullPath: '/cotations'
+      preLoaderRoute: typeof CotationsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/contacts/$id': {
-      id: '/contacts/$id'
-      path: '/$id'
-      fullPath: '/contacts/$id'
-      preLoaderRoute: typeof ContactsIdRouteImport
-      parentRoute: typeof ContactsRoute
-    }
-    '/conge-signer/$token': {
-      id: '/conge-signer/$token'
-      path: '/conge-signer/$token'
-      fullPath: '/conge-signer/$token'
-      preLoaderRoute: typeof CongeSignerTokenRouteImport
+    '/couvertures-fx': {
+      id: '/couvertures-fx'
+      path: '/couvertures-fx'
+      fullPath: '/couvertures-fx'
+      preLoaderRoute: typeof CouverturesFxRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/carnet/$token': {
-      id: '/carnet/$token'
-      path: '/carnet/$token'
-      fullPath: '/carnet/$token'
-      preLoaderRoute: typeof CarnetTokenRouteImport
+    '/demandes': {
+      id: '/demandes'
+      path: '/demandes'
+      fullPath: '/demandes'
+      preLoaderRoute: typeof DemandesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/documents': {
+      id: '/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof DocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dossiers': {
+      id: '/dossiers'
+      path: '/dossiers'
+      fullPath: '/dossiers'
+      preLoaderRoute: typeof DossiersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/export': {
+      id: '/export'
+      path: '/export'
+      fullPath: '/export'
+      preLoaderRoute: typeof ExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/factures-clients': {
+      id: '/factures-clients'
+      path: '/factures-clients'
+      fullPath: '/factures-clients'
+      preLoaderRoute: typeof FacturesClientsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/import-bancaire': {
+      id: '/import-bancaire'
+      path: '/import-bancaire'
+      fullPath: '/import-bancaire'
+      preLoaderRoute: typeof ImportBancaireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/import-pdf': {
+      id: '/import-pdf'
+      path: '/import-pdf'
+      fullPath: '/import-pdf'
+      preLoaderRoute: typeof ImportPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inscription-agence': {
+      id: '/inscription-agence'
+      path: '/inscription-agence'
+      fullPath: '/inscription-agence'
+      preLoaderRoute: typeof InscriptionAgenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mariages': {
+      id: '/mariages'
+      path: '/mariages'
+      fullPath: '/mariages'
+      preLoaderRoute: typeof MariagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mot-de-passe-oublie': {
+      id: '/mot-de-passe-oublie'
+      path: '/mot-de-passe-oublie'
+      fullPath: '/mot-de-passe-oublie'
+      preLoaderRoute: typeof MotDePasseOublieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ops': {
+      id: '/ops'
+      path: '/ops'
+      fullPath: '/ops'
+      preLoaderRoute: typeof OpsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/paiements': {
+      id: '/paiements'
+      path: '/paiements'
+      fullPath: '/paiements'
+      preLoaderRoute: typeof PaiementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parametres-agence': {
+      id: '/parametres-agence'
+      path: '/parametres-agence'
+      fullPath: '/parametres-agence'
+      preLoaderRoute: typeof ParametresAgenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pilotage': {
+      id: '/pilotage'
+      path: '/pilotage'
+      fullPath: '/pilotage'
+      preLoaderRoute: typeof PilotageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/previsions': {
+      id: '/previsions'
+      path: '/previsions'
+      fullPath: '/previsions'
+      preLoaderRoute: typeof PrevisionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qa': {
+      id: '/qa'
+      path: '/qa'
+      fullPath: '/qa'
+      preLoaderRoute: typeof QaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rapprochement': {
+      id: '/rapprochement'
+      path: '/rapprochement'
+      fullPath: '/rapprochement'
+      preLoaderRoute: typeof RapprochementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reinitialiser-mot-de-passe': {
+      id: '/reinitialiser-mot-de-passe'
+      path: '/reinitialiser-mot-de-passe'
+      fullPath: '/reinitialiser-mot-de-passe'
+      preLoaderRoute: typeof ReinitialiserMotDePasseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/suivi-dossiers': {
+      id: '/suivi-dossiers'
+      path: '/suivi-dossiers'
+      fullPath: '/suivi-dossiers'
+      preLoaderRoute: typeof SuiviDossiersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tarifs': {
+      id: '/tarifs'
+      path: '/tarifs'
+      fullPath: '/tarifs'
+      preLoaderRoute: typeof TarifsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/utilisateurs': {
+      id: '/utilisateurs'
+      path: '/utilisateurs'
+      fullPath: '/utilisateurs'
+      preLoaderRoute: typeof UtilisateursRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bulletin/$token': {
@@ -1606,67 +1451,207 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BulletinTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/carnet/$token': {
+      id: '/carnet/$token'
+      path: '/carnet/$token'
+      fullPath: '/carnet/$token'
+      preLoaderRoute: typeof CarnetTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conge-signer/$token': {
+      id: '/conge-signer/$token'
+      path: '/conge-signer/$token'
+      fullPath: '/conge-signer/$token'
+      preLoaderRoute: typeof CongeSignerTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contacts/$id': {
+      id: '/contacts/$id'
+      path: '/$id'
+      fullPath: '/contacts/$id'
+      preLoaderRoute: typeof ContactsIdRouteImport
+      parentRoute: typeof ContactsRoute
+    }
+    '/contrat-signer/$token': {
+      id: '/contrat-signer/$token'
+      path: '/contrat-signer/$token'
+      fullPath: '/contrat-signer/$token'
+      preLoaderRoute: typeof ContratSignerTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cotations/$id': {
+      id: '/cotations/$id'
+      path: '/$id'
+      fullPath: '/cotations/$id'
+      preLoaderRoute: typeof CotationsIdRouteImport
+      parentRoute: typeof CotationsRoute
+    }
+    '/demandes/$id': {
+      id: '/demandes/$id'
+      path: '/$id'
+      fullPath: '/demandes/$id'
+      preLoaderRoute: typeof DemandesIdRouteImport
+      parentRoute: typeof DemandesRoute
+    }
+    '/dossiers/$id': {
+      id: '/dossiers/$id'
+      path: '/$id'
+      fullPath: '/dossiers/$id'
+      preLoaderRoute: typeof DossiersIdRouteImport
+      parentRoute: typeof DossiersRoute
+    }
+    '/email/unsubscribe': {
+      id: '/email/unsubscribe'
+      path: '/email/unsubscribe'
+      fullPath: '/email/unsubscribe'
+      preLoaderRoute: typeof EmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/factures-clients/$id': {
+      id: '/factures-clients/$id'
+      path: '/$id'
+      fullPath: '/factures-clients/$id'
+      preLoaderRoute: typeof FacturesClientsIdRouteImport
+      parentRoute: typeof FacturesClientsRoute
+    }
+    '/factures/$id': {
+      id: '/factures/$id'
+      path: '/factures/$id'
+      fullPath: '/factures/$id'
+      preLoaderRoute: typeof FacturesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mariage/$token': {
+      id: '/mariage/$token'
+      path: '/mariage/$token'
+      fullPath: '/mariage/$token'
+      preLoaderRoute: typeof MariageTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mes-documents/$token': {
+      id: '/mes-documents/$token'
+      path: '/mes-documents/$token'
+      fullPath: '/mes-documents/$token'
+      preLoaderRoute: typeof MesDocumentsTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mon-espace/conges': {
+      id: '/mon-espace/conges'
+      path: '/mon-espace/conges'
+      fullPath: '/mon-espace/conges'
+      preLoaderRoute: typeof MonEspaceCongesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mon-espace/contrats': {
+      id: '/mon-espace/contrats'
+      path: '/mon-espace/contrats'
+      fullPath: '/mon-espace/contrats'
+      preLoaderRoute: typeof MonEspaceContratsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mon-espace/documents': {
+      id: '/mon-espace/documents'
+      path: '/mon-espace/documents'
+      fullPath: '/mon-espace/documents'
+      preLoaderRoute: typeof MonEspaceDocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mon-espace/evaluation': {
+      id: '/mon-espace/evaluation'
+      path: '/mon-espace/evaluation'
+      fullPath: '/mon-espace/evaluation'
+      preLoaderRoute: typeof MonEspaceEvaluationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mon-espace/pointage': {
+      id: '/mon-espace/pointage'
+      path: '/mon-espace/pointage'
+      fullPath: '/mon-espace/pointage'
+      preLoaderRoute: typeof MonEspacePointageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ops/': {
+      id: '/ops/'
+      path: '/'
+      fullPath: '/ops/'
+      preLoaderRoute: typeof OpsIndexRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/agences': {
+      id: '/ops/agences'
+      path: '/agences'
+      fullPath: '/ops/agences'
+      preLoaderRoute: typeof OpsAgencesRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/dashboard': {
+      id: '/ops/dashboard'
+      path: '/dashboard'
+      fullPath: '/ops/dashboard'
+      preLoaderRoute: typeof OpsDashboardRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/demos': {
+      id: '/ops/demos'
+      path: '/demos'
+      fullPath: '/ops/demos'
+      preLoaderRoute: typeof OpsDemosRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/errors': {
+      id: '/ops/errors'
+      path: '/errors'
+      fullPath: '/ops/errors'
+      preLoaderRoute: typeof OpsErrorsRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/messages': {
+      id: '/ops/messages'
+      path: '/messages'
+      fullPath: '/ops/messages'
+      preLoaderRoute: typeof OpsMessagesRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/p/$token': {
+      id: '/p/$token'
+      path: '/p/$token'
+      fullPath: '/p/$token'
+      preLoaderRoute: typeof PTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/paiement/$token': {
+      id: '/paiement/$token'
+      path: '/paiement/$token'
+      fullPath: '/paiement/$token'
+      preLoaderRoute: typeof PaiementTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/rdv/$token': {
+      id: '/demo/rdv/$token'
+      path: '/rdv/$token'
+      fullPath: '/demo/rdv/$token'
+      preLoaderRoute: typeof DemoRdvTokenRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/demo/v/$token': {
+      id: '/demo/v/$token'
+      path: '/v/$token'
+      fullPath: '/demo/v/$token'
+      preLoaderRoute: typeof DemoVTokenRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/lovable/email/suppression': {
+      id: '/lovable/email/suppression'
+      path: '/lovable/email/suppression'
+      fullPath: '/lovable/email/suppression'
+      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ops/equipe/': {
       id: '/ops/equipe/'
       path: '/equipe'
       fullPath: '/ops/equipe/'
       preLoaderRoute: typeof OpsEquipeIndexRouteImport
-      parentRoute: typeof OpsRoute
-    }
-    '/ops/equipe/pointage': {
-      id: '/ops/equipe/pointage'
-      path: '/equipe/pointage'
-      fullPath: '/ops/equipe/pointage'
-      preLoaderRoute: typeof OpsEquipePointageRouteImport
-      parentRoute: typeof OpsRoute
-    }
-    '/ops/equipe/planning': {
-      id: '/ops/equipe/planning'
-      path: '/equipe/planning'
-      fullPath: '/ops/equipe/planning'
-      preLoaderRoute: typeof OpsEquipePlanningRouteImport
-      parentRoute: typeof OpsRoute
-    }
-    '/ops/equipe/parametres': {
-      id: '/ops/equipe/parametres'
-      path: '/equipe/parametres'
-      fullPath: '/ops/equipe/parametres'
-      preLoaderRoute: typeof OpsEquipeParametresRouteImport
-      parentRoute: typeof OpsRoute
-    }
-    '/ops/equipe/fiches-poste': {
-      id: '/ops/equipe/fiches-poste'
-      path: '/equipe/fiches-poste'
-      fullPath: '/ops/equipe/fiches-poste'
-      preLoaderRoute: typeof OpsEquipeFichesPosteRouteImport
-      parentRoute: typeof OpsRoute
-    }
-    '/ops/equipe/evaluations': {
-      id: '/ops/equipe/evaluations'
-      path: '/equipe/evaluations'
-      fullPath: '/ops/equipe/evaluations'
-      preLoaderRoute: typeof OpsEquipeEvaluationsRouteImport
-      parentRoute: typeof OpsRoute
-    }
-    '/ops/equipe/contrats': {
-      id: '/ops/equipe/contrats'
-      path: '/equipe/contrats'
-      fullPath: '/ops/equipe/contrats'
-      preLoaderRoute: typeof OpsEquipeContratsRouteImport
-      parentRoute: typeof OpsRoute
-    }
-    '/ops/equipe/annee': {
-      id: '/ops/equipe/annee'
-      path: '/equipe/annee'
-      fullPath: '/ops/equipe/annee'
-      preLoaderRoute: typeof OpsEquipeAnneeRouteImport
-      parentRoute: typeof OpsRoute
-    }
-    '/ops/equipe/absences': {
-      id: '/ops/equipe/absences'
-      path: '/equipe/absences'
-      fullPath: '/ops/equipe/absences'
-      preLoaderRoute: typeof OpsEquipeAbsencesRouteImport
       parentRoute: typeof OpsRoute
     }
     '/ops/equipe/$id': {
@@ -1676,67 +1661,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpsEquipeIdRouteImport
       parentRoute: typeof OpsRoute
     }
-    '/lovable/email/suppression': {
-      id: '/lovable/email/suppression'
-      path: '/lovable/email/suppression'
-      fullPath: '/lovable/email/suppression'
-      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
-      parentRoute: typeof rootRouteImport
+    '/ops/equipe/absences': {
+      id: '/ops/equipe/absences'
+      path: '/equipe/absences'
+      fullPath: '/ops/equipe/absences'
+      preLoaderRoute: typeof OpsEquipeAbsencesRouteImport
+      parentRoute: typeof OpsRoute
     }
-    '/demo/v/$token': {
-      id: '/demo/v/$token'
-      path: '/v/$token'
-      fullPath: '/demo/v/$token'
-      preLoaderRoute: typeof DemoVTokenRouteImport
-      parentRoute: typeof DemoRoute
+    '/ops/equipe/annee': {
+      id: '/ops/equipe/annee'
+      path: '/equipe/annee'
+      fullPath: '/ops/equipe/annee'
+      preLoaderRoute: typeof OpsEquipeAnneeRouteImport
+      parentRoute: typeof OpsRoute
     }
-    '/demo/rdv/$token': {
-      id: '/demo/rdv/$token'
-      path: '/rdv/$token'
-      fullPath: '/demo/rdv/$token'
-      preLoaderRoute: typeof DemoRdvTokenRouteImport
-      parentRoute: typeof DemoRoute
+    '/ops/equipe/contrats': {
+      id: '/ops/equipe/contrats'
+      path: '/equipe/contrats'
+      fullPath: '/ops/equipe/contrats'
+      preLoaderRoute: typeof OpsEquipeContratsRouteImport
+      parentRoute: typeof OpsRoute
     }
-    '/lovable/email/transactional/send': {
-      id: '/lovable/email/transactional/send'
-      path: '/lovable/email/transactional/send'
-      fullPath: '/lovable/email/transactional/send'
-      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
-      parentRoute: typeof rootRouteImport
+    '/ops/equipe/evaluations': {
+      id: '/ops/equipe/evaluations'
+      path: '/equipe/evaluations'
+      fullPath: '/ops/equipe/evaluations'
+      preLoaderRoute: typeof OpsEquipeEvaluationsRouteImport
+      parentRoute: typeof OpsRoute
     }
-    '/lovable/email/transactional/preview': {
-      id: '/lovable/email/transactional/preview'
-      path: '/lovable/email/transactional/preview'
-      fullPath: '/lovable/email/transactional/preview'
-      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
-      parentRoute: typeof rootRouteImport
+    '/ops/equipe/fiches-poste': {
+      id: '/ops/equipe/fiches-poste'
+      path: '/equipe/fiches-poste'
+      fullPath: '/ops/equipe/fiches-poste'
+      preLoaderRoute: typeof OpsEquipeFichesPosteRouteImport
+      parentRoute: typeof OpsRoute
     }
-    '/lovable/email/queue/process': {
-      id: '/lovable/email/queue/process'
-      path: '/lovable/email/queue/process'
-      fullPath: '/lovable/email/queue/process'
-      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
-      parentRoute: typeof rootRouteImport
+    '/ops/equipe/parametres': {
+      id: '/ops/equipe/parametres'
+      path: '/equipe/parametres'
+      fullPath: '/ops/equipe/parametres'
+      preLoaderRoute: typeof OpsEquipeParametresRouteImport
+      parentRoute: typeof OpsRoute
     }
-    '/lovable/email/auth/webhook': {
-      id: '/lovable/email/auth/webhook'
-      path: '/lovable/email/auth/webhook'
-      fullPath: '/lovable/email/auth/webhook'
-      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
-      parentRoute: typeof rootRouteImport
+    '/ops/equipe/planning': {
+      id: '/ops/equipe/planning'
+      path: '/equipe/planning'
+      fullPath: '/ops/equipe/planning'
+      preLoaderRoute: typeof OpsEquipePlanningRouteImport
+      parentRoute: typeof OpsRoute
     }
-    '/lovable/email/auth/preview': {
-      id: '/lovable/email/auth/preview'
-      path: '/lovable/email/auth/preview'
-      fullPath: '/lovable/email/auth/preview'
-      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
-      parentRoute: typeof rootRouteImport
+    '/ops/equipe/pointage': {
+      id: '/ops/equipe/pointage'
+      path: '/equipe/pointage'
+      fullPath: '/ops/equipe/pointage'
+      preLoaderRoute: typeof OpsEquipePointageRouteImport
+      parentRoute: typeof OpsRoute
     }
-    '/api/public/hooks/relance-bulletins': {
-      id: '/api/public/hooks/relance-bulletins'
-      path: '/api/public/hooks/relance-bulletins'
-      fullPath: '/api/public/hooks/relance-bulletins'
-      preLoaderRoute: typeof ApiPublicHooksRelanceBulletinsRouteImport
+    '/api/public/hooks/payroll-summary': {
+      id: '/api/public/hooks/payroll-summary'
+      path: '/api/public/hooks/payroll-summary'
+      fullPath: '/api/public/hooks/payroll-summary'
+      preLoaderRoute: typeof ApiPublicHooksPayrollSummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/relance-acomptes': {
@@ -1746,11 +1731,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRelanceAcomptesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/payroll-summary': {
-      id: '/api/public/hooks/payroll-summary'
-      path: '/api/public/hooks/payroll-summary'
-      fullPath: '/api/public/hooks/payroll-summary'
-      preLoaderRoute: typeof ApiPublicHooksPayrollSummaryRouteImport
+    '/api/public/hooks/relance-bulletins': {
+      id: '/api/public/hooks/relance-bulletins'
+      path: '/api/public/hooks/relance-bulletins'
+      fullPath: '/api/public/hooks/relance-bulletins'
+      preLoaderRoute: typeof ApiPublicHooksRelanceBulletinsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/send': {
+      id: '/lovable/email/transactional/send'
+      path: '/lovable/email/transactional/send'
+      fullPath: '/lovable/email/transactional/send'
+      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -1887,6 +1907,7 @@ const rootRouteChildren: RootRouteChildren = {
   CouverturesFxRoute: CouverturesFxRoute,
   DemandesRoute: DemandesRouteWithChildren,
   DemoRoute: DemoRouteWithChildren,
+  DocumentsRoute: DocumentsRoute,
   DossiersRoute: DossiersRouteWithChildren,
   ExportRoute: ExportRoute,
   FacturesClientsRoute: FacturesClientsRouteWithChildren,
@@ -1937,3 +1958,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

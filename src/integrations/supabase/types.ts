@@ -674,10 +674,13 @@ export type Database = {
           banque: Database["public"]["Enums"]["compte_banque"]
           categorie: Database["public"]["Enums"]["compte_categorie"]
           created_at: string
+          date_solde_initial: string | null
           devise: Database["public"]["Enums"]["devise_code"]
           id: string
           nom: string
           solde_initial: number
+          solde_initial_devise: number
+          taux_solde_eur: number
           updated_at: string
           user_id: string
         }
@@ -687,10 +690,13 @@ export type Database = {
           banque: Database["public"]["Enums"]["compte_banque"]
           categorie: Database["public"]["Enums"]["compte_categorie"]
           created_at?: string
+          date_solde_initial?: string | null
           devise?: Database["public"]["Enums"]["devise_code"]
           id?: string
           nom: string
           solde_initial?: number
+          solde_initial_devise?: number
+          taux_solde_eur?: number
           updated_at?: string
           user_id: string
         }
@@ -700,10 +706,13 @@ export type Database = {
           banque?: Database["public"]["Enums"]["compte_banque"]
           categorie?: Database["public"]["Enums"]["compte_categorie"]
           created_at?: string
+          date_solde_initial?: string | null
           devise?: Database["public"]["Enums"]["devise_code"]
           id?: string
           nom?: string
           solde_initial?: number
+          solde_initial_devise?: number
+          taux_solde_eur?: number
           updated_at?: string
           user_id?: string
         }
@@ -1422,6 +1431,9 @@ export type Database = {
           client_id: string | null
           cout_total: number
           created_at: string
+          date_depart: string | null
+          date_ouverture: string | null
+          date_retour: string | null
           id: string
           numero: string | null
           pays_destination: string | null
@@ -1438,6 +1450,9 @@ export type Database = {
           client_id?: string | null
           cout_total?: number
           created_at?: string
+          date_depart?: string | null
+          date_ouverture?: string | null
+          date_retour?: string | null
           id?: string
           numero?: string | null
           pays_destination?: string | null
@@ -1454,6 +1469,9 @@ export type Database = {
           client_id?: string | null
           cout_total?: number
           created_at?: string
+          date_depart?: string | null
+          date_ouverture?: string | null
+          date_retour?: string | null
           id?: string
           numero?: string | null
           pays_destination?: string | null
@@ -2208,11 +2226,14 @@ export type Database = {
           created_at: string
           date_echeance: string
           date_ouverture: string
+          date_solde_reel: string | null
           devise: Database["public"]["Enums"]["devise_code"]
           id: string
           montant_devise: number
           notes: string | null
           reference: string | null
+          solde_reel_devise: number | null
+          solde_reel_eur: number | null
           statut: Database["public"]["Enums"]["fx_coverage_statut"]
           taux_change: number
           updated_at: string
@@ -2223,11 +2244,14 @@ export type Database = {
           created_at?: string
           date_echeance: string
           date_ouverture?: string
+          date_solde_reel?: string | null
           devise: Database["public"]["Enums"]["devise_code"]
           id?: string
           montant_devise: number
           notes?: string | null
           reference?: string | null
+          solde_reel_devise?: number | null
+          solde_reel_eur?: number | null
           statut?: Database["public"]["Enums"]["fx_coverage_statut"]
           taux_change: number
           updated_at?: string
@@ -2238,11 +2262,14 @@ export type Database = {
           created_at?: string
           date_echeance?: string
           date_ouverture?: string
+          date_solde_reel?: string | null
           devise?: Database["public"]["Enums"]["devise_code"]
           id?: string
           montant_devise?: number
           notes?: string | null
           reference?: string | null
+          solde_reel_devise?: number | null
+          solde_reel_eur?: number | null
           statut?: Database["public"]["Enums"]["fx_coverage_statut"]
           taux_change?: number
           updated_at?: string
