@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { Plus, Mail, Phone, Users, ArrowRight } from "lucide-react";
+import { Plus, Mail, Phone, Users, ArrowRight, Search } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/contacts")({
@@ -44,10 +44,21 @@ function ContactsPage() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<"all" | "client" | "fournisseur">("all");
+  const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ nom: "", type: "client" as Contact["type"], email: "", telephone: "" });
 
-  const filtered = data.filter((c) => filter === "all" || c.type === filter);
+  const normalizeSearch = (value: string | null | undefined) =>
+    (value ?? "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  const searchTerm = normalizeSearch(search.trim());
+  const filtered = data.filter((c) => {
+    if (filter !== "all" && c.type !== filter) return false;
+    if (!searchTerm) return true;
+    return normalizeSearch(`${c.nom} ${c.email ?? ""} ${c.telephone ?? ""}`).includes(searchTerm);
+  });
   const clientsCount = data.filter((c) => c.type === "client").length;
   const fournisseursCount = data.filter((c) => c.type === "fournisseur").length;
 
@@ -128,17 +139,29 @@ function ContactsPage() {
         action={NewContactButton}
       />
 
-      <div className="flex gap-2">
-        {(["all", "client", "fournisseur"] as const).map((t) => (
-          <Button
-            key={t}
-            variant={filter === t ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilter(t)}
-          >
-            {t === "all" ? `Tous (${data.length})` : t === "client" ? `Clients (${clientsCount})` : `Fournisseurs (${fournisseursCount})`}
-          </Button>
-        ))}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-2 flex-wrap">
+          {(["all", "client", "fournisseur"] as const).map((t) => (
+            <Button
+              key={t}
+              variant={filter === t ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilter(t)}
+            >
+              {t === "all" ? `Tous (${data.length})` : t === "client" ? `Clients (${clientsCount})` : `Fournisseurs (${fournisseursCount})`}
+            </Button>
+          ))}
+        </div>
+        <div className="relative w-full sm:max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Rechercher par nom, email ou téléphone…"
+            aria-label="Rechercher un client ou fournisseur"
+            className="pl-9"
+          />
+        </div>
       </div>
 
       <Card className="border-border/60 overflow-hidden">
@@ -151,7 +174,9 @@ function ContactsPage() {
             description={
               data.length === 0
                 ? "Ajoutez un client ou un fournisseur pour commencer."
-                : "Modifiez le filtre pour voir d'autres contacts."
+                : searchTerm
+                  ? "Aucun client ou fournisseur ne correspond à cette recherche."
+                  : "Modifiez le filtre pour voir d'autres contacts."
             }
             action={data.length === 0 ? NewContactButton : undefined}
           />

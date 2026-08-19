@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useTable, type Contact, type Dossier, type Paiement, type Compte } from "@/hooks/use-data";
+import { useTable, type Contact, type Dossier, type Paiement, type Compte, type RemiseCarte } from "@/hooks/use-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { formatEUR, formatDate } from "@/lib/format";
@@ -19,7 +19,7 @@ import { paiementEUR } from "@/lib/finance";
 import { FxFieldGroup, fxValueToDb, emptyFxValue, type FxFieldValue } from "@/components/fx-field-group";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { Plus, Wallet, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { Plus, Wallet, ArrowDownLeft, ArrowUpRight, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 
@@ -46,6 +46,7 @@ function PaiementsPage() {
   const { data: dossiers } = useTable<Dossier>("dossiers");
   const { data: contacts } = useTable<Contact>("contacts");
   const { data: comptes } = useTable<Compte>("comptes");
+  const { data: remisesCarte, loading: loadingRemises } = useTable<RemiseCarte>("remises_cb");
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -80,6 +81,10 @@ function PaiementsPage() {
   const totalDecaisse = paiements
     .filter((p) => p.type === "paiement_fournisseur")
     .reduce((s, p) => s + paiementEUR(p), 0);
+  const remisesRapprochees = remisesCarte.filter((r) => r.montant_net_recu !== null);
+  const totalBrutCarte = remisesCarte.reduce((s, r) => s + Number(r.montant_brut), 0);
+  const totalNetCarte = remisesRapprochees.reduce((s, r) => s + Number(r.montant_net_recu), 0);
+  const totalCommissionsCarte = remisesRapprochees.reduce((s, r) => s + Number(r.commission_bancaire), 0);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -437,6 +442,91 @@ function PaiementsPage() {
           </Table>
         )}
       </Card>
+
+      {/* Rapprochement des remises acquéreur : brut client, net bancaire et frais restent distincts. */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center">
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div>
+            <h2 className="font-display text-2xl">Remises CB Société Générale</h2>
+            <p className="text-sm text-muted-foreground">
+              Montant payé par le client, net reçu en banque et commission restent séparés.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <Card className="p-4 border-border/60">
+            <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Remises</div>
+            <div className="mt-2 text-lg font-semibold tabular">{remisesCarte.length}</div>
+          </Card>
+          <Card className="p-4 border-border/60">
+            <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Brut clients</div>
+            <div className="mt-2 text-lg font-semibold tabular">{formatEUR(totalBrutCarte)}</div>
+          </Card>
+          <Card className="p-4 border-border/60">
+            <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Net reçu rapproché</div>
+            <div className="mt-2 text-lg font-semibold tabular">{formatEUR(totalNetCarte)}</div>
+          </Card>
+          <Card className="p-4 border-border/60">
+            <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Commissions constatées</div>
+            <div className="mt-2 text-lg font-semibold tabular text-[color:var(--cost)]">
+              {formatEUR(totalCommissionsCarte)}
+            </div>
+          </Card>
+        </div>
+
+        <Card className="border-border/60 overflow-hidden">
+          {loadingRemises ? (
+            <div className="py-10 text-center text-sm text-muted-foreground">Chargement…</div>
+          ) : remisesCarte.length === 0 ? (
+            <EmptyState
+              icon={CreditCard}
+              title="Aucune remise CB"
+              description="Les remises bancaires apparaîtront ici après import du relevé acquéreur."
+            />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-secondary/40 hover:bg-secondary/40">
+                  <TableHead>Date client</TableHead>
+                  <TableHead>Référence</TableHead>
+                  <TableHead className="text-center">Paiements groupés</TableHead>
+                  <TableHead className="text-right">Brut payé</TableHead>
+                  <TableHead>Date banque</TableHead>
+                  <TableHead className="text-right">Net reçu</TableHead>
+                  <TableHead className="text-right">Commission</TableHead>
+                  <TableHead>Statut</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {remisesCarte.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell>{formatDate(r.date_remise)}</TableCell>
+                    <TableCell className="font-mono text-xs">{r.reference_remise}</TableCell>
+                    <TableCell className="text-center tabular">{r.nombre_transactions}</TableCell>
+                    <TableCell className="text-right tabular font-medium">{formatEUR(Number(r.montant_brut))}</TableCell>
+                    <TableCell>{r.date_credit_banque ? formatDate(r.date_credit_banque) : "—"}</TableCell>
+                    <TableCell className="text-right tabular">
+                      {r.montant_net_recu === null ? "—" : formatEUR(Number(r.montant_net_recu))}
+                    </TableCell>
+                    <TableCell className="text-right tabular text-[color:var(--cost)]">
+                      {r.commission_bancaire === null ? "—" : formatEUR(Number(r.commission_bancaire))}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={r.statut === "rapproche" ? "bg-[color:var(--margin)]/12 text-[color:var(--margin)] border-[color:var(--margin)]/25" : "bg-muted text-muted-foreground border-transparent"}>
+                        {r.statut === "rapproche" ? "Rapprochée" : r.statut === "partiel" ? "Partielle" : "À rapprocher"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </Card>
+      </section>
     </div>
   );
 }

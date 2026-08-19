@@ -87,6 +87,25 @@ export type Rapprochement = {
   validated_at: string | null;
 };
 
+export type RemiseCarte = {
+  id: string;
+  compte_id: string | null;
+  bank_transaction_id: string | null;
+  reference_remise: string;
+  date_remise: string;
+  date_credit_banque: string | null;
+  acquereur: string;
+  code_banque: string | null;
+  devise: import("@/lib/fx").DeviseCode;
+  nombre_transactions: number;
+  montant_brut: number;
+  montant_net_recu: number | null;
+  commission_bancaire: number | null;
+  statut: "a_rapprocher" | "rapproche" | "partiel";
+  source_fichier: string | null;
+  created_at: string;
+};
+
 export type Facture = {
   id: string;
   fournisseur_id: string | null;
